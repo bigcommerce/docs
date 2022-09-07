@@ -274,9 +274,28 @@ paths:
         An order can be created with an existing catalog product or a custom product.
 
         **Required Fields**
-
+        
+        Either 
         *   products
         *   billing_address
+        
+        or 
+        
+        * consignments
+        
+        ## Consignments
+        The `consignment(s)` array is an alternative way to specify which products are associated with a fulfillment method. 
+        
+        There are two ways to create a order:
+        1. using the legacy payload: include `shipping_addresses` and `products`
+        2. consignment mode: include the `consignments` array
+        
+        These two methods may not be combined
+        
+        i.e.
+        - if the `consignments` array is present in the payload then neither `shipping_addresses` nor `products` may be included
+        - if either `shipping_addresses` or `products` are present then the `consignments` array may not be included 
+
       summary: Create an Order
       tags:
         - Orders
@@ -412,10 +431,72 @@ paths:
                           value: '180'
                         - id: 230
                           value: '192'
+              Shipping consignment:
+                value:
+                  consignments:
+                    shipping:
+                      - first_name: Jane,
+                        last_name: Doe,
+                        company: Acme Corp,
+                        street_1: 12 Main St,
+                        street_2: Unit 5,
+                        city: Austin,
+                        state: Texas,
+                        zip: 78751,
+                        country: United States,
+                        country_iso2: US,
+                        email: jane@doe.com,
+                        phone: 469-538-6697
+                        line_items:
+                          - name: BigCommerce Coffee Mug
+                            quantity: 1
+                            price_inc_tax: 50
+                            price_ex_tax: 45
+                  billing_address:
+                    first_name: Jane
+                    last_name: Doe
+                    street_1: 123 Main Street
+                    city: Austin
+                    state: Texas
+                    zip: '78751'
+                    country: United States
+                    country_iso2: US
+                    email: janedoe@example.com
+              Download consignment:
+                value:
+                  customer_id: 11
+                  consignments:
+                    downloads:
+                      - line_items:
+                        product_id: 184
+                        quantity: 3
+                  billing_address:
+                    first_name: Jane
+                    last_name: Doe
+                    street_1: 123 Main Street
+                    city: Austin
+                    state: Texas
+                    zip: '78751'
+                    country: United States
+                    country_iso2: US
+                    email: janedoe@example.com
         required: true
       responses:
         '200':
           $ref: '#/components/responses/order_Resp'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/response_400'
+              examples:
+                Empty consignments:
+                  value:
+                    - status: 400
+                      message: The field 'consignments' in invalid.
+                      details:
+                        invalid_reason: Consignments must not be empty.
       operationId: createAnOrder
     delete:
       description: Archives all orders.
@@ -1093,8 +1174,164 @@ paths:
         name: store_hash
         in: path
         required: true
+  '/stores/{store_hash}/v2/orders/{order_id}/consignments':
+    parameters:
+      - schema:
+          type: string
+        name: order_id
+        in: path
+        required: true
+      - schema:
+          type: string
+        name: store_hash
+        in: path
+        required: true
+    get:
+      summary: List Consignments
+      tags:
+        - Order Consignments
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/orderConsignment_Get'
+              examples:
+                Shipping Consignment:
+                  value:
+                    shipping:
+                      - id: 99
+                        first_name: Jane
+                        last_name: Doe
+                        company: Laser Ltd
+                        street_1: 123 Main Street
+                        street_2: string
+                        city: Austin
+                        state: Texas
+                        zip: '12345'
+                        country: United States
+                        country_iso2: US
+                        phone: '0410999888'
+                        email: janedoe@example.com
+                        shipping_method: Free Shipping
+                        items_total: 1
+                        items_shipped: 0
+                        base_cost: 5.1
+                        cost_ex_tax: 5.1
+                        cost_inc_tax: 6.2
+                        cost_tax: 1.1
+                        cost_tax_class_id: 2
+                        base_handling_cost: 4.1
+                        handling_cost_ex_tax: 4.1
+                        handling_cost_inc_tax: 5.3
+                        handling_cost_tax: 1.2
+                        handling_cost_tax_class_id: 2
+                        shipping_zone_id: 1
+                        shipping_zone_name: United States
+                        form_fields:
+                          - name: License Id
+                            value: 123BAF
+                        line_items:
+                          - url: 'https://api.bigcommerce.com/stores/{store_hash}/v2/orders/129/products/12'
+                            resource: /orders/129/products/12
+                        shipping_quotes:
+                          url: 'https://api.bigcommerce.com/stores/{store_hash}/v2/orders/163/consignments/shipping/64/shipping_quotes'
+                          resource: /orders/163/consignments/shipping/64/shipping_quotes
+                    downloads: [ ]
+                    email:
+                      gift_certificates: [ ]
+                Digital consignment:
+                  value:
+                    shipping: [ ]
+                    downloads:
+                      - recipient_email: recipient@email.com
+                        line_items:
+                          url: 'https://api.bigcommerce.com/stores/{store_hash}/v2/orders/129/products/12'
+                          resource: /orders/129/products/12
+                    email:
+                      gift_certificates: [ ]
+                Gift certificate consignment:
+                  value:
+                    shipping: [ ]
+                    downloads: [ ]
+                    email:
+                      gift_certificates:
+                        - recipient_email: recipient@email.com
+                          line_items:
+                            url: 'https://api.bigcommerce.com/stores/{store_hash}/v2/orders/129/products/12'
+                            resource: /orders/129/products/12
+        '404':
+          $ref: '#/components/responses/404_Resp'
+      operationId: get-orders-orderId-consignments
+      description: 'List all of the order consignments. '
+      parameters:
+        - $ref: '#/components/parameters/store_hash'
+        - $ref: '#/components/parameters/order_id_path'
+  '/stores/{store_hash}/v2/orders/{order_id}/consignments/shipping/{shipping_consignment_id}/shipping_quotes':
+    get:
+      summary: List Consignment Shipping Quotes
+      tags:
+        - Order Consignments
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/shippingQuotes_Base'
+              examples:
+                Fixed Shipping:
+                  value:
+                    id: '42'
+                    uuid: 7c65e0a0-cf46-4438-934e-c7b4edb31e18
+                    timestamp: 'Fri, 24 Jun 2022 01:45:27 +0000'
+                    shipping_provider_id: bcstatic
+                    shipping_provider_quote: []
+                    provider_code: peritem
+                    carrier_code: ''
+                    rate_code: ''
+                    rate_id: ''
+                    method_id: 2
+                Fedex:
+                  value:
+                    id: '43'
+                    uuid: 551404b9-beeb-4e49-922b-3b8d85002863
+                    timestamp: 'Fri, 24 Jun 2022 03:52:03 +0000'
+                    shipping_provider_id: bcrealtime
+                    shipping_provider_quote:
+                      rate:
+                        value: '107.32'
+                        unit: USD
+                      transitTime: '1'
+                      name: Priority Overnight
+                      signatureConfirmationFee: {}
+                      carrierName: ''
+                      carrierCode: {}
+                      code: {}
+                      deliveryMessage: ''
+                      labelSizes: []
+                      insuredMailFee: {}
+                      dates: []
+                      rateId: {}
+                      description: ''
+                      additionalInfo: {}
+                    provider_code: fedex
+                    carrier_code: ''
+                    rate_code: ''
+                    rate_id: ''
+                    method_id: 5
+        '404':
+          $ref: '#/components/responses/404_Resp'
+      operationId: get-orders-orderId-consignments-shipping-shippingId-shippingQuotes
+      description: <p>Gets all shipping quotes persisted on an order for a shipping consignment.</p> <p>This is a read only endpoint and the output can vary based on the shipping quote. A shipping quote can only be generated using the storefront at this time. Orders that are created in the control panel or using the API return a 204 for this endpoint since a shipping quote is not generated during that process.</p>
+      parameters:
+        - $ref: '#/components/parameters/store_hash'
+        - $ref: '#/components/parameters/order_id_path'
+        - $ref: '#/components/parameters/shipping_consignment_id'
 tags:
   - name: Orders
+  - name: Order Consignments
   - name: Order Coupons
   - name: Order Products
   - name: Order Taxes
@@ -1321,6 +1558,13 @@ components:
       description: The Channel ID of the Order.
       schema:
         type: integer
+    shipping_consignment_id:
+      name: shipping_consignment_id
+      in: path
+      required: true
+      description: Shipping Consignment ID
+      schema:
+        type: integer
   responses:
     orderStatusCollection_Resp:
       description: Get All Order Status Collection Response.
@@ -1531,6 +1775,9 @@ components:
                   coupons:
                     url: 'https://api.bigcommerce.com/stores/{store_hash}/v2/orders/100/coupons'
                     resource: /orders/100/coupons
+                  consignments:
+                    url: 'https://api.bigcommerce.com/stores/{store_hash}/v2/orders/100/consignments'
+                    resource: /orders/100/consignments
                   external_id: null
                   external_merchant_id: {}
                   tax_provider_id: BasicTaxProvider
@@ -1748,6 +1995,9 @@ components:
                 coupons:
                   url: 'https://api.bigcommerce.com/stores/{store_hash}/v2/orders/218/coupons'
                   resource: /orders/218/coupons
+                consignments:
+                  url: 'https://api.bigcommerce.com/stores/{store_hash}/v2/orders/218/consignments'
+                  resource: /orders/218/consignments
                 external_id: null
                 external_merchant_id: null
                 tax_provider_id: BasicTaxProvider
@@ -4465,6 +4715,8 @@ components:
           $ref: '#/components/schemas/shippingAddresses_Resource'
         coupons:
           $ref: '#/components/schemas/coupons_Resource'
+        consignments:
+          $ref: '#/components/schemas/orderConsignments_Resource'
         status_id:
           type: integer
           example: 7
@@ -4720,5 +4972,365 @@ components:
               type: array
               items:
                 $ref: '#/components/schemas/shippingAddress_Base'
+            consignments:
+              $ref: '#/components/schemas/orderConsignment_Post'
         - $ref: '#/components/schemas/order_Shared'
       x-internal: false
+    orderConsignment_Get:
+      title: orderConsignment_Get
+      type: object
+      properties:
+        shipping:
+          type: array
+          items:
+            $ref: '#/components/schemas/shippingConsignment_Get'
+        downloads:
+          type: array
+          items:
+            $ref: '#/components/schemas/digitalConsignment_Get'
+          maxItems: 1
+        email:
+          type: object
+          properties:
+            gift_certificates:
+              type: array
+              items:
+                $ref: '#/components/schemas/giftCertificateConsignment_Get'
+    digitalConsignment_Post:
+      allOf:
+        - type: object
+          properties:
+            line_items:
+              required: true
+              type: array
+              minItems: 1
+              items:
+                type: array
+                items:
+                  anyOf:
+                    - $ref: '#/components/schemas/orderCatalogProduct_Post'
+      x-examples:
+        x-example-1:
+          line_items:
+            - url: https://api.bigcommerce.com/stores/{$$.env.store_hash}/v2/orders/129/products/12
+              resource: /orders/129/products/12
+    shippingConsignment_Post:
+      allOf:
+        - $ref: '#/components/schemas/shippingConsignment_Base'
+        - type: object
+          properties:
+            line_items:
+              type: array
+              minItems: 1
+              items:
+                type: array
+                items:
+                  anyOf:
+                    - $ref: '#/components/schemas/orderCustomProduct_Post'
+                    - $ref: '#/components/schemas/orderCatalogProduct_Post'
+          required:
+            - line_items
+      x-examples:
+        example-1:
+          id: 99
+          first_name: Jane
+          last_name: Doe
+          company: Laser Ltd
+          street_1: 123 Main Street
+          street_2: string
+          city: Austin
+          state: Texas
+          zip: '12345'
+          country: United States
+          country_iso2: US
+          phone: '0410999888'
+          email: janedoe@example.com
+          form_fields:
+            - name: License Id
+              value: 123BAF
+          shipping_method: Free Shipping
+          line_items:
+            - url: 'https://api.bigcommerce.com/stores/{$$.env.store_hash}/v2/orders/129/products/12'
+              resource: /orders/129/products/12
+          items_total: 1
+          items_shipped: 0
+          base_cost: 5.1
+          cost_ex_tax: 5.1
+          cost_inc_tax: 6.2
+          cost_tax: 1.1
+          cost_tax_class_id: 2
+          base_handling_cost: 4.1
+          handling_cost_ex_tax: 4.1
+          handling_cost_inc_tax: 5.3
+          handling_cost_tax: 1.2
+          handling_cost_tax_class_id: 2
+          shipping_zone_id: 1
+          shipping_zone_name: United States
+          shipping_quotes:
+            url: 'https://api.bigcommerce.com/stores/{$$.env.store_hash}/v2/orders/163/consignments/shipping/64/shipping_quotes'
+            resource: /orders/163/consignments/shipping/64/shipping_quotes
+    orderConsignment_Post:
+      title: ''
+      type: object
+      x-examples:
+        example-1:
+      properties:
+        shipping:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/shippingConsignment_Post'
+        downloads:
+          type: array
+          minItems: 1
+          maxItems: 1
+          items:
+            $ref: '#/components/schemas/digitalConsignment_Post'
+    orderConsignments_Resource:
+      title: orderConsignments_Resource
+      description: URL of the shipping consignment for api requests.
+      type: object
+      readOnly: true
+      properties:
+        url:
+          description: ''
+          readOnly: true
+          example: 'https://api.bigcommerce.com/stores/{store_hash}/v2/orders/101/consignments'
+          type: string
+        resource:
+          description: ''
+          readOnly: true
+          example: /orders/101/consignments
+          type: string
+    response_400:
+      type: array
+      items:
+        type: object
+        properties:
+          status:
+            type: integer
+            example: 400
+          message:
+            type: string
+            example: The field name in invalid.
+          details:
+            type: object
+            properties:
+              invalid_reason:
+                type: string
+                example: Name must be of type string.
+    response_409:
+      type: object
+      properties:
+        status:
+          type: integer
+          example: 409
+        message:
+          type: string
+        details:
+          type: object
+          properties:
+            errors:
+              type: array
+              items:
+                type: object
+    shippingConsignment_Base:
+      title: shippingConsignment_Base
+      type: object
+      properties:
+        first_name:
+          type: string
+          example: Jane
+        last_name:
+          type: string
+          example: Doe
+        company:
+          type: string
+          example: Laser Ltd
+        street_1:
+          type: string
+          example: 123 Main Street
+          description: Street address (first line).
+        street_2:
+          type: string
+          description: Street address (second line).
+        city:
+          type: string
+          example: Austin
+        state:
+          type: string
+          example: Texas
+        zip:
+          type: string
+          example: '12345'
+          description: 'Zip or postal code, as a string.'
+        country:
+          type: string
+          example: United States
+        country_iso2:
+          type: string
+          example: US
+          description: 2-letter ISO Alpha-2 code for the country.
+        phone:
+          type: string
+          description: Recipient’s telephone number.
+          example: '0410999888'
+        email:
+          type: string
+          example: janedoe@example.com
+          description: Recipient’s email address.
+        form_fields:
+          type: array
+          items:
+            $ref: '#/components/schemas/formFields'
+        shipping_method:
+          type: string
+          description: Text code identifying the BigCommerce shipping module selected by the customer.
+          example: Free Shipping
+    shippingConsignment_Get:
+      description: ''
+      allOf:
+        - type: object
+          properties:
+            id:
+              type: integer
+              example: 99
+              description: this is the same id as that of `/stores/{store_hash}/v2/orders/{order_id}/shipping_addresses`
+        - $ref: '#/components/schemas/shippingConsignment_Base'
+        - type: object
+          properties:
+            line_items:
+              type: array
+              items:
+                $ref: '#/components/schemas/products_Resource'
+            items_total:
+              type: number
+              example: 1
+              description: The total number of items in the order.
+            items_shipped:
+              type: number
+              description: The number of items that have been shipped.
+              example: 0
+            base_cost:
+              type: number
+              description: The base shipping cost value.
+              example: 5.1
+            cost_ex_tax:
+              type: number
+              example: 5.1
+              description: The shipping cost value excluding tax.
+            cost_inc_tax:
+              type: number
+              description: The shipping cost value including tax.
+              example: 6.2
+            cost_tax:
+              type: number
+              description: The tax amount on the shipping cost.
+              example: 1.1
+            cost_tax_class_id:
+              type: integer
+              description: 'The ID of the tax class applied to the shipping cost. (NOTE: Value ignored if automatic tax is enabled.)'
+              example: 2
+            base_handling_cost:
+              type: number
+              description: The base handling charge.
+              example: 4.1
+            handling_cost_ex_tax:
+              type: number
+              description: 'The handling charge, excluding tax.'
+              example: 4.1
+            handling_cost_inc_tax:
+              type: number
+              description: 'The handling charge, including tax.'
+              example: 5.3
+            handling_cost_tax:
+              type: number
+              example: 1.2
+            handling_cost_tax_class_id:
+              type: integer
+              description: 'The ID of the tax class applied to the handling charge. (NOTE: Value ignored if automatic tax is enabled.)'
+              example: 2
+            shipping_zone_id:
+              type: number
+              description: Numeric ID of the shipping zone.
+              example: 1
+            shipping_zone_name:
+              type: string
+              description: Name of the shipping zone.
+              example: United States
+            shipping_quotes:
+              $ref: '#/components/schemas/shippingQuotesConsignment_Resource'
+      x-examples:
+        example-1:
+          id: 99
+          first_name: Jane
+          last_name: Doe
+          company: Laser Ltd
+          street_1: 123 Main Street
+          street_2: string
+          city: Austin
+          state: Texas
+          zip: '12345'
+          country: United States
+          country_iso2: US
+          phone: '0410999888'
+          email: janedoe@example.com
+          form_fields:
+            - name: License Id
+              value: 123BAF
+          shipping_method: Free Shipping
+          line_items:
+            - url: 'https://api.bigcommerce.com/stores/{store_hash}/v2/orders/129/products/12'
+              resource: /orders/129/products/12
+          items_total: 1
+          items_shipped: 0
+          base_cost: 5.1
+          cost_ex_tax: 5.1
+          cost_inc_tax: 6.2
+          cost_tax: 1.1
+          cost_tax_class_id: 2
+          base_handling_cost: 4.1
+          handling_cost_ex_tax: 4.1
+          handling_cost_inc_tax: 5.3
+          handling_cost_tax: 1.2
+          handling_cost_tax_class_id: 2
+          shipping_zone_id: 1
+          shipping_zone_name: United States
+          shipping_quotes:
+            url: 'https://api.bigcommerce.com/stores/{store_hash}/v2/orders/163/consignments/shipping/64/shipping_quotes'
+            resource: /orders/163/consignments/shipping/64/shipping_quotes
+    digitalConsignment_Get:
+      type: object
+      properties:
+        recipient_email:
+          type: string
+          example: recipient@email.com
+          description: The recipient email of the digital consignment
+        line_items:
+          type: array
+          items:
+            $ref: '#/components/schemas/products_Resource'
+      x-examples:
+        example-1:
+          recipient_email: recipient@email.com
+          line_items:
+            - url: 'https://api.bigcommerce.com/stores/{store_hash}/v2/orders/129/products/12'
+              resource: /orders/129/products/12
+    giftCertificateConsignment_Get:
+      type: object
+      properties:
+        recipient_email:
+          type: string
+          example: recipient@email.com
+          description: The recipient email of the gift certificate consignment
+        line_items:
+          type: array
+          items:
+            $ref: '#/components/schemas/products_Resource'
+      x-examples:
+        example-1:
+          recipient_email: recipient@email.com
+          line_items:
+            - url: 'https://api.bigcommerce.com/stores/{store_hash}/v2/orders/129/products/12'
+              resource: /orders/129/products/12
+

@@ -99,8 +99,28 @@ paths:
         To update a product in an order, include `id` in the body. The body should only contain the fields that need to be updated. Those fields that are omitted will not be changed.
 
         To remove a product from an order, set that product’s `quantity` to `0`.
+        
+        To update an Order's consignment e.g. Shipping Consignment, Pickup Consignment.
+        
+        ## Consignments
+        The `consignments` array is an alternative way to specify which products are associated with a fulfillment method. 
+        
+        There are two ways to update an order:
 
+        Using the legacy payload: include `shipping_addresses` and `products`
+
+        or
+
+        Consignment mode: include the `consignments` array
+        
+        **Usage notes**
+
+        These two methods can't be combined, for instance:
+        - If the `consignments` array is present in the payload, then you can't include `shipping_addresses` nor `products`.
+        - If either `shipping_addresses` or `products` are present, then you can't include the `consignments` array. 
+        
         To learn more about creating or updating orders, see [Orders Overview](/api-docs/orders/orders-api-overview).
+
       summary: Update an Order
       tags:
         - Orders
@@ -113,7 +133,7 @@ paths:
             schema:
               $ref: '#/components/schemas/order_Put'
             examples:
-              application/json:
+              Updating an Order:
                 value:
                   status_id: 0
                   customer_id: 11
@@ -182,6 +202,24 @@ paths:
                         value: 12
                       price_inc_tax: 12.45
                       price_ex_tax: 10.12
+              Updating an Order's Shipping Consignment:
+                value:
+                  consignments:
+                     - shipping:
+                        id: 149
+                        line_items:
+                          - id: 123
+                            quantity: 1
+                        first_name: "John"
+                        last_name: "Doe"
+                        company: "BC"
+                        street_1: "12 Foo St"
+                        city: "Austin"
+                        state: "Texas"
+                        zip: "78751"
+                        country: "United States"
+                        country_iso": "US"
+                        email: "john.doe@bigcommerce.com"
         required: true
       responses:
         '200':
@@ -4845,10 +4883,7 @@ components:
           type: integer
           description: ID of the product line.
       required:
-        - name
-        - quantity
-        - price_ex_tax
-        - price_inc_tax
+        - id
       x-internal: false
     orderCatalogProduct_Put:
       title: orderCatalogProduct_Put
@@ -5240,6 +5275,30 @@ components:
           shipping_quotes:
             url: 'https://api.bigcommerce.com/stores/{$$.env.store_hash}/v2/orders/163/consignments/shipping/64/shipping_quotes'
             resource: /orders/163/consignments/shipping/64/shipping_quotes
+    shippingConsignment_Put:
+      allOf:
+        - type: object
+          properties:
+            id:
+              type: integer
+              example: 99
+              description: ID of shipping consignment to update.
+          required:
+            - id
+        - $ref: '#/components/schemas/shippingConsignment_Base'
+        - type: object
+          properties:
+            line_items:
+              type: array
+              minItems: 1
+              items:
+               type: array
+               items:
+                anyOf:
+                 - $ref: '#/components/schemas/orderCatalogProduct_Put'
+                 - $ref: '#/components/schemas/orderCatalogProduct_Post'
+                 - $ref: '#/components/schemas/orderCustomProduct_Post'
+                 - $ref: '#/components/schemas/orderCustomProduct_Put'
     orderConsignment_Post:
       title: ''
       type: object
@@ -5304,6 +5363,11 @@ components:
           maxItems: 1
           items:
             $ref: '#/components/schemas/digitalConsignment_Put'
+        shipping:
+          type: array
+          minItems: 0
+          items:
+            $ref: '#/components/schemas/shippingConsignment_Put'
     orderConsignments_Resource:
       title: orderConsignments_Resource
       description: URL of the shipping consignment for API requests.

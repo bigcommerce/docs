@@ -369,7 +369,7 @@ paths:
                     type: object
                   - $ref: 'https://raw.githubusercontent.com/bigcommerce/api-specs/master/reference/global_refs.yaml#/components/schemas/meta_Empty'
       tags:
-        - Inventory
+        - Inventory Notifications
     parameters:
       - $ref: '#/components/parameters/store_hash'
     put:
@@ -391,7 +391,7 @@ paths:
         '200':
           description: OK
       tags:
-        - Inventory
+        - Inventory Notifications
   '/stores/{store_hash}/v3/settings/logo':
     get:
       operationId: get-settings-logo
@@ -1359,6 +1359,63 @@ paths:
                     type: object
       tags:
         - Storefront Status
+  '/stores/{store_hash}/v3/settings/inventory':
+    get:
+      summary: Get Inventory Settings
+      tags:
+        - Inventory
+      responses:
+        '200':
+          description: 'OK, null indicates that a particular field has not been overridden on a channel level when channel level settings are requested'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/InventorySettings'
+                  meta:
+                    type: object
+        '422':
+          description: Provided settings could not be applied for some reason - detailed errors in the response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      parameters:
+        - $ref: '#/components/parameters/ChannelIdParam'
+      description: Get Inventory Settings
+    put:
+      summary: Update Inventory Settings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InventorySettings'
+        description: null set for a particular field removes override on a channel level and means inheritance from a global level
+      responses:
+        '200':
+          description: 'OK, null indicates that a particular field has not been overridden on a channel level when channel level settings are requested'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/InventorySettings'
+                  meta:
+                    type: object
+      parameters:
+        - $ref: '#/components/parameters/ChannelIdParam'
+      tags:
+        - Inventory
+      description: Update inventory settings
+    parameters:
+      - schema:
+          type: string
+        name: store_hash
+        in: path
+        required: true
 components:
   parameters:
     ChannelIdParam:
@@ -1840,6 +1897,50 @@ components:
             - test.user@example.com
           out_of_stock_notification_address:
             - test.user@example.com
+    InventorySettings:
+      type: object
+      properties:
+        product_out_of_stock_behavior:
+          type: string
+          enum:
+            - do_nothing
+            - hide_product
+            - hide_product_and_accessible
+            - hide_product_and_redirect
+          description: Describes storefront behavior when product is out of stock.
+        option_out_of_stock_behavior:
+          type: string
+          enum:
+            - do_nothing
+            - hide_option
+            - label_option
+          description: Describes storefront behavior when variant is out of stock.
+        update_stock_behavior:
+          type: string
+          enum:
+            - order_placed
+            - order_completed_or_shipped
+          description: Describes when stock levels are updated.
+        edit_order_stock_adjustment:
+          type: boolean
+          description: Describes whether stock levels automatically adjust when you edit an order.
+        refund_order_stock_adjustment:
+          type: boolean
+          description: Describes whether stock levels automatically adjust when you refund or cancel an order.
+        stock_level_display:
+          type: string
+          enum:
+            - dont_show
+            - show
+            - show_when_low
+          description: Describes whether a storefront displays stock levels.
+        default_out_of_stock_message:
+          type: string
+          example: Currently out of stock
+          description: Out of stock message displayed to shoppers.
+        hide_in_product_filtering:
+          type: boolean
+          description: 'Describes whether an option is hidden in product filtering. Applies when `option_out_of_stock_behavior` is set to `label_option`. '
     Locale:
       description: 'The basic locale settings for a store, used to give shopper information about languages, countries, etc.'
       type: object
@@ -2016,32 +2117,67 @@ components:
     StorefrontProductSettings:
       type: object
       properties:
-        default_preorder_message:
-          type: string
-          example: preorder message
+        show_product_price:
+          type: boolean
+          description: |
+           Determines the visibility of the product price.
+          example: true
+        show_product_sku:
+          type: boolean
+          description: |
+           Determines the visibility of the product SKU.
+          example: true
+        show_product_weight:
+          type: boolean
+          description: |
+           Determines the visibility of the product's weight.
+          example: false
+        show_product_brand:
+          type: boolean
+          description: |
+           Determines the visibility of the product's brand.
+          example: true
+        show_product_shipping:
+          type: boolean
+          description: |
+           Determines the visibility of the product's shipping option.
+          example: false
+        show_product_rating:
+          type: boolean
+          description: |
+           Determines the visibility of the product's rating.
+          example: true
         show_add_to_cart_link:
           type: boolean
-        show_add_to_cart_qty_box:
-          type: boolean
-        show_add_to_wishlist:
-          type: boolean
+          description: |
+           Determines the visibility of the Add to Cart link.
+          example: true
+        default_preorder_message:
+          type: string
+          description: |
+           The product's pre-order message. If undefined, the message defaults to the storewide setting.
+          example: Preorder message
         show_breadcrumbs_product_pages:
           type: string
           enum:
             - show_one
             - show_none
-        show_product_brand:
+          example: show_one
+        show_add_to_cart_qty_box:
           type: boolean
-        show_product_price:
+          description: |
+           Determines the visibility of the Add to Cart quantity setting.
+          example: true
+        show_add_to_wishlist:
           type: boolean
-        show_product_rating:
+          description: |
+           Determines the visibilty of the Add to Wishlist setting.
+          example: true
+        hide_price_from_guests:
           type: boolean
-        show_product_shipping:
-          type: boolean
-        show_product_sku:
-          type: boolean
-        show_product_weight:
-          type: boolean
+          description: |
+           Determines the visibility of the price.
+          example: false
       title: StorefrontProductSettings
       x-tags:
         - Models
@@ -2189,6 +2325,7 @@ tags:
   - name: Analytics
   - name: Catalog
   - name: Inventory
+  - name: Inventory Notifications
   - name: Logo
   - name: Logo Image
   - name: Favicon Image

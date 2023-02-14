@@ -3,7 +3,11 @@ info:
   title: Orders V3
   version: ''
   description: Manage order settings of BigCommerce stores.
-  termsOfService: ''
+  termsOfService: 'https://www.bigcommerce.com/terms'
+  contact:
+    name: BigCommerce
+    url: 'https://www.bigcommerce.com'
+    email: support@bigcommerce.com
   license:
     name: ''
 servers:
@@ -31,14 +35,7 @@ paths:
         * `store_v2_transactions`
       operationId: paymentactioncapture
       parameters:
-        - name: order_id
-          in: path
-          description: ID of the order
-          required: true
-          schema:
-            type: integer
-        - $ref: '#/components/parameters/Accept'
-        - $ref: '#/components/parameters/Content-Type'
+        - $ref: '#/components/parameters/ContentType'
       responses:
         '201':
           $ref: '#/components/responses/201_Created'
@@ -57,12 +54,8 @@ paths:
       tags:
         - Payment Actions
     parameters:
-
-      - name: order_id
-        in: path
-        required: true
-        schema:
-          type: string
+      - $ref: '#/components/parameters/Accept'
+      - $ref: '#/components/parameters/OrderIdParam'
   '/orders/{order_id}/payment_actions/void':
     post:
       summary: Void
@@ -74,14 +67,7 @@ paths:
         * `store_v2_transactions`
       operationId: paymentactionvoid
       parameters:
-        - name: order_id
-          in: path
-          description: ID of the order
-          required: true
-          schema:
-            type: integer
-        - $ref: '#/components/parameters/Accept'
-        - $ref: '#/components/parameters/Content-Type'
+        - $ref: '#/components/parameters/ContentType'
       responses:
         '201':
           $ref: '#/components/responses/201_Created'
@@ -100,22 +86,12 @@ paths:
       tags:
         - Payment Actions
     parameters:
-
-      - name: order_id
-        in: path
-        required: true
-        schema:
-          type: string
+      - $ref: '#/components/parameters/Accept'
+      - $ref: '#/components/parameters/OrderIdParam'
   '/orders/{order_id}/transactions':
     parameters:
-      - name: order_id
-        in: path
-        description: |
-          The ID of the `Order` to which the transactions belong.
-        required: true
-        schema:
-          type: integer
-
+      - $ref: '#/components/parameters/Accept'
+      - $ref: '#/components/parameters/OrderIdParam'
     get:
       tags:
         - Transactions
@@ -176,24 +152,6 @@ paths:
                     type: string
                 title: Not Found
       summary: Get Transactions
-      parameters:
-        - name: order_id
-          in: path
-          description: |
-            The ID of the `Order` to which the transactions belong.
-          required: true
-          schema:
-            type: integer
-        - in: header
-          name: Accept
-          schema:
-            type: string
-            default: application/json
-        - name: Content-Type
-          in: header
-          schema:
-            type: string
-            default: application/json
   '/orders/{order_id}/payment_actions/refund_quotes':
     post:
       summary: Create a Refund Quote
@@ -205,14 +163,7 @@ paths:
         * `store_v2_transactions`
       operationId: postrefundquote
       parameters:
-        - name: order_id
-          in: path
-          description: Order id
-          required: true
-          schema:
-            type: integer
-        - $ref: '#/components/parameters/Accept'
-        - $ref: '#/components/parameters/Content-Type'
+        - $ref: '#/components/parameters/ContentType'
       requestBody:
         content:
           application/json:
@@ -252,12 +203,8 @@ paths:
       tags:
         - Payment Actions
     parameters:
-      - name: order_id
-        in: path
-        required: true
-        schema:
-          type: string
-
+      - $ref: '#/components/parameters/Accept'
+      - $ref: '#/components/parameters/OrderIdParam'
   '/orders/{order_id}/payment_actions/refunds':
     post:
       summary: Create a Refund
@@ -269,14 +216,7 @@ paths:
         * `store_v2_transactions`
       operationId: postrefund
       parameters:
-        - name: order_id
-          in: path
-          description: order id
-          required: true
-          schema:
-            type: integer
-        - $ref: '#/components/parameters/Accept'
-        - $ref: '#/components/parameters/Content-Type'
+        - $ref: '#/components/parameters/ContentType'
       requestBody:
         content:
           application/json:
@@ -404,22 +344,23 @@ paths:
         * `store_v2_orders_read_only`
         * `store_v2_orders`
       operationId: getorderrefunds
-      parameters:
-        - $ref: '#/components/parameters/Accept'
-        - $ref: '#/components/parameters/Content-Type'
       responses:
         '200':
           $ref: '#/components/responses/RefundCollection_Resp'
       tags:
         - Payment Actions
     parameters:
-      - name: order_id
+      - $ref: '#/components/parameters/Accept'
+      - $ref: '#/components/parameters/OrderIdParam'
+  '/orders/payment_actions/refunds/{refund_id}':
+    parameters:
+      - $ref: '#/components/parameters/Accept'
+      - name: refund_id
         in: path
+        description: Refund ID.
         required: true
         schema:
-          type: string
-
-  '/orders/payment_actions/refunds/{refund_id}':
+          type: integer
     get:
       summary: Get a Refund
       description: Returns a refund by refund ID.
@@ -429,17 +370,9 @@ paths:
           $ref: '#/components/responses/RefundID_Response'
       tags:
         - Payment Actions
-    parameters:
-      - name: refund_id
-        in: path
-        description: Refund ID.
-        required: true
-        schema:
-          type: integer
-
-      - $ref: '#/components/parameters/Accept'
-      - $ref: '#/components/parameters/Content-Type'
   '/orders/payment_actions/refund_quotes':
+    parameters:
+      - $ref: '#/components/parameters/Accept'
     post:
       summary: Create Refund Quotes - BATCH
       description: |-
@@ -452,8 +385,7 @@ paths:
         * `store_v2_transactions`
       operationId: postrefundquotes
       parameters:
-        - $ref: '#/components/parameters/Accept'
-        - $ref: '#/components/parameters/Content-Type'
+        - $ref: '#/components/parameters/ContentType'
       requestBody:
         content:
           application/json:
@@ -554,6 +486,8 @@ paths:
         - Payment Actions
       x-private: true
   '/orders/payment_actions/refunds':
+    parameters:
+      - $ref: '#/components/parameters/Accept'
     get:
       summary: Get All Refunds
       description: |-
@@ -584,8 +518,6 @@ paths:
             type: array
             items:
               type: integer
-        - $ref: '#/components/parameters/Accept'
-        - $ref: '#/components/parameters/Content-Type'
         - in: query
           name: 'created:min'
           description: |-
@@ -637,8 +569,7 @@ paths:
         * `store_v2_transactions`
       operationId: postrefunds
       parameters:
-        - $ref: '#/components/parameters/Accept'
-        - $ref: '#/components/parameters/Content-Type'
+        - $ref: '#/components/parameters/ContentType'
       requestBody:
         content:
           application/json:
@@ -775,14 +706,8 @@ paths:
       x-private: true
   '/orders/{order_id}/metafields':
     parameters:
-      - name: order_id
-        in: path
-        description: |
-          The ID of the `Order` to which the transactions belong.
-        required: true
-        schema:
-          type: integer
-
+      - $ref: '#/components/parameters/Accept'
+      - $ref: '#/components/parameters/OrderIdParam'
     get:
       summary: Get Metafields
       tags:
@@ -829,6 +754,8 @@ paths:
 
         The maxiumum number of metafields allowed on each order, product, category, variant, or brand is 250 per client ID.
       operationId: createOrderMetafield
+      parameters:
+        - $ref: '#/components/parameters/ContentType'
       requestBody:
         content:
           application/json:
@@ -862,13 +789,8 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
   '/orders/{order_id}/metafields/{metafield_id}':
     parameters:
-      - name: order_id
-        in: path
-        description: |
-          The ID of the `Order` to which the transactions belong.
-        required: true
-        schema:
-          type: integer
+      - $ref: '#/components/parameters/Accept'
+      - $ref: '#/components/parameters/OrderIdParam'
       - name: metafield_id
         in: path
         description: |
@@ -876,7 +798,6 @@ paths:
         required: true
         schema:
           type: integer
-
     get:
       summary: Get a Metafield
       tags:
@@ -908,6 +829,8 @@ paths:
 
         The maxiumum number of metafields allowed on each order, product, category, variant, or brand is 250 per client ID.
       operationId: updateOrderMetafield
+      parameters:
+        - $ref: '#/components/parameters/ContentType'
       requestBody:
         content:
           application/json:
@@ -969,6 +892,8 @@ paths:
       summary: Update Global Order Settings
       description: Updates global order settings.
       operationId: UpdateGlobalOrderSettings
+      parameters:
+        - $ref: '#/components/parameters/ContentType'
       tags:
         - Order Settings
       requestBody:
@@ -1002,6 +927,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse422'
+    parameters:
+      - $ref: '#/components/parameters/Accept'
   '/orders/settings/channels/{channel_id}':
     get:
       summary: Get Channel Order Settings
@@ -1009,14 +936,6 @@ paths:
       operationId: GetChannelOrderSettings
       tags:
         - Order Settings
-      parameters:
-        - schema:
-            type: integer
-            minimum: 1
-          in: path
-          name: channel_id
-          required: true
-          description: Channel Id
       responses:
         '200':
           description: OK
@@ -1040,16 +959,10 @@ paths:
 
          **Note:** You must override both notifications `email_addresses` or neither, i.e. either both notification `email_addresses` are an array of valid email addresses, or both `email_addresses` must be null. You may not have one set to an array of addesses and the other set to `null`.
       operationId: UpdateChannelOrderSettings
+      parameters:
+        - $ref: '#/components/parameters/ContentType'
       tags:
         - Order Settings
-      parameters:
-        - schema:
-            type: integer
-            minimum: 1
-          in: path
-          name: channel_id
-          required: true
-          description: Channel Id
       requestBody:
         content:
           application/json:
@@ -1084,11 +997,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse422'
     parameters:
-
-      - schema:
-          type: string
-        name: channel_id
+      - $ref: '#/components/parameters/Accept'
+      - name: channel_id
         in: path
+        schema:
+          type: string
+        description: Channel ID
         required: true
 components:
   schemas:
@@ -3547,17 +3461,21 @@ components:
       schema:
         type: integer
     Accept:
-      in: header
       name: Accept
+      in: header
+      required: true
+      description: 'The [MIME type](https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types) of the response body.'
       schema:
         type: string
-        default: application/json
-    Content-Type:
+        default: 'application/json'
+    ContentType:
       name: Content-Type
       in: header
+      required: true
+      description: 'The [MIME type](https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types) of the request body.'
       schema:
         type: string
-        default: application/json
+        default: 'application/json'
     PageParam:
       name: page
       description: |

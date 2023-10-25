@@ -2,7 +2,7 @@ openapi: '3.0.3'
 info:
   title: Webhooks v3
   version: ''
-  description: 'Get notified when specific events occur on a BigCommerce store. For more information, see [Webhooks Overview](/api-docs/store-management/webhooks/overview).'
+  description: 'Get notified when specific events occur on a BigCommerce store. For more information, see [Webhooks Overview](/docs/integrations/webhooks).'
   termsOfService: 'https://www.bigcommerce.com/terms'
   contact:
     email: support@bigcommerce.com
@@ -227,7 +227,7 @@ paths:
                               description: You can pass in any number of custom headers to validate webhooks being returned.
                             is_active:
                               type: boolean
-                              description: If webhook is active or not
+                              description: If the webhook is active or not. A webhook subscription becomes deactivated after 90 days of inactivity.
                               default: true
                             created_at:
                               type: integer
@@ -235,6 +235,13 @@ paths:
                             updated_at:
                               type: integer
                               description: Updated time
+                            status:
+                              type: string
+                              description: The webhook status.
+                              enum:
+                                - inactive
+                                - active
+                                - deactivated
                       blocked_domains:
                         description: List of domains (destinations) that are currently on the denylist and are not being sent webhooks.
                         type: array
@@ -358,7 +365,7 @@ components:
       name: is_active
       in: query
       description: |
-        Enables user to filter for webhooks that are active or not.
+        Enables user to filter for webhooks that are active or not. A webhook subscription becomes deactivated after 90 days of inactivity.
       schema:
         type: boolean
         example: true
@@ -653,15 +660,15 @@ components:
         
         | Header | Argument | Description |
         |:-------|:---------|:------------|
-        | `X-Auth-Token` | `access_token` | For more about API accounts that generate `access_token`s, see our [Guide to API Accounts](/api-docs/getting-started/api-accounts). |
+        | `X-Auth-Token` | `access_token` | For more about API accounts that generate `access_token`s, see our [Guide to API Accounts](/docs/start/authentication/api-accounts). |
         
         ### Further reading
         
-        For example requests and more information about authenticating BigCommerce APIs, see [Authentication and Example Requests](/api-docs/getting-started/authentication#x-auth-token-header-example-requests).
+        For example requests and more information about authenticating BigCommerce APIs, see [Authentication and Example Requests](/docs/start/authentication#x-auth-token-header-example-requests).
         
-        For more about BigCommerce OAuth scopes, see our [Guide to API Accounts](/api-docs/getting-started/api-accounts#oauth-scopes).
+        For more about BigCommerce OAuth scopes, see our [Guide to API Accounts](/docs/start/authentication/api-accounts#oauth-scopes).
         
-        For a list of API status codes, see [API Status Codes](/api-docs/getting-started/api-status-codes).
+        For a list of API status codes, see [API Status Codes](/docs/start/about/status-codes).
       type: apiKey
       in: header
   schemas:
@@ -685,7 +692,7 @@ components:
         This webhook fires on new cart creation when any of the following occur:
         * a storefront shopper adds their first product to a cart during a new session
         * an application makes a successful `POST` request to `/carts` using either the [REST Storefront](/docs/rest-storefront/carts#create-a-cart) API or the [REST Management](/docs/rest-management/carts/carts-single#create-a-cart) API
-        * a storefront makes a successful call to create a cart using the [GraphQL Storefront API](/api-docs/storefront/graphql/carts-and-checkout)
+        * a storefront makes a successful call to create a cart using the [GraphQL Storefront API](/docs/storefront/cart-checkout/guide/graphql-storefront)
 
         Cart creation also fires the `store/cart/updated` webhook.
 
@@ -732,8 +739,8 @@ components:
       title: store/cart/updated
       description: |-
         Fires when one of the following occurs:
-        * A cartʼs line items are modified by adding a new item to a cart, updating an existing itemʼs quantity, or deleting an item.
-        * A shopper enters or changes their email address during guest checkout. This includes signing in to a customer account after creating a guest cart, which associates the accountʼs email address with the cart.
+        * A cart's line items are modified by adding a new item to a cart, updating an existing item's quantity, or deleting an item.
+        * A shopper enters or changes their email address during guest checkout. This includes signing in to a customer account after creating a guest cart, which associates the account's email address with the cart.
 
         The `store/cart/created` webhook firing also triggers this webhook because adding a product to an empty cart is considered an update. 
 
@@ -1419,7 +1426,7 @@ components:
     store_customer_updated:
       title: store/customer/updated
       description: |-
-        This webhook is triggered when a customer is updated. In addition, this webhook is triggered when a shopper initially enters custom form field values within the account sign-up form. Please note that neither changing existing data in customer form fields nor changing a customerʼs address will trigger the webhook.
+        This webhook is triggered when a customer is updated. In addition, this webhook is triggered when a shopper initially enters custom form field values within the account sign-up form. Please note that neither changing existing data in customer form fields nor changing a customer's address will trigger the webhook.
 
 
         ```json title="Example callback object" lineNumbers
@@ -3023,7 +3030,7 @@ components:
         is_active:
           type: boolean
           example: true
-          description: Boolean value that indicates whether the webhook is active or not.
+          description: Boolean value that indicates whether the webhook is active or not. A webhook subscription becomes deactivated after 90 days of inactivity.
         events_history_enabled:
           type: boolean
           example: true

@@ -302,17 +302,20 @@ paths:
               * modifiers
               * options
               * videos
+          explode: false
           schema:
-            type: string
-            enum:
-              - variants
-              - images
-              - custom_fields
-              - bulk_pricing_rules
-              - primary_image
-              - modifiers
-              - options
-              - videos
+            type: array
+            items:
+              type: string
+              enum:
+                - variants
+                - images
+                - custom_fields
+                - bulk_pricing_rules
+                - primary_image
+                - modifiers
+                - options
+                - videos
         - name: include_fields
           in: query
           description: 'Fields to include, in a comma-separated list. The ID and the specified fields will be returned.'
@@ -1348,17 +1351,20 @@ paths:
         - name: include
           in: query
           description: 'Sub-resources to include on a product, in a comma-separated list. If `options` or `modifiers` is used, results are limited to 10 per page.'
+          explode: false
           schema:
-            type: string
-            enum:
-              - variants
-              - images
-              - custom_fields
-              - bulk_pricing_rules
-              - primary_image
-              - modifiers
-              - options
-              - videos
+            type: array
+            items:
+              type: string
+              enum: 
+                - variants
+                - images
+                - custom_fields
+                - bulk_pricing_rules
+                - primary_image
+                - modifiers
+                - options
+                - videos
         - name: include_fields
           in: query
           description: 'Fields to include, in a comma-separated list. The ID and the specified fields will be returned.'
@@ -4040,7 +4046,11 @@ paths:
       tags:
         - Custom Fields
       summary: Get Custom Fields
-      description: Returns a list of product *Custom Fields*. Optional parameters can be passed in.
+      description: |-
+        Returns a list of product *Custom Fields*. Optional parameters can be passed in.
+
+        **Note:**
+        The default rate limit for this endpoint is 40 concurrent requests.
       operationId: getCustomFields
       parameters:
         - name: include_fields
@@ -4138,9 +4148,8 @@ paths:
         **Read-Only:**
         - id
 
-        **Limits**
-        - 200 custom fields per product limit.
-        - 255 characters per custom field limit.
+        **Note:**
+        The default rate limit for this endpoint is 40 concurrent requests. 
       operationId: createCustomField
       parameters:
         - $ref: '#/components/parameters/ContentType'
@@ -4484,7 +4493,11 @@ paths:
       tags:
         - Custom Fields
       summary: Delete a Custom Field
-      description: Deletes a product *Custom Field*.
+      description: |-
+        Deletes a product *Custom Field*.
+
+        **Note:**
+        The default rate limit for this endpoint is 40 concurrent requests.
       operationId: deleteCustomFieldById
       responses:
         '204':
@@ -8252,6 +8265,8 @@ components:
           type: string
           description: |
             Type of gift-wrapping options. Values: `any` - allow any gift-wrapping options in the store; `none` - disallow gift-wrapping on the product; `list` – provide a list of IDs in the `gift_wrapping_options_list` field.
+
+            Always included in the response body; not applicable for the `include_fields` and `exclude_fields` query parameters.
           enum:
             - any
             - none
@@ -8260,6 +8275,8 @@ components:
           type: array
           description: |
             A list of gift-wrapping option IDs.
+
+            Always included in the response body; not applicable for the `include_fields` and `exclude_fields` query parameters.
           items:
             type: integer
         sort_order:
@@ -8318,6 +8335,7 @@ components:
           type: integer
           description: |
             The number of times the product has been viewed.
+          deprecated: true
         preorder_release_date:
           type: string
           description: |
@@ -8407,7 +8425,7 @@ components:
           type: array
           minimum: 0
           maximum: 255
-          description: 200 maximum custom fields per product. 255 maximum characters per custom field.
+          description: 200 maximum custom fields per product. 255 maximum characters per custom field. The default rate limit for this endpoint is 40 concurrent requests.
           items:
             $ref: '#/components/schemas/productCustomField_Put'
         bulk_pricing_rules:

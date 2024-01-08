@@ -14,7 +14,7 @@ The following is a set of guidelines for contributing to BigCommerce's Developer
 
 The easiest way to edit a file is using GitHub's web interface:
 
-1. Navigate to the file in GitHub. For example, [making-requests.md](https://github.com/bigcommerce/docs/blob/main/CONTRIBUTING.md).
+1. Navigate to the file in GitHub. For example, [store-logs.mdx](https://github.com/bigcommerce/docs/blob/main/docs/api-docs/store-logs/store-logs.mdx).
 
 2. Click the **pencil** icon to **Edit This File**.
 3. Make the edit.

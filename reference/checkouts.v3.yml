@@ -1598,7 +1598,6 @@ paths:
         AllowDynamicQueryParameters: false
         AllowDynamicFormParameters: false
         IsMultiContentStreaming: false
-      x-codegen-request-body-name: body
   '/checkouts/{checkoutId}/discounts':
     post:
       tags:
@@ -2383,7 +2382,6 @@ paths:
                             - homepage
                             - cartpage
                           text: Some text
-      x-codegen-request-body-name: body
   '/checkouts/{checkoutId}/billing-address':
     post:
       tags:
@@ -3154,7 +3152,6 @@ paths:
         AllowDynamicQueryParameters: false
         AllowDynamicFormParameters: false
         IsMultiContentStreaming: false
-      x-codegen-request-body-name: body
   '/checkouts/{checkoutId}/billing-address/{addressId}':
     put:
       tags:
@@ -3925,7 +3922,6 @@ paths:
         AllowDynamicQueryParameters: false
         AllowDynamicFormParameters: false
         IsMultiContentStreaming: false
-      x-codegen-request-body-name: body
   '/checkouts/{checkoutId}/consignments':
     post:
       tags:
@@ -3933,6 +3929,9 @@ paths:
       summary: Add Consignment to Checkout
       description: |-
         Adds a new consignment to a checkout.
+
+
+        Please note that this API endpoint is not concurrent safe, meaning multiple simultaneous requests could result in unexpected and inconsistent results.
 
         For more information about working with consignments, see [Checkout consignment](/docs/storefront/cart-checkout/guide/consignments).  
 
@@ -3964,8 +3963,36 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateConsignmentRequest'
-        required: true
+                $ref: '#/components/schemas/CreateConsignmentRequest'
+            examples: 
+              Shipping Consignment:
+                value:
+                  - address:
+                      first_name: "Jane"
+                      last_name: "Doe"
+                      email: "Jane.Doe@email.com"
+                      company: "BigCommerce"
+                      address1: "100 Main Street"
+                      address2: "string"
+                      city: "Austin"
+                      state_or_province: "Texas"
+                      state_or_province_code: "string"
+                      country_code: "US"
+                      postal_code: "78701"
+                      phone: "555-555-5555"
+                      custom_fields:
+                        - field_id: "string"
+                          field_value: "string"
+                      line_items:
+                          item_id: "118f8774-387c-485e-a095-6ef76d5f1bbd"
+                          quantity: 1 
+              Pickup Consignment:
+                value: 
+                  - line_items:
+                      - item_id: "118f8774-387c-485e-a095-6ef76d5f1bbd"
+                        quantity: 1
+                    pickup_option:
+                      pickup_method_id: 1                 
       responses:
         '200':
           description: ''
@@ -4714,7 +4741,6 @@ paths:
         AllowDynamicQueryParameters: false
         AllowDynamicFormParameters: false
         IsMultiContentStreaming: false
-      x-codegen-request-body-name: body
   '/checkouts/{checkoutId}/consignments/{consignmentId}':
     parameters:
       
@@ -4739,6 +4765,8 @@ paths:
         * Assign a shipping option to the new consignment by sending a `PUT` request to update the consignment's `shipping_option_id` with a returned value from `data.consignments[N].available_shipping_option[N].id` obtained in the [Add Consignment to Checkout](/docs/rest-management/checkouts/checkout-consignments#add-consignment-to-checkout) endpoint. 
         
         To update an existing address and line item IDs, assign a new address and line item IDs by sending a `PUT` request.
+
+        Please note that this API endpoint is not concurrent safe, meaning multiple simultaneous requests could result in unexpected and inconsistent results.
         
 
         2. Assign a shipping option to the new consignment by sending a `PUT` request to update the consignment's `shipping_option_id` with a returned value from `data.consignments[N].available_shipping_option[N].id` obtained in Step One. 
@@ -5506,7 +5534,6 @@ paths:
                             - homepage
                             - cartpage
                           text: Some text
-      x-codegen-request-body-name: body
     delete:
       tags:
         - Checkout Consignments
@@ -7030,7 +7057,6 @@ paths:
         AllowDynamicQueryParameters: false
         AllowDynamicFormParameters: false
         IsMultiContentStreaming: false
-      x-codegen-request-body-name: body
   '/checkouts/{checkoutId}/coupons/{couponCode}':
     delete:
       tags:
@@ -8701,6 +8727,7 @@ components:
                   format: int32
           pickup_option:
             type: object
+            description: 'Assigns a pickup consignment. Note: You cannot assign a shipping method with a pickup consignment.'
             properties:
               pickup_method_id:
                 type: integer

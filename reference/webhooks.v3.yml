@@ -2,7 +2,7 @@ openapi: '3.0.3'
 info:
   title: Webhooks v3
   version: ''
-  description: 'Get notified when specific events occur on a BigCommerce store. For more information, see [Webhooks Overview](/docs/integrations/webhooks).'
+  description: 'Get notified when specific events occur on a BigCommerce store. For more information, see the [Webhooks Overview](/docs/integrations/webhooks).'
   termsOfService: 'https://www.bigcommerce.com/terms'
   contact:
     email: support@bigcommerce.com
@@ -53,7 +53,7 @@ paths:
                       destination: 'https://665b65a6.ngrok.io/webhooks'
                       is_active: true
                       headers:
-                        custom: string
+                        'custom-key': developer-defined value
                     meta:
                       pagination:
                         count: 5
@@ -148,7 +148,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/webhook_Base'
+              $ref: '#/components/schemas/webhook_Put'
         x-examples:
           application/json:
             scope: store/cart/lineItem/*
@@ -164,7 +164,7 @@ paths:
         '200':
           $ref: '#/components/responses/webhook_Resp'
       summary: Delete a Webhook
-      description: 'Deletes a webhook. Only one webhook at a time can be deleted. When a webhook is deleted, it is returned in the response as a 200 OK.'
+      description: Deletes a webhook. Only one webhook at a time can be deleted. When a webhook is deleted, it is returned in the response as a 200 OK.
       operationId: deleteWebhook
       tags:
         - Manage Webhooks (Single)
@@ -175,7 +175,7 @@ paths:
     get:
       operationId: getHooksAdmin
       summary: Get Admin Info
-      description: 'List all notification emails, webhooks, and denylisted domains associated with the API account.'
+      description: List all notification emails, webhooks, and denylisted domains associated with the API account.
       parameters:
         - $ref: '#/components/parameters/IsActive'
       responses:
@@ -197,7 +197,7 @@ paths:
                           format: email
                           example: 'webhooks@example.com'
                       hooks_list:
-                        description: 'List of all the webhooks associated with the provider API account, filtered by the "active" parameter.'
+                        description: 'List of all the webhooks associated with the provider API account, filtered by the `active` parameter.'
                         type: array
                         items:
                           type: object
@@ -208,7 +208,7 @@ paths:
                             client_id:
                               type: string
                               minLength: 1
-                              description: 'Client ID, unique to the store or app.'
+                              description: Client ID, unique to the store or app.
                             store_hash:
                               minLength: 1
                               type: string
@@ -221,20 +221,26 @@ paths:
                             destination:
                               type: string
                               minLength: 1
-                              description: 'URL must be active, return a 200 response, and be served on port 443 (custom ports not currently supported)'
+                              description: URL must be active, return a 200 response, and be served on port 443. Custom ports arenʼt currently supported.
                             headers:
                               type: object
                               description: You can pass in any number of custom headers to validate webhooks being returned.
+                              properties: {}
+                              nullable: true
+                              additionalProperties:
+                                type: string
                             is_active:
                               type: boolean
                               description: If the webhook is active or not. A webhook subscription becomes deactivated after 90 days of inactivity.
                               default: true
                             created_at:
                               type: integer
-                              description: Created time
+                              example: 1561488106
+                              description: The time the webhook was created, represented in UNIX epoch time.
                             updated_at:
                               type: integer
-                              description: Updated time
+                              example: 1561488106
+                              description: The time the webhook was most recently updated, represented in UNIX epoch time.
                             status:
                               type: string
                               description: The webhook status.
@@ -445,7 +451,7 @@ components:
                   type: object
                   properties:
                     id:
-                      type: number
+                      type: integer
                     client_id:
                       type: string
                       minLength: 1
@@ -460,13 +466,18 @@ components:
                       minLength: 1
                     headers:
                       type: object
+                      properties: {}
                       nullable: true
+                      additionalProperties:
+                        type: string
                     is_active:
                       type: boolean
                     created_at:
-                      type: number
+                      type: integer
+                      description: The time the webhook was created, represented in UNIX epoch time.
                     updated_at:
-                      type: number
+                      type: integer
+                      description: The time the webhook was most recently updated, represented in UNIX epoch time.
               meta:
                 type: object
                 properties:
@@ -474,7 +485,7 @@ components:
                     $ref: '#/components/schemas/Pagination'
           examples: {}
     502_GatewayError:
-      description: 'If something happens during the request that causes it to fail, a 502 response will be returned. A new request should be made; however, it could fail.'
+      description: If something happens during the request that causes it to fail, a 502 response will be returned. A new request should be made; however, it could fail.
       content:
         application/json:
           schema:
@@ -548,7 +559,7 @@ components:
                 title: Unauthorized Access. You do not have permission to make this request.
                 type: /api-docs/getting-started/api-status-codes
     404_NotFound:
-      description: 'If the requested webhook is not found, return a 404 Not Found.'
+      description: If the requested webhook is not found, return a 404 Not Found.
       content:
         application/json:
           schema:
@@ -598,7 +609,7 @@ components:
                 type: object
                 properties:
                   id:
-                    type: number
+                    type: integer
                   client_id:
                     type: string
                     minLength: 1
@@ -611,13 +622,20 @@ components:
                   destination:
                     type: string
                     minLength: 1
-                  headers: {}
+                  headers:
+                    type: object
+                    properties: {}
+                    nullable: true
+                    additionalProperties:
+                      type: string
                   is_active:
                     type: boolean
                   created_at:
-                    type: number
+                    type: integer
+                    description: The time the webhook was created, represented in UNIX epoch time.
                   updated_at:
-                    type: number
+                    type: integer
+                    description: The time the webhook was most recently updated, represented in UNIX epoch time.
               meta:
                 type: object
                 properties:
@@ -636,7 +654,7 @@ components:
                   destination: 'https://665b65a6.ngrok.io/webhooks'
                   is_active: true
                   headers:
-                    custom: string
+                    'custom-key': developer-defined value
                 meta:
                   pagination:
                     count: 5
@@ -696,7 +714,7 @@ components:
 
         Cart creation also fires the `store/cart/updated` webhook.
 
-        ```json title="Example callback object" lineNumbers
+        ```json filename="Example callback object" showLineNumbers
         {
           "created_at": 1561482670,
           "store_id": "1025646",
@@ -739,8 +757,8 @@ components:
       title: store/cart/updated
       description: |-
         Fires when one of the following occurs:
-        * A cart's line items are modified by adding a new item to a cart, updating an existing item's quantity, or deleting an item.
-        * A shopper enters or changes their email address during guest checkout. This includes signing in to a customer account after creating a guest cart, which associates the account's email address with the cart.
+        * A cartʼs line items are modified by adding a new item to a cart, updating an existing itemʼs quantity, or deleting an item.
+        * A shopper enters or changes their email address during guest checkout. This includes signing in to a customer account after creating a guest cart, which associates the accountʼs email address with the cart.
 
         The `store/cart/created` webhook firing also triggers this webhook because adding a product to an empty cart is considered an update. 
 
@@ -748,7 +766,7 @@ components:
         * Quantity
         * Item Price
 
-        ```json title="Example callback object" lineNumbers
+        ```json filename="Example callback object" showLineNumbers
         {
           "created_at": 1561482670,
           "store_id": "1025646",
@@ -789,7 +807,7 @@ components:
         Fires when a cart is deleted. Carts are deleted in two ways; when all items are removed from a cart, and when an API consumer explicitly removes the cart using a `DELETE` request. Cart deletion ends the cart lifecycle. The `store/cart/updated` webhook also fires when the last item is removed.
 
 
-        ```json title="Example callback object" lineNumbers
+        ```json filename="Example callback object" showLineNumbers
         {
           "created_at": 1561482670,
           "store_id": "1025646",
@@ -829,7 +847,7 @@ components:
       description: |-
         Fires when a new coupon code is applied to a cart. The webhook request body includes the ID of the coupon code.
 
-        ```json title="Example callback object" lineNumbers
+        ```json filename="Example callback object" showLineNumbers
         {
           "created_at": 1561482670,
           "store_id": "1025646",
@@ -875,7 +893,7 @@ components:
         This webhook fires after a cart is abandoned. BigCommerce considers a cart abandoned when it has no activity for at least one hour. This webhook is available for all store plans, regardless of whether the Abandoned Cart Saver feature is enabled.
 
 
-        ```json title="Example callback object" lineNumbers
+        ```json filename="Example callback object" showLineNumbers
         {
           "created_at": 1561482670,
           "store_id": "1025646",
@@ -919,7 +937,7 @@ components:
         Fires when a cart/checkout is converted into an order, which is typically after the checkout payment step on the storefront. At this point, the cart is automatically deleted and no longer accessible. This webhook returns both the cart/checkout ID and order ID for correlation purposes.
 
 
-        ```json title="Example callback object" lineNumbers
+        ```json filename="Example callback object" showLineNumbers
         {
           "created_at": 1561482670,
           "store_id": "1025646",
@@ -964,7 +982,7 @@ components:
       description: |-
         This webhook subscribes to all cart line item events. 
 
-        ```json title="Example callback object" lineNumbers
+        ```json filename="Example callback object" showLineNumbers
         {
           "created_at": 1561482670,
           "store_id": "1025646",
@@ -1005,7 +1023,7 @@ components:
       description: |-
         Fires when a new item is added to the cart.
 
-        ```json title="Example callback object" lineNumbers
+        ```json filename="Example callback object" showLineNumbers
         {
           "created_at": 1561482670,
           "store_id": "1025646",
@@ -1054,7 +1072,7 @@ components:
         * Quantity
         * Item Price
 
-        ```json title="Example callback object" lineNumbers
+        ```json filename="Example callback object" showLineNumbers
         {
           "created_at": 1561482670,
           "store_id": "1025646",
@@ -1099,7 +1117,7 @@ components:
       description: |-
         Fires when an item is deleted from the cart.
 
-        ```json title="Example callback object" lineNumbers
+        ```json filename="Example callback object" showLineNumbers
         {
           "created_at": 1561482670,
           "store_id": "1025646",
@@ -1154,7 +1172,7 @@ components:
       description: |-
         Fires when a category is created.
 
-        ```json title="Example callback object" lineNumbers
+        ```json filename="Example callback object" showLineNumbers
         {
           "created_at": 1561482670,
           "store_id": "1025646",
@@ -1198,7 +1216,7 @@ components:
         * Enable Google Shopping
 
 
-        ```json title="Example callback object" lineNumbers
+        ```json filename="Example callback object" showLineNumbers
         {
           "created_at": 1561482670,
           "store_id": "1025646",
@@ -1237,7 +1255,7 @@ components:
       description: |-
         Fires when a category is deleted.
 
-        ```json title="Example callback object" lineNumbers
+        ```json filename="Example callback object" showLineNumbers
         {
           "created_at": 1561482670,
           "store_id": "1025646",
@@ -1284,7 +1302,7 @@ components:
       description: |-
         Fires when a channel is created in the control panel or by API.
 
-        ```json title="Example callback object" lineNumbers
+        ```json filename="Example callback object" showLineNumbers
         {
           "created_at": 1561482670,
           "store_id": "1025646",
@@ -1335,7 +1353,7 @@ components:
         * config_meta
 
 
-        ```json title="Example callback object" lineNumbers
+        ```json filename="Example callback object" showLineNumbers
         {
           "created_at": 1561482670,
           "store_id": "1025646",
@@ -1386,7 +1404,7 @@ components:
       description: |-
         Fires when a new customer is created.
 
-        ```json title="Example callback object" lineNumbers
+        ```json filename="Example callback object" showLineNumbers
         {
           "created_at": 1561482670,
           "store_id": "1025646",
@@ -1426,10 +1444,10 @@ components:
     store_customer_updated:
       title: store/customer/updated
       description: |-
-        This webhook is triggered when a customer is updated. In addition, this webhook is triggered when a shopper initially enters custom form field values within the account sign-up form. Please note that neither changing existing data in customer form fields nor changing a customer's address will trigger the webhook.
+        This webhook is triggered when a customer is updated. In addition, this webhook is triggered when a shopper initially enters custom form field values within the account sign-up form. Please note that neither changing existing data in customer form fields nor changing a customerʼs address will trigger the webhook.
 
 
-        ```json title="Example callback object" lineNumbers
+        ```json filename="Example callback object" showLineNumbers
         {
           "created_at": 1561482670,
           "store_id": "1025646",
@@ -1471,7 +1489,7 @@ components:
       description: |-
         This webhook is triggered when a customer is deleted.
 
-        ```json title="Example callback object" lineNumbers
+        ```json filename="Example callback object" showLineNumbers
         {
           "created_at": 1561482670,
           "store_id": "1025646",
@@ -1512,7 +1530,7 @@ components:
       description: |-
         Fires when a customer address is updated.
 
-        ```json title="Example callback object" lineNumbers
+        ```json filename="Example callback object" showLineNumbers
         {
           "created_at": 1561482670,
           "store_id": "1025646",
@@ -1562,7 +1580,7 @@ components:
       description: |-
         Fires when a customer address is created.
 
-        ```json title="Example callback object" lineNumbers
+        ```json filename="Example callback object" showLineNumbers
         {
           "created_at": 1561482670,
           "store_id": "1025646",
@@ -1612,7 +1630,7 @@ components:
       description: |-
         Fires when a customer address is deleted.
 
-        ```json title="Example callback object" lineNumbers
+        ```json filename="Example callback object" showLineNumbers
         {
           "created_at": 1561482670,
           "store_id": "1025646",
@@ -1662,7 +1680,7 @@ components:
       description: |-
         Fires when a customer default payment instrument is updated.
 
-        ```json title="Example callback object" lineNumbers
+        ```json filename="Example callback object" showLineNumbers
         {
           "created_at": 1561482670,
           "store_id": "1025646",
@@ -1708,7 +1726,7 @@ components:
       description: |-
         This webhook is triggered when an order is created in the control panel, using an app, or by API.
 
-        ```json title="Example callback object" lineNumbers
+        ```json filename="Example callback object" showLineNumbers
         {
           "created_at": 1561482670,
           "store_id": "1025646",
@@ -1769,7 +1787,7 @@ components:
         * Release Date
         * Remove pre-order status on this date
 
-        ```json title="Example callback object" lineNumbers
+        ```json filename="Example callback object" showLineNumbers
         {
           "created_at": 1561482670,
           "store_id": "1025646",
@@ -1810,7 +1828,7 @@ components:
       description: |-
         Fires when an order is archived.
 
-        ```json title="Example callback object" lineNumbers
+        ```json filename="Example callback object" showLineNumbers
         {
           "created_at": 1561482670,
           "store_id": "1025646",
@@ -1850,7 +1868,7 @@ components:
       description: |-
         This webhook is triggered when an order status changes; for example, from `Pending` to `Awaiting Payment`.
 
-        ```json title="Example callback object" lineNumbers
+        ```json filename="Example callback object" showLineNumbers
         {
           "created_at": 1561482670,
           "store_id": "1025646",
@@ -1905,7 +1923,7 @@ components:
       description: |-
         This webhook is triggered when an order message is created by a customer or in the control panel.
 
-        ```json title="Example callback object" lineNumbers
+        ```json filename="Example callback object" showLineNumbers
         {
           "created_at": 1561482670,
           "store_id": "1025646",
@@ -1955,7 +1973,7 @@ components:
       description: |-
         This webhook is triggered when a refund is submitted against an order.
 
-        ```json title="Example callback object" lineNumbers
+        ```json filename="Example callback object" showLineNumbers
         {
           "created_at": 1561482670,
           "store_id": "1025646",
@@ -2010,7 +2028,7 @@ components:
       description: |-
         This webhook is triggered when a product is deleted.
 
-        ```json title="Example callback object" lineNumbers
+        ```json filename="Example callback object" showLineNumbers
         {
           "created_at": 1561482670,
           "store_id": "1025646",
@@ -2051,7 +2069,7 @@ components:
       description: |-
         Fires when a new product is created.
 
-        ```json title="Example callback object" lineNumbers
+        ```json filename="Example callback object" showLineNumbers
         {
           "created_at": 1561482670,
           "store_id": "1025646",
@@ -2134,7 +2152,7 @@ components:
         * Product URL
         * Set as a Featured Product on my Storefront
 
-        However, changes to the following fields don't trigger this event:
+        However, changes to the following fields donʼt trigger this event:
 
         * Manufacturer Part Number (MPN)
         * Global Trade Number (GTN)
@@ -2144,7 +2162,7 @@ components:
         * Product Files
         * Customs Information
 
-        ```json title="Example callback object" lineNumbers
+        ```json filename="Example callback object" showLineNumbers
         {
           "created_at": 1561482670,
           "store_id": "1025646",
@@ -2188,12 +2206,12 @@ components:
         Changes to the following fields trigger this event: 
         * Inventory Stock
 
-        However, changes to the following fields don't trigger this event:
+        However, changes to the following fields donʼt trigger this event:
         * Track Inventory
         * Inventory Low Stock
 
 
-        ```json title="Example callback object" lineNumbers
+        ```json filename="Example callback object" showLineNumbers
         {
           "created_at": 1561482670,
           "store_id": "1025646",
@@ -2261,7 +2279,7 @@ components:
         Changes to the following fields trigger this event: 
         * Quantity
 
-        ```json title="Example callback object" lineNumbers
+        ```json filename="Example callback object" showLineNumbers
         {
           "created_at": 1561482670,
           "store_id": "1025646",
@@ -2331,7 +2349,7 @@ components:
       description: |-
         Fires when a shipment is created.
 
-        ```json title="Example callback object" lineNumbers
+        ```json filename="Example callback object" showLineNumbers
         {
           "created_at": 1561482670,
           "store_id": "1025646",
@@ -2379,7 +2397,7 @@ components:
         Changes to the following fields trigger this event:
         * Shipping Tracking Number
 
-        ```json title="Example callback object" lineNumbers
+        ```json filename="Example callback object" showLineNumbers
         {
           "created_at": 1561482670,
           "store_id": "1025646",
@@ -2424,7 +2442,7 @@ components:
       description: |-
         This webhook is triggered when a shipment is deleted.
 
-        ```json title="Example callback object" lineNumbers
+        ```json filename="Example callback object" showLineNumbers
         {
           "created_at": 1561482670,
           "store_id": "1025646",
@@ -2474,7 +2492,7 @@ components:
       description: |-
         This webhook is triggered when a new SKU is created.
 
-        ```json title="Example callback object" lineNumbers
+        ```json filename="Example callback object" showLineNumbers
         {
           "created_at": 1561482670,
           "store_id": "1025646",
@@ -2529,7 +2547,7 @@ components:
       description: |-
         Fires when a SKU is updated.
 
-        ```json title="Example callback object" lineNumbers
+        ```json filename="Example callback object" showLineNumbers
         {
           "created_at": 1561482670,
           "store_id": "1025646",
@@ -2584,7 +2602,7 @@ components:
       description: |-
         Fires when a SKU is deleted.
 
-        ```json title="Example callback object" lineNumbers
+        ```json filename="Example callback object" showLineNumbers
         {
           "created_at": 1561482670,
           "store_id": "1025646",
@@ -2639,7 +2657,7 @@ components:
       description: |-
         Fires when a SKU is updated.
 
-        ```json title="Example callback object" lineNumbers
+        ```json filename="Example callback object" showLineNumbers
         {
           "created_at": 1561482670,
           "store_id": "1025646",
@@ -2694,7 +2712,7 @@ components:
                         - relative
                     value:
                       type: integer
-                      description: 'The number of items that the inventory changed by. This can be negative if the inventory is decreased `-3` or positive if an item is returned to the inventory from an order, `2`'
+                      description: 'The number of items that the inventory changed by. This can be negative if the inventory is decreased `-3` or positive if an item is returned to the inventory from an order, `2`.'
                       example: 2
                     variant_id:
                       type: integer
@@ -2712,7 +2730,7 @@ components:
         Changes to the following fields trigger this event:
         * Quantity
 
-        ```json title="Example callback object" lineNumbers
+        ```json filename="Example callback object" showLineNumbers
         {
           "created_at": 1561482670,
           "store_id": "1025646",
@@ -2767,7 +2785,7 @@ components:
                         - relative
                     value:
                       type: integer
-                      description: 'The number of items that the inventory changed by. This can be negative if the inventory is decreased `-3` or positive if an item is returned to the inventory from an order, `2`'
+                      description: 'The number of items that the inventory changed by. This can be negative if the inventory is decreased `-3` or positive if an item is returned to the inventory from an order, `2`.'
                       example: 2
                     variant_id:
                       type: integer
@@ -2782,7 +2800,7 @@ components:
       description: |-
         Fires when a client store is canceled and uninstalled from the platform.
 
-        ```json title="Example callback object" lineNumbers
+        ```json filename="Example callback object" showLineNumbers
         {
           "created_at": 1561482670,
           "store_id": "1025646",
@@ -2825,7 +2843,7 @@ components:
         * Email
         * Phone
 
-        ```json title="Example callback object" lineNumbers
+        ```json filename="Example callback object" showLineNumbers
         {
           "created_at": 1561482670,
           "store_id": "1025646",
@@ -2865,7 +2883,7 @@ components:
       description: |-
         Fires when a subscriber is created. 
 
-        ```json title="Example callback object" lineNumbers
+        ```json filename="Example callback object" showLineNumbers
         {
           "created_at": 1561482670,
           "store_id": "1025646",
@@ -2905,7 +2923,7 @@ components:
       description: |-
         The webhook fires when a subscriber is updated. 
 
-        ```json title="Example callback object" lineNumbers
+        ```json filename="Example callback object" showLineNumbers
         {
           "created_at": 1561482670,
           "store_id": "1025646",
@@ -2945,7 +2963,7 @@ components:
       description: |-
         This webhook is triggered when a subscriber is deleted.
 
-        ```json title="Example callback object" lineNumbers
+        ```json filename="Example callback object" showLineNumbers
         {
           "created_at": 1561482670,
           "store_id": "1025646",
@@ -3014,6 +3032,34 @@ components:
         errors:
           type: object
       x-internal: false
+    webhook_Put:
+      type: object
+      title: webhook_Put
+      x-internal: false
+      properties:
+        scope:
+          type: string
+          example: store/order/*
+          description: Event you subscribe to.
+        destination:
+          type: string
+          example: 'https://665b65a6.ngrok.io/webhooks'
+          description: URL must be active, return a 200 response, and be served on port 443. Custom ports arenʼt currently supported.
+        is_active:
+          type: boolean
+          example: true
+          description: Boolean value that indicates whether the webhook is active or not.
+        events_history_enabled:
+          type: boolean
+          example: true
+          description: Boolean value that identifies whether events are stored that could not be received.
+        headers:
+          type: object
+          description: Headers used to validate that webhooks are active. You can pass in any number of custom headers to validate webhooks are being returned.
+          nullable: true
+          properties: {}
+          additionalProperties:
+            type: string
     webhook_Base:
       type: object
       title: webhook_Base
@@ -3026,7 +3072,7 @@ components:
         destination:
           type: string
           example: 'https://665b65a6.ngrok.io/webhooks'
-          description: 'URL must be active, return a 200 response, and be served on port 443 (custom ports not currently supported).'
+          description: URL must be active, return a 200 response, and be served on port 443. Custom ports arenʼt currently supported.
         is_active:
           type: boolean
           example: true
@@ -3038,11 +3084,11 @@ components:
           deprecated: true
         headers:
           type: object
-          description: 'Headers used to validate that webhooks are active. You can pass in any number of custom headers to validate webhooks are being returned. '
+          description: Headers used to validate that webhooks are active. You can pass in any number of custom headers to validate webhooks are being returned.
           nullable: true
-          properties:
-            custom:
-              type: string
+          properties: {}
+          additionalProperties:
+            type: string
       required:
         - scope
         - destination
@@ -3057,7 +3103,7 @@ components:
               example: 18048287
             client_id:
               type: string
-              description: 'Client ID, unique to the store or app.'
+              description: Client ID, unique to the store or app.
               example: m9r6keqmo7h7f23btnpwernbez1kglkl
             store_hash:
               type: string
@@ -3066,11 +3112,11 @@ components:
             created_at:
               type: integer
               example: 1561488106
-              description: Time when the webhook was created.
+              description: The time the webhook was created, represented in UNIX epoch time.
             updated_at:
               type: integer
               example: 1561488106
-              description: Time when the webhook was updated.
+              description: The time the webhook was most recently updated, represented in UNIX epoch time.
     HistoryEvent:
       type: object
       properties:
@@ -3140,8 +3186,8 @@ components:
         - properties:
             created_at:
               type: integer
-              example: 1561482670
-              description: Hook creation date, in Unix timestamp format.
+              example: 1561488106
+              description: The time the webhook was created, represented in UNIX epoch time.
               readOnly: true
             store_id:
               type: string

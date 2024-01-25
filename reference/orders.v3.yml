@@ -873,6 +873,122 @@ paths:
           type: string
         description: Channel ID
         required: true
+  '/orders/metafields':
+    get:
+      summary: Get All Metafields
+      tags:
+        - Metafields
+      description: Get all order metafields.
+      operationId: getOrdersMetafields #getAllMetafeilds
+      responses:
+        '200':
+          description: |
+            List of `Metafield` objects.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetaFieldCollectionResponse'
+        '500':
+          description: Internal Server Error
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/MetafieldKeyParam'
+        - $ref: '#/components/parameters/MetafieldKeyInParam'
+        - $ref: '#/components/parameters/MetafieldNamespaceParam'
+        - $ref: '#/components/parameters/MetafieldNamespaceInParam'
+        - $ref: '#/components/parameters/DirectionParam'
+    post:
+      summary: Create multiple Metafields
+      tags:
+        - Metafields
+      description: Create multiple metafields.
+      operationId: createOrderMetafields
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/MetafieldPost'
+        description: ''
+      responses:
+        '200':
+          description: |
+            List of created `Metafield` objects. # TODO
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetaFieldCollectionDeleteResponsePartialSuccess'
+        '422':
+          description: |
+            Response object for metafields creation with partial success.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetaFieldCollectionResponse'
+        '500':
+          description: Internal Server Error
+    put:
+      summary: Update multiple Metafields
+      tags:
+        - Metafields
+      description: Create multiple metafields.
+      operationId: updateOrderMetafields
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/MetafieldPut'
+        description: ''
+      responses:
+        '200':
+          description: |
+            List of updated `Metafield` objects.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetaFieldCollectionResponse'
+        '422':
+          description: |
+            Response object for metafields creation with partial success.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetaFieldCollectionResponse'
+        '500':
+          description: Internal Server Error
+    delete:
+      summary: Delete All Metafields
+      tags:
+        - Metafields
+      description: Delete all order metafields.
+      operationId: deleteOrderMetafields
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: integer
+        description: "Metafield's id list"
+      responses:
+        '200':
+          description: |
+            Response object for metafields deletion with success.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetaFieldCollectionDeleteResponseSuccess'
+        '422':
+          description: |
+            Response object for metafields deletion with partial success.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetaFieldCollectionDeleteResponsePartialSuccess'
 components:
   schemas:
     GetReturnsSettings:
@@ -2897,6 +3013,174 @@ components:
       x-examples:
         example-1:
           $ref: '#/components/examples/EnableMultipleOrderNotifications/value'
+    MetaFieldCollectionDeleteResponsePartialSuccess:
+      type: object
+      description: |
+        Response payload for the BigCommerce API.
+      properties:
+        data:
+          type: array
+          items:
+            type: integer
+            description: |
+              The unique identifier for the metafield.
+          example: [
+            123
+          ]
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Error'
+        meta:
+          $ref: '#/components/schemas/WriteCollectionPartialSuccessMeta'
+      x-internal: false
+    MetaFieldCollectionDeleteResponseSuccess:
+      type: object
+      description: |
+        Response payload for the BigCommerce API.
+      properties:
+        data:
+          type: array
+          items:
+            type: integer
+            description: |
+              The unique identifier for the metafield.
+          example: [
+            123,
+            124,
+            125
+          ]
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Error'
+          example: []
+        meta:
+          $ref: '#/components/schemas/WriteCollectionSuccessMeta'
+      x-internal: false
+    WriteCollectionPartialSuccessMeta:
+      type: object
+      description: 'Additional data about the response.'
+      properties:
+        total:
+          type: integer
+          description: |
+            Total number of items in the result set.
+          example: 3
+        success:
+          type: integer
+          description: |
+            Total number of items that were successfully deleted.
+          example: 1
+        failed:
+          type: integer
+          description: |
+            Total number of items that failed to be deleted.
+          example: 2
+      title: Collection Meta
+      x-internal: false
+    WriteCollectionSuccessMeta:
+      type: object
+      description: 'Additional data about the response.'
+      properties:
+        total:
+          type: integer
+          description: |
+            Total number of items in the result set.
+          example: 3
+        success:
+          type: integer
+          description: |
+            Total number of items that were successfully deleted.
+          example: 3
+        failed:
+          type: integer
+          description: |
+            Total number of items that failed to be deleted.
+          example: 0
+      title: Collection Meta
+      x-internal: false
+    Total:
+      type: integer
+      description: |
+        Total number of items in the result set.
+      example: 3
+    Success:
+      type: integer
+      description: |
+        Total number of items that were successfully deleted.
+      example: 1
+    Failed:
+      type: integer
+      description: |
+        Total number of items that failed to be deleted.
+      example: 2
+    Error:
+      type: object
+      description: |
+        Error response payload for the BigCommerce API.
+      properties:
+        status:
+          type: integer
+          description: |
+            The HTTP status code for the error.
+          example: 422
+        title:
+          type: string
+          description: |
+            The error title.
+          example: Bulk operation has failed
+        type:
+          type: string
+          description: |
+            The error type.
+          example: https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes
+        errors:
+          $ref: '#/components/schemas/ErrorDetail'
+    ErrorDetail:
+      type: object
+      description: |
+        Error detail response payload for the BigCommerce API.
+      example:
+        {
+          "1": "Unauthorized to delete",
+          "2": "Metafield does not exist"
+        }
+    MetafieldPost_Batch:
+      description: |
+        The model for a POST to create metafield.
+      allOf:
+        - $ref: '#/components/schemas/MetafieldBase_Post'
+        - type: object
+          properties:
+            resource_id:
+              type: integer
+              example: 42
+              description: |
+                The ID for the resource with which the metafield is associated.
+          required:
+            - resource_id
+      x-internal: false
+    MetafieldPut_Batch:
+      description: |
+        The model for a PUT to create metafield.
+      allOf:
+        - $ref: '#/components/schemas/MetafieldBase_Post'
+        - type: object
+          properties:
+            id:
+              type: integer
+              example: 42
+              description: |
+                The ID of metafield to update.
+            resource_id:
+              type: integer
+              example: 42
+              description: |
+                The ID for the resource with which the metafield is associated.
+          required:
+            - id
+      x-internal: false
     ChannelOrderSettings:
       type: object
       properties:
@@ -3383,6 +3667,17 @@ components:
       required: false
       schema:
         type: string
+    MetafieldKeyInParam:
+      name: key:in
+      in: query
+      description: Filter based on comma separated metafieldʼs keys. Could be used with vanila 'key' query parameter.
+      required: false
+      style: form
+      explode: false
+      schema:
+        type: array
+        items:
+          type: string
     MetafieldNamespaceParam:
       name: namespace
       in: query
@@ -3391,6 +3686,17 @@ components:
       required: false
       schema:
         type: string
+    MetafieldNamespaceInParam:
+      name: namespace:in
+      in: query
+      description: Filter based on comma separated metafieldʼs namespaces. Could be used with vanila 'namespace' query parameter.
+      required: false
+      style: form
+      explode: false
+      schema:
+        type: array
+        items:
+          type: string
     LimitParam:
       name: limit
       description: |

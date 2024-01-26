@@ -1,4 +1,4 @@
-openapi: '3.0.3'
+openapi: '3.0.0'
 info:
   title: Tax Rates & Zones
   version: '1.0.0'
@@ -18,6 +18,7 @@ servers:
 tags:
   - name: Tax Zones
   - name: Tax Rates
+  - name: Tax Zone Check
 paths:
   '/tax/zones':
     parameters:
@@ -179,13 +180,74 @@ paths:
       description: |-
         Delete one or more tax zones. Deleting a tax zone removes all associated tax rates.
 
-        > #### Note
         > You must specify which zone(s) to delete using the `id:in` query parameter.
 
       operationId: deleteTaxZones
       responses:
         '204':
           description: No Content
+  '/tax/zonecheck':
+    parameters:
+      - $ref: '#/components/parameters/Accept'
+    post:
+      tags:
+        - Tax Zone Check
+      summary: Check Tax Zone
+      description: Returns the tax zone that applies to a given region and customer group.
+      operationId: zoneCheck
+      parameters:
+        - $ref: '#/components/parameters/Content-Type'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ZoneCheck'
+            examples:
+              Example 1:
+                value:
+                  country_code: AU
+                  subdivision_code: NSW
+                  customer_group_id: 2
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Tax_Zone'
+                  meta:
+                    $ref: '#/components/schemas/MetaOpen'
+              examples:
+                Example 1:
+                  value:
+                    data:
+                      id: 2
+                      name: example zone
+                      enabled: false
+                      price_display_settings:
+                        show_inclusive: false
+                        show_both_on_detail_view: false
+                        show_both_on_list_view: false
+                      shopper_target_settings:
+                        locations:
+                          - country_code: AR
+                            subdivision_codes:
+                              - T
+                              - V
+                            postal_codes: []
+                          - country_code: AU
+                            subdivision_codes:
+                              - NSW
+                              - QLD
+                        customer_groups:
+                          - 2
+                    meta: {}
+        "422":
+          description: The request body does not meet specifications.
   '/tax/rates':
     parameters:
       
@@ -297,7 +359,6 @@ paths:
       description: |- 
         Delete one or more tax rates.
 
-        > #### Note
         > You must specify which rate(s) to delete using the `id:in` query parameter.
 
       operationId: deleteTaxRates
@@ -472,7 +533,7 @@ components:
                     example:
                       - NSW
                       - QLD
-                    description: Three-letter ISO 3166-2 subdivision code
+                    description: ISO 3166-2 subdivision code, up to three alphanumeric characters.
                     items:
                       type: string
                   postal_codes:
@@ -527,13 +588,13 @@ components:
                   country_code:
                     type: string
                     example: AU
-                    description: Two-letter ISO 3166-1 country code
+                    description: Two-letter ISO 3166-1 country code.
                   subdivision_codes:
                     type: array
                     example:
                       - NSW
                       - QLD
-                    description: Three-letter ISO 3166-2 subdivision code
+                    description: ISO 3166-2 subdivision code, up to three alphanumeric characters.
                     items:
                       type: string
                   postal_codes:
@@ -591,13 +652,13 @@ components:
                   country_code:
                     type: string
                     example: AU
-                    description: Two-letter ISO 3166-1 country code
+                    description: Two-letter ISO 3166-1 country code.
                   subdivision_codes:
                     type: array
                     example:
                       - NSW
                       - QLD
-                    description: Three-letter ISO 3166-2 subdivision code
+                    description: ISO 3166-2 subdivision code, up to three alphanumeric characters.
                     items:
                       type: string
                   postal_codes:
@@ -733,6 +794,27 @@ components:
         - class_rates
         - name
         - tax_zone_id
+    ZoneCheck:
+      type: object
+      properties:
+        country_code:
+          type: string
+          description: Two-letter ISO 3166-1 country code.
+          example: 'AU'
+        subdivision_codes:
+          type: string
+          description: ISO 3166-2 subdivision code, up to three alphanumeric characters.
+          example: 'NSW'
+        postal_code:
+          type: string
+          description: Postal code.
+          example: '2099'
+        customer_group_id:
+          type: integer
+          description: Customer Group ID to which the customer is belongs.
+          example: 0
+      required:
+        - country_code
     Meta:
       type: object
       properties:
@@ -783,7 +865,7 @@ components:
       name: Accept
       in: header
       required: true
-      description: 'The [MIME type](https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types) of the response body.'
+      description: The [MIME type](https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types) of the response body.
       schema:
         type: string
         default: 'application/json'
@@ -791,7 +873,7 @@ components:
       name: Content-Type
       in: header
       required: true
-      description: 'The [MIME type](https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types) of the request body.'
+      description: The [MIME type](https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types) of the request body.
       schema:
         type: string
         default: 'application/json'
@@ -845,4 +927,3 @@ components:
       required: false
 security:
   - X-Auth-Token: []
-

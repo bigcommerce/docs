@@ -571,26 +571,107 @@ components:
     Category:
       title: Category
       type: object
-      allOf:
-        - $ref: '#/components/schemas/category_id'
-        - $ref: '#/components/schemas/parent_id'
-        - $ref: '#/components/schemas/tree_id'
-        - $ref: '#/components/schemas/name'
-        - $ref: '#/components/schemas/description'
-        - $ref: '#/components/schemas/views'
-        - $ref: '#/components/schemas/sort_order'
-        - $ref: '#/components/schemas/page_title'
-        - $ref: '#/components/schemas/meta_keywords'
-        - $ref: '#/components/schemas/meta_description'
-        - $ref: '#/components/schemas/layout_file'
-        - $ref: '#/components/schemas/image_url'
-        - $ref: '#/components/schemas/is_visible'
-        - $ref: '#/components/schemas/search_keywords'
-        - $ref: '#/components/schemas/default_product_sort'
-        - type: object
+      properties:
+        category_id:
+          type: integer
+          description: |-
+            Unique ID of the *Category*. Increments sequentially.
+            Read-Only.
+          readOnly: true
+        parent_id:
+          type: integer
+          description: |-
+            The unique numeric ID of the categoryʼs parent. This field controls where the category sits in the tree of categories that organize the catalog.
+            Required in a POST if creating a child category.
+          example: 2
+        tree_id:
+          type: integer
+          description: The ID of the Category Tree.
+        name:
+          maxLength: 50
+          minLength: 1
+          type: string
+          description: |-
+            The name displayed for the category. Name is unique with respect to the categoryʼs siblings.
+            Required in a POST.
+          example: Bath
+        description:
+          type: string
+          description: |
+            The product description, which can include HTML formatting.
+          example: <p>We offer a wide variety of products perfect for relaxing</p>
+        views:
+          type: integer
+          description: |
+            Number of views the category has on the storefront.
+          example: 1050
+        sort_order:
+          type: integer
+          description: |
+            Priority this category will be given when included in the menu and category pages. The lower the number, the closer to the top of the results the category will be.
+          example: 3
+        page_title:
+          type: string
+          description: |
+            Custom title for the category page. If not defined, the category name will be used as the meta title.
+          example: Bath
+        meta_keywords:
+          type: array
+          description: |
+            Custom meta keywords for the category page. If not defined, the storeʼs default keywords will be used. Must post as an array like: ["awesome","sauce"].
+          example:
+            - shower
+            - tub
+          items:
+            type: string
+        meta_description:
+          maxLength: 65535
+          minLength: 0
+          type: string
+          description: |
+            Custom meta description for the category page. If not defined, the storeʼs default meta description will be used.
+        layout_file:
+          maxLength: 500
+          minLength: 0
+          type: string
+          description: |
+            A valid layout file. (Please refer to [this article](https://support.bigcommerce.com/articles/Public/Creating-Custom-Template-Files/) on creating category files.) This field is writable only for stores with a Blueprint theme applied.
+          example: category.html
+        image_url:
+          type: string
+          description: |
+            Image URL used for this category on the storefront. Images can be uploaded via form file post to `/categories/{categoryId}/image`, or by providing a publicly accessible URL in this field. Must be either a full-qualified URL or an empty string.
+          example: 'https://cdn8.bigcommerce.com/s-123456/product_images/d/fakeimage.png'
+          x-url: true
+        is_visible:
+          type: boolean
+          description: |
+            Flag to determine whether the product should be displayed to customers browsing the store. If `true`, the category will be displayed. If `false`, the category will be hidden from view.
+        search_keywords:
+          type: string
+          description: |
+            A comma-separated list of keywords that can be used to locate the category when searching the store.
+        default_product_sort:
+          type: string
+          description: |
+            Determines how the products are sorted on category page load.
+          enum:
+            - use_store_settings
+            - featured
+            - newest
+            - best_selling
+            - alpha_asc
+            - alpha_desc
+            - avg_customer_review
+            - price_asc
+            - price_desc
+        url:
+          type: object
           properties:
-            url:
-              $ref: '#/components/schemas/Url'
+            path:
+              type: string
+            is_customized:
+              type: boolean
     MetaPagination:
       type: object
       properties:
@@ -855,24 +936,6 @@ components:
               $ref: '#/components/schemas/beta4DetailedErrors'
       x-tags:
         - Models
-    default_product_sort:
-      title: default_product_sort
-      type: object
-      properties:
-        default_product_sort:
-          type: string
-          description: |
-            Determines how the products are sorted on category page load.
-          enum:
-            - use_store_settings
-            - featured
-            - newest
-            - best_selling
-            - alpha_asc
-            - alpha_desc
-            - avg_customer_review
-            - price_asc
-            - price_desc
     category_uuid:
       type: object
       x-tags:
@@ -883,148 +946,6 @@ components:
           format: uuid
           readOnly: true
       title: category_uuid
-    tree_id:
-      type: object
-      x-tags:
-        - Models
-      properties:
-        tree_id:
-          type: integer
-          description: The ID of the Category Tree.
-    Url:
-      type: object
-      properties:
-        path:
-          type: string
-        is_customized:
-          type: boolean
-      x-tags:
-        - Models
-    name:
-      title: name
-      type: object
-      properties:
-        name:
-          maxLength: 50
-          minLength: 1
-          type: string
-          description: |-
-            The name displayed for the category. Name is unique with respect to the categoryʼs siblings.
-            Required in a POST.
-          example: Bath
-    description:
-      title: description
-      type: object
-      properties:
-        description:
-          type: string
-          description: |
-            The product description, which can include HTML formatting.
-          example: <p>We offer a wide variety of products perfect for relaxing</p>
-    views:
-      title: views
-      type: object
-      properties:
-        views:
-          type: integer
-          description: |
-            Number of views the category has on the storefront.
-          example: 1050
-    sort_order:
-      title: sort_order
-      type: object
-      properties:
-        sort_order:
-          type: integer
-          description: |
-            Priority this category will be given when included in the menu and category pages. The lower the number, the closer to the top of the results the category will be.
-          example: 3
-    page_title:
-      title: page_title
-      type: object
-      properties:
-        page_title:
-          type: string
-          description: |
-            Custom title for the category page. If not defined, the category name will be used as the meta title.
-          example: Bath
-    search_keywords:
-      title: search_keywords
-      type: object
-      properties:
-        search_keywords:
-          type: string
-          description: |
-            A comma-separated list of keywords that can be used to locate the category when searching the store.
-    meta_keywords:
-      title: meta_keywords
-      type: object
-      properties:
-        meta_keywords:
-          type: array
-          description: |
-            Custom meta keywords for the category page. If not defined, the storeʼs default keywords will be used. Must post as an array like: ["awesome","sauce"].
-          items:
-            type: string
-    layout_file:
-      title: layout_file
-      type: object
-      properties:
-        layout_file:
-          maxLength: 500
-          minLength: 0
-          type: string
-          description: |
-            A valid layout file. (Please refer to [this article](https://support.bigcommerce.com/articles/Public/Creating-Custom-Template-Files/) on creating category files.) This field is writable only for stores with a Blueprint theme applied.
-          example: category.html
-    is_visible:
-      title: is_visible
-      type: object
-      properties:
-        is_visible:
-          type: boolean
-          description: |
-            Flag to determine whether the product should be displayed to customers browsing the store. If `true`, the category will be displayed. If `false`, the category will be hidden from view.
-    image_url:
-      title: image_url
-      type: object
-      properties:
-        image_url:
-          type: string
-          description: |
-            Image URL used for this category on the storefront. Images can be uploaded via form file post to `/categories/{categoryId}/image`, or by providing a publicly accessible URL in this field.
-          example: 'https://cdn8.bigcommerce.com/s-123456/product_images/d/fakeimage.png'
-          x-url: true
-    meta_description:
-      title: meta_description
-      type: object
-      properties:
-        meta_description:
-          maxLength: 65535
-          minLength: 0
-          type: string
-          description: |
-            Custom meta description for the category page. If not defined, the storeʼs default meta description will be used.
-    category_id:
-      title: category_id
-      type: object
-      properties:
-        category_id:
-          type: integer
-          description: |-
-            Unique ID of the *Category*. Increments sequentially.
-            Read-Only.
-          readOnly: true
-    parent_id:
-      title: parent_id
-      type: object
-      properties:
-        parent_id:
-          type: integer
-          description: |-
-            The unique numeric ID of the categoryʼs parent. This field controls where the category sits in the tree of categories that organize the catalog.
-            Required in a POST if creating a child category.
-          example: 2
   parameters:
     Accept:
       name: Accept

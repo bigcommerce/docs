@@ -137,7 +137,10 @@ paths:
                   data:
                     type: array
                     items:
-                      $ref: '#/components/schemas/Category'
+                      type: object
+                      allOf:
+                        - $ref: '#/components/schemas/category_uuid'
+                        - $ref: '#/components/schemas/Category'
                   meta:
                     $ref: '#/components/schemas/MetaPagination'
               examples:
@@ -256,6 +259,10 @@ paths:
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetaData'
         '204':
           description: No Content
           content:
@@ -521,6 +528,7 @@ paths:
       - schema:
           type: string
         name: tree_id
+        description: The ID of the Category Tree.
         in: path
         required: true
 components:
@@ -542,27 +550,36 @@ components:
       title: Create Categories
       type: array
       items:
-        type: object
-        allOf:
-          - $ref: '#/components/schemas/RequiredCreateCategoryData'
-          - $ref: '#/components/schemas/CategoryData'
-          - $ref: '#/components/schemas/default_product_sort'
+        anyOf:
+          - type: object
+            allOf:
+              - $ref: '#/components/schemas/Category'
+            required:
+              - name
+              - url
+              - tree_id
+          - type: object
+            allOf:
+              - $ref: '#/components/schemas/Category'
+            required:
+              - name
+              - url
+              - parent_id
     UpdateCategories:
       type: array
       items:
+        type: object
         allOf:
-          - $ref: '#/components/schemas/TreeIdUpdateData'
-          - $ref: '#/components/schemas/CategoryIdUpdateData'
-          - $ref: '#/components/schemas/CategoryUuidData'
-          - $ref: '#/components/schemas/ParentIdUpdateData'
-          - $ref: '#/components/schemas/CategoryDataPUT'
+          - $ref: '#/components/schemas/category_uuid'
+          - $ref: '#/components/schemas/Category'
+        required:
+          - category_id
     Category:
-      x-tags:
-        - Models
       title: Category
       allOf:
         - $ref: '#/components/schemas/category_id'
         - $ref: '#/components/schemas/parent_id'
+        - $ref: '#/components/schemas/tree_id'
         - $ref: '#/components/schemas/name'
         - $ref: '#/components/schemas/description'
         - $ref: '#/components/schemas/views'
@@ -579,8 +596,7 @@ components:
           properties:
             url:
               $ref: '#/components/schemas/Url'
-      x-examples: {}
-    CategoryUuidData:
+    category_uuid:
       type: object
       x-tags:
         - Models
@@ -588,85 +604,19 @@ components:
         category_uuid:
           type: string
           format: uuid
+          readOnly: true
       title: category_uuid
-    CategoryIdUpdateData:
-      type: object
-      properties:
-        category_id:
-          type: integer
-      required:
-        - category_id
-      x-tags:
-        - Models
-    RequiredCreateCategoryData:
-      title: Required Create Category Data
-      type: object
-      properties:
-        name:
-          $ref: '#/components/schemas/name'
-        url:
-          $ref: '#/components/schemas/Url'
-      required:
-        - name
-        - url
-      anyOf:
-        - properties:
-            parent_id:
-              $ref: '#/components/schemas/parent_id'
-          required:
-            - parent_id
-        - properties:
-            tree_id:
-              type: integer
-          required:
-            - tree_id
-    ParentIdUpdateData:
-      type: object
-      properties:
-        parent_id:
-          type: integer
-      x-tags:
-        - Models
-    TreeIdUpdateData:
+    tree_id:
       type: object
       x-tags:
         - Models
       properties:
         tree_id:
           type: integer
-    CategoryData:
-      title: Category Data
-      type: object
-      properties:
-        name:
-          type: string
-        description:
-          type: string
-        views:
-          type: integer
-        sort_order:
-          type: integer
-        page_title:
-          type: string
-        search_keywords:
-          type: string
-        meta_keywords:
-          type: array
-          items:
-            type: string
-        meta_description:
-          type: string
-        layout_file:
-          type: string
-        is_visible:
-          type: boolean
-        image_url:
-          type: string
-        url:
-          $ref: '#/components/schemas/Url'
+          description: The ID of the Category Tree.
     CategoryDataPUT:
       allOf:
-        - $ref: '#/components/schemas/CategoryData'
+        
         - $ref: '#/components/schemas/default_product_sort'
     Url:
       type: object
@@ -798,7 +748,10 @@ components:
         data:
           type: array
           items:
-            $ref: '#/components/schemas/Category'
+            type: object
+            allOf:
+              - $ref: '#/components/schemas/category_uuid'
+              - $ref: '#/components/schemas/Category'
         errors:
           $ref: '#/components/schemas/MetaError'
         meta:

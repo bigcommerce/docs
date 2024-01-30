@@ -1,6 +1,6 @@
 ---
 title: Payments API
-keywords: payments, bigpay, currencies, currency, rest, v3, payment access token, pat, rate limits, 
+keywords: payments, bigpay, currencies, currency, rest, v3, payment access token, pat, rate limits,
 ---
 
 # Payments API
@@ -18,6 +18,11 @@ Learn more about BigCommerce API [OAuth scopes](/docs/start/authentication/api-a
 </Callout>
 
 [![Run in Postman](https://run.pstmn.io/button.svg)](https://app.getpostman.com/run-collection/38daa68bda00ba9d4734)
+
+<Callout type="info">
+#### Implementation note
+3D Secure is a storefront-based experience that requires the shopper's interaction to authenticate the transaction. Because requests to our Payments API must be initiated in a server-to-server context rather than from the storefront, any 3D Secure-enabled card must first be saved during a shopper-initiated transaction and then charged as a stored payment instrument. Attempts to process any payment that requires 3D Secure verification using a card that has not been previously saved will be unsuccessful.
+</Callout>
 
 You can process payments charged to either of two main forms of payment: [stored payment instruments](#stored-cards-and-paypal-accounts) or [new cards](#credit-cards), which weren't previously saved.  The API flow does not currently support hosted, offsite, or wallet-type providers, such as Amazon Pay.
 
@@ -47,14 +52,14 @@ The following table lists the payment gateways that are compatible with our publ
 | Bolt              | &check;            | &check;         |
 | CardConnect       |                    | &check;         |
 | Chase Integrated Payments |            | &check;         |
-| Chase Merchant Services   | &check;    | &check;         | 
+| Chase Merchant Services   | &check;    | &check;         |
 | Checkout.com      | &check;            | &check;         |
 | Commonwealth Bank | &check;            | &check;         |
 | Cybersource       | &check;            | &check;         |
 | Cybersource V2    | &check;            | &check;         |
 | Eway Rapid        |                    | &check;         |
 | First Data Payeezy Gateway |           | &check;         |
-| Heartland Payment Systems  |           | &check;         | 
+| Heartland Payment Systems  |           | &check;         |
 | Mercado Pago      |                    | &check;         |
 | MIGS              |                    | &check;         |
 | Mollie            | &check;            |                 |
@@ -71,6 +76,7 @@ The following table lists the payment gateways that are compatible with our publ
 | QuickBooks Payments                      |     | &check; |
 | Sage Pay/Protx VSP Direct                |     | &check; |
 | SecureNet        |                             | &check; |
+| Square v2        | &check;                     |         |
 | Stripe           | &check;                     | &check; |
 | StripeV3         | &check;                     | &check; |
 | StripeV4         | &check;                     | &check; |
@@ -86,11 +92,11 @@ The following table lists the payment gateways that are compatible with our publ
 The Payments API does not support the [BigCommerce Test Payment Gateway](https://support.bigcommerce.com/s/article/Testing-Shipping-Tax-and-Payment-Settings?language=en_US#test-gateway).
 </Callout>
 
-To learn more about the BigCommerce-compatible features of these gateways, see [All Available Payment Gateways](https://support.bigcommerce.com/s/article/Available-Payment-Gateways#all-available). 
+To learn more about the BigCommerce-compatible features of these gateways, see [All Available Payment Gateways](https://support.bigcommerce.com/s/article/Available-Payment-Gateways#all-available).
 
-## Stored cards and PayPal accounts
+## Stored cards, PayPal and bank accounts
 
-There are three steps to using a stored card or PayPal account to make a payment.
+There are three steps to using a stored card, PayPal, or bank account to make a payment.
 
 1. [Get Payment Methods](/docs/rest-payments/methods#get-accepted-payment-methods)
 2. [Create a Payment Access Token](/docs/rest-payments/tokens#create-payment-access-token) or request a payment access token when you complete checkout with the [GraphQL Storefront API](/docs/storefront/cart-checkout/guide/graphql-storefront#handling-payments)
@@ -110,6 +116,12 @@ The store must:
 * have stored credit cards enabled.
 
 Use the active MSF-enabled store's control panel to enable charging stored credit cards. Navigate to **Settings ›  Setup > Payments** and click the tab for your payment gateway. Toggle the switch to enable Stored Credit Cards and click **Save**. For more on enabling stored payment methods, see [Enabling Stored Payment Methods](https://support.bigcommerce.com/s/article/Enabling-Stored-Credit-Cards).
+
+### Using Braintree ACH stored bank accounts
+
+In addition to the [prerequisites](/docs/store-operations/payments#prerequisites-for-charging-stored-payment-instruments) above, to use Braintree ACH in payments API, your store needs to:
+* Have stored ACH accounts enabled.
+* Have this method enabled in the API. (contact support)
 
 ### Charging stored instruments
 
@@ -289,7 +301,7 @@ Content-Type: application/json
 }
 ```
 
-To process a payment using a stored PayPal account, set the `type` to `stored_paypal_account`. 
+To process a payment using a stored PayPal account, set the `type` to `stored_paypal_account`.
 
 <Tabs items={['Request', 'Response']}>
 <Tab>
@@ -345,12 +357,6 @@ There are two steps to using a credit card to make a payment.
 2. [Process Payment](/docs/rest-payments/processing#process-payment)
 
 The payment gateway your application uses must be able to send raw card data through our API. Before beginning development, consult our table of [compatible payment gateways](#compatible-payment-gateways) to verify that your gateway is listed or select one that is.
-
-
-<Callout type="info">
-#### Implementation note
-Attempting to process a payment through the API using the full credit card information may fail if the card issuer requires 3DS authentication. In that case, the card must be saved through a shopper-initiated transaction before it can be charged using the Payments API. 
-</Callout>
 
 ### Create an access token
 1. Make a request to the [Create a Payment Access Token](/docs/rest-payments/tokens#create-payment-access-token) endpoint to get the authorization token that needs to be passed in the header when processing the payment. The ID of the order needs to be part of the request body. You can also request a payment access token when you use the [GraphQL Storefront API](/docs/storefront/cart-checkout/guide/graphql-storefront#handling-payments) to complete checkout.
@@ -609,9 +615,9 @@ Yes, checkouts and orders with more than one consignment can use the Payments AP
 
 **Is store credit supported?**
 
-Yes, the Payments API supports the store credit payment method under the following conditions: 
-- The shopper is transacting in the store's default currency. 
-- The shopper has a positive store credit balance. 
+Yes, the Payments API supports the store credit payment method under the following conditions:
+- The shopper is transacting in the store's default currency.
+- The shopper has a positive store credit balance.
 
 Store credit is _not_ available for orders created by guest shoppers.
 

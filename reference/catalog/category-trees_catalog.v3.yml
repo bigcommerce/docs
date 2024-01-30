@@ -137,17 +137,15 @@ paths:
                   data:
                     type: array
                     items:
-                      type: object
-                      allOf:
-                        - $ref: '#/components/schemas/category_uuid'
-                        - $ref: '#/components/schemas/Category'
+                      $ref: '#/components/schemas/GetCategories'
                   meta:
                     $ref: '#/components/schemas/MetaPagination'
               examples:
-                example-1:
+                Get Category 12:
                   value:
                     data:
-                      - category_id: 0
+                      - category_id: 12
+                        category_uuid: d1964756-5e1d-4c72-9fa0-e1a3f7be4a34
                         parent_id: 2
                         name: Bath
                         description: <p>We offer a wide variety of products perfect for relaxing</p>
@@ -540,61 +538,84 @@ components:
       properties: {}
       additionalProperties: true
       x-internal: false
+    GetCategories:
+      title: Get Categories
+      allOf:
+        - type: object
+          properties:
+            name:
+              $ref: '#/components/schemas/name'
+            category_id:
+              $ref: '#/components/schemas/category_id'
+            category_uuid:
+              $ref: '#/components/schemas/category_uuid'
+            tree_id:
+              $ref: '#/components/schemas/tree_id'
+            parent_id:
+              $ref: '#/components/schemas/parent_id'
+        - $ref: '#/components/schemas/CategoryBase'
+        - type: object
+          properties:
+            url:
+              $ref: '#/components/schemas/url'
     CreateCategories:
       title: Create Categories
       type: array
       items:
         anyOf:
-          - type: object
-            allOf:
-              - $ref: '#/components/schemas/Category'
-            required:
-              - name
-              - url
-              - tree_id
-          - type: object
-            allOf:
-              - $ref: '#/components/schemas/Category'
-            required:
-              - name
-              - url
-              - parent_id
+          - allOf:
+            - type: object
+              properties:
+                name:
+                  $ref: '#/components/schemas/name'
+                url:
+                  $ref: '#/components/schemas/url'
+                tree_id:
+                  $ref: '#/components/schemas/tree_id'
+              required:
+                - name
+                - url
+                - tree_id
+            - $ref: '#/components/schemas/CategoryBase'
+          - allOf:
+            - type: object
+              properties:
+                name:
+                  $ref: '#/components/schemas/name'
+                url:
+                  $ref: '#/components/schemas/url'
+                parent_id:
+                  $ref: '#/components/schemas/parent_id'
+              required:
+                - name
+                - url
+                - parent_id
+            - $ref: '#/components/schemas/CategoryBase'
     UpdateCategories:
       type: array
       items:
-        type: object
         allOf:
-          - $ref: '#/components/schemas/category_uuid'
-          - $ref: '#/components/schemas/Category'
-        required:
-          - category_id
-    Category:
+          - type: object
+            properties:
+              category_id:
+                $ref: '#/components/schemas/category_id'
+              name:
+                $ref: '#/components/schemas/name'
+              tree_id:
+                $ref: '#/components/schemas/tree_id'
+              parent_id:
+                $ref: '#/components/schemas/parent_id'
+            required:
+              - category_id
+          - $ref: '#/components/schemas/CategoryBase'
+          - type: object
+            properties:
+              url:
+                $ref: '#/components/schemas/url'
+    CategoryBase:
       title: Category
       type: object
       properties:
-        category_id:
-          type: integer
-          description: |-
-            Unique ID of the *Category*. Increments sequentially.
-            Read-Only.
-          readOnly: true
-        parent_id:
-          type: integer
-          description: |-
-            The unique numeric ID of the categoryʼs parent. This field controls where the category sits in the tree of categories that organize the catalog.
-            Required in a POST if creating a child category.
-          example: 2
-        tree_id:
-          type: integer
-          description: The ID of the Category Tree.
-        name:
-          maxLength: 50
-          minLength: 1
-          type: string
-          description: |-
-            The name displayed for the category. Name is unique with respect to the categoryʼs siblings.
-            Required in a POST.
-          example: Bath
         description:
           type: string
           description: |
@@ -665,13 +686,6 @@ components:
             - avg_customer_review
             - price_asc
             - price_desc
-        url:
-          type: object
-          properties:
-            path:
-              type: string
-            is_customized:
-              type: boolean
     MetaPagination:
       type: object
       properties:
@@ -782,7 +796,7 @@ components:
         data:
           type: array
           items:
-            $ref: '#/components/schemas/Category'
+            $ref: '#/components/schemas/GetCategories'
         meta:
           $ref: '#/components/schemas/MetaData'
       x-tags:
@@ -793,10 +807,7 @@ components:
         data:
           type: array
           items:
-            type: object
-            allOf:
-              - $ref: '#/components/schemas/category_uuid'
-              - $ref: '#/components/schemas/Category'
+            $ref: '#/components/schemas/GetCategories'
         errors:
           $ref: '#/components/schemas/MetaError'
         meta:
@@ -936,16 +947,48 @@ components:
               $ref: '#/components/schemas/beta4DetailedErrors'
       x-tags:
         - Models
-    category_uuid:
+    url:
+      title: URL
       type: object
-      x-tags:
-        - Models
       properties:
-        category_uuid:
+        path:
           type: string
-          format: uuid
-          readOnly: true
-      title: category_uuid
+        is_customized:
+          type: boolean
+    category_uuid:
+      title: Category UUID
+      type: string
+      description: An additional unique identifier for the category. Read-Only.
+      format: uuid
+      readOnly: true
+      example: d1964756-5e1d-4c72-9fa0-e1a3f7be4a34
+    category_id:
+      title: Category ID
+      type: integer
+      description: |-
+        Unique ID of the *Category*. Increments sequentially.
+        Read-Only.
+      readOnly: true
+    parent_id:
+      title: Parent ID
+      type: integer
+      description: |-
+        The unique numeric ID of the categoryʼs parent. This field controls where the category sits in the tree of categories that organize the catalog.
+        Required in a POST if creating a child category.
+      example: 2
+    tree_id:
+      title: Tree ID
+      type: integer
+      description: The ID of the Category Tree.
+    name:
+      title: Name
+      maxLength: 50
+      minLength: 1
+      type: string
+      description: |-
+        The name displayed for the category. Name is unique with respect to the categoryʼs siblings.
+        Required in a POST.
+      example: Bath
   parameters:
     Accept:
       name: Accept

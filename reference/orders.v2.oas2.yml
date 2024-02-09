@@ -136,6 +136,29 @@ paths:
                       country: United States
                       country_iso2: US
                       email: elsie@example.com
+                  consignments:
+                    addresses:
+                      address_1: '125 Lane'
+                      address_2: '108 Lane'
+                      city: Austin
+                      state: Texas
+                      zip: '78108'
+                      country: United States
+                      country_iso2: US
+                      phone: '1234567890'
+                      email: janedoe@example.com
+                      customfields:
+                        length: 0
+                    couponDiscounts: 0
+                    discounts: 
+                    handlingcost: 0
+                    id: 65c53b429a0ab
+                    lineitemIds: '138e9a16-1a51-43c7-b4d6-6d8cd9f62189'
+                    selectedShippingOption: null
+                    shippingAddress:
+                      url: 'https://api.bigcommerce.com/stores/{store_hash}/v2/orders/247/shippingaddresses'
+                      resource: /orders/247/shippingaddresses
+                    shippingCost: 0
                   products:
                     - name: BigCommerce Poster
                       quantity: 1
@@ -283,6 +306,38 @@ paths:
             schema:
               $ref: '#/components/schemas/order_Post'
             examples:
+              Order with Consignments:
+                value:
+                  status_id: 0
+                  customer_id: 12
+                  billing_address: []
+                  cart: []
+                  channelID: 1
+                  consignments:
+                    pickups:
+                      - id: 99
+                        pickup_method_id: 1
+                        pickup_method_display_name: Pick Up
+                        collection_instructions: Bring your ID
+                        collection_time_description: 9am - 6pm
+                        location:
+                          id: 1
+                          name: Location 1
+                          code: LOCATION-1
+                          address_line_1: 123 Main Street
+                          address_line_2: Suite 101
+                          city: Austin
+                          state: Texas
+                          postal_code: '78726'
+                          country_alpha2: US
+                          email: location1@example.com
+                          phone: +1 111-111-1111
+                        line_items:
+                          - url: 'https://api.bigcommerce.com/stores/{store_hash}/v2/orders/129/products/12'
+                            resource: /orders/129/products/12
+                    shipping: []
+                    downloads: []
+                    email: []
               Product with Variants:
                 value:
                   status_id: 0
@@ -1256,8 +1311,7 @@ components:
       description: |-
         * `consignments` - include the response returned from the request to the `/orders/{order_id}/consignments` endpoint.
         
-        * `consignments.line_items` - fetches an array of consignment objects with different line items each with their own consignment arrays. Include any of the following line items: `pickups`, `shipping`, `downloads` and `email`. Be sure to include the response returned from the request to the `/orders/{order_id}/products` endpoint in consignments. This implies `include=consignments`. 
-
+        * `consignments.line_items` - fetches an array of consignment objects with different line items which include: `pickups`, `shipping`, `downloads` and `email`. Be sure to include the response returned from the request to the `/orders/{order_id}/products` endpoint in consignments. This implies `include=consignments`. 
       schema:
         type: string
         enum:
@@ -1459,6 +1513,23 @@ components:
                     phone: ''
                     email: janedoe@example.com
                     form_fields: []
+                  consignments:
+                    pickups: []
+                    shipping: 
+                      addresses:
+                        address_1: '125 Lane'
+                        address_2: '108 Lane'
+                        city: Austin
+                        state: Texas
+                        zip: '78108'
+                        country: United States
+                        country_iso2: US
+                        phone: '1234567890'
+                        email: janedoe@example.com
+                        customfields:
+                          length: 0
+                  downloads: []
+                  email: []
                   is_email_opt_in: false
                   credit_card_type: null
                   order_source: manual
@@ -1676,6 +1747,23 @@ components:
                   form_fields:
                     - name: Delivery Instructions
                       value: Leave in backyard
+                consignments:
+                  pickups: []
+                  shipping: 
+                    addresses:
+                      address_1: '125 Lane'
+                      address_2: '108 Lane'
+                      city: Austin
+                      state: Texas
+                      zip: '78108'
+                      country: United States
+                      country_iso2: US
+                      phone: '1234567890'
+                      email: janedoe@example.com
+                      customfields:
+                        length: 0
+                  downloads: []
+                  email: []
                 is_email_opt_in: false
                 credit_card_type: null
                 order_source: external
@@ -2624,6 +2712,39 @@ components:
               value:
                 - status: 404
                   message: The requested resource was not found.
+    orderConsignmentlineitemsResp:
+      description: The response for orders that contain consignments with line items.
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              type: object
+              properties:
+                pickups:
+                  type: array
+                  description: Pickup consignments.
+                  items:
+                    $ref: '#/components/schemas/pickupConsignment_Get'
+                shipping:
+                  type: object
+                  description: 'ID of the shipping consignment.'
+                  items:
+                    $ref: '#/components/schemas/shippingConsignment_Base'
+                downloads:
+                  type: array
+                  maxItems: 1
+                  description: Digital consignments for products that are downloaded.
+                  items:
+                    $ref: '#/components/schemas/digitalConsignment_Get'
+                email:
+                  type: object
+                  description: Email consignments for gift certificates.
+                  properties:
+                    gift_certificates:
+                      type: array
+                      items:
+                        $ref: '#/components/schemas/giftCertificateConsignment_Get'
   securitySchemes:
     X-Auth-Token:
       name: X-Auth-Token
@@ -3233,6 +3354,24 @@ components:
           readOnly: true
           example: /orders/101/consignments
           type: string
+        pickups:
+          description: Pickup consignments.
+          type: array
+          readOnly: true
+        shipping:
+          type: object
+          description: Shipping consignments.
+        downloads:
+          type: object
+          maxItems: 1
+          description: Digital consignments for products that are downloaded.
+        email:
+          type: object
+          description: Email consignments for gift certificates.
+          properties:
+            gift_certificates:
+              type: array
+      x-internal: false
     products_Resource:
       title: products_Resource
       type: object
@@ -4596,8 +4735,6 @@ components:
               type: array
               items:
                 $ref: '#/components/schemas/shippingAddress_Base'
-            consignments:
-              $ref: '#/components/schemas/orderConsignment_Post'
         - $ref: '#/components/schemas/order_Shared'
       x-internal: false
     shippingAddress_Put:
@@ -4624,8 +4761,16 @@ components:
       properties:
         pickups:
           type: array
-          items:
-            $ref: '#/components/schemas/pickupConsignment_Put'
+          description: Pickup consignments.
+        shipping:
+          type: object
+          description: ID of the shipping consignment.
+        downloads:
+          type: object
+          description: Digital consignments for products that are downloaded.
+        email:
+          type: object
+          description: Email consignments for gift certificates.
       x-examples:
         example-1:
           pickups:
@@ -4655,6 +4800,9 @@ components:
                   sku: string
                   upc: string
                   id: 12
+          shipping: []
+          downloads: []
+          email: []
     pickupConsignment_Put:
       allOf:
         - type: object

@@ -26,6 +26,7 @@ tags:
   - name: Redirects
   - name: Settings
   - name: Metafields
+  - name: Batch metafields
 paths:
   '/carts':
     parameters:
@@ -49,10 +50,10 @@ paths:
         * A cart can be created by adding an existing **catalog item** or a **custom item**.
         * Carts are valid for **30 days** from the **last modification** (this includes creating the cart or editing the cart).
         * If a product has modifiers, use the `option_selections` array to describe the **modifier** selection(s).
-        * The format and data type of a cart’s `option_value` are defined by the `value_data` object of a product’s [variant option value](/docs/rest-management/catalog/product-variant-option-values), [modifier value](/docs/rest-management/catalog/product-modifier-values), or a combination of both.
-        * Redirect URLs can only be generated from carts that were created using the **Server-to-Server Carts API**. 
+        * The format and data type of a cart’s `option_value` are defined by the `value_data` object of a product’s [variant option value](/docs/rest-catalog/product-variant-options/values), [modifier value](/docs/rest-catalog/product-modifiers/values), or a combination of both.
+        * Redirect URLs can only be generated from carts that were created using the **REST Management API**. 
         * To get cart `redirect_urls` in the response, append the following query parameter to the request URL: `include=redirect_urls`. Redirect URLs point to either a shared checkout domain or a channel-specific domain, depending on the storefront configuration.
-        * To restore a cart that was created by a shopper or through the Storefront Cart API, first recreate the cart using the Server to Server Cart API.
+        * To restore a cart that was created by a shopper or through a Storefront API, first recreate the cart using the **REST Management API**.
         * To get cart `promotions` in the response, append the following query parameter to the request URL: `include=promotions.banners`.
       parameters:
         - name: include
@@ -81,6 +82,7 @@ paths:
               $ref: '#/components/schemas/CartCreatePostData'
             examples:
               Simple Product:
+                summary: Creating a cart by adding a simple product without option selections.
                 value:
                   customer_id: 0
                   line_items:
@@ -93,6 +95,7 @@ paths:
                     code: USD
                   locale: en-US
               Cart with a variant:
+                summary: Creating a cart with a product that can be specified purely by a variant, without any other required options.
                 value:
                   customer_id: 0
                   line_items:
@@ -111,6 +114,7 @@ paths:
                     code: JOD
                   locale: ar-JO
               Cart with date option:
+                summary: Creating a cart using a date option.
                 value:
                   line_items:
                     - quantity: 1
@@ -124,7 +128,8 @@ paths:
                   currency:
                     code: MXN
                   locale: es-MX
-              'Cart with variant, a checkbox, and a pick list modifier':
+              Cart with variant, a checkbox, and a pick list modifier:
+                summary: Creating a cart with a variant, a checkbox, and an added picklist modifier.
                 value:
                   customer_id: 0
                   line_items:
@@ -133,20 +138,21 @@ paths:
                       product_id: 118
                       list_price: 30
                       name: shirt
-                      options:
-                        - name: Size
-                          nameId: 125
-                          value: Large
-                          valueId: 127
+                      option_selections:
+                        - name: Color
+                          value: Red
+                          option_id: 133
+                          option_value: 149
                         - name: Add a $5 Donation
-                          nameId: 126
-                          value: 'No'
-                          valueId: 129
+                          value: No
+                          option_id: 126
+                          option_value: 129
                   channel_id: 1
                   currency:
                     code: AUD
                   locale: en-AU
               Custom item:
+                summary: Creating a cart using a custom item.
                 value:
                   customer_id: 0
                   line_items: []
@@ -162,7 +168,7 @@ paths:
                             message: Happy Birthday
                   gift_certificates:
                     - name: Tobi Day
-                      theme: Birthday
+                      theme: birthday.html
                       amount: 1
                       quantity: 1
                       sender:
@@ -186,73 +192,38 @@ paths:
           5. Creating a cart using a custom item.
         required: true
         x-examples:
-          Simple Product: |-
-            {
-              "line_items": [
-                {
-                  "quantity": 5,
-                  "product_id": 191
-                }
-              ]
-            }
-          Create a Cart with a Variant: |-
-            {
-                "line_items":[
-                    {
-                        "quantity": 2,
-                        "product_id": 107,
-                        "variant_id": 185
-                    }
-                ]
-            }
-          Create a Cart using Date Option: |-
-            {
-              "line_items": [
-                {
-                  "quantity": 5,
-                  "product_id": 191,
-                  "variant_id": 185,
-                  "option_selections": [
-                    {
-                      "option_id": 440,
-                      "option_value": 1743570000
-                    }
-                  ]
-                }
-              ]
-            } 
-          With a Variant of Checkbox and Picklist: |-
-            {
-              "line_items": [
-                {
-                  "quantity": 1,
-                  "product_id": 77,
-                  "option_selections": [
-                    {
-                      "option_id": 120,
-                      "option_value": 69
-                    },
-                    {
-                      "option_id": 121,
-                      "option_value": 10
-                    },
-
-                    {
-                      "option_id": 124,
-                      "option_value": 106
-                    },
-                    {
-                      "option_id": 122,
-                      "option_value": "Hello"
-                    },
-                    {
-                      "option_id": 123, 
-                      "option_value": 104
-                    }
-                  ]
-                }
-              ]
-            } 
+          Simple Product:
+            line_items:
+              - quantity: 5
+                product_id: 191
+          Create a Cart with a Variant:
+            line_items:
+              - quantity: 2
+                product_id: 107
+                variant_id: 185
+          Create a Cart using Date Option:
+            line_items:
+              - quantity: 5
+                product_id: 191
+                variant_id: 185
+                option_selections: 
+                  - option_id: 440
+                    option_value: 1743570000
+          With a Variant of Checkbox and Picklist: 
+            line_items:
+              - quantity: 1
+                product_id: 77
+                option_selections:
+                  - option_id: 120
+                    option_value: 69
+                  - option_id: 121
+                    option_value: 10
+                  - option_id: 124
+                    option_value: 106
+                  - option_id: 122
+                    option_value: "Hello"
+                  - option_id: 123 
+                    option_value: 104
           Custom Item:
             custom_items:
               - sku: abc-123
@@ -277,7 +248,7 @@ paths:
         '201':
           $ref: '#/components/responses/CartResponse'
       summary: Create a Cart
-      operationId: createACart
+      operationId: createCart
   '/carts/{cartId}/items':
     parameters:
       - $ref: '#/components/parameters/cartId'
@@ -294,6 +265,8 @@ paths:
         Overriding a product’s `list_price` will make that item ineligible for V3 product level promotions.
 
         If a product has modifiers, omit the `variant_id` and instead use the `option_selections` array to describe both the **variant** and the **modifier** selections.
+
+        Please note that this API endpoint is not concurrent safe, meaning multiple simultaneous requests could result in unexpected and inconsistent results.
       parameters:
         - name: include
           in: query
@@ -330,7 +303,7 @@ paths:
                           option_value: 'Yes'
                   gift_certificates:
                     - name: Happy Birthday
-                      theme: Birthday
+                      theme: birthday.html
                       amount: 50
                       quantity: 1
                       sender:
@@ -354,7 +327,7 @@ paths:
         '201':
           $ref: '#/components/responses/CartResponse'
       summary: Add Cart Line Items
-      operationId: addCartLineItem
+      operationId: addCartLineItems
   '/carts/{cartId}/redirect_urls':
     parameters:
       - $ref: '#/components/parameters/cartId'
@@ -366,13 +339,13 @@ paths:
 
         **Usage Notes**
 
-        * Redirect URLs can also be created via **Create a Cart** requests by appending `include=redirect_urls`.
+        * Redirect URLs can also be created with **Create a Cart** requests by appending `include=redirect_urls`.
         * A **Carts** redirect URL may only be used once.
         * Redirect URLs point to either a shared checkout domain or a channel-specific domain, depending on the storefront configuration.
         * Once a redirect URL has been visited, it will be invalidated and cannot be used again. 
         * If your application requires URLs to be visited more than once, consider generating a fresh one each time you need to restore a cart, and redirecting to the URL from your own application.
-        * Redirect URLs can be generated only from carts that were created using the Server to Server Cart API and the Storefront Cart API. 
-        * To restore a cart that was created on the storefront, either by a shopper or the Storefront Cart API, first recreate the cart using the Server to Server Cart API.
+        * Redirect URLs can be generated only from carts that were created using the **REST Management API**. 
+        * To restore a cart that was created on the storefront, either by a shopper or a Storefront API, first recreate the cart using the **REST Management API**.
       tags:
         - Redirects
       responses:
@@ -405,6 +378,8 @@ paths:
         `custom_items` cannot be updated via the API at this time. To update your cart, add a new updated custom item and delete the outdated one. If your cart contains only one line item, perform the add operation before the delete operation.
 
         Deleting all line items from the cart will invalidate the cart. 
+
+        Please note that this API endpoint is not concurrent safe, meaning multiple simultaneous requests could result in unexpected and inconsistent results.
       parameters:
         - name: include
           in: query
@@ -525,7 +500,7 @@ paths:
                         gift_certificates:
                           - id: 6e38bbc2-8873-472c-a452-8bd4aaea5d3a
                             name: Happy Birthday
-                            theme: Birthday
+                            theme: birthday.html
                             amount: 50
                             quantity: 1
                             taxable: false
@@ -576,7 +551,7 @@ paths:
         '404':
           description: Cart not found.
       summary: Get a Cart
-      operationId: getACart
+      operationId: getCart
     put:
       description: |-
         Updates a *Cartʼs* `customer_id`.
@@ -618,7 +593,7 @@ paths:
         '201':
           $ref: '#/components/responses/CartResponse'
       summary: Update Customer ID
-      operationId: updateACart
+      operationId: updateCart
     delete:
       description: Deletes a *Cart*. Once a *Cart* has been deleted it can’t be recovered.
       tags:
@@ -627,7 +602,7 @@ paths:
         '204':
           description: ''
       summary: Delete a Cart
-      operationId: deleteACart
+      operationId: deleteCart
   '/carts/settings':
     parameters: 
       - $ref: '#/components/parameters/Accept'
@@ -801,7 +776,7 @@ paths:
       tags:
         - Metafields
       description: Get all cart metafields.
-      operationId: getAllCartMetafields
+      operationId: getCartMetafields
       parameters:
         - $ref: '#/components/parameters/PageParam'
         - $ref: '#/components/parameters/LimitParam'
@@ -818,7 +793,7 @@ paths:
                 $ref: '#/components/schemas/MetafieldResponse'
         '409':
           description: |
-            The `Metafield` conflicts with another `Metafield`. This can be the result of duplicate unique key combinations of the appʼs client id, namespace, key, resource_type, and resource_id.
+            The `Metafield` conflicts with another `Metafield`. This can result from duplicate unique key combinations of the appʼs client id, namespace, key, resource_type, and resource_id.
           content:
             application/json:
               schema:
@@ -838,15 +813,20 @@ paths:
         Create a cart `Metafield`. 
 
         If you create an order from a Cart, you can continue referencing the Cart Metafields even if you delete the original Cart. Use the `cart_id` field on the Order to construct the Cart Metafield endpoint. 
-      operationId: CreateCartMetafieldsByCartId
+      operationId: createCartMetafield
       parameters: 
         - $ref: '#/components/parameters/ContentType'
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/MetafieldPost'
-            examples: {}
+              $ref: '#/components/schemas/MetafieldBase_Post' 
+            example:
+              permission_set: app_only
+              namespace: Sales Department
+              key: Staff Name
+              value: Sam
+              description: Name of staff member
         description: ''
         required: true
       responses:
@@ -857,7 +837,19 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MetaFieldCollectionResponse'
-              examples: {}
+              example:
+                data: 
+                  "id": "24"
+                  "key": Staff Name
+                  "value": Sam
+                  "namespace": Sales Department
+                  "permission_set": app_only
+                  "resource_type": cart
+                  "resource_id": b810114d-9926-45b7-bba5-7633b251154b
+                  "description": Name of staff member
+                  "date_created": 2023-11-15T15:16:35+00:00
+                  "date_modified": 2023-11-15T15:16:35+00:00
+                meta: {}
         '404':
           description: |
             The resource was not found.
@@ -877,7 +869,7 @@ paths:
       tags:
         - Metafields
       description: Gets a cart metafield.
-      operationId: getACartMetafield
+      operationId: getCartMetafield
       responses:
         '200':
           description: |
@@ -888,7 +880,7 @@ paths:
                 $ref: '#/components/schemas/MetafieldResponse'
         '409':
           description: |
-            The `Metafield` conflicts with another `Metafield`. This can be the result of duplicate unique key combinations of the appʼs client id, namespace, key, resource_type, and resource_id.
+            The `Metafield` conflicts with another `Metafield`. This can result from duplicate unique key combinations of the appʼs client id, namespace, key, resource_type, and resource_id.
           content:
             application/json:
               schema:
@@ -914,14 +906,14 @@ paths:
         - Metafields
       description: |
         Update a `Metafield`, by `cart_id`.
-      operationId: UpdateCartMetafieldsByCartId
+      operationId: updateCartMetafield
       parameters:
         - $ref: '#/components/parameters/ContentType'
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/MetafieldPost'
+              $ref: '#/components/schemas/MetafieldBase_Post'
             examples: {}
         description: |
           A `Metafield` object.
@@ -954,7 +946,7 @@ paths:
         - Metafields
       description: |
         Deletes a `Metafield`.
-      operationId: deleteCartMetafieldById
+      operationId: deleteCartMetafield
       responses:
         '204':
           description: |
@@ -968,6 +960,142 @@ paths:
         in: path
         required: true
         description: The unique ID of the subject `Metafield`.
+  '/carts/metafields':
+    get:
+      summary: Get All Metafields
+      tags:
+        - Batch metafields
+      description: Get all cart metafields.
+      operationId: getCartsMetafields
+      responses:
+        '200':
+          description: |
+            List of `Metafield` objects.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetaFieldCollectionResponse_Batch'
+        '500':
+          description: Internal Server Error
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/MetafieldKeyParam'
+        - $ref: '#/components/parameters/MetafieldKeyInParam'
+        - $ref: '#/components/parameters/MetafieldNamespaceParam'
+        - $ref: '#/components/parameters/MetafieldNamespaceInParam'
+        - $ref: '#/components/parameters/DirectionParam'
+    post:
+      summary: Create multiple Metafields
+      tags:
+        - Batch metafields
+      description: Create multiple metafields.
+      operationId: createCartsMetafields
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                allOf:
+                  - $ref: '#/components/schemas/MetafieldBase_Post'
+                  - type: object
+                    properties:
+                      resource_id:
+                        type: string
+                        example: "42"
+                        description: |
+                          The ID for the cart with which the metafield is associated.
+                    required:
+                      - resource_id
+        description: ''
+      responses:
+        '200':
+          description: |
+            List of created `Metafield` objects.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetaFieldCollectionResponse_Batch_POST_PUT'
+        '422':
+          description: |
+            Response object for metafields creation with partial success.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetaFieldCollectionResponsePartialSuccess_POST_PUT'
+        '500':
+          description: Internal Server Error
+    put:
+      summary: Update multiple Metafields
+      tags:
+        - Batch metafields
+      description: Create multiple metafields.
+      operationId: updateCartsMetafields
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                allOf:
+                  - $ref: '#/components/schemas/MetafieldBase_Post'
+                  - type: object
+                    properties:
+                      id:
+                        type: string
+                        example: "42"
+                        description: |
+                          The ID of metafield to update.
+                    required:
+                      - id
+        description: ''
+      responses:
+        '200':
+          description: |
+            List of updated `Metafield` objects.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetaFieldCollectionResponse_Batch_POST_PUT'
+        '422':
+          description: |
+            Response object for metafields creation with partial success.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetaFieldCollectionResponsePartialSuccess_POST_PUT'
+        '500':
+          description: Internal Server Error
+    delete:
+      summary: Delete All Metafields
+      tags:
+        - Batch metafields
+      description: Delete all cart metafields.
+      operationId: deleteCartsMetafields
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: integer
+        description: List of metafield `id`s.
+      responses:
+        '200':
+          description: |
+            Response object for metafields deletion with success.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetaFieldCollectionDeleteResponseSuccess'
+        '422':
+          description: |
+            Response object for metafields deletion with partial success.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetaFieldCollectionResponsePartialSuccess_DELETE'
 components:
   schemas:
     CartUpdateRequest:
@@ -1017,12 +1145,12 @@ components:
               type: string
               description: The theme of the gift certificate.
               enum:
-                - Birthday
-                - Boy
-                - Celebration
-                - Christmas
-                - General
-                - Girl
+                - birthday.html
+                - boy.html
+                - celebration.html
+                - christmas.html
+                - general.html
+                - girl.html
             amount:
               type: number
               minimum: 1
@@ -1081,12 +1209,12 @@ components:
                 type: string
                 description: The theme of the gift certificate.
                 enum:
-                  - Birthday
-                  - Boy
-                  - Celebration
-                  - Christmas
-                  - General
-                  - Girl
+                  - birthday.html
+                  - boy.html
+                  - celebration.html
+                  - christmas.html
+                  - general.html
+                  - girl.html
               amount:
                 type: number
                 minimum: 1
@@ -1184,12 +1312,12 @@ components:
                 type: string
                 description: The theme of the gift certificate.
                 enum:
-                  - Birthday
-                  - Boy
-                  - Celebration
-                  - Christmas
-                  - General
-                  - Girl
+                  - birthday.html
+                  - boy.html
+                  - celebration.html
+                  - christmas.html
+                  - general.html
+                  - girl.html
               amount:
                 type: number
                 minimum: 1
@@ -1289,12 +1417,12 @@ components:
           type: string
           description: The theme of the gift certificate.
           enum:
-            - Birthday
-            - Boy
-            - Celebration
-            - Christmas
-            - General
-            - Girl
+            - birthday.html
+            - boy.html
+            - celebration.html
+            - christmas.html
+            - general.html
+            - girl.html
         amount:
           type: number
           minimum: 1
@@ -1487,12 +1615,12 @@ components:
           type: string
           description: The theme of the gift certificate.
           enum:
-            - Birthday
-            - Boy
-            - Celebration
-            - Christmas
-            - General
-            - Girl
+            - birthday.html
+            - boy.html
+            - celebration.html
+            - christmas.html
+            - general.html
+            - girl.html
         amount:
           type: number
           description: 'Value must be between 1.00 and 1,000.00 in the store’s default currency.'
@@ -1531,7 +1659,7 @@ components:
           description: Name provided for the gift certificate that will appear in the control panel.
         theme:
           type: string
-          description: 'The theme of the gift certificate. The following options are available:`Birthday`, `Boy`, `Celebration`, `Christmas`, `General`, and `Girl`.'
+          description: 'The theme of the gift certificate. The following options are available:`birthday.html`, `boy.html`, `celebration.html`, `christmas.html`, `general.html`, and `girl.html`.'
         amount:
           type: number
           description: 'Value must be between 1.00 and 1,000.00 in the store’s default currency.'
@@ -2129,7 +2257,7 @@ components:
           description: SKU of the variant.
         name:
           type: string
-          description: The item’s product name.
+          description: The itemʼs product name.
           example: T-Shirt
         url:
           description: The product URL.
@@ -2496,7 +2624,7 @@ components:
             type: object
             properties:
               option_id:
-                type: number
+                type: integer
               option_value:
                 type: integer
               name:
@@ -2549,12 +2677,12 @@ components:
                 type: string
                 description: The theme of the gift certificate.
                 enum:
-                  - Birthday
-                  - Boy
-                  - Celebration
-                  - Christmas
-                  - General
-                  - Girl
+                  - birthday.html
+                  - boy.html
+                  - celebration.html
+                  - christmas.html
+                  - general.html
+                  - girl.html
               amount:
                 type: number
                 minimum: 1
@@ -2616,12 +2744,12 @@ components:
                 type: string
                 description: The theme of the gift certificate.
                 enum:
-                  - Birthday
-                  - Boy
-                  - Celebration
-                  - Christmas
-                  - General
-                  - Girl
+                  - birthday.html
+                  - boy.html
+                  - celebration.html
+                  - christmas.html
+                  - general.html
+                  - girl.html
               amount:
                 type: number
                 minimum: 1
@@ -2669,6 +2797,8 @@ components:
             type: string
           name:
             type: string
+            minLength: 1
+            maxLength: 250  
           quantity:
             type: number
           list_price:
@@ -2939,15 +3069,33 @@ components:
                     type: string
                     description: 'The product option name; for example, Color or Size.'
                   nameId:
-                    type: number
+                    type: number 
+                    example: 151
                     description: The product option identifier.
                   value:
                     type: string
                     description: 'The product option value; for example, Red or Medium.'
                   valueId:
-                    type: number
+                    oneOf:
+                      - type: number
+                        example: 128
+                      - type: string
+                        example: "1259"
                     description: The product option value identifier in number format.
-                    example: 128
+            gift_wrapping:
+              description: The gift wrapping details for this item.
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: Gift Wrap 1
+                message:
+                  type: string
+                  example: Happy Birthday!
+                amount:
+                  type: number
+                  format: float
+                  example: 1.99
           required:
             - variant_id
             - product_id
@@ -2990,7 +3138,7 @@ components:
         - type: object
           properties:
             id:
-              type: integer
+              type: string
               description: The unique identifier for the metafield.
             date_created:
               type: string
@@ -3002,6 +3150,11 @@ components:
               format: date-time
               description: Date and time when the metafield was last updated.
               example: '2022-06-16T18:39:00+00:00'
+            owner_client_id:
+              type: string
+              description: Client ID for the metafieldʼs creator.
+              example: asdfasdfasdfasdfasdfasdfasdf
+              readOnly: true
       x-internal: false
     MetafieldBase:
       type: object
@@ -3018,8 +3171,8 @@ components:
             | `app_only` | Private to the app that owns the field. |
             | `read` | Visible to other API consumers. |
             | `write` | Open for reading and writing by other API consumers. |
-            | `read_and_sf_access` | Visible to other API consumers, including on storefront. |
-            | `write_and_sf_access` | Open for reading and writing by other API consumers, including on storefront. |
+            | `read_and_sf_access` | Visible to other API consumers, including on the storefront. |
+            | `write_and_sf_access` | Open for reading and writing by other API consumers, including on the storefront. |
           enum:
             - app_only
             - read
@@ -3073,12 +3226,6 @@ components:
           readOnly: true
       required:
         - permission_set
-    MetafieldPost:
-      description: |
-        The model for a POST to create metafield.
-      allOf:
-        - $ref: '#/components/schemas/MetafieldBase_Post'
-      x-internal: false
     MetafieldBase_Post:
       type: object
       description: |
@@ -3094,8 +3241,8 @@ components:
             | `app_only` | Private to the app that owns the field. |
             | `read` | Visible to other API consumers. |
             | `write` | Open for reading and writing by other API consumers. |
-            | `read_and_sf_access` | Visible to other API consumers, including on storefront. |
-            | `write_and_sf_access` | Open for reading and writing by other API consumers, including on storefront. |
+            | `read_and_sf_access` | Visible to other API consumers, including on the storefront. |
+            | `write_and_sf_access` | Open for reading and writing by other API consumers, including on the storefront. |
           enum:
             - app_only
             - read
@@ -3141,19 +3288,171 @@ components:
         Response payload for the BigCommerce API.
       properties:
         data:
+          $ref: '#/components/schemas/Metafield'
+        meta:
+          $ref: '#/components/schemas/CollectionMeta'
+      x-internal: false
+    MetaFieldCollectionResponse_Batch:
+      type: object
+      description: |
+        Response payload for the BigCommerce API.
+      properties:
+        data:
           type: array
           items:
             $ref: '#/components/schemas/Metafield'
         meta:
           $ref: '#/components/schemas/CollectionMeta'
+    MetaFieldCollectionResponse_Batch_POST_PUT:
+      type: object
+      description: |
+        Response payload for the BigCommerce API.
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Metafield'
+        errors:
+          type: array
+          description: Empty for 200 responses.
+          example: []
+        meta:
+          $ref: '#/components/schemas/CollectionMeta'
+    MetaFieldCollectionDeleteResponseSuccess:
+      type: object
+      description: |
+        Response payload for the BigCommerce API.
+      properties:
+        data:
+          type: array
+          items:
+            type: integer
+            description: |
+              The unique identifier for the metafield.
+          example:
+            - 123
+            - 124
+            - 125
+        errors:
+          type: array
+          description: Empty for 200 responses.
+          example: []
+        meta:
+          $ref: '#/components/schemas/WriteCollectionSuccessMeta'
+      x-internal: false
+    MetaFieldCollectionResponsePartialSuccess_POST_PUT:
+      type: object
+      description: |
+        Response payload for the BigCommerce API.
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Metafield'
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Error'
+        meta:
+          $ref: '#/components/schemas/WriteCollectionPartialSuccessMeta'
+    MetaFieldCollectionResponsePartialSuccess_DELETE:
+      type: object
+      description: |
+        Response payload for the BigCommerce API.
+      properties:
+        data:
+          type: array
+          items:
+            type: integer
+            description: |
+              The unique identifier for the metafield.
+          example: 
+            - 123
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Error'
+        meta:
+          $ref: '#/components/schemas/WriteCollectionPartialSuccessMeta'
+      x-internal: false
+    Error:
+      type: object
+      description: |
+        Error response payload for the BigCommerce API.
+      properties:
+        status:
+          type: integer
+          description: |
+            The HTTP status code for the error.
+          example: 422
+        title:
+          type: string
+          description: |
+            The error title.
+          example: Bulk operation has failed
+        type:
+          type: string
+          description: |
+            The error type.
+          example: https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes
+        errors:
+          $ref: '#/components/schemas/ErrorDetail'
+    ErrorDetail:
+      type: object
+      description: |
+        Error detail response payload for the BigCommerce API.
+      example:
+        "1": "Unauthorized to delete"
+        "2": "Metafield does not exist"
+    WriteCollectionSuccessMeta:
+      type: object
+      description: Additional data about the response.
+      properties:
+        total:
+          type: integer
+          description: |
+            Total number of items in the result set.
+          example: 3
+        success:
+          type: integer
+          description: |
+            Total number of items that were successfully deleted.
+          example: 3
+        failed:
+          type: integer
+          description: |
+            Total number of items that failed to be deleted.
+          example: 0
+      title: Collection Meta
+      x-internal: false
+    WriteCollectionPartialSuccessMeta:
+      type: object
+      description: Additional data about the response.
+      properties:
+        total:
+          type: integer
+          description: |
+            Total number of items in the result set.
+          example: 3
+        success:
+          type: integer
+          description: |
+            Total number of items that were successfully deleted.
+          example: 1
+        failed:
+          type: integer
+          description: |
+            Total number of items that failed to be deleted.
+          example: 2
+      title: Collection Meta
       x-internal: false
     CollectionMeta:
       type: object
-      description: 'Data about the response, including pagination and collection totals.'
+      description: Data about the response, including pagination and collection totals.
       properties:
         pagination:
           type: object
-          description: 'Data about the response, including pagination and collection totals.'
+          description: Data about the response, including pagination and collection totals.
           title: Pagination
           properties:
             total:
@@ -3322,13 +3621,35 @@ components:
       required: false
       schema:
         type: string
+    MetafieldKeyInParam:
+      name: key:in
+      in: query
+      description: Filter based on comma-separated metafieldʼs keys. Could be used with vanilla `key` query parameter.
+      required: false
+      style: form
+      explode: false
+      schema:
+        type: array
+        items:
+          type: string
     MetafieldNamespaceParam:
       name: namespace
       in: query
-      description: Filter based on a metafieldʼs key.
+      description: Filter based on a metafieldʼs namespaces.
       required: false
       schema:
         type: string
+    MetafieldNamespaceInParam:
+      name: namespace:in
+      in: query
+      description: Filter based on comma-separated metafieldʼs namespaces. Could be used with vanilla `namespace` query parameter.
+      required: false
+      style: form
+      explode: false
+      schema:
+        type: array
+        items:
+          type: string
     LimitParam:
       name: limit
       description: |
@@ -3363,14 +3684,14 @@ components:
 
         | Header | Argument | Description |
         |:-------|:---------|:------------|
-        | `X-Auth-Token` | `access_token` | For more about API accounts that generate `access_token`s, see our [Guide to API Accounts](/api-docs/getting-started/api-accounts). |
+        | `X-Auth-Token` | `access_token` | For more about API accounts that generate `access_token`s, see our [Guide to API Accounts](/docs/start/authentication/api-accounts). |
         
         ### Further reading
 
-        For example requests and more information about authenticating BigCommerce APIs, see [Authentication and Example Requests](/api-docs/getting-started/authentication#x-auth-token-header-example-requests).
+        For example requests and more information about authenticating BigCommerce APIs, see [Authentication and Example Requests](/docs/start/authentication#x-auth-token-header-example-requests).
         
-        For more about BigCommerce OAuth scopes, see our [Guide to API Accounts](/api-docs/getting-started/api-accounts#oauth-scopes).
+        For more about BigCommerce OAuth scopes, see our [Guide to API Accounts](/docs/start/authentication/api-accounts#oauth-scopes).
         
-        For a list of API status codes, see [API Status Codes](/api-docs/getting-started/api-status-codes).
+        For a list of API status codes, see [API Status Codes](/docs/start/about/status-codes).
       type: apiKey
       in: header

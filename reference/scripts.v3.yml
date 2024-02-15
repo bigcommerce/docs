@@ -3,7 +3,7 @@ info:
   title: Scripts
   version: ''
   description: |-
-    Inject client-side code onto a BigCommerce storefront. To learn more about scripts, see [Scripts API](/api-docs/store-management/scripts). 
+    Add client-side code to a BigCommerce storefront page or associate a script with a channel. To learn more about scripts, see the [Scripts API](/docs/integrations/scripts) article. 
   termsOfService: 'https://www.bigcommerce.com/terms'
   contact:
     name: BigCommerce
@@ -36,29 +36,30 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/script_Post'
-            examples: {}
+            examples:
+              Script Source URL:
+                value:
+                  name: Bootstrap
+                  description: Build responsive websites
+                  src: 'https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js'
+                  auto_uninstall: true
+                  load_method: default
+                  location: footer
+                  visibility: all_pages
+                  kind: src
+                  consent_category: essential
+              HTML Script Tag:
+                value:
+                  name: Bootstrap
+                  description: Build responsive websites
+                  html: ''
+                  auto_uninstall: true
+                  load_method: default
+                  location: footer
+                  visibility: all_pages
+                  kind: script_tag
+                  consent_category: essential
         required: true
-        x-examples:
-          Script Source URL:
-            name: Bootstrap
-            description: Build responsive websites
-            src: 'https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js'
-            auto_uninstall: true
-            load_method: default
-            location: footer
-            visibility: all_pages
-            kind: src
-            consent_category: essential
-          HTML Script Tag:
-            name: Bootstrap
-            description: Build responsive websites
-            html: null
-            auto_uninstall: true
-            load_method: default
-            location: footer
-            visibility: all_pages
-            kind: script_tag
-            consent_category: essential
       responses:
         '200':
           description: ''
@@ -66,7 +67,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/script_Response'
-              examples: {}
         '422':
           description: |
             This is the result of missing required fields, or of invalid data. See the response for more details.
@@ -110,11 +110,19 @@ paths:
         **Read Only Fields**
         * uuid
 
+        **Limits**
+        * 50 scripts per channel.
+
         **Notes**
-        * If kind is `src` –- Only the `src` property is needed, and you can optionally supply a `load_method`. The `html` field should not be specified.
-        * If kind is `script_tag` -- Only the `script_tag` is needed. The `src` field should not be specified.
+        * If the `kind` is `src`:
+          * Specify the `src` property. 
+          * Optionally, you can supply a `load_method`. 
+          * Do not specify the `html` field.
+        * If the `kind` is `script_tag`:
+          * Specify the `html` property.
+          * Do not specify the `src` field.
         * Each app can have 10 scripts installed.
-        * Multiple scripts can be created [per call](/api-docs/store-management/scripts#notes). 
+        * Multiple scripts can be created [per call](/docs/integrations/scripts#notes). 
     get:
       summary: Get All Scripts
       operationId: getScripts
@@ -225,7 +233,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/script_Response'
-              examples: {}
         '404':
           description: |
             The resource was not found.
@@ -311,7 +318,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/script_Response'
-              examples: {}
         '404':
           description: |
             The resource was not found.
@@ -613,15 +619,15 @@ components:
         
         | Header | Argument | Description |
         |:-------|:---------|:------------|
-        | `X-Auth-Token` | `access_token` | For more about API accounts that generate `access_token`s, see our [Guide to API Accounts](/api-docs/getting-started/api-accounts). |
+        | `X-Auth-Token` | `access_token` | For more about API accounts that generate `access_token`s, see our [Guide to API Accounts](/docs/start/authentication/api-accounts). |
         
         ### Further reading
         
-        For example requests and more information about authenticating BigCommerce APIs, see [Authentication and Example Requests](/api-docs/getting-started/authentication#x-auth-token-header-example-requests).
+        For example requests and more information about authenticating BigCommerce APIs, see [Authentication and Example Requests](/docs/start/authentication#x-auth-token-header-example-requests).
         
-        For more about BigCommerce OAuth scopes, see our [Guide to API Accounts](/api-docs/getting-started/api-accounts#oauth-scopes).
+        For more about BigCommerce OAuth scopes, see our [Guide to API Accounts](/docs/start/authentication/api-accounts#oauth-scopes).
         
-        For a list of API status codes, see [API Status Codes](/api-docs/getting-started/api-status-codes).
+        For a list of API status codes, see [API Status Codes](/docs/start/about/status-codes).
       type: apiKey
       in: header
   schemas:
@@ -678,7 +684,6 @@ components:
                   description: |
                     Link to the next page returned in the response.
       title: Collection Meta
-      x-internal: false
     Pagination:
       type: object
       description: 'Data about the response, including pagination and collection totals.'
@@ -828,6 +833,11 @@ components:
       allOf:
         - type: object
           properties:
+            name:
+              type: string
+              description: The user-friendly name.
+              minLength: 1
+              maxLength: 255
             uuid:
               type: string
               format: uuid
@@ -841,7 +851,6 @@ components:
               format: date-time
               description: The date on which this object was last updated.
         - $ref: '#/components/schemas/script_Base'
-      x-examples: {}
       x-internal: false
     script_Post:
       title: script_Post
@@ -871,7 +880,7 @@ components:
     script_Response:
       type: object
       title: script_Response
-      description: 'For a list of all locations visit [Scripts Visibility](/api-docs/store-management/scripts#script-visibility-locations).'
+      description: 'For a list of all locations visit [Scripts Visibility](/docs/integrations/scripts#script-visibility-locations).'
       properties:
         data:
           $ref: '#/components/schemas/script_Full'
@@ -881,7 +890,7 @@ components:
     script_responseCollection:
       type: object
       title: script_responseCollection
-      description: 'For a list of all locations visit [Scripts Visibility](/api-docs/store-management/scripts#script-visibility-locations).'
+      description: 'For a list of all locations visit [Scripts Visibility](/docs/integrations/scripts#script-visibility-locations).'
       properties:
         data:
           type: array
@@ -889,20 +898,19 @@ components:
             $ref: '#/components/schemas/script_Full'
         meta:
           $ref: '#/components/schemas/CollectionMeta'
-      x-internal: false
     script_Base:
       type: object
       title: script_Base
       description: 'Script properties common to `post`, `put`, and `get` requests.'
-      x-internal: false
-      x-examples: {}
       properties:
         description:
           type: string
           description: The user-friendly description.
         html:
           type: string
-          description: An html string containing exactly one `script` tag. Only present if `kind` is `script_tag`.
+          description: An HTML string containing exactly one `script` tag. Present when the script `kind` is `script_tag`.
+          minLength: 0
+          maxLength: 65536
         src:
           type: string
           description: The `src` attribute of the script to load. Only present if `kind` is `src`.
@@ -925,7 +933,7 @@ components:
             - footer
         visibility:
           type: string
-          description: "Which set of pages the script should load on. \n\nPlease note that you need to have `Checkout content` scope to use `all_pages` and `checkout`.\n\n- The current visibility options are `storefront`, `checkout`, `all_pages` and `order_confirmation`.\n\n     `storefront`: All pages that are not `checkout` or `order_confirmation`.\n\n\t\t \nFor a list of all locations visit [Scripts Visibility](/api-docs/store-management/scripts#script-visibility-locations)."
+          description: "Which set of pages the script should load on. \n\nPlease note that you need to have `Checkout content` scope to use `all_pages` and `checkout`.\n\n- The current visibility options are `storefront`, `checkout`, `all_pages` and `order_confirmation`.\n\n     `storefront`: All pages that are not `checkout` or `order_confirmation`.\n\n\t\t \nFor a list of all locations visit [Scripts Visibility](/docs/integrations/scripts#script-visibility-locations)."
           enum:
             - storefront
             - all_pages
@@ -936,10 +944,9 @@ components:
           description: |-
             What type of script this is.
 
-            `src` - a `script` tag will be generated with its `src` attribute set to the value of `src`; For scripts that use the src url. By providing a path to the script, we can optimize and serve the script tag automatically for you.
+            `src` - For scripts that use the src URL. A `script` tag will be generated with its `src` attribute set to the value of the `src` property. When your app provides a path to the script, we can optimize and add the script automatically for you. The load_method can vary.
 
-            `script_tag` - The value of `html` will be injected directly onto the page.
-            For scripts which include a raw HTML script_tag to be inserted into the page. The load_method must be default.
+            `script_tag` - For scripts that include a raw HTML `script` tag-enclosed block of JavaScript. The value of `html` is added directly to the page. The load_method must be default.
           enum:
             - src
             - script_tag
@@ -949,7 +956,7 @@ components:
           description: 'The client id of the API user that created this script, or blank if created by other means.'
         consent_category:
           type: string
-          description: 'Consent category for GDPR and CCPA compliance. Defaults to `uknown` when not specified. Scripts with an `uknown` consent category do not display on stores with customer cookie consent banners enabled. '
+          description: Consent category for GDPR and CCPA compliance. Defaults to `unknown` when not specified. Scripts with an `unknown` consent category do not display on stores with customer cookie consent banners enabled.
           enum:
             - essential
             - functional

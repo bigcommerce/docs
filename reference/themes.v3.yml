@@ -106,7 +106,7 @@ paths:
     post:
       tags:
         - Themes
-      operationId: uploadTheme
+      operationId: uploadStoreTheme
       summary: Upload a Theme
       parameters:
         - $ref: '#/components/parameters/ContentType'
@@ -289,7 +289,7 @@ paths:
     post:
       tags:
         - Theme Actions
-      operationId: downloadTheme
+      operationId: downloadStoreTheme
       summary: Download a Theme
       parameters:
         - $ref: '#/components/parameters/ContentType'
@@ -412,7 +412,7 @@ paths:
     get:
       tags:
         - Theme Jobs
-      operationId: getJob
+      operationId: getStoreThemeJob
       summary: Get a Theme Job
       responses:
         '200':
@@ -465,7 +465,7 @@ paths:
                         additionalProperties: true
                         title: Detailed Errors
                 title: Error Response
-      description: 'Returns a theme *Job*. If job is completed, the result is included in the response.'
+      description: 'Returns a theme *Job*. When the job is complete, the results array provides a generated link to access the theme. The link is active for 60 seconds.'
     parameters:
       - $ref: '#/components/parameters/Accept'
       - $ref: '#/components/parameters/JobIdParam'
@@ -476,6 +476,7 @@ paths:
           $ref: '#/components/responses/themesConfigurations_RespCollection'
       tags:
         - Theme Configurations
+      operationId: getThemeConfiguration
       summary: Get Theme Configuration
       description: |-
         Returns a list of theme's configurations.
@@ -507,11 +508,6 @@ paths:
           description: Filter configurations by a variation_uuid.
     parameters:
       - $ref: '#/components/parameters/Accept'
-      - schema:
-          type: string
-        name: uuid
-        in: path
-        required: true
       - in: query
         name: 'site_id:in'
         description: Filter configurations by a list of site_ids
@@ -569,6 +565,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
       summary: Validate Theme Configuration
+      operationId: validateThemeConfiguration
       tags:
         - Theme Configurations
       description: Validates a theme configuration against the theme's schema without creating it. Useful for testing schemas before creation.
@@ -634,7 +631,7 @@ paths:
                         - custom-page-1.html
                         - holiday-page.html
                     meta: {}
-      operationId: get-themes-theme_uuid-custom-templates
+      operationId: getThemeCustomTemplates
       description: Enumerate available custom templates for in the theme files in a specific theme version for each supported entity type.
 components:
   parameters:
@@ -699,7 +696,7 @@ components:
                 items:
                   $ref: '#/components/schemas/themeConfiguration_Full'
               meta:
-                $ref: '#/components/schemas/CollectionMeta'
+                $ref: '#/components/schemas/ThemesCollectionMeta'
           examples:
             response:
               value:
@@ -717,10 +714,6 @@ components:
                     per_page: 50
                     current_page: 1
                     total_pages: 1
-                    links:
-                      previous: nostrud in
-                      current: '?page=1&limit=50'
-                      next: in
   securitySchemes:
     X-Auth-Token:
       name: X-Auth-Token
@@ -735,15 +728,15 @@ components:
         
         | Header | Argument | Description |
         |:-------|:---------|:------------|
-        | `X-Auth-Token` | `access_token` | For more about API accounts that generate `access_token`s, see our [Guide to API Accounts](/api-docs/getting-started/api-accounts). |
+        | `X-Auth-Token` | `access_token` | For more about API accounts that generate `access_token`s, see our [Guide to API Accounts](/docs/start/authentication/api-accounts). |
         
         ### Further reading
         
-        For example requests and more information about authenticating BigCommerce APIs, see [Authentication and Example Requests](/api-docs/getting-started/authentication#x-auth-token-header-example-requests).
+        For example requests and more information about authenticating BigCommerce APIs, see [Authentication and Example Requests](/docs/start/authentication#x-auth-token-header-example-requests).
         
-        For more about BigCommerce OAuth scopes, see our [Guide to API Accounts](/api-docs/getting-started/api-accounts#oauth-scopes).
+        For more about BigCommerce OAuth scopes, see our [Guide to API Accounts](/docs/start/authentication/api-accounts#oauth-scopes).
         
-        For a list of API status codes, see [API Status Codes](/api-docs/getting-started/api-status-codes).
+        For a list of API status codes, see [API Status Codes](/docs/start/about/status-codes).
       type: apiKey
       in: header
   schemas:
@@ -800,6 +793,42 @@ components:
                   description: |
                     Link to the next page returned in the response.
       title: Collection Meta
+      x-internal: false
+    ThemesCollectionMeta:
+      type: object
+      description: 'Data about the response, including pagination and collection totals.'
+      properties:
+        pagination:
+          type: object
+          description: 'Data about the response, including pagination and collection totals.'
+          title: Pagination
+          properties:
+            total:
+              type: integer
+              description: |
+                Total number of items in the result set.
+              example: 36
+            count:
+              type: integer
+              description: |
+                Total number of items in the collection response.
+              example: 36
+            per_page:
+              type: integer
+              description: |
+                The amount of items returned in the collection per page, controlled by the limit parameter.
+              example: 50
+            current_page:
+              type: integer
+              description: |
+                The page you are currently on within the collection.
+              example: 1
+            total_pages:
+              type: integer
+              description: |
+                The total number of pages in the collection.
+              example: 1
+      title: Themes Collection Meta
       x-internal: false
     Pagination:
       type: object

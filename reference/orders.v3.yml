@@ -24,6 +24,7 @@ tags:
   - name: Payment Actions
   - name: Transactions
   - name: Order Settings
+  - name: Batch metafields
 paths:
   '/orders/{order_id}/payment_actions/capture':
     post:
@@ -33,7 +34,7 @@ paths:
         Requires at least one of the following scopes:
         * `store_v2_orders`
         * `store_v2_transactions`
-      operationId: paymentactioncapture
+      operationId: captureOrderPayment
       parameters:
         - $ref: '#/components/parameters/ContentType'
       responses:
@@ -65,7 +66,7 @@ paths:
         Requires at least one of the following scopes:
         * `store_v2_orders`
         * `store_v2_transactions`
-      operationId: paymentactionvoid
+      operationId: voidOrderPayment
       parameters:
         - $ref: '#/components/parameters/ContentType'
       responses:
@@ -96,7 +97,7 @@ paths:
       tags:
         - Transactions
       description: |-
-        Returns an **order's** transactions.
+        Returns an **orderʼs** transactions.
 
         **Usage Notes**
         * Depending on the payment method, different information will be available (not all payment gateways return full card or fraud detail).
@@ -105,7 +106,7 @@ paths:
         Requires at least one of the following scopes:
         * `store_v2_transactions_read_only`
         * `store_v2_transactions`
-      operationId: getTransactions
+      operationId: getOrderTransactions
       responses:
         '200':
           $ref: '#/components/responses/TransactionCollection_Resp'
@@ -165,7 +166,7 @@ paths:
         **Note:**
         Order refunds are processed consecutively. Processing synchronous refunds on an order are not yet supported.
 
-      operationId: postrefundquote
+      operationId: createOrderRefundQuotes
       parameters:
         - $ref: '#/components/parameters/ContentType'
       requestBody:
@@ -231,7 +232,7 @@ paths:
         **Note:**
         Order refunds are processed consecutively. Processing synchronous refunds on an order are not yet supported.
         
-      operationId: postrefund
+      operationId: createOrderRefund
       parameters:
         - $ref: '#/components/parameters/ContentType'
       requestBody:
@@ -350,7 +351,7 @@ paths:
         * `store_v2_transactions`
         * `store_v2_orders_read_only`
         * `store_v2_orders`
-      operationId: getorderrefunds
+      operationId: getOrderRefunds
       responses:
         '200':
           $ref: '#/components/responses/RefundCollection_Resp'
@@ -371,128 +372,13 @@ paths:
     get:
       summary: Get a Refund
       description: Returns a refund by refund ID.
-      operationId: RefundID_Get
+      operationId: getOrderRefund
       responses:
         '200':
           $ref: '#/components/responses/RefundID_Response'
       tags:
         - Payment Actions
   '/orders/payment_actions/refunds':
-    parameters:
-      - $ref: '#/components/parameters/Accept'
-  '/stores/{store_hash}/v3/orders/payment_actions/refund_quotes':
-    post:
-      summary: Create Refund Quotes - BATCH
-      description: |-
-        Calculate the tax amount, total refund amount and get available payment options for an order refund by providing items and costs or quantities to refund.
-
-        This endpoint will accept a batch of one or more.
-
-        Requires at least one of the following scopes:
-        * `store_v2_orders`
-        * `store_v2_transactions`
-      operationId: postrefundquotes
-      parameters:
-        - $ref: '#/components/parameters/Accept'
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PostRefundQuotesRequest'
-        required: true
-        x-examples:
-          application/json:
-            - items:
-                - item_id: 76
-                  item_type: PRODUCT
-                  quantity: 1
-              tax_adjustment_amount: 0
-      responses:
-        '201':
-          $ref: '#/components/responses/RefundQuotesBATCH_Resp'
-        '422':
-          description: Partial success/failure response. Status to roll up to the most severe individual failure to the whole request.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/RefundQuote_Full'
-                  errors:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/FailedQuoteError'
-                  meta:
-                    $ref: '#/components/schemas/Meta'
-            Example 1:
-              examples:
-                response:
-                  value: |-
-                    {
-                        "data": [
-                            {
-                                "order_id": 1,
-                                "total_refund_amount": 1.99,
-                                "total_refund_tax_amount": 1.95,
-                                "rounding": 1,
-                                "adjustment": 0.05,
-                                "tax_inclusive": true,
-                                "refund_methods": [
-                                    ""
-                                ]
-                            }
-                        ],
-                        "errors": [
-                            {
-                                "order_id": 1,
-                                "status": 422,
-                                "error": "Refund amount is greater than remaining amount"
-                            }
-                        ],
-                        "meta": {
-                            "failure": 1,
-                            "success": 1,
-                            "total": 2
-                        }
-                    }
-        '503':
-          description: Every request in the batch failed. The error object describes the failure for each component request.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/RefundQuote_Full'
-                  errors:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/FailedQuoteError'
-                  meta:
-                    $ref: '#/components/schemas/Meta'
-              examples:
-                response:
-                  value:
-                    data: []
-                    errors:
-                      - order_id: 1
-                        status: 503
-                        error: Tax service could not be contacted
-                      - order_id: 100
-                        status: 422
-                        error: Refund amount exceeds remaining amount
-                    meta:
-                      failure: 2
-                      success: 0
-                      total: 2
-      tags:
-        - Payment Actions
-      x-private: true
     parameters:
       - name: store_hash
         in: path
@@ -510,7 +396,9 @@ paths:
         * `store_v2_transactions`
         * `store_v2_orders_read_only`
         * `store_v2_orders`
-      operationId: getrefunds
+      operationId: getOrdersRefunds
+      tags:
+        - Payment Actions
       parameters:
         - name: store_hash
           in: path
@@ -552,7 +440,6 @@ paths:
           description: |-
             Filter results so they are earlier than or equal to provided date.
 
-
             Must be in url-encoded RFC 3339 format.
             e.g. `2020-01-15T01:02:34-01:00` is RFC 3339 format.
             Url-encoded this will be `2020-01-15T01%3A02%3A34%2B01%3A00`
@@ -572,8 +459,109 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/RefundCollection_Resp'
+  '/orders/payment_actions/refund_quotes':
+    post:
+      summary: Create Refund Quotes - BATCH
+      description: |-
+        Calculate the tax amount, total refund amount and get available payment options for an order refund by providing items and costs or quantities to refund.
+
+        This endpoint will accept a batch of one or more.
+
+        Requires at least one of the following scopes:
+        * `store_v2_orders`
+        * `store_v2_transactions`
+      operationId: createOrdersRefundQuotes
+      parameters:
+        - $ref: '#/components/parameters/Accept'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PostRefundQuotesRequest'
+        required: true
+        x-examples:
+          application/json:
+            - items:
+                - item_id: 76
+                  item_type: PRODUCT
+                  quantity: 1
+              tax_adjustment_amount: 0
+      responses:
+        '201':
+          $ref: '#/components/responses/RefundQuotesBATCH_Resp'
+        '422':
+          description: Partial success/failure response. Status to roll up to the most severe individual failure to the whole request.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/RefundQuote_Full'
+                  errors:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/FailedQuoteError'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+            Example 1:
+              examples:
+                response:
+                  value: 
+                    data: 
+                      - order_id: 1
+                        total_refund_amount: 1.99
+                        total_refund_tax_amount: 1.95
+                        rounding: 1
+                        adjustment: 0.05
+                        tax_inclusive: true
+                        refund_methods: 
+                          - ""
+                    errors:
+                      - order_id: 1
+                        status: 422
+                        error: "Refund amount is greater than remaining amount"
+                    meta:
+                      failure: 1
+                      success: 1
+                      total: 2
+        '503':
+          description: Every request in the batch failed. The error object describes the failure for each component request.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/RefundQuote_Full'
+                  errors:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/FailedQuoteError'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+              examples:
+                response:
+                  value:
+                    data: []
+                    errors:
+                      - order_id: 1
+                        status: 503
+                        error: Tax service could not be contacted
+                      - order_id: 100
+                        status: 422
+                        error: Refund amount exceeds remaining amount
+                    meta:
+                      failure: 2
+                      success: 0
+                      total: 2
       tags:
         - Payment Actions
+      x-private: true
   '/orders/{order_id}/metafields':
     parameters:
       - $ref: '#/components/parameters/Accept'
@@ -586,7 +574,7 @@ paths:
         Gets a `Metafield` object list, by `order_id`.
 
         The maximum number of metafields allowed on each order, product, category, variant, or brand is 250 per client ID.
-      operationId: getOrderMetafieldsByOrderId
+      operationId: getOrderMetafields
       parameters:
         - $ref: '#/components/parameters/PageParam'
         - $ref: '#/components/parameters/LimitParam'
@@ -630,7 +618,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/MetafieldPost'
+              $ref: '#/components/schemas/MetafieldBase_Post'
             examples: {}
         description: |
           A `Metafield` object.
@@ -645,7 +633,7 @@ paths:
                 $ref: '#/components/schemas/MetafieldResponse'
         '409':
           description: |
-            The `Metafield` conflicts with another `Metafield`. This can be the result of duplicate unique key combinations of the app's client ID, namespace, key, resource_type, and resource_id.
+            The `Metafield` conflicts with another `Metafield`. This can result from duplicate unique key combinations of the appʼs client id, namespace, key, resource_type, and resource_id.
           content:
             application/json:
               schema:
@@ -674,7 +662,7 @@ paths:
         - Metafields
       description: |
         Gets a `Metafield`, by `order_id`.
-      operationId: getOrderMetafieldByOrderIdAndMetafieldId
+      operationId: getOrderMetafield
       responses:
         '200':
           description: |
@@ -730,7 +718,7 @@ paths:
         - Metafields
       description: |
         Deletes a `Metafield`.
-      operationId: deleteOrderMetafieldById
+      operationId: deleteOrderMetafield
       responses:
         '204':
           description: |
@@ -739,7 +727,7 @@ paths:
     get:
       summary: Get Global Order Settings
       description: Returns global order settings.
-      operationId: GetGlobalOrderSettings
+      operationId: getGlobalOrderSettings
       tags:
         - Order Settings
       responses:
@@ -764,7 +752,7 @@ paths:
     put:
       summary: Update Global Order Settings
       description: Updates global order settings.
-      operationId: UpdateGlobalOrderSettings
+      operationId: updateGlobalOrderSettings
       parameters:
         - $ref: '#/components/parameters/ContentType'
       tags:
@@ -809,7 +797,7 @@ paths:
     get:
       summary: Get Channel Order Settings
       description: Returns order settings for a specific channel.
-      operationId: GetChannelOrderSettings
+      operationId: getChannelOrderSettings
       tags:
         - Order Settings
       responses:
@@ -837,7 +825,7 @@ paths:
         Updates order settings for a specific channel.
 
          **Note:** You must override both notifications `email_addresses` or neither, i.e. either both notification `email_addresses` are an array of valid email addresses, or both `email_addresses` must be null. You may not have one set to an array of addresses and the other set to `null`.
-      operationId: UpdateChannelOrderSettings
+      operationId: updateChannelOrderSettings
       parameters:
         - $ref: '#/components/parameters/ContentType'
       tags:
@@ -886,6 +874,142 @@ paths:
           type: string
         description: Channel ID
         required: true
+  '/orders/metafields':
+    get:
+      summary: Get All Metafields
+      tags:
+        - Batch metafields
+      description: Get all order metafields.
+      operationId: getOrdersMetafields
+      responses:
+        '200':
+          description: |
+            List of `Metafield` objects.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetaFieldCollectionResponse'
+        '500':
+          description: Internal Server Error
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/MetafieldKeyParam'
+        - $ref: '#/components/parameters/MetafieldKeyInParam'
+        - $ref: '#/components/parameters/MetafieldNamespaceParam'
+        - $ref: '#/components/parameters/MetafieldNamespaceInParam'
+        - $ref: '#/components/parameters/DirectionParam'
+    post:
+      summary: Create multiple Metafields
+      tags:
+        - Batch metafields
+      description: Create multiple metafields.
+      operationId: createOrdersMetafields
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                allOf:
+                  - $ref: '#/components/schemas/MetafieldBase_Post'
+                  - type: object
+                    properties:
+                      resource_id:
+                        type: integer
+                        example: 42
+                        description: |
+                          The ID for the order with which the metafield is associated.
+                    required:
+                      - resource_id
+        description: ''
+      responses:
+        '200':
+          description: |
+            List of created `Metafield` objects.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetaFieldCollectionResponse_POST_PUT'
+        '422':
+          description: |
+            Response object for metafields creation with partial success.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetaFieldCollectionResponsePartialSuccess_POST_PUT'
+        '500':
+          description: Internal Server Error
+    put:
+      summary: Update multiple Metafields
+      tags:
+        - Batch metafields
+      description: Create multiple metafields.
+      operationId: updateOrdersMetafields
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                allOf:
+                  - $ref: '#/components/schemas/MetafieldBase_Post'
+                  - type: object
+                    properties:
+                      id:
+                        type: integer
+                        example: 42
+                        description: |
+                          The ID of metafield to update.
+                    required:
+                      - id
+        description: ''
+      responses:
+        '200':
+          description: |
+            List of updated `Metafield` objects.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetaFieldCollectionResponse_POST_PUT'
+        '422':
+          description: |
+            Response object for metafields creation with partial success.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetaFieldCollectionResponsePartialSuccess_POST_PUT'
+        '500':
+          description: Internal Server Error
+    delete:
+      summary: Delete All Metafields
+      tags:
+        - Batch metafields
+      description: Delete all order metafields.
+      operationId: deleteOrdersMetafields
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: integer
+        description: List of metafield IDs.
+      responses:
+        '200':
+          description: |
+            Response object for metafields deletion with success.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetaFieldCollectionDeleteResponseSuccess'
+        '422':
+          description: |
+            Response object for metafields deletion with partial success.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetaFieldCollectionResponsePartialSuccess_DELETE'
 components:
   schemas:
     GetReturnsSettings:
@@ -1123,7 +1247,7 @@ components:
       x-internal: false
     Pagination:
       type: object
-      description: 'Data about the response, including pagination and collection totals.'
+      description: Data about the response, including pagination and collection totals.
       title: Pagination
       properties:
         total:
@@ -1306,11 +1430,11 @@ components:
       x-internal: false
     CollectionMeta:
       type: object
-      description: 'Data about the response, including pagination and collection totals.'
+      description: Data about the response, including pagination and collection totals.
       properties:
         pagination:
           type: object
-          description: 'Data about the response, including pagination and collection totals.'
+          description: Data about the response, including pagination and collection totals.
           title: Pagination
           properties:
             total:
@@ -1364,7 +1488,7 @@ components:
       properties:
         meta:
           type: object
-          description: 'Data about the response, including pagination and collection totals.'
+          description: Data about the response, including pagination and collection totals.
           title: Pagination
           properties:
             total:
@@ -1786,7 +1910,7 @@ components:
               properties:
                 remaining_balance:
                   description: |
-                    Remaining balance of shopper's store credit.
+                    Remaining balance of shopperʼs store credit.
                   type: number
                   format: float
                   example: 35.42
@@ -1889,7 +2013,7 @@ components:
       properties:
         remaining_balance:
           description: |
-            Remaining balance of shopper's store credit.
+            Remaining balance of shopperʼs store credit.
           type: number
           format: float
           example: 35.42
@@ -2147,6 +2271,7 @@ components:
             Note that `refund_methods` is an array of refund methods, with each refund method being an array of payment options.
 
             For example, if the order was placed by a combination of store credit and bank deposit the refund methods would be:
+
             ```json
             {
               "refund_methods": [
@@ -2412,8 +2537,10 @@ components:
         Type of refund item that capture refunding of items in the order that are of type quantity.
         * `ORDER`
         * `PRODUCT`
+        * `GIFT_WRAPPING`
         * `SHIPPING`
         * `HANDLING`
+        * `TAX`
       properties:
         item_type:
           type: string
@@ -2421,8 +2548,10 @@ components:
           enum:
             - ORDER
             - PRODUCT
+            - GIFT_WRAPPING
             - SHIPPING
             - HANDLING
+            - TAX
           description: Type of refund.
         item_id:
           type: integer
@@ -2470,6 +2599,7 @@ components:
         Type of refund item that capture refunding of items in the order that are of type amount.
         * `PRODUCT`
         * `ORDER`
+        * `GIFT_WRAPPING`
         * `SHIPPING`
         * `HANDLING`
         * `TAX`
@@ -2480,6 +2610,7 @@ components:
           enum:
             - PRODUCT
             - ORDER
+            - GIFT_WRAPPING
             - SHIPPING
             - HANDLING
             - TAX
@@ -2535,7 +2666,7 @@ components:
           description: Reference to order ID.
         user_id:
           type: integer
-          description: Reference to the user's ID who create this refund. This is automatically populated by BigCommerce.
+          description: Reference to the userʼs ID who create this refund. This is automatically populated by BigCommerce.
           readOnly: true
         created:
           type: string
@@ -2694,6 +2825,22 @@ components:
         meta:
           $ref: '#/components/schemas/CollectionMeta'
       x-internal: false
+    MetaFieldCollectionResponse_POST_PUT:
+      type: object
+      description: |
+        Response payload for the BigCommerce API.
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Metafield'
+        errors:
+          type: array
+          description: Empty for 200 responses.
+          example: []
+        meta:
+          $ref: '#/components/schemas/CollectionMeta'
+      x-internal: false
     MetafieldResponse:
       description: |
         Response payload for the BigCommerce API.
@@ -2716,8 +2863,8 @@ components:
           description: |
             Determines the visibility and writeability of the field by other API consumers.
 
-            |Value|Description
-            |-|-|
+            |Value|Description |
+            |:-|:-|
             |`app_only`|Private to the app that owns the field|
             |`read`|Visible to other API consumers|
             |`write`|Open for reading and writing by other API consumers|
@@ -2787,8 +2934,8 @@ components:
           description: |
             Determines the visibility and writeability of the field by other API consumers.
 
-            |Value|Description
-            |-|-|
+            |Value|Description |
+            |:-|:-|
             |`app_only`|Private to the app that owns the field|
             |`read`|Visible to other API consumers|
             |`write`|Open for reading and writing by other API consumers|
@@ -2848,7 +2995,7 @@ components:
               type: string
               format: date-time
               description: |
-                Date and time of the metafield's creation.
+                Date and time of the metafieldʼs creation.
               example: '2022-06-16T18:39:00+00:00'
             date_modified:
               type: string
@@ -2856,13 +3003,11 @@ components:
               description: |
                 Date and time when the metafield was last updated.
               example: '2022-06-16T18:39:00+00:00'
-      x-internal: false
-      x-examples: {}
-    MetafieldPost:
-      description: |
-        The model for a POST to create metafield.
-      allOf:
-        - $ref: '#/components/schemas/MetafieldBase_Post'
+            owner_client_id:
+              type: string
+              description: Client ID for the metafieldʼs creator.
+              example: asdfasdfasdfasdfasdfasdfasdf
+              readOnly: true
       x-internal: false
       x-examples: {}
     MetafieldPut:
@@ -2904,6 +3049,184 @@ components:
       x-examples:
         example-1:
           $ref: '#/components/examples/EnableMultipleOrderNotifications/value'
+    MetaFieldCollectionResponsePartialSuccess_POST_PUT:
+      type: object
+      description: |
+        Response payload for the BigCommerce API.
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Metafield'
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Error'
+        meta:
+          $ref: '#/components/schemas/WriteCollectionPartialSuccessMeta'
+    MetaFieldCollectionResponsePartialSuccess_DELETE:
+      type: object
+      description: |
+        Response payload for the BigCommerce API.
+      properties:
+        data:
+          type: array
+          items:
+            type: integer
+            description: |
+              The unique identifier for the metafield.
+          example: 
+            - 123
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Error'
+        meta:
+          $ref: '#/components/schemas/WriteCollectionPartialSuccessMeta'
+      x-internal: false
+    MetaFieldCollectionDeleteResponseSuccess:
+      type: object
+      description: |
+        Response payload for the BigCommerce API.
+      properties:
+        data:
+          type: array
+          items:
+            type: integer
+            description: |
+              The unique identifier for the metafield.
+          example: 
+            - 123
+            - 124
+            - 125
+        errors:
+          type: array
+          description: Empty for 200 responses.
+          example: []
+        meta:
+          $ref: '#/components/schemas/WriteCollectionSuccessMeta'
+      x-internal: false
+    WriteCollectionPartialSuccessMeta:
+      type: object
+      description: Additional data about the response.
+      properties:
+        total:
+          type: integer
+          description: |
+            Total number of items in the result set.
+          example: 3
+        success:
+          type: integer
+          description: |
+            Total number of items that were successfully deleted.
+          example: 1
+        failed:
+          type: integer
+          description: |
+            Total number of items that failed to be deleted.
+          example: 2
+      title: Collection Meta
+      x-internal: false
+    WriteCollectionSuccessMeta:
+      type: object
+      description: Additional data about the response.
+      properties:
+        total:
+          type: integer
+          description: |
+            Total number of items in the result set.
+          example: 3
+        success:
+          type: integer
+          description: |
+            Total number of items that were successfully deleted.
+          example: 3
+        failed:
+          type: integer
+          description: |
+            Total number of items that failed to be deleted.
+          example: 0
+      title: Collection Meta
+      x-internal: false
+    Total:
+      type: integer
+      description: |
+        Total number of items in the result set.
+      example: 3
+    Success:
+      type: integer
+      description: |
+        Total number of items that were successfully deleted.
+      example: 1
+    Failed:
+      type: integer
+      description: |
+        Total number of items that failed to be deleted.
+      example: 2
+    Error:
+      type: object
+      description: |
+        Error response payload for the BigCommerce API.
+      properties:
+        status:
+          type: integer
+          description: |
+            The HTTP status code for the error.
+          example: 422
+        title:
+          type: string
+          description: |
+            The error title.
+          example: Bulk operation has failed
+        type:
+          type: string
+          description: |
+            The error type.
+          example: https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes
+        errors:
+          $ref: '#/components/schemas/ErrorDetail'
+    ErrorDetail:
+      type: object
+      description: |
+        Error detail response payload for the BigCommerce API.
+      example:
+        "1": "Unauthorized to delete"
+        "2": "Metafield does not exist"
+    MetafieldPost_Batch:
+      description: |
+        The model for a POST to create metafield.
+      allOf:
+        - $ref: '#/components/schemas/MetafieldBase_Post'
+        - type: object
+          properties:
+            resource_id:
+              type: integer
+              example: 42
+              description: |
+                The ID for the resource with which the metafield is associated.
+          required:
+            - resource_id
+      x-internal: false
+    MetafieldPut_Batch:
+      description: |
+        The model for a PUT to create metafield.
+      allOf:
+        - $ref: '#/components/schemas/MetafieldBase_Post'
+        - type: object
+          properties:
+            id:
+              type: integer
+              example: 42
+              description: |
+                The ID of metafield to update.
+            resource_id:
+              type: integer
+              example: 42
+              description: |
+                The ID for the resource with which the metafield is associated.
+          required:
+            - id
+      x-internal: false
     ChannelOrderSettings:
       type: object
       properties:
@@ -3149,7 +3472,6 @@ components:
                   primary_contact.district: error.expected.jsstring.
     503_ServiceUnavailable:
       description:  'If this occurs, you should retry the request. If you cannot successfully make a request, please check the BigCommerce system status [here](https://status.bigcommerce.com/). A service is likely down, and you will need to make the request again when it is back up (in several hours, usually).'
-
       content:
         application/json:
           schema:
@@ -3387,18 +3709,40 @@ components:
       name: key
       in: query
       description: |
-        Filter based on a metafield's key.
+        Filter based on a metafieldʼs key.
       required: false
       schema:
         type: string
+    MetafieldKeyInParam:
+      name: key:in
+      in: query
+      description: Filter based on comma-separated metafieldʼs keys. Could be used with vanilla `key` query parameter.
+      required: false
+      style: form
+      explode: false
+      schema:
+        type: array
+        items:
+          type: string
     MetafieldNamespaceParam:
       name: namespace
       in: query
       description: |
-        Filter based on a metafield's key.
+        Filter based on a metafieldʼs key.
       required: false
       schema:
         type: string
+    MetafieldNamespaceInParam:
+      name: namespace:in
+      in: query
+      description: Filter based on comma-separated metafieldʼs namespaces. Could be used with vanilla `namespace` query parameter.
+      required: false
+      style: form
+      explode: false
+      schema:
+        type: array
+        items:
+          type: string
     LimitParam:
       name: limit
       description: |
@@ -3435,15 +3779,15 @@ components:
         
         | Header | Argument | Description |
         |:-------|:---------|:------------|
-        | `X-Auth-Token` | `access_token` | For more about API accounts that generate `access_token`s, see our [Guide to API Accounts](/api-docs/getting-started/api-accounts). |
+        | `X-Auth-Token` | `access_token` | For more about API accounts that generate `access_token`s, see our [Guide to API Accounts](/docs/start/authentication/api-accounts). |
         
         ### Further reading
         
-        For example requests and more information about authenticating BigCommerce APIs, see [Authentication and Example Requests](/api-docs/getting-started/authentication#x-auth-token-header-example-requests).
+        For example requests and more information about authenticating BigCommerce APIs, see [Authentication and Example Requests](/docs/start/authentication#x-auth-token-header-example-requests).
         
-        For more about BigCommerce OAuth scopes, see our [Guide to API Accounts](/api-docs/getting-started/api-accounts#oauth-scopes).
+        For more about BigCommerce OAuth scopes, see our [Guide to API Accounts](/docs/start/authentication/api-accounts#oauth-scopes).
         
-        For a list of API status codes, see [API Status Codes](/api-docs/getting-started/api-status-codes).
+        For a list of API status codes, see [API Status Codes](/docs/start/about/status-codes).
       type: apiKey
       in: header
   examples:

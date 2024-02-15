@@ -1334,11 +1334,12 @@ components:
         * `consignments` - include the response returned from the request to the `/orders/{order_id}/consignments` endpoint.
         
         * `consignments.line_items` - fetches an array of consignment objects with different line items which include: `pickups`, `shipping`, `downloads` and `email`. Be sure to include the response returned from the request to the `/orders/{order_id}/products` endpoint in consignments. This implies `include=consignments`. 
-      schema:
         type: string
         enum:
           - consignments
           - consignments.line_items
+      schema:
+        type: integer
   responses:
     orderStatusCollection_Resp:
       description: Get All Order Status Collection Response.
@@ -2822,6 +2823,50 @@ components:
       type: apiKey
       in: header
   schemas:
+    orderConsignmentlineitemsResp:
+      description: The response for orders that contain consignments with line items.
+      type: array
+      items:
+        oneOf:
+          - type: object
+            readOnly: true
+            properties:
+              url:
+                description: URL where you can use a GET request to get the order consignments.
+                readOnly: true
+                example: 'https://api.bigcommerce.com/stores/{store_hash}/v2/orders/101/consignments'
+                type: string
+              resource:
+                description: Path where you can use a GET request to get the order consignments.
+                readOnly: true
+                example: /orders/101/consignments
+                type: string
+          - type: object
+            properties:
+              pickups:
+                type: array
+                description: Pickup consignments.
+                items:
+                  $ref: '#/components/schemas/pickupConsignment_Get'
+              shipping:
+                type: object
+                description: 'ID of the shipping consignment.'
+                items:
+                  $ref: '#/components/schemas/shippingConsignment_Base'
+              downloads:
+                type: array
+                maxItems: 1
+                description: Digital consignments for products that are downloaded.
+                items:
+                  $ref: '#/components/schemas/digitalConsignment_Get'
+              email:
+                type: object
+                description: Email consignments for gift certificates.
+                properties:
+                  gift_certificates:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/giftCertificateConsignment_Get'
     shipping_provider_standard:
       title: Standard Shipping Provider
       type: string
@@ -3401,21 +3446,6 @@ components:
           type: string
           description: The tracking link that is generated using the combination of either the `tracking_number` and `shipping_provider` or `tracking_number` and `tracking_carrier`. This will be empty if the custom `tracking_link` value is provided.
       x-internal: false
-    orderConsignments_Resource:
-      title: orderConsignments_Resource
-      type: object
-      readOnly: true
-      properties:
-        url:
-          description: URL where you can use a GET request to get the order consignments.
-          readOnly: true
-          example: 'https://api.bigcommerce.com/stores/{store_hash}/v2/orders/101/consignments'
-          type: string
-        resource:
-          description: Path where you can use a GET request to get the order consignments.
-          readOnly: true
-          example: /orders/101/consignments
-          type: string
     products_Resource:
       title: products_Resource
       type: object
@@ -4265,7 +4295,7 @@ components:
             * or by an integration with an external platform such as Facebook by Meta or Amazon.
           type: string
         consignments:
-          $ref: '#/components/schemas/orderConsignments_Resource'
+          $ref: '#/components/schemas/orderConsignmentlineitemsResp'
         products:
           $ref: '#/components/schemas/products_Resource'
         shipping_addresses:

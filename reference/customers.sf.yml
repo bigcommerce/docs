@@ -16,8 +16,9 @@ servers:
         description: 'The [URL authority](https://developer.mozilla.org/en-US/docs/Learn/Common_questions/Web_mechanics/What_is_a_URL#authority) of the storefront.'
 tags:
   - name: Customers
+  - name: Customers Metafields
 paths:
-  /customers:
+  '/customers':
     post:
       tags:
         - Customers
@@ -57,7 +58,191 @@ paths:
                     - fieldId: '25'
                       fieldValue: Leave in backyard
         description: Data sent the the customer endpoint when creating a customer during checkout.
+  '/customers/{customerId}/metafields':
+    get:
+      summary: Get customers metafield.
+      tags:
+        - Customers Metafields
+      description: Get a customer's metafields.
+      operationId: getCustomersMetafields
+      parameters:
+        - $ref: '#/components/parameters/customerId'
+        - name: customerId
+          in: query
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content: 
+          application/json:
+            schema:
+             $ref: '#/components/schemas/metafield'
+      responses:
+        '200':
+          description: |
+            List of `Metafield` objects.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/responses/MetafieldResponse_Post'
+        '500':
+          description: Internal Server Error
+    post:
+      summary: Create Customer Metafields
+      tags:
+      - Customers Metafields
+      description: Creates Customer metafields.
+      operationId: createCustomerMetafields
+      parameters:
+        - $ref: '#/components/parameters/customerId'
+        - name: customerId
+          in: query
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              items:
+                $ref: '#/components/schemas/MetafieldBase_Post'
+      responses:
+        '200':
+          $ref: '#/components/responses/MetafieldResponse_Post'
+  '/customers/{customerId}/metafields/{metafieldId}':
+    get:
+      summary: Get Metafields by CustomerId
+      description: |
+        Lists all available metafields for a customer. Use both `customerId` and `metafieldId` in the parameters to retrieve the full list.
+      operationId: getMetafieldsCustomerId
+      tags:
+        - Customers Metafields
+      parameters: 
+        - name: customerId
+          in: path
+          description: The ID that belongs to the customer.
+          required: true
+          schema:
+            type: integer
+        - name: metafieldId
+          in: path
+          description: The ID that is assigned to a metafield when created.
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/metafield'
+      responses:
+        '200':
+          $ref: '#/components/responses/MetafieldCollectionResponse'
+    put:
+      summary: Update a metafield
+      tags:
+      - Customers Metafields
+      description: Updates Customer metafields. Use both 'customerId' and 'metafield' in the parameter to update the customer metafields.
+      operationId: updateCustomerMetafield
+      parameters: 
+        - name: metafieldId
+          in: query
+          description: The ID that is assigned to a metafield when created.
+          schema:
+            type: integer
+        - $ref: '#/components/parameters/metafieldId'
+        - $ref: '#/components/parameters/customerId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                allOf:
+                  - $ref: '#/components/schemas/MetafieldBase_Put'
+                  - type: object
+                    properties:
+                      id:
+                        type: integer
+                        example: 42
+                        description: |
+                          The ID of metafield to update.
+                    required:
+                      - id
+        description: ''
+      responses:
+        '200':
+          $ref: '#/components/responses/MetafieldResponse_Post'
+    delete:
+      summary: Delete customer metafields
+      tags:
+        - Customers Metafields
+      description: |
+        Deletes customer metafields. Use both 'customerId' and 'metafieldId' in the parameter to delete the customer metafields.
+      parameters:
+        - $ref: '#/components/parameters/customerId'
+        - $ref: '#/components/parameters/metafieldId'
+      operationId: deleteCustomerMetafieldsId
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: integer
+        description: ''
+      responses:
+        '204':
+          description: | 
+            Response object for customer metafields deletion with success.
 components:
+  parameters:
+    customerId:
+      name: customerId
+      in: path
+      required: true
+      description: The ID of the customer.
+      schema:
+        type: integer
+    metafieldId:
+      name: metafieldId
+      in: path
+      description: The ID of the metafield belonging to the customer. The metafieldId is a generated response when sending a POST query to the Create a Customer Metafields endpoint.
+      required: true
+      schema:
+        type: integer
+  responses:
+    MetafieldResponse_Post:
+      description: Response payload for the BigCommerce API.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                $ref: '#/components/schemas/metafield'
+    MetafieldCollectionResponse:
+      description: |
+        Response payload for the BigCommerce API.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                type: array
+                items:
+                  $ref: '#/components/schemas/metafield'
+              meta:
+                $ref: '#/components/schemas/CollectionMeta'
+            x-internal: false
+    CollectionMeta:
+      description: Data about the response, including pagination and collection totals.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Pagination' 
   schemas:
     CustomerCreateData:
       title: CustomerCreateData
@@ -97,3 +282,370 @@ components:
             - type: array
               items:
                 type: string
+    metafield_Base:
+      title: metafield_Base
+      type: object
+      description: 'Metafield for products, categories, variants, and brands; the max number of metafields allowed on each is 50. For more information, see [Platform Limits](https://support.bigcommerce.com/s/article/Platform-Limits) in the Help Center.'
+      x-internal: false
+      properties:
+        key:
+          maxLength: 64
+          minLength: 1
+          type: string
+          description: |
+            The name of the field, for example: `location_id`, `color`. Required for POST.
+          example: Location
+          x-required:
+            - post
+        value:
+          maxLength: 65535
+          minLength: 1
+          type: string
+          description: |
+            The value of the field, for example: `1`, `blue`. Required for POST.
+          example: 4HG
+          x-required:
+            - post
+        namespace:
+          maxLength: 64
+          minLength: 1
+          type: string
+          description: |
+            Namespace for the metafield, for organizational purposes. This is set by the developer. Required for POST.
+          example: Warehouse Locations
+          x-required:
+            - post
+        permission_set:
+          type: string
+          description: |-
+            Determines the visibility and writeability of the field by other API consumers.
+
+            |Value|Description
+            |-|-|
+            |`app_only`|Private to the app that owns the field|
+            |`read`|Visible to other API consumers|
+            |`write`|Open for reading and writing by other API consumers|
+            |`read_and_sf_access`|Visible to other API consumers, including on storefront|
+            |`write_and_sf_access`|Open for reading and writing by other API consumers, including on storefront|
+          enum:
+            - app_only
+            - read
+            - write
+            - read_and_sf_access
+            - write_and_sf_access
+        description:
+          maxLength: 255
+          minLength: 0
+          type: string
+          description: |
+            Description for the metafields.
+          example: Location in the warehouse
+      required:
+        - permission_set
+        - namespace
+        - key
+        - value
+    metafield:
+      type: object
+      description: |
+        Common metafield properties.
+      properties:
+        permission_set:
+          type: string
+          description: |
+            Determines the visibility and writeability of the field by other API consumers.
+            | Value | Description |
+            | :--- | :--- |
+            | `app_only` | Private to the app that owns the field. |
+            | `read` | Visible to other API consumers. |
+            | `write` | Open for reading and writing by other API consumers. |
+            | `read_and_sf_access` | Visible to other API consumers, including on storefront. |
+            | `write_and_sf_access` | Open for reading and writing by other API consumers, including on storefront. |
+          enum:
+            - app_only
+            - read
+            - write
+            - read_and_sf_access
+            - write_and_sf_access
+        namespace:
+          type: string
+          description: |
+            Namespace for the metafield, for organizational purposes.
+          example: Sales Department
+          minLength: 1
+          maxLength: 64
+        key:
+          type: string
+          description: |
+            The name of the field, for example: `location_id`, `color`.
+          minLength: 1
+          maxLength: 64
+          example: Staff Name
+        value:
+          type: string
+          description: |
+            The value of the field, for example: `1`, `blue`.
+          minLength: 1
+          maxLength: 65535
+          example: Ronaldo
+        description:
+          type: string
+          description: |
+            Description for the metafields.
+          example: order
+          minLength: 0
+          maxLength: 255
+        resource_type:
+          type: string
+          description: |
+            The type of resource with which the metafield is associated.
+          enum:
+            - brand
+            - product
+            - variant
+            - category
+            - cart
+            - channel
+            - location
+            - order
+            - customer
+          example: cart
+        resource_id:
+          type: integer
+          description: |
+            The unique identifier for the resource with which the metafield is associated.
+          example: 424242
+          readOnly: true
+        id:
+          type: integer
+          description: The unique identifier for the metafield.
+        date_created:
+          type: string
+          format: date-time
+          description: Date and time of the metafieldʼs creation.
+          example: '2022-06-16T18:39:00+00:00'
+        date_modified:
+          type: string
+          format: date-time
+          description: Date and time when the metafield was last updated.
+          example: '2022-06-16T18:39:00+00:00'
+        owner_client_id:
+          type: string
+          description: Client ID for the metafieldʼs creator.
+          example: asdfasdfasdfasdfasdfasdfasdf
+          readOnly: true
+      required:
+        - namespace
+        - key
+        - value
+        - permission_set
+        - resource_type
+        - resource_id
+        - description
+        - id
+        - date_created
+        - date_modified
+      x-interal: false
+    MetafieldBase_Post:
+      type: object
+      description: |
+        Common Metafield properties.
+      x-internal: false
+      properties:
+        permission_set:
+          type: string
+          description: |
+            Determines the visibility and writeability of the field by other API consumers.
+            | Value | Description |
+            | :--- | :--- |
+            | `app_only` | Private to the app that owns the field. |
+            | `read` | Visible to other API consumers. |
+            | `write` | Open for reading and writing by other API consumers. |
+            | `read_and_sf_access` | Visible to other API consumers, including on the storefront. |
+            | `write_and_sf_access` | Open for reading and writing by other API consumers, including on the storefront. |
+          enum:
+            - app_only
+            - read
+            - write
+            - read_and_sf_access
+            - write_and_sf_access
+        namespace:
+          type: string
+          description: |
+            Namespace for the metafield, for organizational purposes.
+          example: Sales Department
+          minLength: 1
+          maxLength: 64
+        key:
+          type: string
+          description: |
+            The name of the field, for example: `location_id`, `color`.
+          minLength: 1
+          maxLength: 64
+          example: Staff Name
+        value:
+          type: string
+          description: |
+            The value of the field, for example: `1`, `blue`.
+          minLength: 1
+          maxLength: 65535
+          example: Ronaldo
+        description:
+          type: string
+          description: |
+            Description for the metafields.
+          minLength: 0
+          maxLength: 255
+          example: Name of Staff Member
+      required:
+        - permission_set
+        - namespace
+        - key
+        - value
+    MetafieldBase_Put:
+        type: object
+        description: |
+          Common Metafield properties.
+        x-internal: false
+        properties:
+          permission_set:
+            type: string
+            description: |
+              Determines the visibility and writeability of the field by other API consumers.
+              | Value | Description |
+              | :--- | :--- |
+              | `app_only` | Private to the app that owns the field. |
+              | `read` | Visible to other API consumers. |
+              | `write` | Open for reading and writing by other API consumers. |
+              | `read_and_sf_access` | Visible to other API consumers, including on the storefront. |
+              | `write_and_sf_access` | Open for reading and writing by other API consumers, including on the storefront. |
+            enum:
+              - app_only
+              - read
+              - write
+              - read_and_sf_access
+              - write_and_sf_access
+          namespace:
+            type: string
+            description: |
+              Namespace for the metafield, for organizational purposes.
+            example: Sales Department
+            minLength: 1
+            maxLength: 64
+          key:
+            type: string
+            description: |
+              The name of the field, for example: `location_id`, `color`.
+            minLength: 1
+            maxLength: 64
+            example: Staff Name
+          value:
+            type: string
+            description: |
+              The value of the field, for example: `1`, `blue`.
+            minLength: 1
+            maxLength: 65535
+            example: Ronaldo
+          description:
+            type: string
+            description: |
+              Description for the metafields.
+            minLength: 0
+            maxLength: 255
+            example: Name of Staff Member
+    CollectionMeta:
+      type: object
+      description: Data about the response, including pagination and collection totals.
+      properties:
+        pagination:
+          type: object
+          description: Data about the response, including pagination and collection totals.
+          title: Pagination
+          properties:
+            total:
+              type: integer
+              description: |
+                Total number of items in the result set.
+              example: 36
+            count:
+              type: integer
+              description: |
+                Total number of items in the collection response.
+              example: 36
+            per_page:
+              type: integer
+              description: |
+                The amount of items returned in the collection per page, controlled by the limit parameter.
+              example: 50
+            current_page:
+              type: integer
+              description: |
+                The page you are currently on within the collection.
+              example: 1
+            total_pages:
+              type: integer
+              description: |
+                The total number of pages in the collection.
+              example: 1
+            links:
+              type: object
+              description: |
+                Pagination links for the previous and next parts of the whole collection.
+              properties:
+                previous:
+                  type: string
+                  description: |
+                    Link to the previous page returned in the response.
+                current:
+                  type: string
+                  description: |
+                    Link to the current page returned in the response.
+                  example: '?page=1&limit=50'
+                next:
+                  type: string
+                  description: |
+                    Link to the next page returned in the response.
+      additionalProperties: true
+      title: Collection Meta
+      x-internal: false
+    Pagination:
+      title: Pagination
+      description: Data about the response, including pagination and collection totals.
+      type: object
+      properties:
+        total:
+          description: Total number of items in the result set.
+          type: integer
+          format: int32
+        count:
+          description: Total number of items in the collection response.
+          type: integer
+          format: int32
+        per_page:
+          description: 'The amount of items returned in the collection per page, controlled by the limit parameter.'
+          type: integer
+          format: int32
+        current_page:
+          description: The page you are currently on within the collection.
+          type: integer
+          format: int32
+        total_pages:
+          description: The total number of pages in the collection.
+          type: integer
+          format: int32
+        links:
+          $ref: '#/components/schemas/Links'
+    Links:
+      title: Links
+      description: Pagination links for the previous and next parts of the whole collection.
+      type: object
+      properties:
+        previous:
+          description: Link to the previous page returned in the response.
+          type: string
+        current:
+          description: Link to the current page returned in the response.
+          type: string
+        next:
+          description: Link to the next page returned in the response.
+          type: string

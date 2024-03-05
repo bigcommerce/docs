@@ -177,7 +177,7 @@ paths:
 
         **Notes**
 
-        * When including `published_date` in a request, supply it as a flat date string (not an object) in valid <a href="http://tools.ietf.org/html/rfc2822#section-3.3" target="_blank">RFC 2822</a>. The&#160;example request below includes a `published_date` in RFC 2822 format.
+        * When including `published_date` in a request, supply it as a flat date string (not an object) in valid <a href="http://tools.ietf.org/html/rfc2822#section-3.3" target="_blank">RFC 2822</a>. The following example request includes a `published_date` in RFC 2822 format.
         * Blog posts default to draft status. To publish blog posts to the storefront, set the `is_published` property to `true`.
         * If a custom URL is not provided, the post’s URL will be generated based on the value of `title`.
       operationId: createBlogPosts
@@ -304,7 +304,7 @@ paths:
 
         **Notes**
 
-        * When including `published_date` in a request, supply it as a flat date string (not an object) in valid <a href="http://tools.ietf.org/html/rfc2822#section-3.3" target="_blank">RFC 2822</a>. The&#160;example request below includes a `published_date` in RFC 2822 format.
+        * When including `published_date` in a request, supply it as a flat date string (not an object) in valid <a href="http://tools.ietf.org/html/rfc2822#section-3.3" target="_blank">RFC 2822</a>. The following example request includes a `published_date` in RFC 2822 format.
 
         * Blog posts default to draft status. To publish blog posts to the storefront, set the `is_published` property to `true`.
       operationId: updateBlogPost
@@ -350,7 +350,6 @@ paths:
             application/json:
               schema:
                 type: object
-      x-codegen-request-body-name: body
     delete:
       tags:
         - Blog Posts
@@ -531,7 +530,6 @@ paths:
             application/json:
               schema:
                 type: object
-      x-codegen-request-body-name: body
   '/pages/{id}':
     parameters:
       - $ref: '#/components/parameters/Accept'
@@ -605,7 +603,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/page_Base'
+              $ref: '#/components/schemas/page_Full'
         required: false
       responses:
         '200':
@@ -613,7 +611,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/page_Base'
+                $ref: '#/components/schemas/page_Full'
               example:
                 id: 2
                 name: Shipping & Returns
@@ -640,7 +638,6 @@ paths:
             application/json:
               schema:
                 type: object
-      x-codegen-request-body-name: body
     delete:
       deprecated: true
       tags:
@@ -742,7 +739,6 @@ paths:
                   type: category
                   ref: 3
                 url: 'http://store.example.com/mens'
-      x-codegen-request-body-name: body
     delete:
       deprecated: true
       tags:
@@ -798,7 +794,7 @@ paths:
                 forward:
                   type: product
                   ref: 111
-                url: 'http://store-url.mybigcommerce.com/towels/bath-towels/hand-towels/'
+                url: 'http://store-store_hash.mybigcommerce.com/towels/bath-towels/hand-towels/'
     put:
       tags:
         - Redirects
@@ -853,15 +849,16 @@ paths:
                       example: '111'
                 url:
                   type: string
-                  description: URL of the redirect. READ-ONLY
-                  example: 'http://store-url.mybigcommerce.com/towels/bath-towels/hand-towels/'
+                  description: URL of the redirect. READ-ONLY.
+                  readOnly: true
+                  example: 'http://store-store_hash.mybigcommerce.com/towels/bath-towels/hand-towels/'
               example:
                 id: 1
                 path: /smith-journal-13/
                 forward:
                   type: product
                   ref: '111'
-                url: 'http://store-url.mybigcommerce.com/towels/bath-towels/hand-towels/'
+                url: 'http://store-store_hash.mybigcommerce.com/towels/bath-towels/hand-towels/'
         required: true
       responses:
         '200':
@@ -876,8 +873,7 @@ paths:
                 forward:
                   type: product
                   ref: 111
-                url: 'http://store-url.mybigcommerce.com/towels/bath-towels/hand-towels/'
-      x-codegen-request-body-name: body
+                url: 'http://store-store_hash.mybigcommerce.com/towels/bath-towels/hand-towels/'
     delete:
       tags:
         - Redirects
@@ -1029,13 +1025,14 @@ components:
           type: string
           description: URL of the redirect. READ-ONLY.
           readOnly: true
+          example: 'http://store-store_hash.mybigcommerce.com/towels/bath-towels/hand-towels/'
       example:
         id: 1
         path: /smith-journal-13/
         forward:
           type: product
           ref: 111
-        url: 'http://store-url.mybigcommerce.com/towels/bath-towels/hand-towels/'
+        url: 'http://store-store_hash.mybigcommerce.com/towels/bath-towels/hand-towels/'
       x-internal: false
     forward:
       title: forward
@@ -1149,17 +1146,15 @@ components:
           type: string
           description: |-
             + `all` - Customers can access all categories
-             + `specific`  - Customers can access a specific list of categories
+            + `specific`  - Customers can access a specific list of categories
             + `none` - Customers are prevented from viewing any of the categories in this group.
           enum:
             - all
             - specific
             - none
         categories:
+          description: A comma-separated list of category IDs. Should be supplied only if `type` is `specific`.
           type: array
-          description: Is an array of category IDs and should be supplied only if `type` is specific.
-          example:
-            - '18,19,23,34'
           items:
             type: integer
       x-internal: false
@@ -1169,7 +1164,8 @@ components:
       properties:
         name:
           type: string
-          description: 'A string identifying the time zone, in the format: <Continent-name>/<City-name>.'
+          description: |
+            A string identifying the time zone, in the format: `<Continent-name>/<City-name>`.
           example: America/Chicago
         raw_offset:
           type: integer
@@ -1288,7 +1284,7 @@ components:
           example: BigCommerce
         thumbnail_path:
           type: string
-          description: 'Local path to a thumbnail uploaded to `/product_images/` via [WebDav](https://support.bigcommerce.com/s/article/File-Access-WebDAV).'
+          description: 'Local path to a thumbnail uploaded to `/product_images/` using [WebDAV](https://support.bigcommerce.com/s/article/File-Access-WebDAV).'
         published_date:
           type: string
           example: 'Wed, 10 Aug 2022 15:39:15 -0500'
@@ -1354,7 +1350,7 @@ components:
         published_date_iso8601:
           type: string
           description: Published date in `ISO 8601` format.
-          example: '5/18/2018 1:26:42 PM'
+          example: '5/18/2023 1:26:42 PM'
         meta_description:
           type: string
           description: Description text for this blog post’s `<meta/>` element.
@@ -1369,7 +1365,7 @@ components:
           example: BigCommerce
         thumbnail_path:
           type: string
-          description: 'Local path to a thumbnail uploaded to `/product_images/` via [WebDav](https://support.bigcommerce.com/s/article/File-Access-WebDAV).'
+          description: 'Local path to a thumbnail uploaded to `/product_images/` using [WebDAV](https://support.bigcommerce.com/s/article/File-Access-WebDAV).'
       required:
         - title
         - body
@@ -1417,7 +1413,7 @@ components:
         published_date_iso8601:
           type: string
           description: Published date in `ISO 8601` format.
-          example: '5/18/2018 1:26:42 PM'
+          example: '5/18/2023 1:26:42 PM'
         meta_description:
           type: string
           description: Description text for this blog post’s `<meta/>` element.
@@ -1435,7 +1431,7 @@ components:
           nullable: true
         thumbnail_path:
           type: string
-          description: 'Local path to a thumbnail uploaded to `/product_images/` via [WebDav](https://support.bigcommerce.com/s/article/File-Access-WebDAV).'
+          description: 'Local path to a thumbnail uploaded to `/product_images/` using [WebDAV](https://support.bigcommerce.com/s/article/File-Access-WebDAV).'
           nullable: true
     publishedDate:
       type: object
@@ -1477,7 +1473,11 @@ components:
           example: 5
         type:
           type: string
-          description: "`page`: free-text page  \n`link`: link to another web address  \n`rss_feed`: syndicated content from an RSS feed  \n`contact_form`: When the store's contact form is used.\n\n\t"
+          description: |
+            `page`: free-text page
+            `link`: link to another web address
+            `rss_feed`: syndicated content from an RSS feed
+            `contact_form`: When the store’s contact form is used
           enum:
             - page
             - rss_feed
@@ -1490,7 +1490,7 @@ components:
           example: 'fullname,companyname,phone,orderno,rma'
         email:
           type: string
-          description: 'Where the page’s type is a contact form: email address that receives messages sent via the form.'
+          description: Where the page’s type is a contact form, the email address that receives messages sent using the form.
           example: janedoes@example.com
         name:
           type: string
@@ -1509,7 +1509,7 @@ components:
           example: "<p>We're happy to answer questions or help you with returns.<br />Please fill out the form below if you need assistance.</p>"
         mobile_body:
           type: string
-          description: HTML to use for this page's body when viewed in the mobile template (deprecated).
+          description: HTML to use for this page’s body when viewed in the mobile template (deprecated).
           example: '0'
         has_mobile_version:
           type: boolean
@@ -1525,7 +1525,7 @@ components:
           example: false
         meta_title:
           type: string
-          description: 'Text specified for this page’s `<title>` element. (If empty, the value of the name property is used.)'
+          description: Text specified for this page’s `<title>` element. If empty, the value of the name property is used.
         layout_file:
           type: string
           description: Layout template for this page. This field is writable only for stores with a Blueprint theme applied.
@@ -1568,7 +1568,11 @@ components:
           example: 5
         type:
           type: string
-          description: "`page`: free-text page  \n`link`: link to another web address  \n`rss_feed`: syndicated content from an RSS feed  \n`contact_form`: When the store's contact form is used.\n\n\t"
+          description: |
+            `page`: free-text page
+            `link`: link to another web address
+            `rss_feed`: syndicated content from an RSS feed
+            `contact_form`: When the store’s contact form is used
           enum:
             - page
             - rss_feed
@@ -1581,7 +1585,7 @@ components:
           example: 'fullname,companyname,phone,orderno,rma'
         email:
           type: string
-          description: 'Where the page’s type is a contact form: email address that receives messages sent via the form.'
+          description: Where the page’s type is a contact form, the email address that receives messages sent using the form.
           example: janedoes@example.com
         name:
           type: string
@@ -1600,7 +1604,7 @@ components:
           example: "<p>We're happy to answer questions or help you with returns.<br />Please fill out the form below if you need assistance.</p>"
         mobile_body:
           type: string
-          description: HTML to use for this page's body when viewed in the mobile template (deprecated).
+          description: HTML to use for this page’s body when viewed in the mobile template (deprecated).
           example: '0'
         has_mobile_version:
           type: boolean
@@ -1612,11 +1616,11 @@ components:
           example: true
         is_homepage:
           type: boolean
-          description: 'If true, this page is the storefront’s home page.'
+          description: If true, this page is the storefront’s home page.
           example: false
         meta_title:
           type: string
-          description: 'Text specified for this page’s `<title>` element. (If empty, the value of the name property is used.)'
+          description: Text specified for this page’s `<title>` element. If empty, the value of the name property is used.
         layout_file:
           type: string
           description: Layout template for this page. This field is writable only for stores with a Blueprint theme applied.

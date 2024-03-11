@@ -97,7 +97,7 @@ X-Bc-Customer-Id: 123
 # This query retrieves one product.
 query SingleProduct ($entityId: Int) {
   site {
-    product (entityId: $entityId}) {
+    product(entityId: $entityId}) {
       id
       entityId
       name
@@ -134,7 +134,7 @@ Make note of one of the cart's `entityId` displayed in the response. You will ne
     mutation createCartSimple($createCartInput: CreateCartInput!) {
       cart {
         createCart(input: $createCartInput) {
-          cart {
+          cart(entityId: $entityId) {
             entityId
             lineItems {
               physicalItems {
@@ -214,7 +214,7 @@ To add a new line item to the existing cart, add the cart ID to the GraphQL vari
     mutation addCartLineItems($addCartLineItemsInput: AddCartLineItemsInput!) {
       cart {
         addCartLineItems(input: $addCartLineItemsInput) {
-          cart {
+          cart(entityId: $entityId) {
             entityId
           }
         }
@@ -272,9 +272,9 @@ You can access Cart and Checkout details in the same request as other informatio
     Authorization: Bearer {{CUSTOMER_IMPERSONATION_TOKEN}}
     X-Bc-Customer-Id: 123
 
-    query getCheckout {
+    query getCheckout($entityId: Int) {
       site {
-        checkout {
+        checkout(entityId: $entityId) {
           entityId
           billingAddress {
             ...CheckoutBillingAddressFields
@@ -282,7 +282,7 @@ You can access Cart and Checkout details in the same request as other informatio
           shippingConsignments {
             ...CheckoutShippingConsignmentFields
           }
-          order {
+          order(entityId: $entityId) {
             entityId
           }
           shippingCostTotal {
@@ -348,7 +348,7 @@ You can access Cart and Checkout details in the same request as other informatio
       countryCode
       postalCode
       phone
-      customFields {
+      customFields(entityId: $entityId) {
         entityId
         ... on CheckoutAddressCheckboxesCustomField {
           valueEntityIds
@@ -373,7 +373,7 @@ You can access Cart and Checkout details in the same request as other informatio
       }
     }
 
-    fragment CheckoutShippingConsignmentFields on CheckoutShippingConsignment {
+    fragment CheckoutShippingConsignmentFields on CheckoutShippingConsignment(entityId: $entityId)  {
       entityId
       address {
         ...CheckoutConsignmentAddressFields
@@ -396,7 +396,7 @@ You can access Cart and Checkout details in the same request as other informatio
       lineItemIds
     }
 
-    fragment CheckoutAvailableShippingOptionFields on CheckoutAvailableShippingOption {
+    fragment CheckoutAvailableShippingOptionFields on CheckoutAvailableShippingOption(entityId: $entityId) {
       entityId
       description
       type
@@ -408,7 +408,7 @@ You can access Cart and Checkout details in the same request as other informatio
       isRecommended
     }
 
-    fragment CheckoutSelectedShippingOptionFields on CheckoutSelectedShippingOption {
+    fragment CheckoutSelectedShippingOptionFields on CheckoutSelectedShippingOption(entityId: $entityId) {
       entityId
       description
       type
@@ -424,7 +424,7 @@ You can access Cart and Checkout details in the same request as other informatio
       currencyCode
     }
 
-    fragment CheckoutCouponFields on CheckoutCoupon {
+    fragment CheckoutCouponFields on CheckoutCoupon(entityId: $entityId) {
       entityId
       code
       couponType
@@ -441,7 +441,7 @@ You can access Cart and Checkout details in the same request as other informatio
     }
 
     fragment CheckoutPromotionFields on CheckoutPromotion {
-      banners {
+      banners(entityId: $entityId) {
         entityId
         type
         locations
@@ -529,7 +529,7 @@ X-Bc-Customer-Id: 123
 mutation addCheckoutBillingAddress($addCheckoutBillingAddressInput: AddCheckoutBillingAddressInput!) {
   checkout {
     addCheckoutBillingAddress(input: $addCheckoutBillingAddressInput) {
-      checkout {
+      checkout(entityId: $entityId) {
         entityId
       }
     }
@@ -585,7 +585,7 @@ mutation addCheckoutBillingAddress($addCheckoutBillingAddressInput: AddCheckoutB
 This mutation adds a shipping consignment to an existing checkout.
 
 <Callout type="info">
-Make note of a shipping consignment's `entityId` displayed in the response. You will need to use it in a later step. 
+Make a note of a shipping consignment's `entityId` and an available shipping option `entityId` displayed in the response. You will need to use these in later steps. 
 </Callout>
 
 <Tabs items={['Request', 'Response']}>
@@ -598,14 +598,14 @@ X-Bc-Customer-Id: 123
 mutation addCheckoutShippingConsignments($addCheckoutShippingConsignmentsInput: AddCheckoutShippingConsignmentsInput!) {
   checkout {
     addCheckoutShippingConsignments(input: $addCheckoutShippingConsignmentsInput) {
-      checkout {
+      checkout(entityId: $entityId) {
         entityId
-        shippingConsignments {
+        shippingConsignments(entityId: $entityId) {
           entityId
-          availableShippingOptions {
+          availableShippingOptions(entityId: $entityId) {
             entityId
           }
-          selectedShippingOption {
+          selectedShippingOption(entityId: $entityId) {
             entityId
           }
         }
@@ -695,7 +695,7 @@ This mutation sets a selected shipping to an existing checkout.
 mutation selectCheckoutShippingOption($selectCheckoutShippingOptionInput: SelectCheckoutShippingOptionInput!) {
     checkout {
       selectCheckoutShippingOption(input: $selectCheckoutShippingOptionInput) {
-        checkout {
+        checkout(entityId: $entityId) {
           entityId
         }
       }

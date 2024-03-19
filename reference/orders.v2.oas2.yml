@@ -241,6 +241,7 @@ paths:
         - $ref: '#/components/parameters/is_deleted'
         - $ref: '#/components/parameters/channel_id'
         - $ref: '#/components/parameters/order_includes'
+        - $ref: '#/components/parameters/external_order_id'
       responses:
         '200':
           $ref: '#/components/responses/orderCollection_Resp'
@@ -630,7 +631,19 @@ paths:
 
         3. Supply a custom `tracking_link`: By providing a value for the `tracking_link` property, you can use your own tracking link within the BigCommerce control panel and in customer-facing emails. The API response will return your supplied tracking link as part of the `tracking_link` property in the response. In situations when there isn't a `generated_tracking_link`, the property in the API response will remain empty. 
         
-        Acceptable values for `shipping_provider` include an empty string (`""`), `auspost`, `carrier_{your_carrier_id}` (only used if the carrier is a [third-party Shipping Provider](/docs/integrations/shipping)), `canadapost`, `endicia`, `usps`, `fedex`, `royalmail`, `ups`, `upsready`, `upsonline`, or `shipperhq`.
+        Acceptable values for `shipping_provider` include the following, and this list may be updated at any time: 
+         - `""`, an empty string
+         - `auspost`
+         - `canadapost
+         - `endicia`
+         - `usps`
+         - `fedex`
+         - `royalmail`
+         - `ups`
+         - `upsready`
+         - `upsonline`
+         - `shipperhq`
+         - `carrier_{your_carrier_id}`, when the carrier is a [third-party Shipping Provider](/docs/integrations/shipping) 
         
         Acceptable values for `tracking_carrier` include an empty string (`""`) or one of the valid [tracking-carrier values](https://github.com/bigcommerce/dev-docs/blob/master/assets/csv/tracking_carrier_values.csv).
       summary: Create Order Shipment
@@ -1042,6 +1055,12 @@ components:
       schema:
         type: string
         default: 'application/json'
+    external_order_id:
+      name: external_order_id
+      in: query
+      description: The order ID in another system, such as the Amazon Order ID if this is an Amazon order. After setting it, you can update this field using a POST or PUT request.
+      schema:
+        type: string
     min_id:
       name: min_id
       in: query
@@ -2643,6 +2662,28 @@ components:
       type: apiKey
       in: header
   schemas:
+    shipping_provider_standard:
+      title: Standard Shipping Provider
+      type: string
+      description: An enum identifying one of several core shipping providers.
+      enum:
+        - auspost
+        - canadapost
+        - endicia
+        - usps
+        - fedex
+        - ups
+        - upsready
+        - upsonline
+        - shipperhq
+        - royalmail
+        - ''
+      example: shipperhq
+    shipping_provider_custom:
+      title: Custom Shipping Provider
+      type: string
+      description: A string identifying the shipping provider. Some shipping providers may not be listed in the preceding enum list. In addition, if the carrier is a [third-party Shipping Provider](/docs/integrations/shipping), the string takes the form `carrier_{your_carrier_id}`.
+      example: carrier_1234567
     order_Resp:
       title: order_Resp
       description: Order object returned in responses.
@@ -2810,13 +2851,13 @@ components:
           example: 1
           type: integer
         base_cost_price:
-          description: The product’s cost price.  This can be set using the Catalog API. (Float, Float-As-String, Integer) 
+          description: The product’s cost price.  This can be set using the Catalog API. (Float, Float-As-String, Integer)
           example: '50.0000'
           type: string
         cost_price_inc_tax:
           description: |-
             The product’s cost price including tax. (Float, Float-As-String, Integer)
-            The cost of your products to you; this is never shown to customers, but can be used for accounting purposes. 
+            The cost of your products to you; this is never shown to customers, but can be used for accounting purposes.
           example: '50.0000'
           type: string
         cost_price_ex_tax:
@@ -2925,7 +2966,7 @@ components:
           type: string
           nullable: true
           readOnly: true
-        brand: 
+        brand:
           description: The productʼs brand.
           type: string
         applied_discounts:
@@ -3155,26 +3196,16 @@ components:
           example: Ship by Weight
           type: string
         shipping_provider:
-          type: string
-          description: Enum of the BigCommerce shipping-carrier integration/module.
-          enum:
-            - auspost
-            - canadapost
-            - carrier_{your_carrier_id} (only used if the carrier is a [third-party Shipping Provider](/docs/integrations/shipping))
-            - endicia
-            - usps
-            - fedex
-            - ups
-            - upsready
-            - upsonline
-            - shipperhq
-            - ''
+          anyOf:
+            - $ref: '#/components/schemas/shipping_provider_standard'
+            - $ref: '#/components/schemas/shipping_provider_custom'
         tracking_carrier:
           type: string
           title: Tracking Carrier
           description: |-
             Tracking carrier for the shipment.
             Acceptable values for `tracking_carrier` include an empty string (`""`) or one of the valid [tracking-carrier values](https://github.com/bigcommerce/dev-docs/blob/master/assets/csv/tracking_carrier_values.csv).
+          example: ""
         tracking_link:
           type: string
           description: The custom tracking link supplied on POST or PUT shipments. For the auto-generated tracking link see the `generated_tracking_link` property.
@@ -3555,25 +3586,16 @@ components:
           example: Ship by Weight
           type: string
         shipping_provider:
-          type: string
-          description: Enum of the BigCommerce shipping-carrier integration/module.
-          enum:
-            - auspost
-            - canadapost
-            - carrier_{your_carrier_id} (only used if the carrier is a [third-party Shipping Provider](/docs/integrations/shipping))
-            - endicia
-            - usps
-            - fedex
-            - ups
-            - upsready
-            - upsonline
-            - shipperhq
+          anyOf:
+            - $ref: '#/components/schemas/shipping_provider_standard'
+            - $ref: '#/components/schemas/shipping_provider_custom'
         tracking_carrier:
           type: string
           title: Tracking Carrier
           description: |-
             Tracking carrier for the shipment.
             Acceptable values for `tracking_carrier` include an empty string (`""`) or one of the valid [tracking-carrier values](https://github.com/bigcommerce/dev-docs/blob/master/assets/csv/tracking_carrier_values.csv).
+          example: ""
         comments:
           type: string
           description: Comments the shipper wishes to add.
@@ -3610,25 +3632,16 @@ components:
           example: Ship by Weight
           type: string
         shipping_provider:
-          type: string
-          description: Enum of the BigCommerce shipping-carrier integration/module.
-          enum:
-            - auspost
-            - canadapost
-            - carrier_{your_carrier_id} (only used if the carrier is a [third-party Shipping Provider](/docs/integrations/shipping))
-            - endicia
-            - usps
-            - fedex
-            - ups
-            - upsready
-            - upsonline
-            - shipperhq
+          anyOf:
+            - $ref: '#/components/schemas/shipping_provider_standard'
+            - $ref: '#/components/schemas/shipping_provider_custom'
         tracking_carrier:
           type: string
           title: Tracking Carrier
           description: |-
             Tracking carrier for the shipment.
             Acceptable values for `tracking_carrier` include an empty string (`""`) or one of the valid [tracking-carrier values](https://github.com/bigcommerce/dev-docs/blob/master/assets/csv/tracking_carrier_values.csv).
+          example: ""
         tracking_link:
           type: string
           description: The custom tracking link supplied on POST or PUT shipments. For the auto-generated tracking link see the `generated_tracking_link` property.
@@ -3698,8 +3711,6 @@ components:
           description: The value of the base wrapping cost expressed as a floating point number to four decimal places in string format.
           example: '0.0000'
           type: string
-        billing_address:
-          $ref: '#/components/schemas/billingAddress_Base'
         channel_id:
           description: Shows where the order originated. The channel_id will default to 1.
           example: 1
@@ -3712,9 +3723,6 @@ components:
           type: string
         date_created:
           description: The date the order was created, formatted in the RFC-2822 standard. You set this attribute on Order creation (POST) to support the migration of historical orders. If you do not provide a value, then it will default to the current date/time. e.g., `Tue, 20 Nov 2012 00:00:00 +0000`.
-          type: string
-        default_currency_code:
-          description: The currency code of the transactional currency the shopper pays in; writeable when multi-currency is enabled.
           type: string
         discount_amount:
           description: Amount of discount for this transaction. (Float, Float-As-String, Integer)
@@ -3837,15 +3845,12 @@ components:
           type: string
         tax_provider_id:
           description: |
+            Read-only.
             BasicTaxProvider - Tax is set to manual and order is created in the store.
             
             AvaTaxProvider - Tax is set to automatic and order is created in the store. Used for Avalara.
             
             "" (empty string) - The order is created with the API, or the tax provider is unknown.
-          enum:
-            - BasicTaxProvider
-            - AvaTaxProvider
-            - ''
           type: string
         customer_locale:
           type: string
@@ -4104,12 +4109,7 @@ components:
           example: 7
           description: The status ID of the order.
         billing_address:
-          type: object
-          properties:
-            form_fields:
-              type: array
-              items:
-                $ref: '#/components/schemas/formFields'
+          $ref: '#/components/schemas/billingAddress_Resp'
     orderCustomProduct_Put:
       type: object
       title: Custom product
@@ -4212,8 +4212,8 @@ components:
                 description: |-
                   The product’s cost price including tax. (Float, Float-As-String, Integer)
                   The cost of your products to you; this is never shown to customers, but can be used for accounting purposes.
-                example: '50.0000' 
-              price_ex_tax:  
+                example: '50.0000'
+              price_ex_tax:
                 type: string
                 description: |-
                   The products cost price excluding tax. (Float, Float-As-String, Integer)
@@ -4416,7 +4416,7 @@ components:
               example: '0'
               type: string
             external_id:
-              description: (Read-only) The order ID in another system, such as the Amazon Order ID if this is an Amazon order.  
+              description: (Read-only) The order ID in another system, such as the Amazon Order ID if this is an Amazon order.
               example: null
               type: string
               nullable: true
@@ -4537,15 +4537,12 @@ components:
               type: string
             tax_provider_id:
               description: |
+                Read-only.
                 BasicTaxProvider - Tax is set to manual and order is created in the store.
                 
                 AvaTaxProvider - Tax is set to automatic and order is created in the store. Used for Avalara.
                 
                 "" (empty string) - The order is created with the API, or the tax provider is unknown.
-              enum:
-                - BasicTaxProvider
-                - AvaTaxProvider
-                - ''
               type: string
             customer_locale:
               type: string
@@ -4555,7 +4552,7 @@ components:
               type: string
               nullable: true
               example: external-order-id
-              description: The order ID in another system, such as the Amazon Order ID if this is an Amazon order. After setting it, you can update this field using a POST or PUT request. 
+              description: The order ID in another system, such as the Amazon Order ID if this is an Amazon order. After setting it, you can update this field using a POST or PUT request.
             total_ex_tax:
               description: Override value for the total, excluding tax. If specified, the field `total_inc_tax` is also required. (Float, Float-As-String, Integer)
               example: '225.0000'
@@ -4578,6 +4575,11 @@ components:
       allOf:
         - type: object
           properties:
+            billing_address:
+              $ref: '#/components/schemas/billingAddress_Base'
+            default_currency_code:
+              description: The currency code of the transactional currency the shopper pays in is writeable when multi-currency is enabled.
+              type: string
             products:
               type: array
               items:
@@ -4602,6 +4604,15 @@ components:
               items:
                 $ref: '#/components/schemas/formFields'
     billingAddress_Put:
+      allOf:
+        - $ref: '#/components/schemas/billingAddress_Base'
+        - type: object
+          properties:
+            form_fields:
+              type: array
+              items:
+                $ref: '#/components/schemas/formFields'
+    billingAddress_Resp:
       allOf:
         - $ref: '#/components/schemas/billingAddress_Base'
         - type: object

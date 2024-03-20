@@ -12,4 +12,7 @@ RUN npm install -g bigcommerce/dev-docs-style-guide-linter#updated-messages --sa
 
 COPY entrypoint.sh /entrypoint.sh
 
+# Set execute permissions for the entrypoint script
+RUN chmod +x /entrypoint.sh
+
 ENTRYPOINT ["/entrypoint.sh"]

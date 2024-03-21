@@ -1,4 +1,4 @@
-# End-to-End Guide: Headless Checkout Flow with GraphQL APIs
+# End-to-End Guide: Headless checkout flow with the GraphQL Storefront API
 
 The BigCommerce GraphQL Storefront API lets server-side and browser-side clients manage product, cart, and checkout objects to build storefront features. The GraphQL Storefront API can solve the same use cases as our REST Management API's cart and checkout features, but makes it easier to build headless storefront applications. Developers using the GraphQL Storefront API can spend less time focusing on API interactions and more time building the shopper experience.
 
@@ -67,41 +67,54 @@ In the playground, add the customer impersonation token to the **Headers** tab a
 
 ## Querying product data
 
-The GraphQL Storefront API lets you retrieve product data from a store. The following example demonstrates how to query a simple product using the GraphQL Storefront API. Pricing and visibility response values can vary based on the customer. For more information and examples, see the [Guide to Working with Products](/docs/storefront/graphql/examples/products).
+The GraphQL Storefront API lets you retrieve product data from a store. The following example demonstrates how to query a simple product using the GraphQL Storefront API. Pricing and visibility response values can vary based on the customer. For more information and examples, see the [Guide to working with products](/docs/storefront/graphql/examples/products).
 
 <Callout type="info">
-#### Query best practices
-* Query less than 50 resources at a time.
-* Limit query complexity where possible.
-* Limit pagination where possible.
-* Employ security practices and limit scope where possible.
-* Employ caching where possible.
+When possible, use the following best practices for queries to the GraphQL Storefront API.
+* Query fewer than 50 resources at a time.
+* Limit query complexity.
+* Limit pagination.
+* Employ security practices and limit scope.
+* Cache data to avoid repeat fetching of data that hasn't changed.
 </Callout>
 
-```graphql filename="Get a product" showLineNumbers copy
-GET https://store.example.com/graphql
-Authorization: Bearer {{CUSTOMER_IMPERSONATION_TOKEN}}
-X-Bc-Customer-Id: 123
+<Tabs items={["Request", "Response"]}>
+  <Tab>
+    ```http filename="Get a product" showLineNumbers copy
+    GET https://store.example.com/graphql
+    Authorization: Bearer {{CUSTOMER_IMPERSONATION_TOKEN}}
+    Accept: application/json
+    X-Bc-Customer-Id: 123
 
-# This query retrieves one product.
-query SingleProduct ($entityId: Int) {
-  site {
-    product(entityId: $entityId}) {
-      id
-      entityId
-      name
-      sku
-      description
-      prices {
-        price {
-          value
-          currencyCode
+    # This query retrieves one product.
+    query SingleProduct ($entityId: Int) {
+      site {
+        product(entityId: $entityId) {
+          id
+          entityId
+          name
+          sku
+          description
+          prices {
+            price {
+              value
+              currencyCode
+            }
+          }
         }
       }
     }
-  }
-}
-```
+    ```
+
+  </Tab>
+  <Tab>
+
+    ```http filename="Get a product" showLineNumbers copy
+
+    ```
+
+  </Tab>
+</Tabs>
 
 ## Creating a cart
 
@@ -111,10 +124,11 @@ BigCommerce's GraphQL Storefront API provides the same cart and checkout objects
 Make note of one of the cart's `entityId` displayed in the response. You will need to use it in later steps.
 </Callout>
 
-<Tabs items={['Request', 'Response']}>
+<Tabs items={['Request', 'Input variables', 'Response']}>
   <Tab>
-    ```graphql filename="Example mutation: Create a cart (simple)" showLineNumbers copy
+    ```graphql filename="Create a cart (simple)" showLineNumbers copy
     POST https://store.example.com/graphql
+    Accept: application/json
     Authorization: Bearer {{CUSTOMER_IMPERSONATION_TOKEN}}
     X-Bc-Customer-Id: 123
 
@@ -147,100 +161,104 @@ Make note of one of the cart's `entityId` displayed in the response. You will ne
       }
     }
     ```
+  </Tab>
+  <Tab>
 
-    ```json filename="GraphQL variables" showLineNumbers copy 
-    {
-      "createCartInput": {
-        "lineItems": [
-          {
-            "quantity": 1,
-            "productEntityId": 111
-          }
-        ]
+    ```json filename="Create a cart (simple)" showLineNumbers copy 
+      {
+        "createCartInput": {
+          "lineItems": [
+            {
+              "quantity": 1,
+              "productEntityId": 111
+            }
+          ]
+        }
       }
-    }
     ```
   </Tab>
   <Tab>
-    ```json filename="Example mutation: Create a cart (simple)" showLineNumbers copy
-    {
-      "data": {
-        "cart": {
-          "createCart": {
-            "cart": {
-              "entityId": "bb916deb-ddd6-4586-b65b-b8385e0e7a9d",
-              "lineItems": {
-                "physicalItems": [
-                  {
-                    "name": "[Sample] Smith Journal 13",
-                    "quantity": 1
-                  }
-                ],
-                "digitalItems": [],
-                "giftCertificates": [],
-                "customItems": []
+    ```json filename="Create a cart (simple)" showLineNumbers copy
+      {
+        "data": {
+          "cart": {
+            "createCart": {
+              "cart": {
+                "entityId": "bb916deb-ddd6-4586-b65b-b8385e0e7a9d",
+                "lineItems": {
+                  "physicalItems": [
+                    {
+                      "name": "[Sample] Smith Journal 13",
+                      "quantity": 1
+                    }
+                  ],
+                  "digitalItems": [],
+                  "giftCertificates": [],
+                  "customItems": []
+                }
               }
             }
           }
         }
       }
-    }
     ```
   </Tab>
 </Tabs>
 
 ## Add cart line items
 
-To add a new line item to the existing cart, add the cart ID to the GraphQL variables or the mutation will fail.
+To add a new line item to the existing cart, add the cart ID to the input variables or the mutation will fail.
 
-<Tabs items={['Request', 'Response']}>
+<Tabs items={['Request', 'Input variables', 'Response']}>
   <Tab>
-    ```graphql filename="Example mutation: Add cart line items" showLineNumbers copy
-    POST https://store.example.com/graphql
-    Authorization: Bearer {{CUSTOMER_IMPERSONATION_TOKEN}}
-    X-Bc-Customer-Id: 123
+    ```http filename="Add cart line items" showLineNumbers copy
+      POST https://store.example.com/graphql
+      Authorization: Bearer {{CUSTOMER_IMPERSONATION_TOKEN}}
+      X-Bc-Customer-Id: 123
 
-    mutation addCartLineItems($addCartLineItemsInput: AddCartLineItemsInput!) {
-      cart {
-        addCartLineItems(input: $addCartLineItemsInput) {
-          cart {
-            entityId
+      mutation addCartLineItems($addCartLineItemsInput: AddCartLineItemsInput!) {
+        cart {
+          addCartLineItems(input: $addCartLineItemsInput) {
+            cart {
+              entityId
+            }
           }
         }
       }
-    }
-    ```
-
-    ```json filename="GraphQL variables" showLineNumbers copy 
-    {
-      "addCartLineItemsInput": {
-        "cartEntityId": "bb916deb-ddd6-4586-b65b-b8385e0e7a9d",
-        "data": {
-          "lineItems": [
-            {
-              "quantity": 1,
-              "productEntityId": 107
-            }
-          ]
-        }
-      }
-    }
     ```
   </Tab>
   <Tab>
-    
-    ```json filename="Example mutation: Add cart line item" showLineNumbers copy
-    {
-      "data": {
-        "cart": {
-          "addCartLineItems": {
-            "cart": {
-              "entityId": "bb916deb-ddd6-4586-b65b-b8385e0e7a9d"
+
+    ```json filename="Add cart line items" showLineNumbers copy 
+      {
+        "addCartLineItemsInput": {
+          "cartEntityId": "bb916deb-ddd6-4586-b65b-b8385e0e7a9d",
+          "data": {
+            "lineItems": [
+              {
+                "quantity": 1,
+                "productEntityId": 107
+              }
+            ]
+          }
+        }
+      }
+    ```
+
+  </Tab>
+  <Tab>
+    ```json filename="Add cart line items" showLineNumbers copy
+      {
+        "data": {
+          "cart": {
+            "addCartLineItems": {
+              "cart": {
+                "entityId": "bb916deb-ddd6-4586-b65b-b8385e0e7a9d"
+              }
             }
           }
         }
       }
-    }
     ```
   </Tab>
 </Tabs>
@@ -250,13 +268,13 @@ To add a new line item to the existing cart, add the cart ID to the GraphQL vari
 The following query example shows how to display the contents of a checkout. 
 
 <Callout type="info">
-You can access Cart and Checkout details in the same request as other information. A cart id is the same as a checkout id.
+You can access cart and checkout details in the same request as other information. The cart ID is the same as a checkout ID.
 </Callout>
 
 <Tabs items={['Request', 'Response']}>
   <Tab>
     
-    ```graphql filename="Example query: Get checkout" showLineNumbers copy
+    ```graphql filename="Get checkout" showLineNumbers copy
     GET https://store.example.com/graphql
     Authorization: Bearer {{CUSTOMER_IMPERSONATION_TOKEN}}
     X-Bc-Customer-Id: 123
@@ -441,7 +459,7 @@ You can access Cart and Checkout details in the same request as other informatio
   </Tab>
   <Tab>
     
-    ```json filename="Example query: Get checkout" showLineNumbers copy   
+    ```json filename="Get checkout" showLineNumbers copy   
     {
       "data": {
         "site": {
@@ -508,63 +526,65 @@ You can access Cart and Checkout details in the same request as other informatio
 
 This mutation adds a billing address to an existing checkout.
 
-<Tabs items={['Request', 'Response']}>
+<Tabs items={['Request', 'Input variables', 'Response']}>
   <Tab>
-```graphql filename="Example mutation: Add checkout billing address" showLineNumbers copy
-POST https://store.example.com/graphql
-Authorization: Bearer {{CUSTOMER_IMPERSONATION_TOKEN}}
-X-Bc-Customer-Id: 123
+    ```graphql filename="Add checkout billing address" showLineNumbers copy
+      POST https://store.example.com/graphql
+      Authorization: Bearer {{CUSTOMER_IMPERSONATION_TOKEN}}
+      X-Bc-Customer-Id: 123
 
-mutation addCheckoutBillingAddress($addCheckoutBillingAddressInput: AddCheckoutBillingAddressInput!) {
-  checkout {
-    addCheckoutBillingAddress(input: $addCheckoutBillingAddressInput) {
-      checkout {
-        entityId
-      }
-    }
-  }
-}   
-```
- ```json filename="GraphQL variables" showLineNumbers copy 
-{
-  "addCheckoutBillingAddressInput": {
-    "checkoutEntityId": "812ece1a-da23-46eb-ab6b-c2ee210aae54",
-    "data": {
-      "address": {
-        "firstName": "Joe",
-        "lastName": "Blogs",
-        "email": "joe@example.com",
-        "company": "BlogIndustries",
-        "address1": "123 Yar st",
-        "address2": "",
-        "city": "RWC",
-        "stateOrProvince": "CA",
-        "stateOrProvinceCode": "CA",
-        "countryCode": "US",
-        "postalCode": "94061",
-        "phone": "6501231212",
-        "shouldSaveAddress": false
-      }
-    }
-  }
-}
-```
-</Tab>
- <Tab>
-    
- ```json filename="Example mutation: Add checkout billing address" showLineNumbers copy
- {
-  "data": {
-    "checkout": {
-      "addCheckoutBillingAddress": {
-        "checkout": {
-          "entityId": "812ece1a-da23-46eb-ab6b-c2ee210aae54"
+      mutation addCheckoutBillingAddress($addCheckoutBillingAddressInput: AddCheckoutBillingAddressInput!) {
+        checkout {
+          addCheckoutBillingAddress(input: $addCheckoutBillingAddressInput) {
+            checkout {
+              entityId
+            }
+          }
+        }
+      }   
+    ```
+  </Tab>
+  <Tab>
+    ```json filename="Add a checkout billing address" showLineNumbers copy 
+      {
+        "addCheckoutBillingAddressInput": {
+          "checkoutEntityId": "812ece1a-da23-46eb-ab6b-c2ee210aae54",
+          "data": {
+            "address": {
+              "firstName": "Joe",
+              "lastName": "Blogs",
+              "email": "joe@example.com",
+              "company": "BlogIndustries",
+              "address1": "123 Yar st",
+              "address2": "",
+              "city": "RWC",
+              "stateOrProvince": "CA",
+              "stateOrProvinceCode": "CA",
+              "countryCode": "US",
+              "postalCode": "94061",
+              "phone": "6501231212",
+              "shouldSaveAddress": false
+            }
+          }
         }
       }
-    }
-  }
- }
- ```
+    ```
+  </Tab>
+  <Tab>
+    
+    ```json filename="Add a checkout billing address" showLineNumbers copy
+      {
+        "data": {
+          "checkout": {
+            "addCheckoutBillingAddress": {
+              "checkout": {
+                "entityId": "812ece1a-da23-46eb-ab6b-c2ee210aae54"
+              }
+            }
+          }
+        }
+      }
+    ```
   </Tab>
 </Tabs>
 
@@ -574,215 +594,225 @@ mutation addCheckoutBillingAddress($addCheckoutBillingAddressInput: AddCheckoutB
 This mutation adds a shipping consignment to an existing checkout.
 
 <Callout type="info">
-Make a note of a shipping consignment's `entityId` and an available shipping option `entityId` displayed in the response. You will need to use these in later steps. 
+Make a note of a shipping consignment's `entityId` and the desired shipping option's `entityId` returned from your request. You will need to use these in later steps. 
 </Callout>
 
-<Tabs items={['Request', 'Response']}>
+<Tabs items={['Request', 'Input variables', 'Response']}>
   <Tab>
-```graphql filename="Example mutation: Add checkout billing address" showLineNumbers copy
-POST https://store.example.com/graphql
-Authorization: Bearer {{CUSTOMER_IMPERSONATION_TOKEN}}
-X-Bc-Customer-Id: 123
+    ```graphql filename="Add a checkout billing address" showLineNumbers copy
+    POST https://store.example.com/graphql
+    Authorization: Bearer {{CUSTOMER_IMPERSONATION_TOKEN}}
+    X-Bc-Customer-Id: 123
 
-mutation addCheckoutShippingConsignments($addCheckoutShippingConsignmentsInput: AddCheckoutShippingConsignmentsInput!) {
-  checkout {
-    addCheckoutShippingConsignments(input: $addCheckoutShippingConsignmentsInput) {
+    mutation addCheckoutShippingConsignments($addCheckoutShippingConsignmentsInput: AddCheckoutShippingConsignmentsInput!) {
       checkout {
-        entityId
-        shippingConsignments {
-          entityId
-          availableShippingOptions {
+        addCheckoutShippingConsignments(input: $addCheckoutShippingConsignmentsInput) {
+          checkout {
             entityId
-          }
-          selectedShippingOption {
-            entityId
+            shippingConsignments {
+              entityId
+              availableShippingOptions {
+                entityId
+              }
+              selectedShippingOption {
+                entityId
+              }
+            }
           }
         }
       }
     }
-  }
-}
-```
+    ```
+  </Tab>
+  <Tab>
 
-```json filename="GraphQL variables" showLineNumbers copy 
-{
-  "addCheckoutShippingConsignmentsInput": {
-    "checkoutEntityId": "812ece1a-da23-46eb-ab6b-c2ee210aae54",
-    "data": {
-      "consignments": [
-        {
-          "address": {
-            "firstName": "Joe",
-            "lastName": "Blogs",
-            "email": "joe@example.com",
-            "company": "BlogIndustries",
-            "address1": "123 Yar st",
-            "city": "RWC",
-            "stateOrProvince": "CA",
-            "stateOrProvinceCode": "CA",
-            "countryCode": "US",
-            "postalCode": "94061",
-            "phone": "6501231212",
-            "shouldSaveAddress": false
-          },
-          "lineItems": [
+    ```json filename="Add a checkout billing address" showLineNumbers copy 
+    {
+      "addCheckoutShippingConsignmentsInput": {
+        "checkoutEntityId": "812ece1a-da23-46eb-ab6b-c2ee210aae54",
+        "data": {
+          "consignments": [
             {
-              "lineItemEntityId": "0a281902-d548-4d2e-a930-dc2aae9bfc39",
-              "quantity": 1
-            }
-          ]
-        }
-      ]
-    }
-  }
-}
-```
-</Tab>
- <Tab>
-    
- ```json filename="Example mutation: Add a checkout shipping consignment" showLineNumbers copy
-{
-  "data": {
-    "checkout": {
-      "addCheckoutShippingConsignments": {
-        "checkout": {
-          "entityId": "812ece1a-da23-46eb-ab6b-c2ee210aae54",
-          "shippingConsignments": [
-            {
-              "entityId": "6478f628f1d8f",
-              "availableShippingOptions": [
+              "address": {
+                "firstName": "Joe",
+                "lastName": "Blogs",
+                "email": "joe@example.com",
+                "company": "BlogIndustries",
+                "address1": "123 Yar st",
+                "city": "RWC",
+                "stateOrProvince": "CA",
+                "stateOrProvinceCode": "CA",
+                "countryCode": "US",
+                "postalCode": "94061",
+                "phone": "6501231212",
+                "shouldSaveAddress": false
+              },
+              "lineItems": [
                 {
-                  "entityId": "9ba45e71fe66e1cd757f022dcae331b0"
-                },
-                {
-                  "entityId": "d8fb74f7cd682de8ae35a7fdd1e26f56"
+                  "lineItemEntityId": "0a281902-d548-4d2e-a930-dc2aae9bfc39",
+                  "quantity": 1
                 }
-              ],
-              "selectedShippingOption": null
+              ]
             }
           ]
         }
       }
     }
-  }
-}
- ```
+    ```
+  </Tab>
+  <Tab>
+    
+    ```json filename="Example mutation: Add a checkout shipping consignment" showLineNumbers copy
+      {
+        "data": {
+          "checkout": {
+            "addCheckoutShippingConsignments": {
+              "checkout": {
+                "entityId": "812ece1a-da23-46eb-ab6b-c2ee210aae54",
+                "shippingConsignments": [
+                  {
+                    "entityId": "6478f628f1d8f",
+                    "availableShippingOptions": [
+                      {
+                        "entityId": "9ba45e71fe66e1cd757f022dcae331b0"
+                      },
+                      {
+                        "entityId": "d8fb74f7cd682de8ae35a7fdd1e26f56"
+                      }
+                    ],
+                    "selectedShippingOption": null
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    ```
   </Tab>
 </Tabs>
 
 ## Select checkout shipping option
 
-This mutation sets a selected shipping to an existing checkout.
+This mutation adds a selected shipping to an existing checkout.
 
-<Tabs items={['Request', 'Response']}>
+<Tabs items={['Request', 'Input variables', 'Response']}>
   <Tab>
- ```graphql filename="Example mutation: Select checkout shipping option" showLineNumbers copy
- POST https://store.example.com/graphql
- Authorization: Bearer {{CUSTOMER_IMPERSONATION_TOKEN}}
- X-Bc-Customer-Id: 123
+    ```graphql filename="Select a checkout shipping option" showLineNumbers copy
+    POST https://store.example.com/graphql
+    Authorization: Bearer {{CUSTOMER_IMPERSONATION_TOKEN}}
+    X-Bc-Customer-Id: 123
 
-mutation selectCheckoutShippingOption($selectCheckoutShippingOptionInput: SelectCheckoutShippingOptionInput!) {
-    checkout {
-      selectCheckoutShippingOption(input: $selectCheckoutShippingOptionInput) {
+    mutation selectCheckoutShippingOption($selectCheckoutShippingOptionInput: SelectCheckoutShippingOptionInput!) {
         checkout {
-          entityId
+          selectCheckoutShippingOption(input: $selectCheckoutShippingOptionInput) {
+            checkout {
+              entityId
+            }
+          }
         }
       }
-    }
-  }
-```
+    ```
+  </Tab>
+  <Tab>
 
-```json filename="GraphQL variables" showLineNumbers copy 
-{
-    "selectCheckoutShippingOptionInput": {
-      "checkoutEntityId": "acd6f2ca-85c1-4b5f-8dab-d7d80521ecc5",
-      "consignmentEntityId": "6478ff925d33a",
-      "data": {
-        "shippingOptionEntityId": "9ba45e71fe66e1cd757f022dcae331b0"
-         }
-    }
-}
-```
-</Tab>
-
- <Tab>
+    ```json filename="Select a checkout shipping option" showLineNumbers copy 
+      {
+        "selectCheckoutShippingOptionInput": {
+          "checkoutEntityId": "acd6f2ca-85c1-4b5f-8dab-d7d80521ecc5",
+          "consignmentEntityId": "6478ff925d33a",
+          "data": {
+            "shippingOptionEntityId": "9ba45e71fe66e1cd757f022dcae331b0"
+          }
+        }
+      }
+    ```
+  </Tab>
+  <Tab>
     
-```json filename="Example mutation: Select checkout shipping option" showLineNumbers copy
-{
-    "data": {
-      "checkout": {
-        "selectCheckoutShippingOption": {
+    ```json filename="Select a checkout shipping option" showLineNumbers copy
+      {
+        "data": {
           "checkout": {
-            "entityId": "acd6f2ca-85c1-4b5f-8dab-d7d80521ecc5"
+            "selectCheckoutShippingOption": {
+              "checkout": {
+                "entityId": "acd6f2ca-85c1-4b5f-8dab-d7d80521ecc5"
+              }  
+            }
+          }
         }
       }
-    }
-  }
-}
-```
-</Tab>
+    ```
+  </Tab>
 </Tabs>
 
 ## Complete checkout
 
-Completing a checkout creates an incomplete order until you process the payment. For PCI compliance-related reasons, the GraphQL Storefront API does not handle payments. You must use the [ Payments API](/docs/rest-payments) to process payments. The payments workflow includes the following three steps:
+Completing a checkout creates an incomplete order until you process the payment. For PCI compliance-related reasons, the GraphQL Storefront API does not handle payments. You must use the [Payments API](/docs/rest-payments) to process payments. The payments workflow includes the following three steps:
  1. [Fetch available payment methods](/docs/rest-payments/methods#get-accepted-payment-methods)
- 2. [Create a payment access token](/docs/rest-payments/tokens#create-payment-access-token)
+ 2. Create a payment access token by either requesting one with the following mutation or using the [REST Payments API](/docs/rest-payments/tokens#create-payment-access-token)
  3. [Capture payment](/docs/rest-payments/processing#process-payments)
 
-<Tabs items={['Request', 'Response']}>
+<Tabs items={['Request', 'Input variables', 'Response']}>
   <Tab>
- ```graphql filename="Example mutation: Complete checkout" showLineNumbers copy
- POST https://store.example.com/graphql
- Authorization: Bearer {{CUSTOMER_IMPERSONATION_TOKEN}}
- X-Bc-Customer-Id: 123
+    ```graphql filename="Complete checkout" showLineNumbers copy
+      POST https://store.example.com/graphql
+      Authorization: Bearer {{CUSTOMER_IMPERSONATION_TOKEN}}
+      X-Bc-Customer-Id: 123
 
-mutation completeCheckout($completeCheckoutInput: CompleteCheckoutInput!) {
-    checkout {
-      completeCheckout(input:$completeCheckoutInput) {
-        orderEntityId
-        paymentAccessToken
+      mutation completeCheckout($completeCheckoutInput: CompleteCheckoutInput!) {
+          checkout {
+            completeCheckout(input:$completeCheckoutInput) {
+              orderEntityId
+              paymentAccessToken
+            }
+          }
+        }
+    ```
+  </Tab>
+  <Tab>
+    ```json filename="Complete checkout" showLineNumbers copy
+      {
+        "completeCheckoutInput": {
+          "checkoutEntityId": "812ece1a-da23-46eb-ab6b-c2ee210aae54"
+        }
       }
-    }
-  }
-```
-```json filename="GraphQL variables" showLineNumbers copy
-{
-  "completeCheckoutInput": {
-    "checkoutEntityId": "812ece1a-da23-46eb-ab6b-c2ee210aae54"
-  }
-}
-```
-</Tab>
+    ```
+  </Tab>
 
- <Tab>
+  <Tab>
     
-```json filename="Example mutation: Complete checkout" showLineNumbers copy
-{
-    "data": {
-      "checkout": {
-        "completeCheckout": {
-          "orderEntityId": 106,
-          "paymentAccessToken": "eyJhbGciOiJIUzI1NiJ9.eyJleHAiOjE2ODU3MjQwMzQsIm5iZiI6MTY4NTcyMDQzNCwiaXNzIjoicGF5bWVudHMuYmlnY29tbWVyY2UuY29tIiwic3ViIjoidmpid3FiYWJwMSIsImp0aSI6IjAzODU3ODk2LTdkY2YtNDIzNi04OTQ5LWU0MjcyYWU3ZGZjMSIsImlhdCI6MTY4NTcyMDQzNCwiZGF0YSI6eyJzdG9yZV9pZCI6IjEwMDI4ODA3NDYiLCJvcmRlcl9pZCI6IjEwNiIsImFtb3VudCI6MjUwMCwiY3VycmVuY3kiOiJVU0QifX0.iiJ96cYKtk2-oLRXvZHs1lWUl9v8JkEkCdHShbyfEK4"
+    ```json filename="Complete checkout" showLineNumbers copy
+      {
+        "data": {
+          "checkout": {
+            "completeCheckout": {
+              "orderEntityId": 106,
+              "paymentAccessToken": "eyJhbGciOiJIUzI1NiJ9.eyJleHAiOjE2ODU3MjQwMzQsIm5iZiI6MTY4NTcyMDQzNCwiaXNzIjoicGF5bWVudHMuYmlnY29tbWVyY2UuY29tIiwic3ViIjoidmpid3FiYWJwMSIsImp0aSI6IjAzODU3ODk2LTdkY2YtNDIzNi04OTQ5LWU0MjcyYWU3ZGZjMSIsImlhdCI6MTY4NTcyMDQzNCwiZGF0YSI6eyJzdG9yZV9pZCI6IjEwMDI4ODA3NDYiLCJvcmRlcl9pZCI6IjEwNiIsImFtb3VudGd85rUwMCwiY3VycmVuY3kiOiJVU0QifX0.iiJ96cYKtk2-oLRXvZHs1lWUl9v8JkEkCdHShbyfEK4"
+            }
+          }
+        }
       }
-    }
-  }
-}
-```
-</Tab>
+    ```
+  </Tab>
 </Tabs>
 
 
 ## Resources
 
-### Related articles
-* [Tokens](/docs/storefront/cart-checkout/guide/graphql-storefront#tokens)
+### GraphQL Storefront API
+
+* [Storefront tokens](/docs/storefront/cart-checkout/guide/graphql-storefront#tokens)
 * [Querying within a BigCommerce storefront](/docs/storefront/graphql#querying-within-a-bigcommerce-storefront)
 * [Create a cart using a simple product](/docs/storefront/cart-checkout/guide/graphql-storefront#create-a-cart-using-a-simple-product)
 * [Add cart line items](/docs/storefront/cart-checkout/guide/graphql-storefront#add-cart-line-items)
-* [Checkouts](/docs/rest-management/checkouts)
 * [Add checkout billing address](/docs/storefront/cart-checkout/guide/graphql-storefront#add-checkout-billing-address)
 * [Add a checkout shipping consignment](/docs/storefront/cart-checkout/guide/graphql-storefront#add-a-checkout-shipping-consignment)
 * [Select checkout shipping option](/docs/storefront/cart-checkout/guide/graphql-storefront#select-checkout-shipping-option)
 * [Complete checkout](/docs/storefront/cart-checkout/guide/graphql-storefront#complete-checkout) 
 
+### REST Management API
+
+* [Guide: End-to-end headless flow](/docs/storefront/headless/end-to-end-guides/rest-management)
+* [Carts](/docs/rest-management/carts)
+* [Checkouts](/docs/rest-management/checkouts)

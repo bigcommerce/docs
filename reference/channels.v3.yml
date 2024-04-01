@@ -30,11 +30,11 @@ info:
     | `catch`             | `marketplace` |
     | `ebay`              | `marketplace` |
     | `etsy`              | `marketplace` |
-    | `facebook`  | `marketplace`, `marketing` |
+    | `facebook`          | `marketplace`, `marketing` |
     | `hudsons_bay`       | `marketplace` |
     | `google`            | `marketplace`, `marketing` |
     | `google_shopping` (deprecated)   | `marketing` |
-    | `instagram` | `marketplace`, `marketing` |
+    | `instagram`         | `marketplace`, `marketing` |
     | `macys`             | `marketplace` |
     | `mirakl`            | `marketplace` |
     | `overstock`         | `marketplace` |
@@ -45,12 +45,13 @@ info:
     | `wish`              | `marketplace` |
     | `walmart`           | `marketplace` |
     | `acquia`            | `storefront` |
-    | `bigcommerce`       | `storefront` |
+    | `bigcommerce` (Stencil and Blueprint) | `storefront` |
     | `bloomreach`        | `storefront` |
+    | `catalyst` (BigCommerce Next.js) | `storefront` |
     | `deity`             | `storefront` |
     | `drupal`            | `storefront` |
     | `gatsby`            | `storefront` |
-    | `next`              | `storefront` |
+    | `next` (Next.js Commerce and other Next.js) | `storefront` |
     | `vue`               | `storefront` |
     | `wordpress`         | `storefront` |
     | `custom`            | `storefront`, `pos`, `marketing`, `marketplace` |
@@ -58,13 +59,12 @@ info:
 
     ### Status
 
-    Allowed values for a channelʼs `status` vary by channel `type` and `platform`.
+    Allowed values for a channelʼs `status` vary by channel `type`.
 
-    |Type|Platform|Allowed Statuses|
-    |--|--|--|
-    |`storefront`|`bigcommerce`|`prelaunch`, `active`, `inactive`, `archived`, `deleted`|
-    |`storefront`|**Is not** `bigcommerce` |`prelaunch`, `active`, `inactive`, `archived`, `deleted` 
-    |`marketing`, `marketplace`, `pos`|N/A|`connected`, `disconnected`, `archived`, `deleted`|
+    | Type | Writeable Statuses |
+    |:-----|:-------------------|
+    | `storefront` | `prelaunch`, `active`, `inactive`, `archived`, `deleted` |
+    | `marketing`, `marketplace`, `pos`| `connected`, `disconnected`, `archived`, `deleted` |
 
     > #### Warning
     > * You can restore a Channel with `deleted` status within **90 days** after deletion by contacting the BigCommerce support team. After the 90-days grace period is over, the Channel `status` will become `terminated`.
@@ -761,7 +761,7 @@ paths:
       description: Deletes a single channel metafield.
   '/channels/metafields':
     get:
-      summary: Get All Metafields
+      summary: Get All Channel Metafields
       tags:
         - Batch metafields
       description: Get all channel metafields.
@@ -976,7 +976,7 @@ components:
           - currencies
     available:
       name: available
-      description: 'Filter items based on whether the channel is currently available for integration. Setting this query parameter to `true` will return channels with the status of `prelaunch`, `active` , `inactive`, and `connected`. Setting this query parameter to `false` will return channels with the status of `disconnected`, `archived`, `deleted`, and `terminated`.'
+      description: Filter items based on whether the channel is currently available for integration. Setting this query parameter to `true` will return channels with the status of `prelaunch`, `active` , `inactive`, and `connected`. Setting this query parameter to `false` will return channels with the status of `disconnected`, `archived`, `deleted`, and `terminated`.
       in: query
       required: false
       schema:
@@ -986,6 +986,8 @@ components:
       description: Filter items by a comma-separated list of statuses.
       in: query
       required: false
+      style: form
+      explode: false
       schema:
         type: array
         items:
@@ -1004,6 +1006,8 @@ components:
       description: Filter items by a comma-separated list of types.
       in: query
       required: false
+      style: form
+      explode: false
       schema:
         type: array
         items:
@@ -1018,12 +1022,14 @@ components:
       description: 'Filter items by a comma-separated list of platforms. For a list of supported platforms, see [Platform](/docs/rest-management/channels#platform).'
       in: query
       required: false
+      style: form
+      explode: false
       schema:
         type: array
         items:
           type: string
         example:
-          - 'facebook by meta, amazon'
+          - 'facebook by meta,amazon'
     date_created:
       name: date_created
       description: 'Filter items by date_created. For example, `date_created=2019-09-04T00:00:00`, `date_created=2019-09-04`, or `date_created=1567573200`'
@@ -1092,6 +1098,8 @@ components:
       description: Filter items by a comma-separated list of product IDs.
       in: query
       required: false
+      style: form
+      explode: false
       schema:
         type: array
         items:
@@ -2757,7 +2765,7 @@ components:
       type: integer
       format: int64
       minimum: 1
-      description: 'The ID of the channel listing that has been created, returned, or updated.'
+      description: The ID of the channel listing that has been created, returned, or updated. In a 422 error, you may receive a response that references the `group_id`. The `group_id` in the Invalid Listing ID example refers to the `listing_id`. Please use `listing_id` instead of `group_id` in the request payload.
       x-internal: false
     ProductId:
       type: integer

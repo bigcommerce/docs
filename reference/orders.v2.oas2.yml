@@ -238,7 +238,6 @@ paths:
         - $ref: '#/components/parameters/page'
         - $ref: '#/components/parameters/limit'
         - $ref: '#/components/parameters/sort'
-        - $ref: '#/components/parameters/is_deleted'
         - $ref: '#/components/parameters/channel_id'
         - $ref: '#/components/parameters/order_includes'
         - $ref: '#/components/parameters/external_order_id'
@@ -1059,8 +1058,8 @@ components:
       name: external_order_id
       in: query
       description: The order ID in another system, such as the Amazon Order ID if this is an Amazon order. After setting it, you can update this field using a POST or PUT request.
-      schema: 
-        type: integer
+      schema:
+        type: string
     min_id:
       name: min_id
       in: query
@@ -1118,12 +1117,6 @@ components:
       description: The cart ID of the order.
       schema:
         type: string
-    is_deleted:
-      name: is_deleted
-      in: query
-      description: If the order was deleted or archived.
-      schema:
-        type: boolean
     payment_method:
       name: payment_method
       in: query
@@ -1453,7 +1446,6 @@ components:
                   discount_amount: '0.0000'
                   coupon_discount: '0.0000'
                   shipping_address_count: 1
-                  is_deleted: false
                   ebay_order_id: '0'
                   cart_id: a8458391-ef68-4fe5-9ec1-442e6a767364
                   billing_address:
@@ -1668,7 +1660,6 @@ components:
                 discount_amount: '5.0000'
                 coupon_discount: '5.0000'
                 shipping_address_count: 1
-                is_deleted: false
                 ebay_order_id: '0'
                 cart_id: 7e48f7ef-2e88-4817-aea4-b0ed01490114
                 billing_address:
@@ -1761,7 +1752,6 @@ components:
                 discount_amount: '0'
                 coupon_discount": 0
                 shipping_address_count: 1
-                is_deleted: false
                 ebay_order_id: '0'
                 cart_id: 8b84f622-faf1-4c10-887b-f5dff2f9eaf4
                 billing_address:
@@ -2851,13 +2841,13 @@ components:
           example: 1
           type: integer
         base_cost_price:
-          description: The product’s cost price.  This can be set using the Catalog API. (Float, Float-As-String, Integer) 
+          description: The product’s cost price.  This can be set using the Catalog API. (Float, Float-As-String, Integer)
           example: '50.0000'
           type: string
         cost_price_inc_tax:
           description: |-
             The product’s cost price including tax. (Float, Float-As-String, Integer)
-            The cost of your products to you; this is never shown to customers, but can be used for accounting purposes. 
+            The cost of your products to you; this is never shown to customers, but can be used for accounting purposes.
           example: '50.0000'
           type: string
         cost_price_ex_tax:
@@ -2966,7 +2956,7 @@ components:
           type: string
           nullable: true
           readOnly: true
-        brand: 
+        brand:
           description: The productʼs brand.
           type: string
         applied_discounts:
@@ -3711,8 +3701,6 @@ components:
           description: The value of the base wrapping cost expressed as a floating point number to four decimal places in string format.
           example: '0.0000'
           type: string
-        billing_address:
-          $ref: '#/components/schemas/billingAddress_Base'
         channel_id:
           description: Shows where the order originated. The channel_id will default to 1.
           example: 1
@@ -3725,9 +3713,6 @@ components:
           type: string
         date_created:
           description: The date the order was created, formatted in the RFC-2822 standard. You set this attribute on Order creation (POST) to support the migration of historical orders. If you do not provide a value, then it will default to the current date/time. e.g., `Tue, 20 Nov 2012 00:00:00 +0000`.
-          type: string
-        default_currency_code:
-          description: The currency code of the transactional currency the shopper pays in; writeable when multi-currency is enabled.
           type: string
         discount_amount:
           description: Amount of discount for this transaction. (Float, Float-As-String, Integer)
@@ -3789,10 +3774,6 @@ components:
             Note: You can set either `ip_address` or `ip_address_v6`. Setting the `ip_address_v6` value will reset the `ip_address` value and vice versa.
           example: '2001:db8:3333:4444:5555:6666:7777:8888'
           maxLength: 39
-        is_deleted:
-          description: Indicates whether the order was deleted (archived). Set to to true, to archive an order.
-          example: false
-          type: boolean
         items_shipped:
           description: The number of items that have been shipped.
           example: 0
@@ -3850,15 +3831,12 @@ components:
           type: string
         tax_provider_id:
           description: |
+            Read-only.
             BasicTaxProvider - Tax is set to manual and order is created in the store.
             
             AvaTaxProvider - Tax is set to automatic and order is created in the store. Used for Avalara.
             
             "" (empty string) - The order is created with the API, or the tax provider is unknown.
-          enum:
-            - BasicTaxProvider
-            - AvaTaxProvider
-            - ''
           type: string
         customer_locale:
           type: string
@@ -4117,12 +4095,7 @@ components:
           example: 7
           description: The status ID of the order.
         billing_address:
-          type: object
-          properties:
-            form_fields:
-              type: array
-              items:
-                $ref: '#/components/schemas/formFields'
+          $ref: '#/components/schemas/billingAddress_Resp'
     orderCustomProduct_Put:
       type: object
       title: Custom product
@@ -4225,8 +4198,8 @@ components:
                 description: |-
                   The product’s cost price including tax. (Float, Float-As-String, Integer)
                   The cost of your products to you; this is never shown to customers, but can be used for accounting purposes.
-                example: '50.0000' 
-              price_ex_tax:  
+                example: '50.0000'
+              price_ex_tax:
                 type: string
                 description: |-
                   The products cost price excluding tax. (Float, Float-As-String, Integer)
@@ -4320,7 +4293,7 @@ components:
           type: string
         variant_id:
           type: integer
-          description: '""'
+          description: 'Products `variant_id`. PUT or POST. This field is not available for custom products.'
         wrapping_id:
           type: integer
           description: ID of the gift wrapping that will be used for this product. If provided, then `wrapping_cost_ex_tax` and `wrapping_cost_inc_tax` are required. When updating an order product line item, if `wrapping_id` is set to `0` and no other wrapping fields are provided,then the wrapping will be removed from the order product.
@@ -4429,7 +4402,7 @@ components:
               example: '0'
               type: string
             external_id:
-              description: (Read-only) The order ID in another system, such as the Amazon Order ID if this is an Amazon order.  
+              description: (Read-only) The order ID in another system, such as the Amazon Order ID if this is an Amazon order.
               example: null
               type: string
               nullable: true
@@ -4480,10 +4453,6 @@ components:
                 Note: You can set either `ip_address` or `ip_address_v6`. Setting the `ip_address_v6` value will reset the `ip_address` value and vice versa.
               example: '2001:db8:3333:4444:5555:6666:7777:8888'
               maxLength: 39
-            is_deleted:
-              description: Indicates whether the order was deleted (archived). Set to to true, to archive an order.
-              example: false
-              type: boolean
             items_shipped:
               description: The number of items that have been shipped.
               example: 0
@@ -4550,15 +4519,12 @@ components:
               type: string
             tax_provider_id:
               description: |
+                Read-only.
                 BasicTaxProvider - Tax is set to manual and order is created in the store.
                 
                 AvaTaxProvider - Tax is set to automatic and order is created in the store. Used for Avalara.
                 
                 "" (empty string) - The order is created with the API, or the tax provider is unknown.
-              enum:
-                - BasicTaxProvider
-                - AvaTaxProvider
-                - ''
               type: string
             customer_locale:
               type: string
@@ -4568,7 +4534,7 @@ components:
               type: string
               nullable: true
               example: external-order-id
-              description: The order ID in another system, such as the Amazon Order ID if this is an Amazon order. After setting it, you can update this field using a POST or PUT request. 
+              description: The order ID in another system, such as the Amazon Order ID if this is an Amazon order. After setting it, you can update this field using a POST or PUT request.
             total_ex_tax:
               description: Override value for the total, excluding tax. If specified, the field `total_inc_tax` is also required. (Float, Float-As-String, Integer)
               example: '225.0000'
@@ -4591,6 +4557,11 @@ components:
       allOf:
         - type: object
           properties:
+            billing_address:
+              $ref: '#/components/schemas/billingAddress_Base'
+            default_currency_code:
+              description: The currency code of the transactional currency the shopper pays in is writeable when multi-currency is enabled.
+              type: string
             products:
               type: array
               items:
@@ -4615,6 +4586,15 @@ components:
               items:
                 $ref: '#/components/schemas/formFields'
     billingAddress_Put:
+      allOf:
+        - $ref: '#/components/schemas/billingAddress_Base'
+        - type: object
+          properties:
+            form_fields:
+              type: array
+              items:
+                $ref: '#/components/schemas/formFields'
+    billingAddress_Resp:
       allOf:
         - $ref: '#/components/schemas/billingAddress_Base'
         - type: object

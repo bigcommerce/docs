@@ -25,6 +25,9 @@ tags:
   - name: Cart Currency
 paths:
   /carts:
+    parameters:
+      - $ref: '#/components/parameters/Accept'
+      - $ref: '#/components/parameters/Include'
     get:
       tags:
         - Cart
@@ -35,10 +38,7 @@ paths:
         > #### Note
         > * Substitute your storefront domain for `yourstore.example.com`. 
         > * The Send a Test Request feature is not currently supported for this endpoint.  
-
       operationId: getCart
-      parameters:
-        - $ref: '#/components/parameters/include'
       responses:
         '200':
           $ref: '#/components/responses/getCarts'
@@ -52,10 +52,9 @@ paths:
         > #### Note
         > * Substitute your storefront domain for `yourstore.example.com`. 
         > * The Send a Test Request feature is not currently supported for this endpoint.  
-
       operationId: createCart
       parameters:
-        - $ref: '#/components/parameters/include'
+        - $ref: '#/components/parameters/ContentType'
       requestBody:
         content:
           application/json:
@@ -91,6 +90,9 @@ paths:
           $ref: '#/components/responses/postCarts'
       x-codegen-request-body-name: cartData
   '/carts/{cartId}':
+    parameters:
+      - $ref: '#/components/parameters/CartIdPath'
+      - $ref: '#/components/parameters/Accept'
     delete:
       tags:
         - Cart
@@ -102,20 +104,16 @@ paths:
         > #### Note
         > * Substitute your storefront domain for `yourstore.example.com`. 
         > * The Send a Test Request feature is not currently supported for this endpoint.  
-
       operationId: deleteCart
-      parameters:
-        - name: cartId
-          in: path
-          description: This cart's unique ID.
-          required: true
-          schema:
-            type: string
-            format: UUID
       responses:
         '204':
           description: No Content
   '/carts/{cartId}/items':
+    parameters:
+      - $ref: '#/components/parameters/CartIdPath'
+      - $ref: '#/components/parameters/Accept'
+      - $ref: '#/components/parameters/ContentType'
+      - $ref: '#/components/parameters/Include'
     post:
       tags:
         - Cart Items
@@ -127,35 +125,7 @@ paths:
         > * Substitute your storefront domain for `yourstore.example.com`. 
         > * The Send a Test Request feature is not currently supported for this endpoint.  
         > * Please note that this API endpoint is not concurrent safe, meaning multiple simultaneous requests could result in unexpected and inconsistent results.
-
       operationId: addCartLineItem
-      parameters:
-        - name: cartId
-          in: path
-          description: This cart's unique ID.
-          required: true
-          schema:
-            type: string
-            format: UUID
-        - name: include
-          in: query
-          description: |-
-            To return product options add one of the following include:
-
-            `lineItems.physicalItems.options`: The Cart returns an abbreviated result. Use this to return physical items product options. Can also be used in a /POST to have the extended Cart object return.
-
-            `lineItems.digitalItems.options`:  The Cart returns an abbreviated result. Use this to return digital items product options.  Can also be used in a /POST to have the extended Cart object return.
-
-            `lineItems.digitalItems.options,lineItems.physicalItems.options`:  The Cart returns an abbreviated result. Use this to return digital and physical options. Can also be used in a /POST to have the extended Cart object return.
-          style: form
-          explode: false
-          schema:
-            type: array
-            items:
-              type: string
-              enum:
-                - lineItems.physicalItems.options
-                - lineItems.digitalItems.options
       responses:
         '200':
           $ref: '#/components/responses/postCartsItems'
@@ -189,6 +159,11 @@ paths:
                               message: "Happy Birthday"                 
         description: ''
   '/carts/{cartId}/items/{itemId}':
+    parameters:
+      - $ref: '#/components/parameters/CartIdPath'
+      - $ref: '#/components/parameters/ItemIdPath'
+      - $ref: '#/components/parameters/Accept'
+      - $ref: '#/components/parameters/Include'
     put:
       tags:
         - Cart Items
@@ -203,42 +178,9 @@ paths:
         > * Substitute your storefront domain for `yourstore.example.com`. 
         > * The Send a Test Request feature is not currently supported for this endpoint. 
         > * Please note that this API endpoint is not concurrent safe, meaning multiple simultaneous requests could result in unexpected and inconsistent results.
-
       operationId: updateCartLineItem
       parameters:
-        - name: cartId
-          in: path
-          description: This cart's unique ID.
-          required: true
-          schema:
-            type: string
-            format: UUID
-        - name: itemId
-          in: path
-          description: This item's ID.
-          required: true
-          schema:
-            type: string
-            format: number
-        - name: include
-          in: query
-          description: |-
-            To return product options add one of the following include:
-
-            `lineItems.physicalItems.options`: The Cart returns an abbreviated result. Use this to return physical items product options. Can also be used in a /POST to have the extended Cart object return.
-
-            `lineItems.digitalItems.options`:  The Cart returns an abbreviated result. Use this to return digital items product options.  Can also be used in a /POST to have the extended Cart object return.
-
-            `lineItems.digitalItems.options,lineItems.physicalItems.options`:  The Cart returns an abbreviated result. Use this to return digital and physical options. Can also be used in a /POST to have the extended Cart object return.
-          style: form
-          explode: false
-          schema:
-            type: array
-            items:
-              type: string
-              enum:
-                - lineItems.physicalItems.options
-                - lineItems.digitalItems.options
+        - $ref: '#/components/parameters/ContentType'
       requestBody:
         content:
           application/json:
@@ -298,44 +240,14 @@ paths:
         > * Substitute your storefront domain for `yourstore.example.com`. 
         > * The Send a Test Request feature is not currently supported for this endpoint.  
       operationId: deleteCartLineItem
-      parameters:
-        - name: cartId
-          in: path
-          description: This cart's unique ID.
-          required: true
-          schema:
-            type: string
-            format: UUID
-        - name: itemId
-          in: path
-          description: The ID of the item to delete.
-          required: true
-          schema:
-            type: string
-            format: number
-        - name: include
-          in: query
-          description: |-
-            To return product options add one of the following include:
-
-            `lineItems.physicalItems.options`: The Cart returns an abbreviated result. Use this to return physical items product options. Can also be used in a /POST to have the extended Cart object return.
-
-            `lineItems.digitalItems.options`:  The Cart returns an abbreviated result. Use this to return digital items product options.  Can also be used in a /POST to have the extended Cart object return.
-
-            `lineItems.digitalItems.options,lineItems.physicalItems.options`:  The Cart returns an abbreviated result. Use this to return digital and physical options. Can also be used in a /POST to have the extended Cart object return.
-          style: form
-          explode: false
-          schema:
-            type: array
-            items:
-              type: string
-              enum:
-                - lineItems.physicalItems.options
-                - lineItems.digitalItems.options
       responses:
         '200':
           $ref: '#/components/responses/deleteCartsItems'
   '/carts/{cartId}/currency':
+    parameters:
+      - $ref: '#/components/parameters/CartIdPath'
+      - $ref: '#/components/parameters/Accept'
+      - $ref: '#/components/parameters/ContentType'
     post:
       tags:
         - Cart Currency
@@ -349,14 +261,6 @@ paths:
         > * Substitute your storefront domain for `yourstore.example.com`. 
         > * The Send a Test Request feature is not currently supported for this endpoint.  
       operationId: updateCartCurrency
-      parameters:
-        - name: cartId
-          in: path
-          description: This cart's unique ID.
-          required: true
-          schema:
-            type: string
-            format: UUID
       responses:
         '200':
           $ref: '#/components/responses/getCarts'
@@ -1531,10 +1435,49 @@ components:
                 updatedTime: string
                 locale: string
   parameters:
-    include:
+    Accept:
+      name: Accept
+      in: header
+      required: true
+      description: 'The [MIME type](https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types) of the response body.'
+      schema:
+        type: string
+        default: 'application/json'
+    ContentType:
+      name: Content-Type
+      in: header
+      required: true
+      description: 'The [MIME type](https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types) of the request body.'
+      schema:
+        type: string
+        default: 'application/json'
+    CartIdPath:
+      name: cartId
+      in: path
+      description: This cartʼs unique ID.
+      required: true
+      schema:
+        type: string
+        format: uuid
+    ItemIdPath:
+      name: itemId
+      in: path
+      description: The ID of the subject item.
+      required: true
+      schema:
+        type: string
+        format: number
+    Include:
       name: include
       in: query
-      description: Include product options in specified line item types.
+      description: |-
+        To return product options add one of the following include:
+
+        `lineItems.physicalItems.options`: The Cart returns an abbreviated result. Use this to return physical items product options. Can also be used in a /POST to have the extended Cart object return.
+
+        `lineItems.digitalItems.options`:  The Cart returns an abbreviated result. Use this to return digital items product options.  Can also be used in a /POST to have the extended Cart object return.
+
+        `lineItems.digitalItems.options,lineItems.physicalItems.options`:  The Cart returns an abbreviated result. Use this to return digital and physical options. Can also be used in a /POST to have the extended Cart object return.
       style: form
       explode: false
       schema:

@@ -2,10 +2,9 @@ openapi: '3.0.1'
 info:
   title: Storefront Checkouts
   description: |-
-    Manage checkout operations and data using front-end JavaScript on BigCommerce
-    Stencil-powered storefronts.
-
-    For info about API accounts, see our [Guide to API Accounts](/docs/start/authentication/api-accounts).
+    Manage checkout operations and data on BigCommerce-hosted storefronts. To work with headless storefronts, use the [GraphQL Storefront API](/graphql-storefront/reference).
+    
+    The REST Storefront API uses [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) headers for authentication, and therefore has no required scopes. You do not need to send any BigCommerce-specific tokens with your requests to these endpoints.
         
     For info about authenticating BigCommerce APIs, see [Authentication and Example Requests](/docs/start/authentication#same-origin-cors-authentication).
   version: ''
@@ -31,6 +30,9 @@ tags:
   - name: Checkout Store Credit
 paths:
   '/checkouts/{checkoutId}':
+    parameters:
+      - $ref: '#/components/parameters/Accept'
+      - $ref: '#/components/parameters/CheckoutIdPath'
     get:
       tags:
         - Checkout
@@ -45,38 +47,7 @@ paths:
         > * The Send a Test Request feature is not currently supported for this endpoint.  
       operationId: getCheckout
       parameters:
-        - name: checkoutId
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: include
-          in: query
-          description: |-
-            * `cart.lineItems.physicalItems.options` - physical options
-            * `cart.lineItems.digitalItems.options` - digital options
-            * `cart.lineItems.physicalItems.categoryNames` - physical categories
-            * `cart.lineItems.digitalItems.categoryNames` - digital categories
-            * `cart.lineItems.customItems.categoryNames` - custom categories
-            * `customer` - customer
-            * `customer.customerGroup` - customer group
-            * `payments` - payments
-            * `promotions` - promotions
-            * `consignments.availableShippingOptions` - shipping options
-          schema:
-            type: string
-            default: consignments.availableShippingOptions
-            enum:
-              - cart.lineItems.physicalItems.options
-              - cart.lineItems.digitalItems.options
-              - cart.lineItems.physicalItems.categoryNames
-              - cart.lineItems.digitalItems.categoryNames
-              - cart.lineItems.customItems.categoryNames
-              - customer
-              - customer.customerGroup
-              - payments
-              - promotions
-              - consignments.availableShippingOptions
+        - $ref: '#/components/parameters/IncludeShippingDefault'
       responses:
         '200':
           description: ''
@@ -237,11 +208,7 @@ paths:
         > * The Send a Test Request feature is not currently supported for this endpoint.  
       operationId: updateCheckout
       parameters:
-        - name: checkoutId
-          in: path
-          required: true
-          schema:
-            type: string
+        - $ref: '#/components/parameters/ContentType'
       requestBody:
         content:
           application/json:
@@ -366,6 +333,11 @@ paths:
                 customerMessage: ''
       x-codegen-request-body-name: body
   '/checkouts/{checkoutId}/carts/{cartId}/items/{itemId}':
+    parameters:
+      - $ref: '#/components/parameters/CheckoutIdPath'
+      - $ref: '#/components/parameters/CartIdPath'
+      - $ref: '#/components/parameters/ItemIdPath'
+      - $ref: '#/components/parameters/Accept'
     put:
       tags:
         - Checkout Cart Items
@@ -381,22 +353,7 @@ paths:
         > * Please note that this API endpoint is not concurrent safe, meaning multiple simultaneous requests could result in unexpected and inconsistent results.
       operationId: updateCheckoutLineItem
       parameters:
-        - name: checkoutId
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: cartId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-        - name: itemId
-          in: path
-          required: true
-          schema:
-            type: string
+        - $ref: '#/components/parameters/ContentType'
       requestBody:
         content:
           application/json:
@@ -531,23 +488,6 @@ paths:
         > * Substitute your storefront domain for `yourstore.example.com`. 
         > * The Send a Test Request feature is not currently supported for this endpoint.  
       operationId: deleteCheckoutLineItem
-      parameters:
-        - name: checkoutId
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: cartId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-        - name: itemId
-          in: path
-          required: true
-          schema:
-            type: string
       responses:
         '200':
           description: 'NOTE: Discounted line items are re-evaluated on cart actions and may be automatically added back to your cart with a new line item ID to satisfy promotional requirements.'
@@ -771,6 +711,10 @@ paths:
                 updatedTime: '2018-09-18T16:59:45+00:00'
                 customerMessage: 'Thank you, BigCommerce'
   '/checkouts/{checkoutId}/billing-address':
+    parameters:
+      - $ref: '#/components/parameters/CheckoutIdPath'
+      - $ref: '#/components/parameters/Accept'
+      - $ref: '#/components/parameters/ContentType'
     post:
       tags:
         - Checkout Billing Address
@@ -788,12 +732,6 @@ paths:
         > * Substitute your storefront domain for `yourstore.example.com`. 
         > * The Send a Test Request feature is not currently supported for this endpoint.  
       operationId: addCheckoutBillingAddress
-      parameters:
-        - name: checkoutId
-          in: path
-          required: true
-          schema:
-            type: string
       requestBody:
         content:
           application/json:
@@ -922,8 +860,12 @@ paths:
         '429':
           description: Unable to determine if provided email is associated with an account. The customer must sign in.
           content: {}
-      x-codegen-request-body-name: body
   '/checkouts/{checkoutId}/billing-address/{addressId}':
+    parameters:
+      - $ref: '#/components/parameters/CheckoutIdPath'
+      - $ref: '#/components/parameters/AddressIdPath'
+      - $ref: '#/components/parameters/Accept'
+      - $ref: '#/components/parameters/ContentType'
     put:
       tags:
         - Checkout Billing Address
@@ -935,20 +877,6 @@ paths:
         > * Substitute your storefront domain for `yourstore.example.com`. 
         > * The Send a Test Request feature is not currently supported for this endpoint.  
       operationId: updateCheckoutBillingAddress
-      parameters:
-        - name: checkoutId
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: addressId
-          in: path
-          required: true
-          schema:
-            exclusiveMaximum: false
-            exclusiveMinimum: false
-            type: number
-            format: double
       requestBody:
         content:
           application/json:
@@ -1185,6 +1113,11 @@ paths:
           content: {}
       x-codegen-request-body-name: body
   '/checkouts/{checkoutId}/consignments':
+    parameters:
+      - $ref: '#/components/parameters/CheckoutIdPath'
+      - $ref: '#/components/parameters/IncludeShippingDefault'
+      - $ref: '#/components/parameters/Accept'
+      - $ref: '#/components/parameters/ContentType'
     post:
       tags:
         - Checkout Consignments
@@ -1219,17 +1152,6 @@ paths:
         > * The Send a Test Request feature is not currently supported for this endpoint.  
         > * Please note that this API endpoint is not concurrent safe, meaning multiple simultaneous requests could result in unexpected and inconsistent results.
       operationId: createCheckoutConsignment
-      parameters:
-        - name: checkoutId
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: include
-          in: query
-          schema:
-            type: string
-            default: consignments.availableShippingOptions
       requestBody:
         content:
           application/json:
@@ -1356,6 +1278,10 @@ paths:
                 updatedTime: '2019-01-10T17:19:47+00:00'
                 customerMessage: ''
   '/checkouts/{checkoutId}/consignments/{consignmentId}':
+    parameters:
+      - $ref: '#/components/parameters/CheckoutIdPath'
+      - $ref: '#/components/parameters/ConsignmentIdPath'
+      - $ref: '#/components/parameters/Accept'
     put:
       tags:
         - Checkout Consignments
@@ -1390,21 +1316,8 @@ paths:
         > * Please note that this API endpoint is not concurrent safe, meaning multiple simultaneous requests could result in unexpected and inconsistent results.
       operationId: updateCheckoutConsignment
       parameters:
-        - name: checkoutId
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: consignmentId
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: include
-          in: query
-          schema:
-            type: string
-            default: consignments.availableShippingOptions, consignments.availablePickupOptions
+        - $ref: '#/components/parameters/IncludeShippingPickupDefault'
+        - $ref: '#/components/parameters/ContentType'
       requestBody:
         content:
           application/json:
@@ -1540,17 +1453,6 @@ paths:
         > * Substitute your storefront domain for `yourstore.example.com`. 
         > * The Send a Test Request feature is not currently supported for this endpoint.  
       operationId: deleteCheckoutConsignment
-      parameters:
-        - name: checkoutId
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: consignmentId
-          in: path
-          required: true
-          schema:
-            type: string
       responses:
         '200':
           description: ''
@@ -1668,6 +1570,10 @@ paths:
                 updatedTime: '2019-01-10T17:19:47+00:00'
                 customerMessage: ''
   '/checkouts/{checkoutId}/gift-certificates':
+    parameters:
+      - $ref: '#/components/parameters/CheckoutIdPath'
+      - $ref: '#/components/parameters/Accept'
+      - $ref: '#/components/parameters/ContentType'
     post:
       tags:
         - Checkout Gift Certificates
@@ -1682,12 +1588,6 @@ paths:
         > * Substitute your storefront domain for `yourstore.example.com`. 
         > * The Send a Test Request feature is not currently supported for this endpoint.  
       operationId: addCheckoutGiftCertificate
-      parameters:
-        - name: checkoutId
-          in: path
-          required: true
-          schema:
-            type: string
       requestBody:
         content:
           application/json:
@@ -1818,6 +1718,10 @@ paths:
                 type: object
       x-codegen-request-body-name: body
   '/checkouts/{checkoutId}/gift-certificates/{giftCertificateCode}':
+    parameters:
+      - $ref: '#/components/parameters/CheckoutIdPath'
+      - $ref: '#/components/parameters/GiftCertificateCodePath'
+      - $ref: '#/components/parameters/Accept'
     delete:
       tags:
         - Checkout Gift Certificates
@@ -1831,17 +1735,6 @@ paths:
         > * Substitute your storefront domain for `yourstore.example.com`. 
         > * The Send a Test Request feature is not currently supported for this endpoint.  
       operationId: deleteCheckoutGiftCertificate
-      parameters:
-        - name: checkoutId
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: giftCertificateCode
-          in: path
-          required: true
-          schema:
-            type: string
       responses:
         '200':
           description: ''
@@ -1850,6 +1743,10 @@ paths:
               schema:
                 $ref: '#/components/schemas/checkout_Full'
   '/checkouts/{checkoutId}/coupons':
+    parameters:
+      - $ref: '#/components/parameters/CheckoutIdPath'
+      - $ref: '#/components/parameters/Accept'
+      - $ref: '#/components/parameters/ContentType'
     post:
       tags:
         - Checkout Coupons
@@ -1864,12 +1761,6 @@ paths:
         > * Substitute your storefront domain for `yourstore.example.com`. 
         > * The Send a Test Request feature is not currently supported for this endpoint.  
       operationId: addCheckoutCoupon
-      parameters:
-        - name: checkoutId
-          in: path
-          required: true
-          schema:
-            type: string
       requestBody:
         content:
           application/json:
@@ -1999,6 +1890,10 @@ paths:
                 customerMessage: ''
       x-codegen-request-body-name: body
   '/checkouts/{checkoutId}/coupons/{couponCode}':
+    parameters:
+      - $ref: '#/components/parameters/CheckoutIdPath'
+      - $ref: '#/components/parameters/CouponCodePath'
+      - $ref: '#/components/parameters/Accept'
     delete:
       tags:
         - Checkout Coupons
@@ -2010,17 +1905,6 @@ paths:
         > * Substitute your storefront domain for `yourstore.example.com`. 
         > * The Send a Test Request feature is not currently supported for this endpoint.  
       operationId: deleteCheckoutCoupon
-      parameters:
-        - name: checkoutId
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: couponCode
-          in: path
-          required: true
-          schema:
-            type: string
       responses:
         '200':
           description: ''
@@ -2242,6 +2126,9 @@ paths:
                 updatedTime: '2018-09-18T17:47:35+00:00'
                 customerMessage: ''
   '/checkouts/{checkoutId}/store-credit':
+    parameters:
+      - $ref: '#/components/parameters/CheckoutIdPath'
+      - $ref: '#/components/parameters/Accept'
     post:
       tags:
         - Checkout Store Credit
@@ -2254,11 +2141,7 @@ paths:
         > * The Send a Test Request feature is not currently supported for this endpoint.
       operationId: addCheckoutStoreCredit
       parameters:
-        - name: checkoutId
-          in: path
-          required: true
-          schema:
-            type: string
+        - $ref: '#/components/parameters/ContentType'
       responses:
         '200':
           description: ''
@@ -2277,12 +2160,6 @@ paths:
         > * Substitute your storefront domain for `yourstore.example.com`. 
         > * The Send a Test Request feature is not currently supported for this endpoint.  
       operationId: removeCheckoutStoreCredit
-      parameters:
-        - name: checkoutId
-          in: path
-          required: true
-          schema:
-            type: string
       responses:
         '200':
           description: ''
@@ -2291,6 +2168,10 @@ paths:
               schema:
                 type: object
   '/checkouts/{checkoutId}/spam-protection':
+    parameters:
+      - $ref: '#/components/parameters/CheckoutIdPath'
+      - $ref: '#/components/parameters/Accept'
+      - $ref: '#/components/parameters/ContentType'
     post:
       tags:
         - Checkout Spam Protection
@@ -2302,12 +2183,6 @@ paths:
         > * Substitute your storefront domain for `yourstore.example.com`. 
         > * The Send a Test Request feature is not currently supported for this endpoint.  
       operationId: checkoutSpamProtection
-      parameters:
-        - name: checkoutId
-          in: path
-          required: true
-          schema:
-            type: string
       requestBody:
         content:
           application/json:
@@ -3571,10 +3446,10 @@ components:
             properties:
               itemId:
                 type: string
-                description: ''
+                description: The ID of a line item.
               quantity:
                 type: integer
-                description: ''
+                description: The quantity of the line item.
                 format: int32
         shippingOptionId:
           type: string
@@ -3677,10 +3552,10 @@ components:
             properties:
               itemId:
                 type: string
-                description: ''
+                description: The ID of a line item.
               quantity:
                 type: integer
-                description: ''
+                description: The quantity of a line item.
                 format: int32
         shippingOptionId:
           type: string
@@ -4239,9 +4114,144 @@ components:
             updatedTime: '2019-01-10T17:19:47+00:00'
             customerMessage: ''
   parameters:
-    include:
-      name: include
-      in: query
+    Accept:
+      name: Accept
+      in: header
+      required: true
+      description: 'The [MIME type](https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types) of the response body.'
       schema:
         type: string
-        default: consignments.availableShippingOptions
+        default: 'application/json'
+    ContentType:
+      name: Content-Type
+      in: header
+      required: true
+      description: 'The [MIME type](https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types) of the request body.'
+      schema:
+        type: string
+        default: 'application/json'
+    CheckoutIdPath:
+      name: checkoutId
+      in: path
+      required: true
+      description: The ID of the subject checkout. Identical to the cart ID.
+      schema:
+        type: string
+        format: uuid
+    CartIdPath:
+      name: cartId
+      in: path
+      required: true
+      description: The ID of the cart associated with this checkout. Identical to the checkout ID.
+      schema:
+        type: string
+        format: uuid
+    ItemIdPath:
+      name: itemId
+      in: path
+      required: true
+      description: The ID of an item being purchased.
+      schema:
+        type: string
+    AddressIdPath:
+      name: addressId
+      in: path
+      required: true
+      description: The ID of the subject address.
+      schema:
+        exclusiveMaximum: false
+        exclusiveMinimum: false
+        type: number
+        format: double
+    ConsignmentIdPath:
+      name: consignmentId
+      in: path
+      required: true
+      description: The ID of the subject consignment.
+      schema:
+        type: string
+    GiftCertificateCodePath:
+      name: giftCertificateCode
+      in: path
+      required: true
+      description: The code of the subject gift certificate.
+      schema:
+        type: string
+    CouponCodePath:
+      name: couponCode
+      in: path
+      required: true
+      description: The code of the subject coupon.
+      schema:
+        type: string
+    IncludeShippingDefault:
+      name: include
+      in: query
+      description: |-
+        * `cart.lineItems.physicalItems.options` - physical options
+        * `cart.lineItems.digitalItems.options` - digital options
+        * `cart.lineItems.physicalItems.categoryNames` - physical categories
+        * `cart.lineItems.digitalItems.categoryNames` - digital categories
+        * `cart.lineItems.customItems.categoryNames` - custom categories
+        * `customer` - customer
+        * `customer.customerGroup` - customer group
+        * `payments` - payments
+        * `promotions` - promotions
+        * `consignments.availableShippingOptions` - shipping options
+        * `consignments.availablePickupOptions` - pickup options
+      style: form
+      explode: false
+      schema:
+        type: array
+        default: 
+          - consignments.availableShippingOptions
+        items:
+          type: string
+          enum:
+            - cart.lineItems.physicalItems.options
+            - cart.lineItems.digitalItems.options
+            - cart.lineItems.physicalItems.categoryNames
+            - cart.lineItems.digitalItems.categoryNames
+            - cart.lineItems.customItems.categoryNames
+            - customer
+            - customer.customerGroup
+            - payments
+            - promotions
+            - consignments.availableShippingOptions
+            - consignments.availablePickupOptions
+    IncludeShippingPickupDefault:
+      name: include
+      in: query
+      description: |-
+        * `cart.lineItems.physicalItems.options` - physical options
+        * `cart.lineItems.digitalItems.options` - digital options
+        * `cart.lineItems.physicalItems.categoryNames` - physical categories
+        * `cart.lineItems.digitalItems.categoryNames` - digital categories
+        * `cart.lineItems.customItems.categoryNames` - custom categories
+        * `customer` - customer
+        * `customer.customerGroup` - customer group
+        * `payments` - payments
+        * `promotions` - promotions
+        * `consignments.availableShippingOptions` - shipping options
+        * `consignments.availablePickupOptions` - pickup options
+      style: form
+      explode: false
+      schema:
+        type: array
+        default:
+          - consignments.availableShippingOptions
+          - consignments.availablePickupOptions
+        items:
+          type: string
+          enum:
+            - cart.lineItems.physicalItems.options
+            - cart.lineItems.digitalItems.options
+            - cart.lineItems.physicalItems.categoryNames
+            - cart.lineItems.digitalItems.categoryNames
+            - cart.lineItems.customItems.categoryNames
+            - customer
+            - customer.customerGroup
+            - payments
+            - promotions
+            - consignments.availableShippingOptions
+            - consignments.availablePickupOptions

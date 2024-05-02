@@ -18,3 +18,4 @@ find ${GITHUB_WORKSPACE} -type f -name '*.mdx' -exec quality-docs {} + \
       -level="${INPUT_LEVEL}" \
       ${INPUT_REVIEWDOG_FLAGS} \
       -tee
+      -diff="git diff --unified=0 ${INPUT_BEFORE_COMMIT} ${INPUT_AFTER_COMMIT}"

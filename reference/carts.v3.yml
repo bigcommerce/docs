@@ -180,7 +180,7 @@ paths:
                       message: Happy Birthday
                   channel_id: 1
                   currency:
-                    code: usd
+                    code: USD
                   locale: en-US
               Cart with file upload options:
                 summary: Creating a cart using the file upload option.
@@ -356,12 +356,10 @@ paths:
         * Redirect URLs point to either a shared checkout domain or a channel-specific domain, depending on the storefront configuration.
         * Once a redirect URL has been visited, it will be invalidated and cannot be used again. 
         * If your application requires URLs to be visited more than once, consider generating a fresh one each time you need to restore a cart, and redirecting to the URL from your own application.
-        * Redirect URLs can be generated only from carts that were created using the **REST Management API**. 
         * To restore a cart that was created on the storefront, either by a shopper or a Storefront API, first recreate the cart using the **REST Management API**.
         * When redirecting the shopper, you can add a set of `query_params` to the URL. The `query_params` feature allows passing additional information to the redirect URL.
       tags:
         - Redirects
-        - Cart Redirect URLs
       requestBody:
         content:
           application/json:
@@ -1004,6 +1002,7 @@ paths:
         - $ref: '#/components/parameters/MetafieldNamespaceParam'
         - $ref: '#/components/parameters/MetafieldNamespaceInParam'
         - $ref: '#/components/parameters/DirectionParam'
+        - $ref: '#/components/parameters/IncludeFieldsParamMetafields'
     post:
       summary: Create multiple Metafields
       tags:
@@ -1715,6 +1714,7 @@ components:
     ItemDigital:
       allOf:
         - title: Base Item
+          type: object
           properties:
             id:
               type: string
@@ -1884,7 +1884,8 @@ components:
             - variant_id
             - product_id
             - quantity
-        - properties:
+        - type: object
+          properties:
             download_file_urls:
               description: URLs to download all product files.
               type: array
@@ -1898,11 +1899,11 @@ components:
             download_size:
               description: 'Specifies the combined download size of all files in human-readable style; for example, `30MB`.'
               type: string
-      type: object
-      title: ''
+      title: 'Digital Item'
     ItemDigitalGet:
       allOf:
         - title: Base Item
+          type: object
           properties:
             id:
               type: string
@@ -2062,7 +2063,8 @@ components:
                     type: number
                     description: The product option value identifier in number format.
                     example: 128
-        - properties:
+        - type: object
+          properties:
             download_file_urls:
               description: URLs to download all product files.
               type: array
@@ -2076,8 +2078,7 @@ components:
             download_size:
               description: 'Specifies the combined download size of all files in human-readable style; for example, `30MB`.'
               type: string
-      type: object
-      title: ''
+      title: 'Digital Item Response'
       description: ''
     ItemPhysical:
       allOf:
@@ -2509,6 +2510,7 @@ components:
           description: The discounted amount.
       x-internal: false
     GiftWrapping:
+      type: object
       properties:
         name:
           type: string
@@ -2758,11 +2760,12 @@ components:
       properties:
         line_items:
           oneOf:
-            - items:
+            - type: array
+              items:
                 $ref: '#/components/schemas/cart_PostVariant'
-            - items:
+            - type: array
+              items:
                 $ref: '#/components/schemas/cart_PostModifier'
-          type: array
         gift_certificates:
           type: array
           items:
@@ -2905,6 +2908,8 @@ components:
           type: string
         errors:
           type: object
+          properties: {}
+          additionalProperties: true
       x-tags:
         - Models
     LineItemsGet:
@@ -3346,6 +3351,7 @@ components:
             $ref: '#/components/schemas/Metafield'
         errors:
           type: array
+          items: {}
           description: Empty for 200 responses.
           example: []
         meta:
@@ -3367,6 +3373,7 @@ components:
             - 125
         errors:
           type: array
+          items: {}
           description: Empty for 200 responses.
           example: []
         meta:
@@ -3431,6 +3438,8 @@ components:
           $ref: '#/components/schemas/ErrorDetail'
     ErrorDetail:
       type: object
+      properties: {}
+      additionalProperties: true
       description: |
         Error detail response payload for the BigCommerce API.
       example:
@@ -3701,6 +3710,27 @@ components:
         enum:
           - asc
           - desc
+    IncludeFieldsParamMetafields:
+      name: include_fields
+      in: query
+      description: Fields to include, in a comma-separated list. The ID and the specified fields will be returned.
+      style: form
+      explode: false
+      schema:
+        type: array
+        items:
+          type: string
+          enum:
+            - resource_id
+            - key
+            - value
+            - namespace
+            - permission_set
+            - resource_type
+            - description
+            - owner_client_id
+            - date_created
+            - date_modified
   securitySchemes:
     X-Auth-Token:
       name: X-Auth-Token

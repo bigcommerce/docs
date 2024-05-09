@@ -702,6 +702,20 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/metafield_200'
+        '409':
+          description: |
+            The `Metafield` conflicts with another `Metafield`. This can result from duplicate unique key combinations of the appʼs client id, namespace, key, resource_type, and resource_id.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse' 
+        '422':
+          description: |
+            Unprocessable Entity (The following fields are invalid: key)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
       requestBody:
         content:
           application/json:
@@ -730,6 +744,19 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/metafield_200'
+        '404':
+          description: |
+            Not found (A metafield was not found with this query).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFound'
+              examples:
+                example-1:
+                  value:
+                    status: 404
+                    title: The resource at that URL is not found.
+                    type: 'https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes'
       operationId: getChannelMetafield
       description: Returns a single channel metafield.
     put:
@@ -740,6 +767,19 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/metafield_200'
+        '404':
+          description: |
+            Not found (A metafield was not found with this query).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFound'
+              examples:
+                example-1:
+                  value:
+                    status: 404
+                    title: The resource at that URL is not found.
+                    type: 'https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes'
       requestBody:
         content:
           application/json:
@@ -758,6 +798,19 @@ paths:
       responses:
         '204':
           description: No Content
+        '404':
+          description: |
+            Not found (A metafield was not found with this query).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFound'
+              examples:
+                example-1:
+                  value:
+                    status: 404
+                    title: The resource at that URL is not found.
+                    type: 'https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes'
       tags:
         - Metafields
       description: Deletes a single channel metafield.
@@ -808,12 +861,11 @@ paths:
               schema:
                 $ref: '#/components/schemas/MetaFieldCollectionResponse_POST_PUT'
         '422':
-          description: |
-            Response object for metafields creation with partial success.
+          description: Unprocessable entity (The following fields are invalid.)
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/MetaFieldCollectionResponsePartialSuccess_POST_PUT'
+                $ref: '#/components/schemas/ErrorResponse'
     put:
       summary: Update multiple Metafields
       tags:
@@ -2578,6 +2630,21 @@ components:
       example:
         "1": "Unauthorized to delete"
         "2": "Metafield does not exist"
+    ErrorResponse:
+      type: object
+      properties:
+        status:
+          type: integer
+        title:
+          type: string
+        type:
+          type: string
+        instance:
+          type: string
+        errors:
+          type: object
+          properties: {}
+          additionalProperties: true
     CollectionMeta:
       type: object
       description: Data about the response, including pagination and collection totals.
@@ -2769,6 +2836,23 @@ components:
                 The ID of metafield to update.
           required:
             - id
+      x-internal: false
+    NotFound:
+      description: Error payload for the BigCommerce API.
+      type: object
+      properties:
+        status:
+          description: |
+            404 HTTP status code.
+          type: integer
+        title:
+          description: The error title describing the particular error.
+          type: string
+        type:
+          type: string
+        instance:
+          type: string
+      title: Not Found
       x-internal: false
     PutCheckoutUrl:
       type: object

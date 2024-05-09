@@ -335,6 +335,39 @@ Payload objects with the following scopes take the form that follows:
 }
 ```
 
+## Delivery exception hooks
+
+| Name / Scope             | Description |
+|:-------------------------|:------------|
+| store/hook/deliveryException | Once configured by the API client, this hook fires when the destination has issues responding to regular hooks. The system will send deliveryException hook to a different destination and provide information regarding unsuccessful webhook delivery. There can only be one deliveryException hook per storeId/clientId. The destination **must** be different from all other hook destinations.  |
+
+There are three different error codes available:
+* 90001 - The hook couldn’t be delivered, but system will retry. This type is limited to be sent only once in 10 minutes per destination.
+* 90002 - The hook couldn’t be delivered. All attempts are exhausted. The hook is going to be disabled.
+* 90003 - The hook couldn’t be delivered because the destination domain was temporarily blocked due to many unsuccessful attempts to deliver hooks.
+
+See [Webhooks Overview](/docs/integrations/webhooks) and [Troubleshooting](/docs/integrations/webhooks) documentation for more information.
+
+
+Payload objects with the following scopes take the form that follows:
+
+* `store/hook/deliveryException`
+
+```json filename="Example delivery exception payload object" showLineNumbers copy
+{
+  "scope": "store/hook/deliveryException",
+  "store_id": "1025646",
+  "data": {
+    "type": "webhook",
+    "id": 123, // ID of the webhook
+    "error_code": 90001, // some error code for type of failure? retry vs deactivation, etc
+    "message": "Non-200 response received when delivering to https://app.com/bc/webhook, will retry"
+  },
+  "hash": "e0c298b8097a6a2f39d17e593a9b360f5b2fef7d",
+  "created_at": 1561482670,
+  "producer": "stores/{store_hash}"
+}
+```
 
 ## Emails
 
@@ -617,7 +650,7 @@ The following webhook events fire in response to actions that affect a specific 
 | Name / Scope | Description |
 |:-------------|:------------|
 | `store/priceList/record/created/` | Fires when a price list record is created. | 
-| `store/priceList/record/updated/` | Fires when a price list record is updated. | 
+| `store/priceList/record/updated/` | Fires when an existing specific price list record is updated by variant and currency. | 
 | `store/priceList/record/deleted/` | Fires when a price list record is deleted. | 
 
 
@@ -647,7 +680,7 @@ The following batch webhook events fire in response to actions that affect price
 | Name / Scope | Description |
 |:-------------|:------------|
 | `store/priceList/records/created/` | Fires when price list records are created. | 
-| `store/priceList/records/updated/` | Fires when price list records are updated. | 
+| `store/priceList/records/updated/` | Fires when you update one or more existing price list records using any batch call.| 
 | `store/priceList/records/deleted/` | Fires when price list records are deleted. | 
 
 Payload objects with the following scopes take the form that follows:
@@ -972,7 +1005,6 @@ Consult the [social media links section of the Channel Webhooks Guide](/docs/int
 A change to the following store settings triggers a `store/information/updated` event:
 
 * Store Name
-* Store Address
 * Store Address
 * Store Phone Number
 * Admin Email

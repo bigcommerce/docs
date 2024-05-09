@@ -161,11 +161,11 @@ paths:
 
         Requires at least one of the following scopes:
         * `store_v2_orders`
-        * `store_v2_transactions`
-
-        **Note:**
-        Order refunds are processed consecutively. Processing synchronous refunds on an order are not yet supported.
-
+        * `store_v2_transactions`   
+      
+        **Notes:**
+        * Create a refund quote before performing a refund request to best avoid a `422` error. Check the refund quote's response body for the `refund_methods` array. The `amount` given in the array must match the `amount` used in the refund request body.
+        * Order refunds are processed consecutively. Processing synchronous refunds on an order is not yet supported.
       operationId: createOrderRefundQuotes
       parameters:
         - $ref: '#/components/parameters/ContentType'
@@ -397,7 +397,7 @@ paths:
       parameters:
         - name: 'order_id:in'
           in: query
-          description: Filter by `order_id`. Accepts multiple as comma-separated values.
+          description: Pass a comma-separated list of order IDs to filter the included orders. Accepts multiple values.
           style: form
           explode: false
           schema:
@@ -406,7 +406,7 @@ paths:
               type: integer
         - name: 'id:in'
           in: query
-          description: Filter by refund `id`. Accepts multiple as comma-separated values.
+          description: Pass a comma-separated list of refund IDs to filter the included refunds. Accepts multiple values.
           style: form
           explode: false
           schema:
@@ -471,10 +471,9 @@ paths:
         required: true
         x-examples:
           application/json:
-            - items:
-                - item_id: 76
-                  item_type: PRODUCT
-                  quantity: 1
+            - item_id: 76
+              item_type: PRODUCT
+              quantity: 1
               tax_adjustment_amount: 0
       responses:
         '201':
@@ -580,19 +579,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/MetaFieldCollectionResponse'
               examples: {}
-        '404':
-          description: |
-            The resource was not found.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/NotFound'
-              examples:
-                example-1:
-                  value:
-                    status: 404
-                    title: There was no order found with ID 1010
-                    type: 'https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes'
     post:
       summary: Create Metafields
       tags:
@@ -609,7 +595,12 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/MetafieldBase_Post'
-            examples: {}
+            example:
+              permission_set: app_only
+              namespace: Sales Department
+              key: Staff Name
+              value: Sam
+              description: Name of staff member
         description: |
           A `Metafield` object.
         required: true
@@ -623,7 +614,7 @@ paths:
                 $ref: '#/components/schemas/MetafieldResponse'
         '409':
           description: |
-            The `Metafield` conflicts with another `Metafield`. This can result from duplicate unique key combinations of the appʼs client id, namespace, key, resource_type, and resource_id.
+            The metafield conflicts with another metafield. This can result from duplicate unique key combinations of the appʼs client ID, namespace, key, resource type, and resource ID.
           content:
             application/json:
               schema:
@@ -663,7 +654,7 @@ paths:
                 $ref: '#/components/schemas/MetafieldResponse'
         '404':
           description: |
-            The resource was not found.
+            A metafield was not found with this query.
           content:
             application/json:
               schema:
@@ -675,7 +666,7 @@ paths:
       description: |-
         Updates a `Metafield` object.
 
-        The maxiumum number of metafields allowed on each order, product, category, variant, or brand is 250 per client ID.
+        The maximum number of metafields allowed on each order, product, category, variant, or brand is 250 per client ID.
       operationId: updateOrderMetafield
       parameters:
         - $ref: '#/components/parameters/ContentType'
@@ -697,7 +688,7 @@ paths:
                 $ref: '#/components/schemas/MetafieldResponse'
         '404':
           description: |
-            The resource was not found.
+            A metafield was not found with this query.
           content:
             application/json:
               schema:
@@ -764,9 +755,9 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - type: object
                   - $ref: '#/components/schemas/GlobalOrderSettings'
-                  - properties:
+                  - type: object
+                    properties:
                       meta:
                         $ref: '#/components/schemas/metaEmpty_Full'
         '400':
@@ -879,8 +870,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MetaFieldCollectionResponse'
-        '500':
-          description: Internal Server Error
       parameters:
         - $ref: '#/components/parameters/PageParam'
         - $ref: '#/components/parameters/LimitParam'
@@ -889,6 +878,7 @@ paths:
         - $ref: '#/components/parameters/MetafieldNamespaceParam'
         - $ref: '#/components/parameters/MetafieldNamespaceInParam'
         - $ref: '#/components/parameters/DirectionParam'
+        - $ref: '#/components/parameters/IncludeFieldsParamMetafields'
     post:
       summary: Create multiple Metafields
       tags:
@@ -928,13 +918,11 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MetaFieldCollectionResponsePartialSuccess_POST_PUT'
-        '500':
-          description: Internal Server Error
     put:
       summary: Update multiple Metafields
       tags:
         - Batch metafields
-      description: Create multiple metafields.
+      description: Update multiple metafields.
       operationId: updateOrdersMetafields
       requestBody:
         content:
@@ -969,8 +957,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MetaFieldCollectionResponsePartialSuccess_POST_PUT'
-        '500':
-          description: Internal Server Error
     delete:
       summary: Delete All Metafields
       tags:
@@ -1562,7 +1548,7 @@ components:
         method:
           type: string
           description: |
-            The payment method: `credit_card` - a credit-card transaction; `electronic_wallet` - an online wallet; `store_credit` - a transaction using store credit; `gift_certificate` - a transaction using a gift certificate; `custom` - manual payment methods; `token` - payment token; `nonce` - temporary payment token; `offsite` - online payment off the site (e.g., PayPal); `offline` - payment method that takes place offline.
+            The payment method: `credit_card` - a credit card transaction; `electronic_wallet` - an online wallet; `store_credit` - a transaction using store credit; `gift_certificate` - a transaction using a gift certificate; `custom` - manual payment methods; `token` - payment token; `nonce` - temporary payment token; `offsite` - online payment off the site (e.g., PayPal); `offline` - payment method that takes place offline.
           enum:
             - credit_card
             - electronic_wallet
@@ -1667,17 +1653,20 @@ components:
             404 HTTP status code.
           type: integer
         title:
-          description: The error title describing the particular error.
+          description: The resource at that URL is not found.
           type: string
         type:
           type: string
-        instance:
-          type: string
+        errors:
+          type: array
+          items: {}
+          description: Empty for 200 responses.
       title: Not Found
       x-internal: false
     Transaction:
       allOf:
         - title: Transaction Base
+          type: object
           properties:
             event:
               type: string
@@ -1694,7 +1683,7 @@ components:
             method:
               type: string
               description: |
-                The payment method: `credit_card` - a credit-card transaction; `electronic_wallet` - an online wallet; `store_credit` - a transaction using store credit; `gift_certificate` - a transaction using a gift certificate; `custom` - manual payment methods; `token` - payment token; `nonce` - temporary payment token; `offsite` - online payment off the site; `offline` - payment method that takes place offline.
+                The payment method: `credit_card` - a credit card transaction; `electronic_wallet` - an online wallet; `store_credit` - a transaction using store credit; `gift_certificate` - a transaction using a gift certificate; `custom` - manual payment methods; `token` - payment token; `nonce` - temporary payment token; `offsite` - online payment off the site; `offline` - payment method that takes place offline.
               enum:
                 - credit_card
                 - electronic_wallet
@@ -1807,7 +1796,8 @@ components:
             - amount
             - currency
             - gateway
-        - properties:
+        - type: object
+          properties:
             id:
               type: integer
               description: |
@@ -1904,7 +1894,6 @@ components:
                   type: number
                   format: float
                   example: 35.42
-      type: object
       title: ''
       x-examples:
         Example 1:
@@ -1952,7 +1941,7 @@ components:
       description: ''
     CreditCard:
       type: object
-      description: A credit-card model.
+      description: A credit card model.
       title: Credit Card
       properties:
         card_type:
@@ -1979,21 +1968,21 @@ components:
           description: '**Allowed values**: alelo, alia, american_express, cabal, carnet, dankort, diners_club, discover, elo, forbrugsforeningen, jcb, maestro, master, naranja, sodexo, unionpay, visa, vr'
         card_iin:
           description: |
-            The IIN of a credit-card number.
+            The IIN of a credit card number.
           type: string
         card_last4:
           description: |
-            The last 4 digits of a credit-card number.
+            The last 4 digits of a credit card number.
           type: string
         card_expiry_month:
           description: |
-            The expiry month of a credit-card.
+            The expiry month of a credit card.
           type: integer
           minimum: 1
           maximum: 12
         card_expiry_year:
           description: |
-            The expiry year of a credit-card.
+            The expiry year of a credit card.
           type: integer
       x-internal: false
     StoreCredit:
@@ -2224,7 +2213,6 @@ components:
       title: RefundQuote_Post
       description: Request body for refund quotes.
       x-internal: false
-      x-examples: {}
       properties:
         items:
           type: array
@@ -2245,6 +2233,9 @@ components:
         total_refund_tax_amount:
           type: number
           example: 1.95
+        order_level_refund_amount:
+          type: number
+          example: 1.99
         rounding:
           type: number
           description: Indicates rounding value to bring `refund_total` to an amount refundable with payment providers (in this case to 2 decimal places).
@@ -2332,7 +2323,6 @@ components:
       required:
         - items
         - payments
-      x-examples: {}
     RefundID_Get:
       type: object
       x-examples:
@@ -2469,7 +2459,6 @@ components:
       items:
         $ref: '#/components/schemas/RefundRequest_Post'
       x-internal: false
-      x-examples: {}
     FailedQuoteError:
       type: object
       description: Failed quote response.
@@ -2492,7 +2481,6 @@ components:
         - $ref: '#/components/schemas/AmountBoundItem'
         - $ref: '#/components/schemas/QuantityBoundItem'
         - $ref: '#/components/schemas/TaxExemptItem'
-      x-examples: {}
     PaymentRequest:
       type: object
       properties:
@@ -2825,6 +2813,7 @@ components:
             $ref: '#/components/schemas/Metafield'
         errors:
           type: array
+          items: {}
           description: Empty for 200 responses.
           example: []
         meta:
@@ -2834,7 +2823,6 @@ components:
       description: |
         Response payload for the BigCommerce API.
       x-internal: false
-      x-examples: {}
       allOf:
         - type: object
           properties:
@@ -2998,7 +2986,6 @@ components:
               example: asdfasdfasdfasdfasdfasdfasdf
               readOnly: true
       x-internal: false
-      x-examples: {}
     MetafieldPut:
       description: |
         The model for a PUT to update metafield.
@@ -3090,6 +3077,7 @@ components:
             - 125
         errors:
           type: array
+          items: {}
           description: Empty for 200 responses.
           example: []
         meta:
@@ -3176,6 +3164,8 @@ components:
           $ref: '#/components/schemas/ErrorDetail'
     ErrorDetail:
       type: object
+      properties: {}
+      additionalProperties: true
       description: |
         Error detail response payload for the BigCommerce API.
       example:
@@ -3274,6 +3264,8 @@ components:
           properties:
             errors:
               type: object
+              properties: {}
+              additionalProperties: true
       x-tags:
         - Models
     BaseError:
@@ -3291,10 +3283,6 @@ components:
           type: string
         type:
           type: string
-      x-tags:
-        - Models
-    betaDetailedErrors:
-      type: object
       x-tags:
         - Models
   responses:
@@ -3317,6 +3305,7 @@ components:
       content:
         application/json:
           schema:
+            type: object
             properties:
               data:
                 $ref: '#/components/schemas/UpdateReturnStatuses'
@@ -3349,6 +3338,7 @@ components:
       content:
         application/json:
           schema:
+            type: object
             properties:
               data:
                 $ref: '#/components/schemas/ReceivedItems_Base'
@@ -3363,6 +3353,7 @@ components:
       content:
         application/json:
           schema:
+            type: object
             properties:
               data:
                 $ref: '#/components/schemas/ReviewedItems_Base'
@@ -3498,6 +3489,8 @@ components:
         application/json:
           schema:
             type: object
+            properties: {}
+            additionalProperties: true
     RefundCollection_Resp:
       description: ''
       content:
@@ -3570,40 +3563,40 @@ components:
       content:
         application/json:
           schema:
-            allOf:
-              - properties:
-                  data:
-                    $ref: '#/components/schemas/Transaction_Post'
-              - properties:
-                  id:
-                    type: integer
-                    description: |
-                      Unique identifier for the transaction.
-                  order_id:
-                    type: string
-                    description: Identifier for the BigCommerce Order with which this transaction is associated.
-                  date_created:
-                    type: string
-                    format: date-time
-                    description: |
-                      The datetime of the transaction.
-                  payment_instrument_token:
-                    type: string
-                    description: This field contains internal BigPay token for stored card that is then mapped to the actual third-party token. We currently do not offer a way to get third party tokens.These tokens are read-only and do not return any information about the payment.
-                  avs_result:
-                    $ref: '#/components/schemas/AVSResult'
-                  cvv_result:
-                    $ref: '#/components/schemas/CVVResult'
-                  credit_card:
-                    $ref: '#/components/schemas/CreditCard'
-                  gift_certificate:
-                    $ref: '#/components/schemas/GiftCertificate'
-                  store_credit:
-                    $ref: '#/components/schemas/StoreCredit'
-              - properties:
-                  meta:
-                    $ref: '#/components/schemas/metaEmpty_Full'
             type: object
+            properties:
+              data:
+                allOf:
+                  - $ref: '#/components/schemas/Transaction_Post'
+                  - type: object
+                    properties:
+                      id:
+                        type: integer
+                        description: |
+                          Unique identifier for the transaction.
+                      order_id:
+                        type: string
+                        description: Identifier for the BigCommerce Order with which this transaction is associated.
+                      date_created:
+                        type: string
+                        format: date-time
+                        description: |
+                          The datetime of the transaction.
+                      payment_instrument_token:
+                        type: string
+                        description: This field contains internal BigPay token for stored card that is then mapped to the actual third-party token. We currently do not offer a way to get third party tokens.These tokens are read-only and do not return any information about the payment.
+                      avs_result:
+                        $ref: '#/components/schemas/AVSResult'
+                      cvv_result:
+                        $ref: '#/components/schemas/CVVResult'
+                      credit_card:
+                        $ref: '#/components/schemas/CreditCard'
+                      gift_certificate:
+                        $ref: '#/components/schemas/GiftCertificate'
+                      store_credit:
+                        $ref: '#/components/schemas/StoreCredit'
+              meta:
+                $ref: '#/components/schemas/metaEmpty_Full'
     RefundQuotesBATCH_Resp:
       description: ''
       content:
@@ -3704,7 +3697,8 @@ components:
     MetafieldKeyInParam:
       name: key:in
       in: query
-      description: Filter based on comma-separated metafieldʼs keys. Could be used with vanilla `key` query parameter.
+      description: |-
+        Filter using a comma-separated list of metafield keys. Could be used with vanilla `key` query parameter.
       required: false
       style: form
       explode: false
@@ -3723,7 +3717,8 @@ components:
     MetafieldNamespaceInParam:
       name: namespace:in
       in: query
-      description: Filter based on comma-separated metafieldʼs namespaces. Could be used with vanilla `namespace` query parameter.
+      description: |-
+        Filter using a comma-separated list of metafield namespaces. Can be used with vanilla `namespace` query parameter.
       required: false
       style: form
       explode: false
@@ -3750,6 +3745,27 @@ components:
         enum:
           - asc
           - desc
+    IncludeFieldsParamMetafields:
+      name: include_fields
+      in: query
+      description: Fields to include, in a comma-separated list. The ID and the specified fields will be returned.
+      style: form
+      explode: false
+      schema:
+        type: array
+        items:
+          type: string
+          enum:
+            - resource_id
+            - key
+            - value
+            - namespace
+            - permission_set
+            - resource_type
+            - description
+            - owner_client_id
+            - date_created
+            - date_modified
   securitySchemes:
     X-Auth-Token:
       name: X-Auth-Token

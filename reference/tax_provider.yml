@@ -19,14 +19,14 @@ servers:
 paths:
   /estimate:
     post:
-      summary: Estimate Taxes
+      summary: Estimate taxes
       tags:
         - Tax Provider
       description: |-
         Submit the quote request to retrieve an estimate from the enabled third-party tax provider. Estimates are not expected to be persisted by the tax provider.
 
         > Server URL
-        > - For supporting tax providers, the server URL contains the tax provider's profile field; for example, `your_profile.example.com`.
+        > - For supporting tax providers, the server URL contains the tax providerʼs profile field; for example, `your_profile.example.com`.
         > - The Try it feature is not currently supported for this endpoint.
 
         The following actions can trigger tax estimate requests multiple times during a standard checkout on a BigCommerce storefront, depending on the BigCommerce merchant’s settings.
@@ -50,7 +50,7 @@ paths:
         - Test connection feature in Tax Settings.
       operationId: estimateTaxes
       parameters:
-        - $ref: '#/components/parameters/header-storehash'
+        - $ref: '#/components/parameters/StoreHashHeader'
       requestBody:
         content:
           application/json:
@@ -308,23 +308,18 @@ paths:
           description: Fallback Tax will be used for this transaction. General response that points to an error on the tax provider side. These types of errors should be promptly resolved by the tax provider.
   /void:
     post:
-      summary: Void Tax Quote
+      summary: Void tax quote
       description: |- 
         Invalidate the persisted tax quote as identified by the given unique ID. Relevant to order cancellations, full refunds, or moving an order from a paid status to an unpaid status.
 
         > Server URL
-        > - For supporting tax providers, the server URL contains the tax provider's profile field; for example, `your_profile.example.com`.
+        > - For supporting tax providers, the server URL contains the tax providerʼs profile field; for example, `your_profile.example.com`.
         > - The Try it feature is not currently supported for this endpoint.
 
       operationId: voidTaxQuote
       parameters:
-        - name: id
-          in: query
-          description: 'Unique ID identifying the existing, persisted Tax Quote that will be voided.'
-          required: true
-          schema:
-            type: string
-        - $ref: '#/components/parameters/header-storehash'
+        - $ref: '#/components/parameters/IdQueryVoid'
+        - $ref: '#/components/parameters/StoreHashHeader'
       responses:
         '200':
           description: OK
@@ -343,12 +338,12 @@ paths:
         Submit the quote request to be persisted by the enabled third-party tax provider. A commit operation is intended to be submitted once only, when the Order has been confirmed and paid.
 
         > Server URL
-        > - For supporting tax providers, the server URL contains the tax provider's profile field; for example, `your_profile.example.com`.
+        > - For supporting tax providers, the server URL contains the tax providerʼs profile field; for example, `your_profile.example.com`.
         > - The Try it feature is not currently supported for this endpoint.
 
       operationId: commitTaxQuote
       parameters:
-        - $ref: '#/components/parameters/header-storehash'
+        - $ref: '#/components/parameters/StoreHashHeader'
       requestBody:
         content:
           application/json:
@@ -849,20 +844,15 @@ paths:
         The returned **Tax Quote** response is expected to be the same to a response returned by an equivalent response to **estimate** or **commit** methods.
 
         > Server URL
-        > - For supporting tax providers, the server URL contains the tax provider's profile field; for example, `your_profile.example.com`.
+        > - For supporting tax providers, the server URL contains the tax providerʼs profile field; for example, `your_profile.example.com`.
         > - The Try it feature is not currently supported for this endpoint.
         
       operationId: adjustTaxQuote
       tags:
         - Tax Provider
       parameters:
-        - $ref: '#/components/parameters/header-storehash'
-        - in: query
-          name: id
-          required: true
-          description: 'Unique ID identifying the existing, persisted Tax Quote that will be adjusted.'
-          schema:
-            type: string
+        - $ref: '#/components/parameters/StoreHashHeader'
+        - $ref: '#/components/parameters/IdQueryAdjusted'
       requestBody:
         content:
           application/json:
@@ -870,10 +860,24 @@ paths:
               $ref: '#/components/schemas/request-adjust'
 components:
   parameters:
-    header-storehash:
-      name: X-BC-Store-Hash
+    StoreHashHeader:
+      name: X-Bc-Store-Hash
       in: header
-      description: BigCommerce will send through the Store Hash as part of all Tax Provider API operations. Each BigCommerce store on the platform has a unique Store Hash value for the store’s lifetime. This value can assist in account verification or profile matching responsibilities.
+      description: BigCommerce will send through the store hash as part of all tax provider operations. Each BigCommerce store on the platform has a unique store hash value for the store’s lifetime. This value can assist in account verification or profile matching responsibilities.
+      required: true
+      schema:
+        type: string
+    IdQueryVoid:
+      name: id
+      in: query
+      description: Unique ID identifying the existing, persisted tax quote that will be voided.
+      required: true
+      schema:
+        type: string
+    IdQueryAdjusted:
+      name: id
+      in: query
+      description: Unique ID identifying the existing, persisted tax quote that will be adjusted.
       required: true
       schema:
         type: string
@@ -962,7 +966,6 @@ components:
         origin_address:
           $ref: '#/components/schemas/Address'
         shipping:
-          type: object
           description: Shipping line item present in each document request.
           allOf:
             - $ref: '#/components/schemas/request-item'
@@ -973,7 +976,6 @@ components:
               required:
                 - type
         handling:
-          type: object
           description: Handling line item present in each document request.
           allOf:
             - $ref: '#/components/schemas/request-item'
@@ -994,15 +996,14 @@ components:
                   type:
                     $ref: '#/components/schemas/item_type'
                   wrapping:
-                    type: object
                     description: Optional gift wrapping for items in the consignment.
-                    nullable: true
                     allOf:
                       - $ref: '#/components/schemas/request-item'
                       - type: object
                         properties:
                           type:
                             $ref: '#/components/schemas/wrapping_type'
+                        nullable: true
                         required:
                           - type
                 required:
@@ -1168,21 +1169,19 @@ components:
                   type:
                     $ref: '#/components/schemas/item_type'
                   wrapping:
-                    type: object
                     description: Optional gift wrapping for items in the consignment.
-                    nullable: true
                     allOf:
                       - $ref: '#/components/schemas/response-item'
                       - type: object
                         properties:
                           type:
                             $ref: '#/components/schemas/wrapping_type'
+                        nullable: true
                         required: 
                           - type
                 required:
                   - type
         shipping:
-          type: object
           description: Shipping line item present in each document request.
           allOf:
             - $ref: '#/components/schemas/response-item'
@@ -1193,7 +1192,6 @@ components:
               required:
                 - type
         handling:
-          type: object
           description: Handling line item present in each document request.
           allOf:
             - $ref: '#/components/schemas/response-item'

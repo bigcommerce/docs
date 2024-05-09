@@ -128,8 +128,12 @@ paths:
         - name: 'email:in'
           in: query
           description: 'Filter items by email. `email:in=janedoe@example.com`'
+          style: form
+          explode: false
           schema:
-            type: string
+            type: array
+            items:
+              type: string
         - name: 'name:in'
           in: query
           description: Filter items by first_name and last_name. `name=james moriarty`
@@ -143,7 +147,7 @@ paths:
           in: query
           description: |-
             Filter items by substring in first_name and last_name.
-            `name:like=moriarty, sherlock`
+            `name:like=moriarty,sherlock`
             Concatenates the first_name and last_name fields.
           style: form
           explode: false
@@ -174,6 +178,7 @@ paths:
              * `segment_ids`- segments the customer belongs to (Beta)
 
              `include=addresses,storecredit,attributes,formfields,shopper_profile_id,segment_ids`
+          style: form
           explode: false
           schema:
             type: array
@@ -281,7 +286,6 @@ paths:
                       - name: "test"
                         value: "test"
         required: true
-        x-examples: {}
         description: ''
       responses:
         '200':
@@ -467,10 +471,14 @@ paths:
             Indicates whether to include customer address sub-resources:
             * `formfields` - address form fields
             `include=formfields`
+          style: form
+          explode: false
           schema:
-            type: string
-            enum:
-              - formfields
+            type: array
+            items:
+              type: string
+              enum:
+                - formfields
         - name: 'id:in'
           in: query
           description: |-
@@ -780,7 +788,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CustomerSettingsObject'
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/CustomerSettingsObject'
+                  meta:
+                    type: object
+                    properties: {}
+                    additionalProperties: true
               examples:
                 data:
                   value:
@@ -817,7 +832,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CustomerSettingsObject'
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/CustomerSettingsObject'
+                  meta:
+                    type: object
+                    properties: {}
+                    additionalProperties: true
               examples:
                 data:
                   value:
@@ -852,7 +874,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CustomerChannelSettingsObject'
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/CustomerChannelSettingsObject'
+                  meta:
+                    type: object
+                    properties: {}
+                    additionalProperties: true
               examples:
                 data:
                   value:
@@ -905,7 +934,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CustomerSettingsObject'
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/CustomerSettingsObject'
+                  meta:
+                    type: object
+                    properties: {}
+                    additionalProperties: true
               examples:
                 example:
                   value:
@@ -1576,7 +1612,7 @@ paths:
                     propertyName: type
                     mapping:
                       stored_card: '#/components/schemas/CardInstrument'
-                      stored_paypal_account: '#/components/schemas/PaypalAccountInstrument'
+                      stored_paypal_account: '#/components/schemas/PayPalAccountInstrument'
                       stored_bank_account: '#/components/schemas/BankAccountInstrument'
               examples:
                 example-1:
@@ -1764,7 +1800,7 @@ paths:
       tags:
         - Customer Batch Metafields
       description: Get all customer metafields.
-      operationId: getallCustomersMetafields
+      operationId: getAllCustomersMetafields
       responses:
         '200':
           description: |
@@ -1783,6 +1819,7 @@ paths:
         - $ref: '#/components/parameters/MetafieldNamespaceParam'
         - $ref: '#/components/parameters/MetafieldNamespaceInParam'
         - $ref: '#/components/parameters/DirectionParam'
+        - $ref: '#/components/parameters/IncludeFieldsParamMetafields'
     post:
       summary: Create Multiple Metafields
       tags:
@@ -1926,7 +1963,8 @@ components:
     MetafieldKeyInParam:
       name: key:in
       in: query
-      description: Filter based on comma-separated metafieldʼs keys. Could be used with vanilla 'key' query parameter.
+      description: |-
+        Filter based on comma-separated metafieldʼs keys. Could be used with vanilla 'key' query parameter.
       required: false
       style: form
       explode: false
@@ -1971,6 +2009,27 @@ components:
         enum:
           - asc
           - desc
+    IncludeFieldsParamMetafields:
+      name: include_fields
+      in: query
+      description: Fields to include, in a comma-separated list. The ID and the specified fields will be returned.
+      style: form
+      explode: false
+      schema:
+        type: array
+        items:
+          type: string
+          enum:
+            - resource_id
+            - key
+            - value
+            - namespace
+            - permission_set
+            - resource_type
+            - description
+            - owner_client_id
+            - date_created
+            - date_modified
   responses:
     CustomerCollectionResponse:
       description: Customer Collection Response
@@ -2179,6 +2238,7 @@ components:
                       postal_code: '78759'
                       state_or_province: Texas
                   meta: {}
+                type: object
                 properties:
                   data:
                     type: array
@@ -2259,6 +2319,8 @@ components:
                   meta:
                     $ref: '#/components/schemas/MetaOpen'
               - title: DuplicateAddressCollectionResponse
+                type: object
+                properties: {}
                 example: {}
             type: object
             properties:
@@ -2821,95 +2883,98 @@ components:
             properties:
               data:
                 type: array
-              id: 
-                type: integer
-                description: Unique ID of the *Metafield*. Read-Only.
-                readOnly: true
-                example: 0
-              key:
-                type: string
-                description: The key for the metafields.
-                example: Staff Name
-              value:
-                type: string
-                description: The description for the metafield.
-                example: Ronaldo
-              namespace:
-                type: string
-                description: |
-                  Namespace for the metafield, for organizational purposes.
-                example: Sales Department
-                minLength: 1
-                maxLength: 64
-              permission_set:
-                type: string
-                description: |
-                  Determines the visibility and writeability of the field by other API consumers.
-                  | Value | Description |
-                  | :--- | :--- |
-                  | `app_only` | Private to the app that owns the field. |
-                  | `read` | Visible to other API consumers. |
-                  | `write` | Open for reading and writing by other API consumers. |
-                  | `read_and_sf_access` | Visible to other API consumers, including on storefront. |
-                  | `write_and_sf_access` | Open for reading and writing by other API consumers, including on storefront. |
-                enum:
-                  - app_only
-                  - read
-                  - write
-                  - read_and_sf_access
-                  - write_and_sf_access
-              resource_type:
-                type: string
-                description: |
-                  The type of resource with which the metafield is associated.
-                enum:
-                  - brand
-                  - product
-                  - variant
-                  - category
-                  - cart
-                  - channel
-                  - location
-                  - order
-                  - customer
-                example: cart 
-              resource_id:
-                type: integer
-                description: |
-                  The unique identifier for the resource with which the metafield is associated.
-                example: 0
-                readOnly: true
-              description: 
-                type: string
-                description: |
-                  Description for the metafields.
-                example: order
-              date_created:
-                type: string
-                format: date-time
-                description: Date and time of the metafieldʼs creation.
-                example: '2022-06-16T18:39:00+00:00'
-              date_modified:
-                type: string
-                format: date-time
-                description: Date and time when the metafield was last updated.
-                example: '2022-06-16T18:39:00+00:00'
-              owner_client_id:
-                type: string
-                description: Client ID for the metafield's creator.
-                readOnly: true
-                example: ramciw4fnoz87it3ynjfif2zrkil5p
-            required:
-              - namespace
-              - key
-              - value
-              - permission_set
-              - resource_type
-              - resource_id
-              - description
-              - id
-              - date_created
-              - date_modified       
+                items:
+                  type: object
+                  properties:
+                    id: 
+                      type: integer
+                      description: Unique ID of the *Metafield*. Read-Only.
+                      readOnly: true
+                      example: 0
+                    key:
+                      type: string
+                      description: The key for the metafields.
+                      example: Staff Name
+                    value:
+                      type: string
+                      description: The description for the metafield.
+                      example: Ronaldo
+                    namespace:
+                      type: string
+                      description: |
+                        Namespace for the metafield, for organizational purposes.
+                      example: Sales Department
+                      minLength: 1
+                      maxLength: 64
+                    permission_set:
+                      type: string
+                      description: |
+                        Determines the visibility and writeability of the field by other API consumers.
+                        | Value | Description |
+                        | :--- | :--- |
+                        | `app_only` | Private to the app that owns the field. |
+                        | `read` | Visible to other API consumers. |
+                        | `write` | Open for reading and writing by other API consumers. |
+                        | `read_and_sf_access` | Visible to other API consumers, including on storefront. |
+                        | `write_and_sf_access` | Open for reading and writing by other API consumers, including on storefront. |
+                      enum:
+                        - app_only
+                        - read
+                        - write
+                        - read_and_sf_access
+                        - write_and_sf_access
+                    resource_type:
+                      type: string
+                      description: |
+                        The type of resource with which the metafield is associated.
+                      enum:
+                        - brand
+                        - product
+                        - variant
+                        - category
+                        - cart
+                        - channel
+                        - location
+                        - order
+                        - customer
+                      example: cart 
+                    resource_id:
+                      type: integer
+                      description: |
+                        The unique identifier for the resource with which the metafield is associated.
+                      example: 0
+                      readOnly: true
+                    description: 
+                      type: string
+                      description: |
+                        Description for the metafields.
+                      example: order
+                    date_created:
+                      type: string
+                      format: date-time
+                      description: Date and time of the metafieldʼs creation.
+                      example: '2022-06-16T18:39:00+00:00'
+                    date_modified:
+                      type: string
+                      format: date-time
+                      description: Date and time when the metafield was last updated.
+                      example: '2022-06-16T18:39:00+00:00'
+                    owner_client_id:
+                      type: string
+                      description: Client ID for the metafield's creator.
+                      readOnly: true
+                      example: ramciw4fnoz87it3ynjfif2zrkil5p
+                  required:
+                    - namespace
+                    - key
+                    - value
+                    - permission_set
+                    - resource_type
+                    - resource_id
+                    - description
+                    - id
+                    - date_created
+                    - date_modified       
     consent_Resp:
       description: ''
       content:
@@ -3005,6 +3070,7 @@ components:
           type: string
         errors:
           type: object
+          properties: {}
           additionalProperties:
             type: string
       x-internal: false
@@ -3822,16 +3888,14 @@ components:
       x-internal: false  
     customerAuthentication_PostPut:
       title: customerAuthentication_PostPut
-      allOf:
-        - properties:
-            force_password_reset:
-              description: 'If `true`, this customer will be forced to change password on next login.'
-              type: boolean
-        - properties:
-            new_password:
-              description: New password for customer. Write only field.
-              type: string
       type: object
+      properties:
+        force_password_reset:
+          description: 'If `true`, this customer will be forced to change password on next login.'
+          type: boolean
+        new_password:
+          description: New password for customer. Write only field.
+          type: string
       x-internal: false
     Links:
       title: Links
@@ -4374,7 +4438,7 @@ components:
         - id
         - date_created
         - date_modified
-      x-interal: false
+      x-internal: false
     MetaFieldCollectionResponse:
       type: object
       description: |
@@ -4395,6 +4459,7 @@ components:
             $ref: '#/components/schemas/Metafield'
         errors:
           type: array
+          items: {}
           description: Empty for 200 responses.
           example: []
         meta:
@@ -4451,6 +4516,7 @@ components:
             - 125
         errors:
           type: array
+          items: {}
           description: Empty for 200 responses.
           example: []
         meta:
@@ -4537,6 +4603,8 @@ components:
           $ref: '#/components/schemas/ErrorDetail'
     ErrorDetail:
       type: object
+      properties: {}
+      additionalProperties: true
       description: |
         Error detail response payload for the BigCommerce API.
       example:

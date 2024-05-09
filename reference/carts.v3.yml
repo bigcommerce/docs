@@ -808,20 +808,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MetafieldResponse'
-        '409':
-          description: |
-            The `Metafield` conflicts with another `Metafield`. This can result from duplicate unique key combinations of the appʼs client id, namespace, key, resource_type, and resource_id.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '422':
-          description: |
-            The `Metafield` is not valid. This is the result of missing required fields or of invalid data. See the response for more details.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
     post:
       summary: Create a Cart Metafield
       tags:
@@ -867,19 +853,20 @@ paths:
                   "date_created": 2023-11-15T15:16:35+00:00
                   "date_modified": 2023-11-15T15:16:35+00:00
                 meta: {}
-        '404':
+        '409':
           description: |
-            The resource was not found.
+            The `Metafield` conflicts with another `Metafield`. This can result from duplicate unique key combinations of the appʼs client id, namespace, key, resource_type, and resource_id.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/NotFound'
-              examples:
-                example-1:
-                  value:
-                    status: 404
-                    title: There was no order found with ID 1010
-                    type: 'https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes'
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: |
+            Response object for metafields creation with partial success.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetaFieldCollectionResponsePartialSuccess_POST_PUT'
   '/carts/{cart_id}/metafields/{metafield_id}':
     get:
       summary: Get a Cart Metafield
@@ -895,20 +882,43 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MetafieldResponse'
-        '409':
-          description: |
-            The `Metafield` conflicts with another `Metafield`. This can result from duplicate unique key combinations of the appʼs client id, namespace, key, resource_type, and resource_id.
+        '400':
+          description: Bad Request. Input is invalid.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '422':
+                description: ''
+                type: object
+                properties:
+                  status:
+                    type: number
+                  title:
+                    type: string
+                    minLength: 1
+                  type:
+                    type: string
+                    minLength: 1
+                  detail:
+                    type: string
+                    minLength: 1
+              example:
+                status: 400
+                title: Input is invalid
+                type: 'https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes'
+                detail: Syntax error
+        '404':
           description: |
-            The `Metafield` is not valid. This is the result of missing required fields or of invalid data. See the response for more details.
+            The resource was not found.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/NotFound'
+              examples:
+                example-1:
+                  value:
+                    status: 404
+                    title: The resource at that URL is not found.
+                    type: 'https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes' 
       parameters:
         - $ref: '#/components/parameters/PageParam'
         - $ref: '#/components/parameters/LimitParam'
@@ -955,6 +965,13 @@ paths:
                     status: 404
                     title: There was no order found with ID 1010
                     type: 'https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes'
+        '422':
+          description: |
+            Response object for metafields creation with partial success.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetaFieldCollectionResponsePartialSuccess_POST_PUT'
     delete:
       summary: Delete a Metafield
       tags:
@@ -965,7 +982,20 @@ paths:
       responses:
         '204':
           description: |
-            An empty response.        
+            An empty response. 
+        '404':
+          description: |
+            The resource was not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFound'
+              examples:
+                example-1:
+                  value:
+                    status: 404
+                    title: The resource at that URL is not found.
+                    type: 'https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes'
     parameters:
       - $ref: '#/components/parameters/Accept'
       - $ref: '#/components/parameters/cart_id'

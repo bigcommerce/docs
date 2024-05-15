@@ -1,0 +1,115 @@
+# Product Reviews with the GraphQL Storefront API
+
+
+
+
+Store settings
+
+There are two settings to consider:
+
+- The general 'enable product reviews' setting.
+- The 'only allow reviews from previous customers' setting.
+
+The overall setting must be enabled for the review submission process to work. Any attempts to submit reviews will be cancelled if this setting is not enabled.
+
+The second setting determines the conditions under which reviews can be submitted. When enabled, customers must be logged in to their account to submit a review, and they must have at least one previous order placed in the store. The order does not necessarily have to include the product being reviewed.
+If the 'Only accept product reviews from past customers' setting is enabled: Customers must have made a previous purchase to submit a review. Users must be logged in, meaning guest shoppers cannot leave reviews. This ensures the merchant has a genuine customer to contact if needed.
+Additionally, when logged in, if an email is provided as input, it will be validated against the email associated with the shopper's account. If they do not match, the submission will fail. However, providing an email through input parameters is not mandatory in this state, as the system will use the email from the shopper's context.
+When the second setting is turned off, customers are not required to be logged in to submit a review, but an email must still be provided. In the absence of a logged-in state, the email must be supplied through the input parameters.
+
+
+
+
+<Callout type="info">
+  #### Limitations 
+  - Once a purchase has been made, customers can review any item in the store.
+  - Only one review per product is allowed per email address.
+</Callout>
+
+## Authentication
+
+
+
+## Mutation
+
+The following mutation creates a product review for a store.
+
+If a merchant enables the [recaptcha setting](https://support.bigcommerce.com/s/article/Updating-Themes-with-reCAPTCHA-v2) on the storefront, you need to send a recaptcha token with the request.
+
+<Tabs items={['Request', 'Response']}>
+<Tab>
+
+```gql filename="Example request: Add a product review" lineNumbers copy
+mutation {
+  catalog {
+    addProductReview (
+      input: {
+        productEntityId:81
+          review: {
+            title: "teitle"
+            text: "textr"
+            author: "oman"
+            rating: 4  # integer value between 1 and 5
+            email: "mem@ail.com2"
+        }
+      }
+    ){
+      errors {
+        ...on NotAuthorizedToAddProductReviewError {
+          message
+        }
+        ...on CustomerAlreadyReviewedProductError {
+          message
+        }
+        ...on ProductIdNotFoundError {
+          message
+        }
+        ...on InvalidInputFieldsError {
+          message fields
+        }
+        ...on Error{
+          message
+        }
+      }
+    }
+  }
+}
+```
+
+</Tab>
+<Tab>
+
+```json filename="Example success response: Add a product review" lineNumbers copy
+{
+  "data": {
+    "catalog": {
+      "addProductReview": {
+        "errors": []
+      }
+    }
+  }
+}
+```
+
+</Tab>
+</Tabs>
+
+
+## Query
+
+
+<Tabs items={['Request', 'Response']}>
+<Tab>
+
+```gql filename="Example request: Query a product review" lineNumbers copy
+
+```
+
+</Tab>
+<Tab>
+
+```json filename="Example response: Query a product review" lineNumbers copy
+
+```
+
+## Resources

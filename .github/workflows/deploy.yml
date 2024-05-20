@@ -1,9 +1,9 @@
-name: Deploy
+name: Deploy Preview Build
 
 on:
   push:
     branches:
-      - main
+      - trigger_circleci_deploy
   workflow_dispatch:
 
 jobs:
@@ -16,4 +16,12 @@ jobs:
       
     - name: Trigger Vercel Deploy Hook
       run: |
-        curl -X POST ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}?buildCache=false
+        curl --location 'https://circleci.com/api/v2/project/gh/bigcommerce/developer-center/pipeline' \
+        --header 'Circle-Token: ${{ secrets.CIRCLECI_TOKEN }}' \
+        --header 'content-type: application/json' \
+        --data '{
+            "branch": "jest-testing",
+            "parameters": {
+                "build_environment": "preview"
+            }
+        }'

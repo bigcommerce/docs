@@ -108,6 +108,12 @@ Release notes can work for all storefronts. Changes to the [OAuth scopes](/docs/
 
 ## PCI compliance
 
+To comply with PCI standards, BigCommerce implements the [Subresource Integrity (SRI)]() feature for external scripts and [Content Security Policy (CSP)]() standards for inline scripts.
+
+You can [opt into these security features]() in the control panel in storefront settings.
+
+The following sections describe what you need to provide after you opt-in to ensure the integrity of scripts.
+
 ### Subresource integrity
 
 [Subresource integrity (SRI)](https://developer.mozilla.org/en-US/docs/Web/Security/Subresource_Integrity) is a security feature browsers use to verify that attackers have not manipulated external hosted resources, including scripts. 
@@ -129,22 +135,19 @@ You can add up to five SRI hashes and remove hashes when they are no longer vali
   If there is a change to the host script, you must update or add a valid hash. If no hashes match the contents of the script, the browser console will show an error that the script failed to execute.
 </Callout>
 
-### Inline scripts
+### Content security policy
 
-Merchants can opt-in to this feature in storefront settings. After that, scripts will fail if...
+[Content Security Policy (CSP)]() is a standard that uses [`nonce` global attributes]() to allowlist non-static inline scripts.
 
+Since inline scripts may contain dynamic handlebar template variables, BigCommerce uses `nonce` values instead of `intgrity` hashes to validate inline scripts. Browsers first check for `integrity` hashes before checking `nonce` values.
 
-Inline scripts use a `nonce` attribute in the `script` tag that has a uniquely generated value. 
-On every page load, BigCommerce generates a nonce value and passes it to browsers through the content security policy header.
+The `nonce` attribute in the `script` tag has a uniquely generated value. 
+On every page load, BigCommerce generates a nonce value and passes it to browsers through the HTTP `Content-Security-Policy` response header.
 For any scripts that the merchant adds through Script Manager or the Scripts API, BigCommerce automatically injects the nonce value for them on every page load.
 
-Browsers first check for the integrity hashes before checking nonce values.
 
 If you are editing custom scripts in the Stencil theme files (i.e. outside of script manager or the Scripts API), you need to add a nonce handlebar.  
 E.g. added script to checkout page.
-
-Inline scripts may contain handlebar template variables. 
-Since their values change dynamically and a script contents must match an integrity hash, you can't use intgrity hashes for inline scripts.
 
 
 ## Troubleshooting

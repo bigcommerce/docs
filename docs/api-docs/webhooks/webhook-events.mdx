@@ -439,9 +439,64 @@ Payload objects with the following scopes take the form that follows:
   "producer": "stores/{store_hash}"
 }
 ```
+
+## Modifiers 
+
+| Name / Scope             | Description |
+|:-------------------------|:------------|
+| store/modifier/updated | Fires when you edit attributes for a local or shared modifier. Updates to the global store and channel locale as an override triggers the webhook. The `context` fields are present for only override updates.  |
+
+The payload object takes the form that follows:
+
+```json filename="Example modifier payload object" showLineNumbers copy
+{
+  "scope": "store/modifier/updated",
+  "store_id": "1025646",
+  "data": {
+    "type": "shared_modifier",
+    "id": 205, // ID of the modifier
+    "affected_product_ids": [1, 2],
+    "context": {
+      "channel_id": 2,
+      "locale": "fr"
+    } 
+  },
+  "hash": "a833a57fadd56a32dc752fb6ca0841dc9602a495",
+  "created_at": 1561479233,
+  "producer": "stores/{store_hash}"
+}
+```
+
 ## Notifications
 
 Consult the [notifications section of the Channel Webhooks Guide](/docs/integrations/webhooks/events/channels#notifications).
+
+## Options
+
+| Name / Scope             | Description |
+|:-------------------------|:------------|
+| store/option/updated | Fires when you edit attributes for a local or shared variant option, including its display name and option values. Updates to the global store and channel locale as an override triggers the webhook. The `context` fields are present for only override updates. |
+
+The payload object takes the form that follows:
+
+```json filename="Example option payload object" showLineNumbers copy
+{
+  "scope": "store/option/updated",
+  "store_id": "1025646",
+  "data": {
+    "type": "local_option",
+    "id": 205, // ID of the option
+    "affected_product_ids": [1, 2],
+    "context": {
+      "channel_id": 2,
+      "locale": "fr"
+    } 
+  },
+  "hash": "a833a57fadd56a32dc752fb6ca0841dc9602a495",
+  "created_at": 1561479233,
+  "producer": "stores/{store_hash}"
+}
+```
 
 ## Orders
 
@@ -749,7 +804,7 @@ Consult the [product assignment section of the Channel Webhooks Guide](/docs/int
 | store/product/* | Fires for all store/product events. |
 | store/product/deleted| Fires when a product is deleted.|
 | store/product/created | Fires when a new product is created. |
-| store/product/updated | Fires when product details are edited. For a full list of product fields that trigger an updated event, consult the following section on [product updated events](#product-update-events). |
+| store/product/updated | Fires when you edit product attributes globally or for a channel locale as an override. For a full list of product fields that trigger an updated event, see the [product updated events](#product-update-events) that follow. The `context` fields are present for only override updates. |
 | store/product/inventory/updated | Fires when inventory levels change for a _base product_. For products without variants, the webhook fires regardless of how you track inventory. <br /><br />For products with variants, the webhook only fires when the product's inventory properties are configured to track by _product_ and the _product-level_ inventory changes. <br /><br />Inventory updates made in the control panel and by API trigger the webhook. This includes changes made by apps. In the control panel, you can bulk import inventory updates or make inventory updates to single products on the **Products > View** page.  |
 | store/product/inventory/order/updated | Fires when _base product_ inventory levels change in response to the order-related events configured in [Inventory settings](/docs/rest-management/settings/inventory#get-inventory-settings). For example, stock levels can change when you either place or complete/ship an order. Stock levels can also change when you refund or cancel an order. Global settings apply when inventory changes through a [manual order](https://support.bigcommerce.com/s/article/Creating-a-Manual-Order?language=en_US). The settings for a channel apply when inventory changes through an order in a channel.<br /><br />The webhook always fires for products without variants. For products with variants, the webhook only fires when you configure the product's inventory properties to track by _product_. |
 | store/product/metafield/* | Fires for all store/product/metafield events.  |
@@ -765,7 +820,6 @@ Payload objects with the following scopes take the form that follows:
 
 * `store/product/deleted`
 * `store/product/created`
-* `store/product/updated`
 
 ```json filename="Example product payload object" showLineNumbers copy
 {
@@ -773,13 +827,37 @@ Payload objects with the following scopes take the form that follows:
   "store_id": "1025646",
   "data": {
     "type": "product", // will always be product
-    "id": 205 // ID of the product
+    "id": 205, // ID of the product
   },
   "hash": "a833a57fadd56a32dc752fb6ca0841dc9602a495",
   "created_at": 1561479233,
   "producer": "stores/{store_hash}"
 }
 ```
+
+Payload objects with the following scopes take the form that follows:
+
+* `store/product/updated`
+
+```json filename="Example product payload object" showLineNumbers copy
+{
+  "scope": "store/product/updated",
+  "store_id": "1025646",
+  "data": {
+    "type": "product", // will always be product
+    "id": 205, // ID of the product
+    "properties": ["warranty", "is_featured"],
+    "context": {
+      "channel_id": 2,
+      "locale": "fr"
+    } 
+  },
+  "hash": "a833a57fadd56a32dc752fb6ca0841dc9602a495",
+  "created_at": 1561479233,
+  "producer": "stores/{store_hash}"
+}
+```
+
 ### Product update events
 
 A change to any of the following fields triggers a `store/product/updated` event:
@@ -792,15 +870,21 @@ A change to any of the following fields triggers a `store/product/updated` event
 * Dimensions
 * Featured
 * Inventory
+* Is Featured
+* Meta Description
 * Modifier - deleted
 * Name
 * Number Sold
+* Page Title
+* Pre-order Message
 * Price
 * Product Type
+* Search Keywords
 * Sort Order
 * Tax Price
 * Thumbnail - new images only*
 * Visibility
+* Warranty
 
 <Callout type="info">
   Setting a thumbnail triggers an updated event only when that thumbnail is the first to be set. For example, setting an image as a thumbnail **after deleting all images** triggers an updated event. However, changing the current thumbnail, uploading an additional product image and setting it as the thumbnail, or even deleting all thumbnails, does not generate an update event. 
@@ -1077,6 +1161,7 @@ Payload objects with the following scopes take the form that follows:
 ## Themes
 
 Consult the [themes section of the Channel Webhooks Guide](/docs/integrations/webhooks/events/channels#themes).
+
 
 ## Resources
 

@@ -1,47 +1,35 @@
 ---
-title: Managing Customers
+title: Managing customers
 keywords: customers, currency, currencies, headless, graphql, storefronts,  
 ---
 
-# Managing Customers
+# Managing customers
 
-This section covers different ways to associate customers to headless carts.
+This section covers different ways to associate customers with headless carts.
 
-## Customer login using GraphQL
+## GraphQL Storefront API
 
-You can sign in a customer account using client-side or server-side code.
+You can use the GraphQL Storefront API to sign in to a customer account using hosted client-side, headless client-side, or server-side code. 
 
-### Client-side GraphQL customer login
+### Hosted client-side sign in
 
-To sign in a customer account with an email address and a password in client-side code, use the following [GraphQL Storefront API](/docs/storefront/graphql) customer login mutation.
+To sign in a customer account with an email address and a password in client-side code on a hosted storefront, use the [login mutation](/docs/start/authentication/graphql-storefront#signing-customers-in).
 
-**Customer login mutation**
+When a customer is signed in using the customer login mutation, subsequent queries made to the GraphQL Storefront API will return customer-specific results, such as customer group pricing.
 
-```graphql showLineNumbers copy
-mutation Login($email: String!, $pass: String!) {
-  login(email: $email, password: $pass) {
-    result
-  }
-}
-```
+### Headless and server-side sign in
 
-When a customer is logged in using the customer login mutation, subsequent queries made to the GraphQL Storefront API will return customer-specific results (for example, customer group pricing) using the context of the logged in customer.
+To make queries from the perspective of a particular customer in headless or server-side code, use [customer impersonation tokens](/docs/start/authentication/graphql-storefront#customer-impersonation-tokens) rather than storefront tokens. 
 
-### Server-side GraphQL customer login
+Depending on your implementation, you can use the login mutation or a combination of the [Current Customer API](), the [Customer Login API](), or the REST Management API's [customers features]() to authenticate the customer and get their customer ID. Pass the customer ID with your GraphQL Storefront requests using the `X-Bc-Customer-Id` header to interact with the store fron the customer's perspective. The responses will reflect customer-specific pricing, product availability, account information, and more.
 
-To make queries from the perspective of a particular customer in headless or server-side code, use [customer impersonation tokens](/docs/storefront/graphql#customer-impersonation-tokens).
+## Customer single sign-on
 
-When you use customer impersonation tokens to authenticate requests made to the GraphQL Storefront API, the tokens receive store information from the perspective of the customer corresponding to the customer ID passed in the `X-Bc-Customer-Id` header of the `POST` request. Pricing, product availability, customer account, and customer details will be reflected.
+When a customer signs in to your headless storefront and your application redirects them to a BigCommerce-hosted page, such as checkout, you can use the [Customer Login API](/docs/start/authentication/customer-login) to create a single sign-on experience between your headless storefront and BigCommerce. Doing so will make the redirection from the headless storefront to BigCommerce a more seamless experience for the customer.
 
-## Customer Single Sign-on
+You can sign a customer in to an embedded checkout by setting `redirect_to` in the Customer Login JWT payload to the relative path of the `embedded_checkout_url` generated using the [REST Management API carts feature](/docs/rest-management/carts) or the GraphQL Storefront API [createCartRedirectUrls mutation](/graphql-storefront/reference#definition-CartMutations).
 
-If a customer signs in to your headless storefront, and then is redirected to a BigCommerce-hosted page, you can use the [Customer Login API](/docs/start/authentication/customer-login) to create a single sign-on experience between your headless storefront and BigCommerce. Doing so will make the redirection from the headless storefront to BigCommerce a more seamless experience for the customer.
-
-You can sign a customer in to an embedded checkout by setting `redirect_to` in the Customer Login JWT payload to the relative path of the `embedded_checkout_url` generated using the [Carts API](/docs/rest-management/carts).
-
-**JWT payload example**
-
-```http showLineNumbers copy
+```js filename="Example JWT payload" showLineNumbers copy
 {
   "iss": {{CLIENT_ID}},
   "iat": 1535393113,
@@ -58,13 +46,14 @@ You can sign a customer in to an embedded checkout by setting `redirect_to` in t
 ## Identifying signed-in customers
 
 If a customer signs in to a BigCommerce-hosted cart or checkout, then navigates back to the headless storefront, you will need to confirm the customer's identity before revealing sensitive information.
-To address this need, BigCommerce provides the [Current Customers API](/docs/start/authentication/current-customer) accessible via client-side JavaScript. The [Get Current Customer](/docs/rest-authentication/current-customer#get-current-customer) endpoint returns a `JWT` (signed with your OAuth client secret) that contains customer details.
+
+To address this need, BigCommerce provides the [Current Customer API](/docs/start/authentication/current-customer), which you can access using client-side JavaScript. The [Get current customer](/docs/rest-authentication/current-customer#get-current-customer) endpoint returns a BigCommerce-generated JWT signed with the client secret of the API account you used to make the request. To access customer details, such as customer ID, customer group number, and email, use a library to decode the JWT.
 
 ## Surfacing customer group pricing
 
-When querying the GraphQL Storefront API, customer-specific pricing will be reflected in query results if the request is made using a [customer impersonation token](/docs/storefront/graphql#customer-impersonation-tokens).
+When querying the GraphQL Storefront API, customer-specific pricing will be reflected in query results if the request is made using a [customer impersonation token](/docs/start/authentication/graphql-storefront#customer-impersonation-tokens).
 
-For server-side REST implementations, you can use the [Pricing API](/docs/rest-management/pricing) to [get prices](/docs/rest-management/pricing/products#get-prices-batch) for a particular customer group.
+For server-side REST implementations, you can use the [REST Management API pricing feature](/docs/rest-management/pricing) to [Get prices](/docs/rest-management/pricing/products#get-prices-batch) for a particular customer group.
 
 <Tabs items={['Request', 'Response']}>
 <Tab>

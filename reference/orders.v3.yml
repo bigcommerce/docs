@@ -176,12 +176,10 @@ paths:
               $ref: '#/components/schemas/RefundQuote_Post'
           application/xml:
             schema:
-              type: object
-              properties: {}
+              $ref: '#/components/schemas/RefundQuote_Post'
           multipart/form-data:
             schema:
-              type: object
-              properties: {}
+              $ref: '#/components/schemas/RefundQuote_Post'
         required: true
         x-examples:
           Quantity:
@@ -360,6 +358,11 @@ paths:
     parameters:
       - $ref: '#/components/parameters/Accept'
       - $ref: '#/components/parameters/OrderIdParam'
+      - in: query
+        name: 'transaction_id'
+        description: Filters by refund payment using the BigCommerce `transaction_id`.
+        schema:
+          type: string
   '/orders/payment_actions/refunds/{refund_id}':
     parameters:
       - $ref: '#/components/parameters/Accept'
@@ -436,6 +439,11 @@ paths:
           schema:
             type: string
             format: date-time
+        - in: query
+          name: 'transaction_id'
+          description: Filters by refund payment using the BigCommerce `transaction_id`.
+          schema:
+            type: string
         - in: query
           name: page
           description: Specifies the page number in a limited (paginated) list of items.
@@ -579,19 +587,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/MetaFieldCollectionResponse'
               examples: {}
-        '404':
-          description: |
-            The resource was not found.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/NotFound'
-              examples:
-                example-1:
-                  value:
-                    status: 404
-                    title: There was no order found with ID 1010
-                    type: 'https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes'
     post:
       summary: Create Metafields
       tags:
@@ -608,7 +603,12 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/MetafieldBase_Post'
-            examples: {}
+            example:
+              permission_set: app_only
+              namespace: Sales Department
+              key: Staff Name
+              value: Sam
+              description: Name of staff member
         description: |
           A `Metafield` object.
         required: true
@@ -620,6 +620,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MetafieldResponse'
+        '400':
+          description: Bad Request. Input is invalid.
+          content:
+            application/json:
+              schema:
+                description: ''
+                type: object
+                properties:
+                  status:
+                    type: number
+                  title:
+                    type: string
+                    minLength: 1
+                  type:
+                    type: string
+                    minLength: 1
+                  detail:
+                    type: string
+                    minLength: 1
+              example:
+                status: 400
+                title: Input is invalid
+                type: 'https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes'
+                detail: Syntax error
         '409':
           description: |
             The metafield conflicts with another metafield. This can result from duplicate unique key combinations of the appʼs client ID, namespace, key, resource type, and resource ID.
@@ -662,7 +686,7 @@ paths:
                 $ref: '#/components/schemas/MetafieldResponse'
         '404':
           description: |
-            The resource was not found.
+            A metafield was not found with this query.
           content:
             application/json:
               schema:
@@ -694,9 +718,33 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MetafieldResponse'
+        '400':
+          description: Bad Request. Input is invalid.
+          content:
+            application/json:
+              schema:
+                description: ''
+                type: object
+                properties:
+                  status:
+                    type: number
+                  title:
+                    type: string
+                    minLength: 1
+                  type:
+                    type: string
+                    minLength: 1
+                  detail:
+                    type: string
+                    minLength: 1
+              example:
+                status: 400
+                title: Input is invalid
+                type: 'https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes'
+                detail: Syntax error
         '404':
           description: |
-            The resource was not found.
+            A metafield was not found with this query.
           content:
             application/json:
               schema:
@@ -712,6 +760,13 @@ paths:
         '204':
           description: |
             An empty response.
+        '404':
+          description: |
+            The resource was not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFound'
   '/orders/settings':
     get:
       summary: Get Global Order Settings
@@ -878,8 +933,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MetaFieldCollectionResponse'
-        '500':
-          description: Internal Server Error
       parameters:
         - $ref: '#/components/parameters/PageParam'
         - $ref: '#/components/parameters/LimitParam'
@@ -921,6 +974,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MetaFieldCollectionResponse_POST_PUT'
+        '400':
+          description: Bad Request. Input is invalid.
+          content:
+            application/json:
+              schema:
+                description: ''
+                type: object
+                properties:
+                  status:
+                    type: number
+                  title:
+                    type: string
+                    minLength: 1
+                  type:
+                    type: string
+                    minLength: 1
+                  detail:
+                    type: string
+                    minLength: 1
+              example:
+                status: 400
+                title: Input is invalid
+                type: 'https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes'
+                detail: Syntax error
         '422':
           description: |
             Response object for metafields creation with partial success.
@@ -928,13 +1005,11 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MetaFieldCollectionResponsePartialSuccess_POST_PUT'
-        '500':
-          description: Internal Server Error
     put:
       summary: Update multiple Metafields
       tags:
         - Batch metafields
-      description: Create multiple metafields.
+      description: Update multiple metafields.
       operationId: updateOrdersMetafields
       requestBody:
         content:
@@ -962,6 +1037,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MetaFieldCollectionResponse_POST_PUT'
+        '400':
+          description: Bad Request. Input is invalid.
+          content:
+            application/json:
+              schema:
+                description: ''
+                type: object
+                properties:
+                  status:
+                    type: number
+                  title:
+                    type: string
+                    minLength: 1
+                  type:
+                    type: string
+                    minLength: 1
+                  detail:
+                    type: string
+                    minLength: 1
+              example:
+                status: 400
+                title: Input is invalid
+                type: 'https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes'
+                detail: Syntax error
         '422':
           description: |
             Response object for metafields creation with partial success.
@@ -969,10 +1068,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MetaFieldCollectionResponsePartialSuccess_POST_PUT'
-        '500':
-          description: Internal Server Error
     delete:
-      summary: Delete All Metafields
+      summary: Delete Multiple Metafields
       tags:
         - Batch metafields
       description: Delete all order metafields.
@@ -993,6 +1090,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MetaFieldCollectionDeleteResponseSuccess'
+        '400':
+          description: Bad Request. Input is invalid.
+          content:
+            application/json:
+              schema:
+                description: ''
+                type: object
+                properties:
+                  status:
+                    type: number
+                  title:
+                    type: string
+                    minLength: 1
+                  type:
+                    type: string
+                    minLength: 1
+                  detail:
+                    type: string
+                    minLength: 1
+              example:
+                status: 400
+                title: Input is invalid
+                type: 'https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes'
+                detail: Syntax error
         '422':
           description: |
             Response object for metafields deletion with partial success.
@@ -1667,12 +1788,14 @@ components:
             404 HTTP status code.
           type: integer
         title:
-          description: The error title describing the particular error.
+          description: The resource at that URL is not found.
           type: string
         type:
           type: string
-        instance:
-          type: string
+        errors:
+          type: array
+          items: {}
+          description: Empty for 200 responses.
       title: Not Found
       x-internal: false
     Transaction:
@@ -2225,7 +2348,6 @@ components:
       title: RefundQuote_Post
       description: Request body for refund quotes.
       x-internal: false
-      x-examples: {}
       properties:
         items:
           type: array
@@ -2336,7 +2458,6 @@ components:
       required:
         - items
         - payments
-      x-examples: {}
     RefundID_Get:
       type: object
       x-examples:
@@ -2473,7 +2594,6 @@ components:
       items:
         $ref: '#/components/schemas/RefundRequest_Post'
       x-internal: false
-      x-examples: {}
     FailedQuoteError:
       type: object
       description: Failed quote response.
@@ -2496,7 +2616,6 @@ components:
         - $ref: '#/components/schemas/AmountBoundItem'
         - $ref: '#/components/schemas/QuantityBoundItem'
         - $ref: '#/components/schemas/TaxExemptItem'
-      x-examples: {}
     PaymentRequest:
       type: object
       properties:
@@ -2738,6 +2857,10 @@ components:
         declined_message:
           type: string
           description: Message indicate why payment was declined.
+        transaction_id:
+          type: string
+          description: The BigCommerce `transaction_id`.
+          example: '1234'
       x-internal: false
     PaymentOption:
       type: object
@@ -2839,7 +2962,6 @@ components:
       description: |
         Response payload for the BigCommerce API.
       x-internal: false
-      x-examples: {}
       allOf:
         - type: object
           properties:
@@ -3003,7 +3125,6 @@ components:
               example: asdfasdfasdfasdfasdfasdfasdf
               readOnly: true
       x-internal: false
-      x-examples: {}
     MetafieldPut:
       description: |
         The model for a PUT to update metafield.

@@ -1,167 +1,198 @@
 # GraphQL Storefront API: Orders (beta)
 
-<Callout type="info" emoji="ℹ️">
+<Callout type="info">
     This feature is currently in beta and only available to participants. 
 </Callout>
 
 ## Overview
-BigCommerce's Storefront GraphQL API provides the same access to “order” objects as the REST Storefront API. Having access to orders data in the storefront graph makes it easier to manage and build solutions for customer-specific use cases as shoppers transition from guests to registered customers.
-You can use Storefront GraphQL API to create an end-to-end shopper experience and now manage customer account use cases such as showcasing their order history and order details. 
 
-Order queries can do the following:
+BigCommerce's GraphQL Storefront Orders API provides the same access to order objects as the REST Storefront API. This GraphQL API can handle customer solutions as shoppers evolve from guests, to registered customers. You can manage customer account details that can pull up order history and order deatils.
+
+Developers can use frontend GraphQL to create an end-to-end shopper experience. Orders related mutations and queries can do the following:
+
+## Site order
+
 - Query a specific order to power order details including (site->order)
-    - Billing address and customer information
-    - Status of order
-    - Specific shipments for a given order (a.k.a consignments)
-        - Shipment address / Pickup Address
+    - Billing address and the customer's information
+    - Order status
+    - Consignment orders
+        - Ship or pickup consignments
         - Products per shipment
-        - Product specifics such as brand, name, variant and order quantity, and pricing.
-    - Specific discounts, coupons (if applicable)
-    - Costs
-        - Subtotal
-        - Additional costs such as tax, gift wrapping, shipment (if applicable)
-        - Total
-    - Time order placed
-    - Payment/Payments information (Coming soon)
-    - Order specific messages (Coming soon)
+        - Product specifics such as brand, name, variant, quantity, and pricing
+    - Specific discounts, and coupons when applied
+    - Pricing
+        - Get pricing details
+            - Such as tax, gift wrapping, shipping, etc., when available
+            - Total amount
+            - Order purchase timestamp
+
+<Callout type="info">
+    The following feature will be coming soon:
+    - Order specific messages
+</Callout>
+
+## Site orders
+
 - Query all orders for a specific customer (site->orders)
-    - Everything you can query for a specific order AND…
+    - Query for a specific order 
     - Filter orders by order status
     - Filter orders by order date
     - Support for cursor pagination
-    - Order specific messages (Coming soon)
+
+<Callout type="info">
+    The following features will be coming soon:
+    - Payment/Payments information 
+    - Order specific messages
+</Callout>
 
 
-### Query Examples:
 
-``` GraphQL
-site->order
-Pull order info for order #106
+## Example queries and mutations
 
+### Get order details
 
- query GetOrderDetails {
- site {
-   order(filter: {entityId: 106}) {
-     billingAddress {
-       address1
-       city
-       company
-       country
-       countryCode
-       email
-       firstName
-       lastName
-       phone
-       postalCode
-       stateOrProvince
-     }
-     consignments {
-       shipping {
-         edges {
-           cursor
-           node {
-             lineItems {
-               edges {
-                 node {
-                   brand
-                   entityId
-                   imageUrl
-                   name
-                   subTotalListPrice {
-                     currencyCode
-                     value
-                   }
-                 }
-               }
-             }
-             shipments {
-               edges {
-                 node {
-                   shippingProviderName
-                   tracking {
-                     ... on OrderShipmentUrlOnlyTracking {
-                       __typename
-                     }
-                   }
-                 }
-               }
-             }
-             shippingAddress {
-               address1
-               city
-               firstName
-               lastName
-               postalCode
-               stateOrProvince
-             }
-             shippingCost {
-               currencyCode
-               value
-             }
-           }
-         }
-       }
-     }
-     subTotal {
-       currencyCode
-       value
-     }
-     taxTotal {
-       currencyCode
-       value
-     }
-     totalIncTax {
-       currencyCode
-       value
-     }
-     updatedAt {
-       utc
-     }
-   }
- }
-}
-```
+<Tabs items={[`Request`, `Response`]}>
+    <Tab>
+    ```graphql filename="Example query: Get order details"
+    query GetOrderDetails {
+    site {
+    order(filter: {entityId: 106}) {
+        billingAddress {
+        address1
+        city
+        company
+        country
+        countryCode
+        email
+        firstName
+        lastName
+        phone
+        postalCode
+        stateOrProvince
+        }
+        consignments {
+        shipping {
+            edges {
+            cursor
+            node {
+                lineItems {
+                edges {
+                    node {
+                    brand
+                    entityId
+                    imageUrl
+                    name
+                    subTotalListPrice {
+                        currencyCode
+                        value
+                    }
+                    }
+                }
+                }
+                shipments {
+                edges {
+                    node {
+                    shippingProviderName
+                    tracking {
+                        ... on OrderShipmentUrlOnlyTracking {
+                        __typename
+                        }
+                    }
+                    }
+                }
+                }
+                shippingAddress {
+                address1
+                city
+                firstName
+                lastName
+                postalCode
+                stateOrProvince
+                }
+                shippingCost {
+                currencyCode
+                value
+                }
+            }
+            }
+        }
+        }
+        subTotal {
+        currencyCode
+        value
+        }
+        taxTotal {
+        currencyCode
+        value
+        }
+        totalIncTax {
+        currencyCode
+        value
+        }
+        updatedAt {
+        utc
+        }
+    }
+    }
+    }
+    ```
+    </Tab>
+    <Tab>
+    ``` GraphQL filename="Example response: Get order details"
 
+    ```
+    </Tab>
+</Tabs>
 
-### site->orders
+### Site orders
 Query all orders for given customer with a status of completed.
 
-```
-query GetAllOrders{
- site {
-   orders(filters: {status: COMPLETED}) {
-     edges {
-       node {
-         consignments {
-           shipping {
-             edges {
-               node {
-                 lineItems {
-                   edges {
-                     node {
-                       brand
-                       entityId
-                       imageUrl
-                       name
-                       productOptions {
-                         name
-                         value
-                       }
-                       quantity
-                     }
-                   }
-                 }
-               }
-             }
-           }
-         }
-         subTotal {
-           currencyCode
-           value
-         }
-       }
-     }
-   }
- }
-}
-```
+<Tabs items={[`Request`, `Response`]}>
+    <Tab>
+    ```graphql filename="Example query: Get order details"
+    query GetAllOrders{
+    site {
+    orders(filters: {status: COMPLETED}) {
+        edges {
+        node {
+            consignments {
+            shipping {
+                edges {
+                node {
+                    lineItems {
+                    edges {
+                        node {
+                        brand
+                        entityId
+                        imageUrl
+                        name
+                        productOptions {
+                            name
+                            value
+                        }
+                        quantity
+                        }
+                    }
+                    }
+                }
+                }
+            }
+            }
+            subTotal {
+            currencyCode
+            value
+            }
+        }
+        }
+    }
+    }
+    }
+    ```
+    </Tab>
+    <Tab>
+    ``` GraphQL filename="Example response: Get order details"
+
+    ```
+    </Tab>
+</Tabs>
+

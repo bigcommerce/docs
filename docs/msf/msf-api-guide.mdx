@@ -9,19 +9,19 @@ keywords: multistorefront, channels, multi-channel, multichannel, sort, graphql,
 
 When your integration creates a cart or checkout, make sure it specifies the `channel_id` for the storefront or other channel the shopper is using. 
 
-If the cart is associated with the shopper's channel and the relationship between a storefront's channel and site has been properly configured with the [Sites API](/docs/rest-management/sites#create-a-site), both [cart redirect URLs](/docs/rest-management/carts/redirects#create-cart-redirect-url) and [embedded checkout URLs](/docs/storefront/cart-checkout/embedded-checkout) will refer the shopper to the correct site. 
+If the cart is associated with the shopper's channel and the relationship between a storefront's channel and site has been properly configured using the [REST Management API's sites feature](/docs/rest-management/sites#create-a-site), both [cart redirect URLs](/docs/rest-management/carts/redirects#create-cart-redirect-url) and [embedded checkout URLs](/docs/storefront/cart-checkout/embedded-checkout) will refer the shopper to the correct site. 
 
-If your application interacts with shoppers, you can use the [GraphQL Storefront API: Carts and Checkout](/docs/storefront/cart-checkout/guide/graphql-storefront) to access cart and checkout data for shoppers in real time.
+If your application interacts with shoppers, you can use the [GraphQL Storefront API's carts and checkout](/docs/storefront/cart-checkout/guide/graphql-storefront) features to access cart and checkout data for shoppers in real time.
 
 ## Categories
 
-[Categories API reference documentation](/docs/rest-catalog/category-trees/categories#get-all-categories)
+[Catalog API - Category trees and categories reference](/docs/rest-catalog/category-trees)
 
 Previously, a store had a collection of categories that were organized in a tree structure. This collection of categories has been abstracted from the store and converted into the store's first **category tree**. You can create multiple category trees, each of which you can assign to a storefront or other sales channel.
 
 ![categories-diagram.webp](https://storage.cloud.google.com/bigcommerce-production-dev-center/images/msf-beta-guide/categories-diagram.webp)
 
-To access the category structure used by a particular storefront, you must first identify which tree is tied to that storefront channel. You can do so by sending a request to the following endpoint. Include the `channel_id:in` query parameter, which accepts one or more channel IDs as a comma-separated list. 
+To access the category structure used by a particular storefront, you must first identify which tree is tied to that storefront channel. You can do so by sending a request to the [Get all category trees](/docs/rest-catalog/category-trees) endpoint. Include the `channel_id:in` query parameter, which accepts one or more channel IDs as a comma-separated list. 
 
 ```http filename="Example request: Get category tree for channel 3" showLineNumbers copy
 GET https://api.bigcommerce.com/stores/{{STORE_HASH}}/v3/catalog/trees?channel_id:in=3
@@ -37,38 +37,39 @@ If your application interacts with shoppers, you may be able to use the [GraphQL
 
 ## Customers
 
-[Customers API documentation](/docs/rest-management/customers)
+[REST Management API - Customers reference](/docs/rest-management/customers)
 
 Each customer account has an `origin_channel_id` that references the channel on which it was created. Email addresses must be unique within each **channel**, rather than within the store. This means that a single email address can exist two (or more) times in one store: associated with two Customer IDs on two different channels.
 
 ## Orders
 
-[Orders API reference documentation](/docs/rest-management/transactions)
+[REST Management API - V2 orders reference](/docs/rest-management/orders)
+[REST Management API - V3 orders transactions reference](/docs/rest-management/transactions)
 
 For applications that deal with order management, it is now crucial to include the `channel_id` as part of the order object. Among other benefits, linking each order to a channel will make it easier to sort, categorize, and filter orders by the storefront or other sales channel in which they were placed. You will also avoid accidentally having [an order associated with the default channel](/docs/storefront/multi-storefront#backwards-compatibility), which may confuse shoppers by exposing store configuration details that do not apply to their channel.
 
-Similarly, if your application is shopper-facing and deals with orders, it's important to provide the appropriate channel-specific information to shoppers. For example, if your app sends order confirmation emails to customers, you'll need to ensure that any store information, URLs, and links in your email reflect the correct storefront or other sales channel. For more details, see the use case considerations at the end of [Managing Store Configuration](/docs/rest-management/settings#the-cumulative-effect-of-global-and-channel-specific-settings).
+Similarly, if your application is shopper-facing and deals with orders, it's important to provide the appropriate channel-specific information to shoppers. For example, if your app sends order confirmation emails to customers, you'll need to ensure that any store information, URLs, and links in your email reflect the correct storefront or other sales channel. For more details, see the use case considerations at the end of [Managing store configuration](/docs/store-operations/settings/configuration#the-cumulative-effect-of-global-and-channel-specific-settings).
 
 ## Price lists
 
-[Price List Assignments API documentation](/docs/rest-management/price-lists/price-lists-assignments#get-price-list-assignments)
+[REST Management API - Price list assignments reference](/docs/rest-management/price-lists/price-lists-assignments)
 
-Previously, price lists assignments were made with the V2 Customer Groups API. Price lists could only be assigned to customer groups.
+Previously, price lists assignments were made with the REST Management API's V2 customer groups endpoints. Price lists could only be assigned to customer groups.
 
-The V3 Price List Assignments API allows you to assign price lists to channels, customer groups, or the combination of a channel and customer group. Only one price list can apply at any given time, so BigCommerce determines which price list to apply using the following logic:
+The REST Management API's V3 price list assignments endpoints let you assign price lists to channels, customer groups, or the combination of a channel and customer group. Only one price list can apply at any given time, so BigCommerce determines which price list to apply using the following logic:
 
 * If a price list assignment is found that matches both the shopper's active channel **AND** their current customer group, it will be used; otherwise,
 * If a price list assignment is found that both does not specify a channel **AND** matches the shopper's current customer group, it will be used; otherwise,
 * If a price list assignment is found that both matches the shopper's current channel **AND** does not specify a customer group, it will be used; otherwise,
 * The catalog default pricing will be used.
 
-If your implementation uses price lists to manage pricing, we recommend that you start using the V3 Price List Assignments API so that your app fully understands and can reason about the pricing state for the customers, orders, and channels on the merchant's store.
+If your implementation uses price lists to manage pricing, we recommend that you start using the [price list assignments](/docs/rest-management/price-lists/price-lists-assignments) endpoints so that your app fully understands and can reason about the pricing state for the customers, orders, and channels on the merchant's store.
 
 If your use case is primarily concerned with what the price will be for a given shopper, consider using the [GraphQL Storefront API](/docs/storefront/graphql) to fetch data about the shopper's view in real time.
 
 ## Products
 
-[Channel Assignments API documentation]() 
+[Catalog API - Channel assignments reference](/docs/rest-catalog/products/channel-assignments) 
 
 <Callout type="info">
 #### The cardinal rule of multi-channel sales
@@ -79,19 +80,19 @@ It is important to understand the difference between assigning a product to a ca
 
 ![products-diagram.webp](https://storage.cloud.google.com/bigcommerce-production-dev-center/images/msf-beta-guide/products-diagram.webp)
 
-If your app provides merchants with a sales channel, such as an integration with a third-party marketplace, we recommend that you check the merchant's catalog to determine their existing channel assignments. This will help your app understand and communicate with the merchant about which products the integration's channel is currently permitted to offer for sale. For extended product information relevant to your channel, consult the [Channel Listings API](/docs/rest-management/channels/channel-listings#get-channel-listings).
+If your app provides merchants with a sales channel, such as an integration with a third-party marketplace, we recommend that you check the merchant's catalog to determine their existing channel assignments. This will help your app understand and communicate with the merchant about which products the integration's channel is currently permitted to offer for sale. For extended product information relevant to your channel, use the [Get channel listings](/docs/rest-management/channels/channel-listings#get-channel-listings) endpoint.
 
 If your application interacts with shoppers, you can use the [GraphQL Storefront API](/docs/storefront/graphql) to get the correct product availability and data for a given shopper in real time.
 
 ### The nuances of channel assignments
 
-Use the [Channel Assignments API](/docs/rest-catalog/products/channel-assignments#get-products-channel-assignments) to create and manage product assignments for [storefronts and other sales channels](/docs/storefront/multi-storefront#channels).
+Use the [Catalog API's channel assignments feature](/docs/rest-catalog/products/channel-assignments#get-products-channel-assignments) to create and manage product assignments for [storefronts and other sales channels](/docs/storefront/multi-storefront#channels).
 
 A product assigned to a storefront channel can be sold on that channel, discovered in search, and accessed by direct link, unless that storefront's settings otherwise disable direct links. 
 
 Removing a product from a channel will make that product unavailable on the given channel. The product will remain categorized, but it will not be available using category filters, search, or direct link.
 
-Removing a product from a category does not remove it from the channel. Use the [Channel Assignments API](/docs/rest-catalog/products/channel-assignments#get-products-channel-assignments) to revoke channel assignments.
+Removing a product from a category does not remove it from the channel. Use the [Delete product channel assignments](/docs/rest-catalog/products/channel-assignments#delete-products-channel-assignments) endpoint to revoke channel assignments.
 
 Removing a product from one or all of a channel's categories without revoking the channel assignment will remove the product from the category views and filters, but shoppers will still be able to access the product by search or direct link. This may be useful for sales campaigns that send shoppers a direct link to purchase a specific product.
 
@@ -103,7 +104,7 @@ Scripts are associated with a particular site. Any scripts that were created pre
 
 ![scripts-diagram.webp](https://storage.cloud.google.com/bigcommerce-production-dev-center/images/msf-beta-guide/scripts-diagram.webp)
 
-[Scripts API reference documentation](/docs/rest-management/scripts)
+[REST Management API - Scripts reference](/docs/rest-management/scripts)
 
 From a UX perspective, you may wish to make it clear to merchants who are setting up your app that they must explicitly select one or more storefront sites on which to install your app's storefront functionality. You should also provide ways to remove your scripts from each site and install your scripts on any new sites the merchant creates in the future.
 
@@ -113,9 +114,9 @@ Pages are associated with a particular site. Any pages that were created previou
 
 ![pages-diagram.webp](https://storage.cloud.google.com/bigcommerce-production-dev-center/images/msf-beta-guide/pages-diagram.webp)
 
-[Pages API reference documentation](/docs/rest-content/pages#get-pages)
+[REST Content API - Pages reference](/docs/rest-content/pages#get-pages)
 
-The new V3 Pages API services multi-storefront use cases and provides several of the efficiency benefits that V3 APIs offer in comparison with their V2 equivalents. The V3 Pages API has `site_id` as a required parameter.
+The REST Content pages endpoints service multi-storefront use cases and provide several of the efficiency benefits that V3 APIs offer versus their V2 equivalents. The REST Content API's pages endpoints have `site_id` as a required parameter.
 
 If your application reads pages-related data, be sure to filter by the appropriate `site_id` when dealing with a particular site. Similarly, when writing new pages, be sure to provide the correct `site_id`.
 
@@ -123,17 +124,17 @@ If your application reads pages-related data, be sure to filter by the appropria
 
 Widget templates, widgets, and widget placements are all associated with a particular channel. Any previously existing widget-related objects are assigned to the default channel, which is the first channel that was created on the store.
 
-Going forward, we recommend that you use the query parameters on each Widgets API endpoint to pass the `channel_id` of the storefront for which you are managing content. This will restrict the scope of your requests to the target channel. When you create new widget objects, be sure to include the correct `channel_id`.
+Going forward, we recommend that you use the query parameters on each REST Content API widgets endpoint to pass the `channel_id` of the storefront for which you are managing content. This will restrict the scope of your requests to the target channel. When you create new widget objects, be sure to include the correct `channel_id`.
 
 ### 301 Redirects
 
 ![redirects-diagram.webp](https://storage.cloud.google.com/bigcommerce-production-dev-center/images/msf-beta-guide/redirects-diagram.webp)
 
-[Redirects API documentation](/docs/rest-management/redirects)
+[REST Management API - Redirects reference](/docs/rest-management/redirects)
 
 Redirects are associated with a particular site. Any redirects that were created previously have been assigned to the default site, the ID of which is `1000` for each merchant store.
 
-The new V3 Redirects API services multi-storefront use cases and provides several of the efficiency benefits that V3 APIs offer in comparison with their V2 equivalents. The V3 Redirects API has `site_id` as a required parameter.
+The REST Management API's redirects feature services multi-storefront use cases and provides several of the efficiency benefits that V3 APIs offer versus their V2 equivalents. The redirects endpoints have `site_id` as a required parameter.
 
 If your application reads redirects-related data, be sure to filter by the appropriate `site_id` when dealing with a particular site. Similarly, when writing new redirects, be sure to provide the correct `site_id`.
 
@@ -145,19 +146,20 @@ Because we now support installing different themes and/or theme configurations f
 
 <Callout type="info">
 #### Locating the configuration ID
-The `configuration_id` is the same as a configuration's `uuid`, returned in the [Get Theme Configuration](/docs/rest-content/themes/theme-configurations#get-theme-configuration) response body.
+The `configuration_id` is the same as a configuration's `uuid`, returned in the [Get theme configuration](/docs/rest-content/themes/theme-configurations#get-theme-configuration) response body.
 </Callout>
 
 ![themes-diagram.webp](https://storage.cloud.google.com/bigcommerce-production-dev-center/images/msf-beta-guide/themes-diagram.webp)
-[Themes API documentation](/docs/rest-content/themes)
+
+[REST Content API - Themes reference](/docs/rest-content/themes)
 
 To understand which theme is active for a particular site, you can check the [Get active theme](/docs/rest-management/channels/channel-active-theme) endpoint.
 
-Themes themselves remain "global" to the store, but each theme now exposes a list of configuration settings. Each theme has a default configuration, but you can use the store control panel's Page Builder feature in the BigCommerce control panel to apply a different configuration to a storefront. 
+Themes themselves remain "global" to the store, but each theme now exposes a list of configuration settings. Each theme has a default configuration, but you can use the store control panel's Page Builder feature to apply a different configuration to a particular storefront. 
 
 <Callout type="info">
-#### Themes API roadmap
-Our Themes API roadmap includes the following: 
+#### Themes feature roadmap
+Our Themes feature roadmap includes the following: 
 * Exposing an endpoint to create a new theme configuration
 * Adding a `download_url` query parameter to the [Get all themes](/docs/rest-content/themes#get-all-themes) endpoint
 </Callout>
@@ -168,7 +170,7 @@ Because each theme can define its own configuration, the response from the [Get 
 
 ### Subscribers
 
-[Subscribers API documentation](/docs/rest-management/subscribers)
+[REST Management API - Subscribers reference](/docs/rest-management/subscribers)
 
 Each subscriber now has an `origin_channel_id` property that identifies the channel on which the subscriber consented to receive a newsletter. When not supplied, the `origin_channel_id` will default to `1`. To comply with electronic consent and privacy regulations, we recommend that your implementation specify the `origin_channel_id` for every subscriber.
 

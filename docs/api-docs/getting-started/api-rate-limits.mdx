@@ -1,0 +1,90 @@
+# Adaptive concurrency limits
+
+BigCommerce aims to provide you with an outstanding level of platform reliability. To keep platforms dependable, it's encouraged to practice industry-standard rate limiting when building.
+
+## Overview
+
+Apps that authenticate with OAuth are rate-limited based on a quota that is refreshed every few seconds. The maximum quota for a store will vary depending on the store plan and resources requested.
+
+| Plans & sandboxes | Quotas |
+|:------------------|:-------|
+| Enterprise plans and Enterprise sandboxes (Enterprise-Test) | by plan\* and [resource](https://support.bigcommerce.com/s/article/Platform-Limits#storelimits) | 
+| All other sandboxes (Dev/Partner/Employee) | by [resource](https://support.bigcommerce.com/s/article/Platform-Limits#storelimits) | 
+| Pro plans| 60k per hour (450 / 30sec) |
+| Plus & Standard plans| 20k per hour (150 / 30sec) | 
+
+<Callout type="warning">
+  \* The **Unlimited** rate plan for select BigCommerce Enterprise clients means that these stores are not rate limited by number of requests per unit of time. However, there are physical infrastructure-related constraints that may limit the maximum throughput of requests for a given resource. For more on resource constraints, consult our article on [object-related limits (Help Center)](https://support.bigcommerce.com/s/article/Platform-Limits#storelimits).
+  
+  BigCommerce reserves the right to limit unreasonable or abusive API activity in the interest of platform stability, per our [Terms of Service](https://www.bigcommerce.com/terms/api-terms/). 
+</Callout>
+
+Each request to the API consumes one available request from the quota. When an app hits the quota limit, subsequent requests are rejected until the quota is refreshed.
+
+A store’s overall quota is distributed across all apps that are accessing that store at a given time. This prevents a single app from consuming the store’s entire quota by itself. The quota available to a single app adjusts as additional clients start and stop making requests.
+
+## Rate limit methods
+There are plenty of ways to effectively manage your platform's resources.
+
+The follwing practices are useful to apply:
+
+* Handle rate limit status codes
+* Distribute the load evenly across time
+* Cache results
+* Retry requests responsibly
+
+### Handle rate limit status codes
+
+<Callout type="info">
+  As of January 2022, BigCommerce header field names became functionally case-insensitive. Learn more about BigCommerce [response header conventions](/docs/start/about#response-headers).
+</Callout>
+
+Every API response’s HTTP headers give you full visibility into your position in the rate-limiting algorithm:
+
+```http filename="Standard plan example: Rate limit headers"
+X-Rate-Limit-Time-Window-Ms: 30000
+X-Rate-Limit-Time-Reset-Ms: 15000
+X-Rate-Limit-Requests-Quota: 150
+X-Rate-Limit-Requests-Left: 35
+```
+
+If your implementation's request to the API triggers a [429: Too Many Requests](/docs/start/about/status-codes#4xx-client-error) response, it is encountering rate limits. Responses contain the `X-Rate-Limit-Time-Reset-Ms` header, which specifies the time in milliseconds that your client must wait before its quota refreshes. Retry the request after this time has elapsed.
+
+For more about rate limit headers and how to calculate the timing of your requests to reduce the risk of encoutering rate limits, see [About Our API](/docs/start/about#bigcommerce-specific-response-headers).
+
+### Distrube the load
+
+### Caching results
+
+### Retrying requests responsibly
+
+When you see a response with an HTTP `429` status code, your client shouldn’t make any further requests until your quota has refreshed:
+
+```http filename="Example: 429 response" showLineNumbers copy
+  HTTP/1.1 429 Too Many Requests
+  Date: Mon, 03 Feb 2022 20:36:00 GMT
+  Content-Type: application/json
+  X-Rate-Limit-Time-Reset-Ms: 15000
+```
+
+Parse the `X-Rate-Limit-Time-Reset-Ms` header to determine how long you have to wait. In this case, it would be 15000 milliseconds.
+Your client can sleep on the specified interval:
+
+```php filename="PHP example for delaying response" showLineNumbers copy
+  $milliseconds = $response->getHeader("X-Rate-Limit-Time-Reset-Ms");
+  usleep($milliseconds);
+```
+
+After waiting for the given number of milliseconds, your client can go back to making API requests.
+
+## REST API rate limits
+
+### REST Storefront API rate limits
+
+### REST Admin API rate limits
+
+## GraphQL API rate limits
+
+### GraphQL Storefront API rate limits
+
+### GraphQL Admin API rate limits

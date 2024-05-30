@@ -9,7 +9,20 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    steps:      
+    steps:
+    - name: Check for running builds and cancel
+      run: |
+        # Fetch running pipelines
+        RUNNING_PIPELINES=$(curl --location --request GET "https://circleci.com/api/v2/project/gh/bigcommerce/developer-center/pipeline?branch=main" \
+          --header "Circle-Token: ${{ secrets.CIRCLECI_TOKEN }}" \
+          | jq -r '.items[] | select(.state == "running") | .id')
+        
+        # Cancel each running pipeline
+        for PIPELINE_ID in $RUNNING_PIPELINES; do
+          curl --location --request POST "https://circleci.com/api/v2/pipeline/$PIPELINE_ID/cancel" \
+            --header "Circle-Token: ${{ secrets.CIRCLECI_TOKEN }}"
+        done
+
     - name: Trigger CircleCI Build
       run: |
         curl --location 'https://circleci.com/api/v2/project/gh/bigcommerce/developer-center/pipeline' \
@@ -22,3 +35,5 @@ jobs:
                  "github_triggering_actor": "${{ github.actor }}"
              }
         }'
+      env:
+        CIRCLECI_TOKEN: ${{ secrets.CIRCLECI_TOKEN }}

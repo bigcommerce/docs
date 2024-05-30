@@ -1,155 +1,233 @@
 # GraphQL Storefront API: Orders (beta)
 
 <Callout type="info">
-    This feature is currently in beta and only available to participants. 
+    This feature is currently in beta and is only available to participants. 
 </Callout>
 
 ## Overview
 
-BigCommerce's GraphQL Storefront Orders API provides the same access to order objects as the REST Storefront API. This GraphQL API can handle customer solutions as shoppers evolve from guests, to registered customers. You can manage customer account details that can pull up order history and order deatils.
+BigCommerce's GraphQL Storefront Orders API provides the same access to order objects as the REST Storefront API. This GraphQL API can handle customer solutions as shoppers evolve from guests, to registered customers. You can manage customer account details that can pull up order history and order details.
 
 Developers can use frontend GraphQL to create an end-to-end shopper experience. Orders related mutations and queries can do the following:
 
-## Site order
+### View customer order and details
 
-- Query a specific order to power order details including (site->order)
-    - Billing address and the customer's information
-    - Order status
-    - Consignment orders
-        - Ship or pickup consignments
-        - Products per shipment
-        - Product specifics such as brand, name, variant, quantity, and pricing
-    - Specific discounts, and coupons when applied
-    - Pricing
-        - Get pricing details
-            - Such as tax, gift wrapping, shipping, etc., when available
-            - Total amount
-            - Order purchase timestamp
+Get all order details for a specific customer using the `GetOrderDetails` query.
+
+Use `GetOrderDetails` to:
+  - Query for a specific order 
+  - Filter orders by order status
+  - Filter orders by order date
+  - Support for cursor pagination
+
+### View all customer order and details
+
+Get all orders for a specific customer using the `GetAllOrders` query.
+
+Use the `GetAllOrders` query to get details like:
+- Billing address, including the customer's information
+- Order status
+- Consignment orders
+    - Ship or pickup consignments
+    - Products per shipment
+    - Product specifics such as brand, name, variant, quantity, and pricing
+- Specific discounts, and coupons (when applied)
+- Pricing
+    - Get pricing details
+        - Such as tax, gift wrapping, shipping, etc., (when applied)
+        - Total amount
+        - Order placed timestamp
 
 <Callout type="info">
-    The following feature will be coming soon:
-    - Order specific messages
-</Callout>
-
-## Site orders
-
-- Query all orders for a specific customer (site->orders)
-    - Query for a specific order 
-    - Filter orders by order status
-    - Filter orders by order date
-    - Support for cursor pagination
-
-<Callout type="info">
-    The following features will be coming soon:
+    **The following features are coming soon**
     - Payment/Payments information 
     - Order specific messages
 </Callout>
 
-
-
 ## Example queries and mutations
 
 ### Get order details
+In this example, the query is set up to get details for order #106. Use `entityId` to query by customer. 
 
 <Tabs items={[`Request`, `Response`]}>
     <Tab>
-    ```graphql filename="Example query: Get order details"
+    ```graphql filename="Example query: Get order details" showLineNumbers copy
     query GetOrderDetails {
-    site {
-    order(filter: {entityId: 106}) {
-        billingAddress {
-        address1
-        city
-        company
-        country
-        countryCode
-        email
-        firstName
-        lastName
-        phone
-        postalCode
-        stateOrProvince
-        }
-        consignments {
-        shipping {
-            edges {
-            cursor
-            node {
-                lineItems {
-                edges {
-                    node {
-                    brand
-                    entityId
-                    imageUrl
-                    name
-                    subTotalListPrice {
-                        currencyCode
-                        value
-                    }
-                    }
-                }
-                }
-                shipments {
-                edges {
-                    node {
-                    shippingProviderName
-                    tracking {
-                        ... on OrderShipmentUrlOnlyTracking {
-                        __typename
+      site {
+        order(filter: { entityId: 106 }) {
+          billingAddress {
+            address1
+            city
+            company
+            country
+            countryCode
+            email
+            firstName
+            lastName
+            phone
+            postalCode
+            stateOrProvince
+          }
+          consignments {
+            shipping {
+              edges {
+                  cursor
+                  node {
+                  lineItems {
+                    edges {
+                      node {
+                        brand
+                        entityId
+                        imageUrl
+                        name
+                        subTotalListPrice {
+                          currencyCode
+                          value
                         }
+                      }
                     }
+                  }
+                  shipments {
+                    edges {
+                      node {
+                        shippingProviderName
+                        tracking {
+                          ... on OrderShipmentUrlOnlyTracking {
+                              __typename
+                          }
+                        }
+                      }
                     }
+                  }
+                  shippingAddress {
+                    address1
+                    city
+                    firstName
+                    lastName
+                    postalCode
+                    stateOrProvince
+                  }
+                  shippingCost {
+                    currencyCode
+                      value
+                  }
                 }
-                }
-                shippingAddress {
-                address1
-                city
-                firstName
-                lastName
-                postalCode
-                stateOrProvince
-                }
-                shippingCost {
-                currencyCode
-                value
-                }
+              }
             }
-            }
+          }
+          subTotal {
+            currencyCode
+            value
+          }
+          taxTotal {
+            currencyCode
+            value
+          }
+          totalIncTax {
+            currencyCode
+            value
+          }
+          updatedAt {
+            utc
+          }
         }
-        }
-        subTotal {
-        currencyCode
-        value
-        }
-        taxTotal {
-        currencyCode
-        value
-        }
-        totalIncTax {
-        currencyCode
-        value
-        }
-        updatedAt {
-        utc
-        }
-    }
-    }
+      }
     }
     ```
     </Tab>
     <Tab>
-    ``` GraphQL filename="Example response: Get order details"
+    ``` graphQL filename="Example response: Get order details"
+    {
+      "data": {
+        "site": {
+            "order": {
+              "billingAddress": {
+                  "address1": "123456 New Fake Street",
+                  "city": "Austin",
+                  "company": "BC",
+                  "country": "United States",
+                  "countryCode": "US",
+                  "email": "jon.smith@test.com",
+                  "firstName": "Jon",
+                  "lastName": "Smith",
+                  "phone": "123-456-7890",
+                  "postalCode": "78610",
+                  "stateOrProvince": ""
+              },
+              "consignments": {
+                "shipping": {
+                    "edges": [
+                        {
+                          "cursor": "YXJyYXljb25uZWN0aW9uOjA=",
+                          "node": {
+                            "lineItems": {
+                               "edges": [
+                                  {
+                                   "node": {
+                                      "brand": "",
+                                      "entityId": 7,
+                                      "imageUrl": null,
+                                      "name": "Dog Leash w/ Movie",
+                                      "subTotalListPrice": {
+                                          "currencyCode": "USD",
+                                          "value": 40.0
+                                          }
+                                        }
+                                      }
+                                    ]
+                                    },
+                                    "shipments": {
+                                        "edges": []
+                                    },
+                                    "shippingAddress": {
+                                        "address1": null,
+                                        "city": "South Jordan",
+                                        "firstName": "Camille",
+                                        "lastName": "Butterfield",
+                                        "postalCode": "84009",
+                                        "stateOrProvince": "Utah"
+                                    },
+                                    "shippingCost": {
+                                        "currencyCode": "USD",
+                                        "value": 0.0
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                },
+                "subTotal": {
+                    "currencyCode": "USD",
+                    "value": 40.0
+                },
+                "taxTotal": {
+                    "currencyCode": "USD",
+                    "value": 0.0
+                },
+                "totalIncTax": {
+                    "currencyCode": "USD",
+                    "value": 0.0
+                },
+                "updatedAt": {
+                    "utc": "2024-04-02T15:04:08Z"
+                }
+            }
+        }
+      }
+    }
 
     ```
     </Tab>
 </Tabs>
 
-### Site orders
-Query all orders for given customer with a status of completed.
+### Get all orders and details
+
+#### Filter by order status
+In this example, the query is set up to return a filtered list of all orders with a `COMPLETED` status. 
 
 <Tabs items={[`Request`, `Response`]}>
     <Tab>
-    ```graphql filename="Example query: Get order details"
+    ```graphql filename="Example query: Get order details" showLineNumbers copy
     query GetAllOrders{
     site {
     orders(filters: {status: COMPLETED}) {
@@ -190,8 +268,85 @@ Query all orders for given customer with a status of completed.
     ```
     </Tab>
     <Tab>
-    ``` GraphQL filename="Example response: Get order details"
-
+    ``` graphql filename="Example response: Get order details"
+     {
+      "data": {
+          "site": {
+              "order": {
+                  "billingAddress": {
+                      "address1": "123456 New Fake Street",
+                      "city": "Austin",
+                      "company": "BC",
+                      "country": "United States",
+                      "countryCode": "US",
+                      "email": "jon.smith@test.com",
+                      "firstName": "Jon",
+                      "lastName": "Smith",
+                      "phone": "123-456-7890",
+                      "postalCode": "78610",
+                      "stateOrProvince": ""
+                  },
+                  "consignments": {
+                      "shipping": {
+                          "edges": [
+                              {
+                                  "cursor": "YXJyYXljb25uZWN0aW9uOjA=",
+                                  "node": {
+                                      "lineItems": {
+                                          "edges": [
+                                              {
+                                                  "node": {
+                                                      "brand": "",
+                                                      "entityId": 7,
+                                                      "imageUrl": null,
+                                                      "name": "Dog Leash w/ Movie",
+                                                      "subTotalListPrice": {
+                                                          "currencyCode": "USD",
+                                                          "value": 40.0
+                                                      }
+                                                  }
+                                              }
+                                          ]
+                                      },
+                                      "shipments": {
+                                          "edges": []
+                                      },
+                                      "shippingAddress": {
+                                          "address1": null,
+                                          "city": "South Jordan",
+                                          "firstName": "Camille",
+                                          "lastName": "Butterfield",
+                                          "postalCode": "84009",
+                                          "stateOrProvince": "Utah"
+                                      },
+                                      "shippingCost": {
+                                          "currencyCode": "USD",
+                                          "value": 0.0
+                                      }
+                                  }
+                              }
+                          ]
+                      }
+                  },
+                  "subTotal": {
+                      "currencyCode": "USD",
+                      "value": 40.0
+                  },
+                  "taxTotal": {
+                      "currencyCode": "USD",
+                      "value": 0.0
+                  },
+                  "totalIncTax": {
+                      "currencyCode": "USD",
+                      "value": 0.0
+                  },
+                  "updatedAt": {
+                      "utc": "2024-04-02T15:04:08Z"
+                  }
+              }
+          }
+      }
+    }
     ```
     </Tab>
 </Tabs>

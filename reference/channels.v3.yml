@@ -532,6 +532,8 @@ paths:
                     default: 'https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes'
                   errors:
                     type: object
+                    properties: {}
+                    additionalProperties: true
     delete:
       summary: Delete a Siteʼs Checkout URL
       operationId: deleteCheckoutUrl
@@ -700,6 +702,44 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/metafield_200'
+        '400':
+          description: Bad Request. Input is invalid.
+          content:
+            application/json:
+              schema:
+                description: ''
+                type: object
+                properties:
+                  status:
+                    type: number
+                  title:
+                    type: string
+                    minLength: 1
+                  type:
+                    type: string
+                    minLength: 1
+                  detail:
+                    type: string
+                    minLength: 1
+              example:
+                status: 400
+                title: Input is invalid
+                type: 'https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes'
+                detail: Syntax error
+        '409':
+          description: |
+            The `Metafield` conflicts with another `Metafield`. This can result from duplicate unique key combinations of the appʼs client id, namespace, key, resource_type, and resource_id.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse' 
+        '422':
+          description: |
+            The `Metafield` was not valid. This is the result of missing required fields, or of invalid data. See the response for more details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
       requestBody:
         content:
           application/json:
@@ -728,6 +768,19 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/metafield_200'
+        '404':
+          description: |
+            Not found (A metafield was not found with this query).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFound'
+              examples:
+                example-1:
+                  value:
+                    status: 404
+                    title: The resource at that URL is not found.
+                    type: 'https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes'
       operationId: getChannelMetafield
       description: Returns a single channel metafield.
     put:
@@ -738,6 +791,43 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/metafield_200'
+        '400':
+          description: Bad Request. Input is invalid.
+          content:
+            application/json:
+              schema:
+                description: ''
+                type: object
+                properties:
+                  status:
+                    type: number
+                  title:
+                    type: string
+                    minLength: 1
+                  type:
+                    type: string
+                    minLength: 1
+                  detail:
+                    type: string
+                    minLength: 1
+              example:
+                status: 400
+                title: Input is invalid
+                type: 'https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes'
+                detail: Syntax error
+        '404':
+          description: |
+            Not found (A metafield was not found with this query).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFound'
+              examples:
+                example-1:
+                  value:
+                    status: 404
+                    title: The resource at that URL is not found.
+                    type: 'https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes'
       requestBody:
         content:
           application/json:
@@ -756,6 +846,19 @@ paths:
       responses:
         '204':
           description: No Content
+        '404':
+          description: |
+            Not found (A metafield was not found with this query).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFound'
+              examples:
+                example-1:
+                  value:
+                    status: 404
+                    title: The resource at that URL is not found.
+                    type: 'https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes'
       tags:
         - Metafields
       description: Deletes a single channel metafield.
@@ -774,8 +877,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MetaFieldCollectionResponse'
-        '500':
-          description: Internal Server Error
       parameters:
         - $ref: '#/components/parameters/PageParam'
         - $ref: '#/components/parameters/LimitParam'
@@ -784,6 +885,7 @@ paths:
         - $ref: '#/components/parameters/MetafieldNamespaceParam'
         - $ref: '#/components/parameters/MetafieldNamespaceInParam'
         - $ref: '#/components/parameters/DirectionParam'
+        - $ref: '#/components/parameters/IncludeFieldsParamMetafields'
     post:
       summary: Create multiple Metafields
       tags:
@@ -806,15 +908,36 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MetaFieldCollectionResponse_POST_PUT'
-        '422':
-          description: |
-            Response object for metafields creation with partial success.
+        '400':
+          description: Bad Request. Input is invalid.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/MetaFieldCollectionResponsePartialSuccess_POST_PUT'
-        '500':
-          description: Internal Server Error
+                description: ''
+                type: object
+                properties:
+                  status:
+                    type: number
+                  title:
+                    type: string
+                    minLength: 1
+                  type:
+                    type: string
+                    minLength: 1
+                  detail:
+                    type: string
+                    minLength: 1
+              example:
+                status: 400
+                title: Input is invalid
+                type: 'https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes'
+                detail: Syntax error
+        '422':
+          description: Unprocessable entity (The following fields are invalid.)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
     put:
       summary: Update multiple Metafields
       tags:
@@ -837,6 +960,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MetaFieldCollectionResponse_POST_PUT'
+        '400':
+          description: Bad Request. Input is invalid.
+          content:
+            application/json:
+              schema:
+                description: ''
+                type: object
+                properties:
+                  status:
+                    type: number
+                  title:
+                    type: string
+                    minLength: 1
+                  type:
+                    type: string
+                    minLength: 1
+                  detail:
+                    type: string
+                    minLength: 1
+              example:
+                status: 400
+                title: Input is invalid
+                type: 'https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes'
+                detail: Syntax error
         '422':
           description: |
             Response object for metafields creation with partial success.
@@ -844,10 +991,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MetaFieldCollectionResponsePartialSuccess_POST_PUT'
-        '500':
-          description: Internal Server Error
     delete:
-      summary: Delete All Metafields
+      summary: Delete Multiple Metafields
       tags:
         - Batch metafields
       description: Delete all channel metafields.
@@ -868,6 +1013,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MetaFieldCollectionDeleteResponseSuccess'
+        '400':
+          description: Bad Request. Input is invalid.
+          content:
+            application/json:
+              schema:
+                description: ''
+                type: object
+                properties:
+                  status:
+                    type: number
+                  title:
+                    type: string
+                    minLength: 1
+                  type:
+                    type: string
+                    minLength: 1
+                  detail:
+                    type: string
+                    minLength: 1
+              example:
+                status: 400
+                title: Input is invalid
+                type: 'https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes'
+                detail: Syntax error
         '422':
           description: |
             Response object for metafields deletion with partial success.
@@ -974,6 +1143,27 @@ components:
         type: string
         enum:
           - currencies
+    IncludeFieldsParamMetafields:
+      name: include_fields
+      in: query
+      description: Fields to include, in a comma-separated list. The ID and the specified fields will be returned.
+      style: form
+      explode: false
+      schema:
+        type: array
+        items:
+          type: string
+          enum:
+            - resource_id
+            - key
+            - value
+            - namespace
+            - permission_set
+            - resource_type
+            - description
+            - owner_client_id
+            - date_created
+            - date_modified
     available:
       name: available
       description: Filter items based on whether the channel is currently available for integration. Setting this query parameter to `true` will return channels with the status of `prelaunch`, `active` , `inactive`, and `connected`. Setting this query parameter to `false` will return channels with the status of `disconnected`, `archived`, `deleted`, and `terminated`.
@@ -1581,15 +1771,16 @@ components:
                     links:
                       current: '?page=1&limit=50'
             allOf:
-              - properties:
+              - type: object
+                properties:
                   data:
                     type: array
                     items:
                       $ref: '#/components/schemas/metafield_Base'
-              - properties:
+              - type: object
+                properties:
                   meta:
                     $ref: '#/components/schemas/MetaWithFullPagination'
-            type: object
           examples: {}
   examples:
     create_channel_req_example:
@@ -2407,6 +2598,7 @@ components:
             $ref: '#/components/schemas/Metafield'
         errors:
           type: array
+          items: {}
           description: Empty for 200 responses.
           example: []
         meta:
@@ -2463,6 +2655,7 @@ components:
             - 125
         errors:
           type: array
+          items: {}
           description: Empty for 200 responses.
           example: []
         meta:
@@ -2550,11 +2743,28 @@ components:
           $ref: '#/components/schemas/ErrorDetail'
     ErrorDetail:
       type: object
+      properties: {}
+      additionalProperties: true
       description: |
         Error detail response payload for the BigCommerce API.
       example:
         "1": "Unauthorized to delete"
         "2": "Metafield does not exist"
+    ErrorResponse:
+      type: object
+      properties:
+        status:
+          type: integer
+        title:
+          type: string
+        type:
+          type: string
+        instance:
+          type: string
+        errors:
+          type: object
+          properties: {}
+          additionalProperties: true
     CollectionMeta:
       type: object
       description: Data about the response, including pagination and collection totals.
@@ -2746,6 +2956,23 @@ components:
                 The ID of metafield to update.
           required:
             - id
+      x-internal: false
+    NotFound:
+      description: Error payload for the BigCommerce API.
+      type: object
+      properties:
+        status:
+          description: |
+            404 HTTP status code.
+          type: integer
+        title:
+          description: The error title describing the particular error.
+          type: string
+        type:
+          type: string
+        instance:
+          type: string
+      title: Not Found
       x-internal: false
     PutCheckoutUrl:
       type: object

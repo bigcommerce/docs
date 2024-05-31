@@ -1,7 +1,10 @@
 type: object
 properties:
   store/modifier/updated:
-    description: Fires when product modifier overrides are edited. 
+    description: |
+      Fires when you edit attributes for a local or shared modifier. Updates to the global store and channel locale as an override triggers the webhook. The `context` fields are present for only override updates. 
+      
+      For shared modifiers, the maximum number of product IDs in a payload is 100. If a shared modifier is assigned to more than 100 products, the payload includes a link to the API so you can query all the event data.  
     type: object
     properties:
       scope:
@@ -13,10 +16,15 @@ properties:
         properties:
           type:
             type: string
+            enum:
+            - local_modifier
+            - shared_modifier
           id:
             type: integer
           affected_product_ids: 
             type: array
+            items:
+              type: integer
             description: 100 items limit
           context:
             type: object
@@ -25,6 +33,7 @@ properties:
                 type: integer
               locale:
                 type: string
+                description: '`null` if the attribute that was overridden applies to the entire channel.'
       hash:
         type: string
       created_at:

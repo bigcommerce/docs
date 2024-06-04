@@ -1,0 +1,328 @@
+**GraphQL Storefront API: Cart Metafields**
+
+# Working with Cart Metafields
+
+Cart metafields allow you to add custom metadata to a cart to display product information. Cart metafields are key-value pairs available in REST Storefront Carts APIs, but you can now use cart metafield operations while in GraphQL.
+
+## Example queries and mutations
+
+### Query cart metafields
+
+<Tabs items={['Request', 'Response']}>
+  <Tab>
+```graphql filename="Example query: Get cart metafields" showLineNumbers copy 
+# Access metafields attached to products, brands, categories, or variants
+# Adjust this query with your metafield namespace and key(s) to access them
+# Stores in pre-launch or maintenance mode may reject queries.
+# Access from Control Panel > Advanced Settings > Storefront API Playground
+# or browse privately and query against https://buybutton.store/graphql
+query metafields {
+  site {
+    products(first: 3) {
+      edges {
+        cursor
+        node {
+          metafields(
+            namespace: "my-namespace"
+            keys: ["my-key", "my-other-key"]
+            first: 2
+          ) {
+            edges {
+              node {
+                key
+                id
+                value
+              }
+            }
+          }
+          variants(first: 5) {
+            edges {
+              node {
+                sku
+                metafields(
+                  namespace: "my-namespace"
+                  keys: ["my-key", "my-other-key"]
+                  first: 2
+                ) {
+                  edges {
+                    node {
+                      key
+                      id
+                      value
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+```
+</Tab>
+<Tab>
+```json filename="Example query: Get cart metafields" showLineNumbers copy
+{
+  "data": {
+    "site": {
+      "products": {
+        "edges": [
+          {
+            "cursor": "YXJyYXljb25uZWN0aW9uOjA=",
+            "node": {
+              "metafields": {
+                "edges": []
+              },
+              "variants": {
+                "edges": [
+                  {
+                    "node": {
+                      "sku": "SLCTBS",
+                      "metafields": {
+                        "edges": []
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "cursor": "YXJyYXljb25uZWN0aW9uOjE=",
+            "node": {
+              "metafields": {
+                "edges": []
+              },
+              "variants": {
+                "edges": [
+                  {
+                    "node": {
+                      "sku": "s-1138-SM-RE-RE",
+                      "metafields": {
+                        "edges": []
+                      }
+                    }
+                  },
+                  {
+                    "node": {
+                      "sku": "s-1138-SM-GR-RE",
+                      "metafields": {
+                        "edges": []
+                      }
+                    }
+                  },
+                  {
+                    "node": {
+                      "sku": "s-1138-SM-BL-RE",
+                      "metafields": {
+                        "edges": []
+                      }
+                    }
+                  },
+                  {
+                    "node": {
+                      "sku": "s-1138-ME-RE-RE",
+                      "metafields": {
+                        "edges": []
+                      }
+                    }
+                  },
+                  {
+                    "node": {
+                      "sku": "s-1138-ME-GR-RE",
+                      "metafields": {
+                        "edges": []
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "cursor": "YXJyYXljb25uZWN0aW9uOjI=",
+            "node": {
+              "metafields": {
+                "edges": []
+              },
+              "variants": {
+                "edges": [
+                  {
+                    "node": {
+                      "sku": "",
+                      "metafields": {
+                        "edges": []
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}
+```
+</Tab>
+</Tabs>
+
+
+### Create a cart metafield
+
+<Callout type="info">
+The current platform limit is 250 metafields for a single cart. 
+</Callout>
+
+<Tabs items={['Request', 'Response']}>
+  <Tab>
+    
+  ```graphql filename="Example mutation: Create a cart metafield" showLineNumbers copy 
+  mutation createCartMetafield {
+ 
+  cart {
+  createCartMetafield(input:{
+    cartEntityId: "4a5fd706-beb9-41b5-9ac2-01593b471168"
+    data: {
+      key: "size"
+      value: "small"
+    }
+  }) {
+    metafield {
+      id
+      entityId
+      key
+      value
+    }
+    errors {
+      ...on Error {
+        message
+      }
+    }
+  }
+```
+</Tab>
+  <Tab>
+  ```json filename="Example mutation: Create a cart metafield" showLineNumbers copy
+  {
+  "data": {
+    "cart": {
+      "createCartMetafield": {
+        "metafield": {
+          "id": "TWV0YWZpZWxkczo1Mw==",
+          "entityId": 53,
+          "key": "size",
+          "value": "small"
+        },
+        "errors": []
+      }
+    }
+  }
+}
+```
+  </Tab>
+</Tabs>
+
+### Update a cart metafield
+<Tabs items={['Request', 'Response']}>
+  <Tab>
+  ```graphql filename="Example mutation: Update a cart metafield" showLineNumbers copy 
+  mutation updateCartMetafield {
+  cart {
+    updateCartMetafield(input:{
+      cartEntityId: "4a5fd706-beb9-41b5-9ac2-01593b471168"
+      metafieldEntityId:53
+      data: {
+        key: "Size",
+				value: "medium"
+      }
+    }) {
+      metafield {
+        id
+        entityId
+        key
+        value
+      }
+      errors {
+        ...on Error {
+          message
+        }
+      }
+    }
+  }
+}
+```
+</Tab>
+  <Tab>
+```json filename="Example mutation: Update a cart metafield" showLineNumbers copy
+ {
+  "data": {
+    "cart": {
+      "updateCartMetafield": {
+        "metafield": {
+          "id": "TWV0YWZpZWxkczo1Mw==",
+          "entityId": 53,
+          "key": "Size",
+          "value": "medium"
+        },
+        "errors": []
+      }
+    }
+  }
+}
+```
+  </Tab>
+</Tabs>
+
+### Delete a cart metafield
+<Tabs items={['Request', 'Response']}>
+  <Tab>
+```graphql filename="Example mutation: Delete a cart metafield" showLineNumbers copy 
+ mutation deleteCartMetafield {
+ cart {
+  deleteCartMetafield(input:{
+    cartEntityId: "4a5fd706-beb9-41b5-9ac2-01593b471168"
+    metafieldEntityId: 53
+  }) {
+  errors {
+        ... on NotFoundError {
+          __typename
+          message
+        }
+        ... on ValidationError {
+          __typename
+          message
+          path
+        }
+        ... on NotAuthorisedError {
+          __typename
+        }
+      }
+    }
+  }
+}
+```
+</Tab>
+  <Tab>
+```json filename="Example mutation: Delete a cart metafield" showLineNumbers copy
+{
+  "data": {
+    "cart": {
+      "deleteCartMetafield": {
+        "errors": []
+      }
+    }
+  }
+}
+```
+  </Tab>
+</Tabs>
+
+## Resources
+
+### GraphQL documentation
+- [GraphQL Storefront API overview](/docs/storefront/graphql)
+- [GraphQL Storefront API: Carts and Checkout](/docs/storefront/cart-checkout/guide/graphql-storefront)

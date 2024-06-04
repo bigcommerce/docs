@@ -77,6 +77,8 @@ For more information on specific webhook events and their payloads, see [Webhook
 
 To acknowledge a callback has been received without issue, the destination server must return an `HTTP 200` response — no response, or any response outside the `200` range indicates the callback was not received. If this happens, the webhook service will use the [retry mechanism](#callback-retry-mechanism) described below.
 
+Duplication of webhook callbacks may occasionally occur due to various factors such as network issues, retries, or other anomalies. We provide mechanisms to detect and handle duplicate callbacks to ensure data integrity and prevent duplicate processing. For more information on webhook duplication, see the [Troubleshooting](#troubleshooting) section.
+
 Need to set up a quick webhook destination URL for testing? See [Tools for Debugging and Testing Webhooks](#tools).
 
 ### Response requirements
@@ -203,9 +205,22 @@ Webhooks created with one token are not visible when you retrieve webhooks using
 
 To prevent your webhooks from timing out, send a `200` success status response immediately after receiving the request.
 
-**Duplicate webhook events**
+**What are duplicate events?**
 
-Duplicate webhooks can happen. For this reason, apps should use idempotent operations to avoid significant unintended side effects. Idempotent operations allow multiple calls without changing the result. A way to ensure webhook events are idempotent is to create a temporary "blocklist" array to store the hash of webhooks that have already been received or handled. When you receive a webhook, you can compare the hash of the received event to the list. If the hash has already been handled you can ignore the event.
+In our event-based system, events are like messages that trigger actions within the system. Sometimes, for various reasons, these events can be received or processed more than once, causing "duplicate events."
+
+**Why do duplicate events happen?**
+
+Duplicate events can occur for several reasons:
+
+* Network Glitches: Internet connections or network delays can cause events to be sent or received more than once. 
+* System Hiccups: If parts of our system experience temporary glitches or outages, they might inadvertently send the same event multiple times when they recover.
+* Message Retries: When messages fail to reach their destination, our system automatically retries sending them. Occasionally, this causes duplicate events to be processed.
+
+**How do you prevent duplicate events?**
+
+BigCommerce recommends that apps use idempotent operations to prevent unintended side effects. Idempotent operations allow multiple calls without changing the result. One approach to ensuring webhook events maintain idempotence is by creating a temporary 'blocklist' array to store the hashes of webhooks that have already been received or handled. When you receive a webhook, you can compare the hash of the received event to the list. If the hash has already been handled you can ignore the event.
+
 
 ## Tools
 

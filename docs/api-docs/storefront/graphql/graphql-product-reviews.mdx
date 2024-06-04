@@ -1,0 +1,181 @@
+# Product Reviews with the GraphQL Storefront API
+
+BigCommerce's GraphQL Storefront API allows you to create and query [product reviews](https://support.bigcommerce.com/s/article/Managing-Reviews) through the built-in comment system. 
+
+## Store settings
+
+There are a few store settings to consider when creating a product review:
+
+- [Overall enable product reviews](https://support.bigcommerce.com/s/article/Managing-Reviews?language=en_US#enable)
+- [Only accept product reviews from past customers](https://support.bigcommerce.com/s/article/Managing-Reviews?language=en_US#enable)
+- [Enable reCAPTCHA](https://support.bigcommerce.com/s/article/Updating-Themes-with-reCAPTCHA-v2)
+
+**Overall enable product reviews**
+
+The merchant must enable this overall setting for the review submission process. Turning off this setting cancels any attempts to submit reviews.
+
+**Only accept product reviews from past customers**
+
+When the merchant enables the 'Only accept product reviews from past customers' setting, only logged-in customers (not guest shoppers) can submit a review, and they must have at least one previous order placed in the store.
+This setting ensures the merchant has a genuine customer to contact if needed. You can use the [login mutation](/docs/storefront/graphql#customer-login) to log in a customer.
+After a purchase, customers can review any item in the store. The order doesn't have to include the reviewed product. 
+
+When the merchant turns off the setting, guest shoppers can also submit reviews but they must provide an email. Since guests do not log in, they must supply the email in the request as an input parameter.
+Logged-in customers don't need to provide the email through the input parameter, as the system will use the email from the customer's account.
+If the logged-in customer provides an email as input, BigCommerce will validate the email against the email associated with the shopper's account. If the email doesn't match, the submission will fail.
+
+In all cases, you can create only one review per product an email address.
+
+**Enable reCAPTCHA**
+
+If a merchant enables the [reCAPTCHA setting](https://support.bigcommerce.com/s/article/Updating-Themes-with-reCAPTCHA-v2) on the storefront, you need to send a reCAPTCHA token with the request.
+
+## Mutation
+
+The following mutation creates a product review for a store.
+
+
+<Tabs items={['Request', 'Response']}>
+<Tab>
+
+```graphql filename="Example request: Create a product review" showLineNumbers copy
+mutation {
+  catalog {
+    addProductReview (
+      reCaptchaV2: "12345"
+      input: {
+        productEntityId: 81
+          review: {
+            title: "Great product"
+            text: "Would recommend"
+            author: "example author"
+            rating: 4  # integer value between 1 and 5
+            email: "name@example.com"
+        }
+      }
+    ){
+      errors {
+        ...on NotAuthorizedToAddProductReviewError {
+          message
+        }
+        ...on CustomerAlreadyReviewedProductError {
+          message
+        }
+        ...on ProductIdNotFoundError {
+          message
+        }
+        ...on InvalidInputFieldsError {
+          message fields
+        }
+        ...on Error{
+          message
+        }
+      }
+    }
+  }
+}
+```
+
+</Tab>
+<Tab>
+
+```json filename="Example success response: Create a product review" showLineNumbers copy
+{
+  "data": {
+    "catalog": {
+      "addProductReview": {
+        "errors": []
+      }
+    }
+  }
+}
+```
+
+</Tab>
+</Tabs>
+
+
+## Query
+
+
+You can query the product review with the `products` GraphQL node.
+
+<Tabs items={['Request', 'Response']}>
+<Tab>
+
+```graphql filename="Example request: Query a product review" showLineNumbers copy
+query {
+  site {
+    products (entityIds: [81]) {
+      edges {
+        node {
+          reviews {
+            edges {
+              node {
+                entityId
+                author {
+                  name
+                }
+                title
+                text
+                rating
+                createdAt {
+                  utc
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+</Tab>
+<Tab>
+
+```json filename="Example response: Query a product review" showLineNumbers copy
+{
+  "data": {
+    "site": {
+      "products": {
+        "edges": [
+          {
+            "node": {
+              "reviews": {
+                "edges": [
+                  {
+                    "node": {
+                      "entityId": 3,
+                      "author": {
+                        "name": "example author"
+                      },
+                      "title": "Great product",
+                      "text": "Would recommend",
+                      "rating": 4,
+                      "createdAt": {
+                        "utc": "2024-05-15T15:16:30Z"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}
+```
+
+</Tab>
+</Tabs>
+
+## Resources
+
+- [GraphQL Storefront Playground](https://developer.bigcommerce.com/graphql-storefront/playground)
+- [Product Reviews (Support Article)](https://support.bigcommerce.com/s/article/Managing-Reviews)
+- [Enabling reCAPTCHA (Support Article)](https://support.bigcommerce.com/s/article/Updating-Themes-with-reCAPTCHA-v2)
+- [GraphQL Storefront API Overview - Login mutation](/docs/storefront/graphql#customer-login)

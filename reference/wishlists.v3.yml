@@ -34,24 +34,9 @@ paths:
       description: Returns a list of wishlists. Optional filter parameters can be passed in.
       operationId: getWishlists
       parameters:
-        - name: customer_id
-          in: query
-          description: All wishlists relating to the customer.
-          schema:
-            type: integer
-            format: int32
-        - name: page
-          in: query
-          description: The page number of results per page. 1 is the default and starts from record 0.
-          schema:
-            type: integer
-            format: int32
-        - name: limit
-          in: query
-          description: The numbers of items to return per page. Default is 50 and maximum is 250.
-          schema:
-            type: integer
-            format: int32
+        - $ref: '#/components/parameters/CustomerIdQuery'
+        - $ref: '#/components/parameters/PageQuery'
+        - $ref: '#/components/parameters/LimitQuery'
         - $ref: '#/components/parameters/Accept'
       responses:
         '200':
@@ -243,14 +228,9 @@ paths:
                     type: string
   '/wishlists/{wishlist_id}/items/{item_id}':
     parameters:
-      - $ref: '#/components/parameters/WishlistID'
+      - $ref: '#/components/parameters/WishlistIdPath'
       - $ref: '#/components/parameters/Accept'
-      - name: item_id
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int32
+      - $ref: '#/components/parameters/ItemIdPath'
     delete:
       tags:
         - Wishlists Items
@@ -317,6 +297,7 @@ paths:
             application/json:
               schema:
                 type: object
+                properties: {}
         '500':
           description: Internal server error.
           content:
@@ -334,7 +315,7 @@ paths:
                     type: string
   '/wishlists/{wishlist_id}':
     parameters:
-    - $ref: '#/components/parameters/WishlistID'
+    - $ref: '#/components/parameters/WishlistIdPath'
     - $ref: '#/components/parameters/Accept'
     get:
       tags:
@@ -402,6 +383,7 @@ paths:
             application/json:
               schema:
                 type: object
+                properties: {}
         '500':
           description: Internal server error.
           content:
@@ -545,7 +527,7 @@ paths:
                     type: string
   '/wishlists/{wishlist_id}/items':
     parameters:
-    - $ref: '#/components/parameters/WishlistID'
+    - $ref: '#/components/parameters/WishlistIdPath'
     - $ref: '#/components/parameters/Accept'
     post:
       tags:
@@ -807,7 +789,7 @@ components:
           $ref: '#/components/schemas/pagination'
       x-internal: false
   parameters:
-    WishlistID:
+    WishlistIdPath:
       name: wishlist_id
       in: path
       description: ID of the Wishlist.
@@ -815,6 +797,37 @@ components:
       schema:
         type: integer
         format: int32
+    ItemIdPath:
+      name: item_id
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int32
+    CustomerIdQuery:
+      name: customer_id
+      in: query
+      description: All wishlists relating to the customer.
+      schema:
+        type: integer
+        format: int32
+    PageQuery:
+      name: page
+      in: query
+      description: The page number of results to return. 1 is the default and starts from record 0. Use in conjunction with the limit query parameter to request a specific set of records.
+      schema:
+        type: integer
+        format: int32
+        default: 1
+    LimitQuery:
+      name: limit
+      in: query
+      description: The number of items to return per page. Default is 50 and maximum is 250.
+      schema:
+        type: integer
+        format: int32
+        default: 50
+        maximum: 250
     Accept:
       name: Accept
       in: header

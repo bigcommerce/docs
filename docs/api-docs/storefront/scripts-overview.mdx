@@ -106,6 +106,27 @@ Solutions that add dynamic script support using revisions to or additions of scr
 
 Release notes can work for all storefronts. Changes to the [OAuth scopes](/docs/start/authentication/api-accounts#oauth-scopes) of apps that use [app-level API accounts](/docs/start/authentication/api-accounts#app-level-api-accounts) require the store owner or other authorized user to accept the new scopes, which could provide a mechanism to trigger release note display. Store owners aren't prompted to reauthorize until they next open an app in the control panel, so direct contact may be advisable from a conversion perspective. You can't change the OAuth scopes for a [store-level API account](/docs/start/authentication/api-accounts#store-level-api-accounts), so directly contacting the store or stores that you want to change may be your only option for disclosure.
 
+## Subresource integrity
+
+[Subresource integrity (SRI)](https://developer.mozilla.org/en-US/docs/Web/Security/Subresource_Integrity) is a security feature browsers use to verify that attackers have not manipulated external hosted resources, including scripts. 
+
+All scripts on the checkout page need at least one SRI hash to meet [PCI 4.0 - 6.4.3 requirements](https://pcipolicies.com/blogs/news/how-to-comply-with-the-new-pci-dss-requirement-6-4-3). 
+
+You can [generate SRI hashes](https://www.srihash.org/) or work with a script provider or host to generate a hash. We support all the hashing algorithms the SRI standard allows, including SHA-256, SHA-384, and SHA-512.
+The hash corresponds to the contents of the script. If you modify the contents of your script at its original location, you must generate a new hash. 
+
+You can add SRI hashes through the [Script Manager](https://support.bigcommerce.com/s/article/Using-Script-Manager) or using the REST Management API's [scripts feature](/docs/rest-management/scripts).  
+For _external SRC scripts_, BigCommerce will use the provided hashes within the `integrity` attribute when we generate the `script` tag from your external SRC script. BigCommerce will also set the `crossorigin` attribute of the script to `anonymous`. This is because SRI requires that browsers don't include any credentials (like cookies or HTTP authentication) in the request when fetching the resource. 
+
+A hash becomes invalid when the contents of a script change, and the script will fail to execute. 
+To prevent this from happening, we support multiple hashes so that a script can always have a valid hash while the script provider updates the script.
+You should supply another hash before the contents of the script change. The browser will check each hash to see if any of them match a corresponding script. 
+You can add up to five SRI hashes and remove hashes when they are no longer valid. The browser will typically check hashes starting from the leftmost hash in the `integrity` attribute and proceed to the right until it finds a match. For this reason, you can use the allotted five hashes to sort hashes in decreasing algorithmic strength so that browsers use the strongest available hash.
+
+<Callout type="warning">
+  If there is a change to the host script, you must update or add a valid hash. If no hashes match the contents of the script, the browser console will show an error that the script failed to execute.
+</Callout>
+
 ## Troubleshooting
 
 Your app installation may find itself unexpectedly missing one or more scripts. Below are some possible causes of this issue.
@@ -151,9 +172,15 @@ Stencil themes from the marketplace support [Optimized One-Page Checkout (Help C
 * [Apps Guide: Auth Flow](/docs/integrations/apps/guide/auth)
 * [Apps Guide: Callbacks](/docs/integrations/apps/guide/callbacks)
 * [Multi-Storefront App Compatibility](/docs/integrations/apps/multi-storefront)
+* [Subresource Integrity - SRI hashes (MDN Web Docs)](https://developer.mozilla.org/en-US/docs/Web/Security/Subresource_Integrity)
+* [PCI 4.0 - 6.4.3 requirements](https://pcipolicies.com/blogs/news/how-to-comply-with-the-new-pci-dss-requirement-6-4-3)
 
 ### Help center
 
 * [Installing Apps (Help Center)](https://support.bigcommerce.com/s/article/How-do-I-access-and-install-the-new-single-click-apps-within-my-Bigcommerce-store-control-panel?language=en_US#installing)
 * [Optimized One-Page Checkout (Help Center)](https://support.bigcommerce.com/articles/Public/Optimized-Single-Page-Checkout#signup)
+* [Script Manager (Help Center)](https://support.bigcommerce.com/s/article/Using-Script-Manager)
 
+### Tools
+
+* [SRI Hash Generator](https://www.srihash.org/)

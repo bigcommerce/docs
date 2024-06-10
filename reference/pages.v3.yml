@@ -87,14 +87,16 @@ paths:
           application/json:
             schema:
               oneOf:
-                - anyOf:
+                - title: "Create single page using object"
+                  anyOf:
                   - $ref: '#/components/schemas/typePage'
                   - $ref: '#/components/schemas/typeBlog'
                   - $ref: '#/components/schemas/typeContactForm'
                   - $ref: '#/components/schemas/typeFeed'
                   - $ref: '#/components/schemas/typeRaw'
                   - $ref: '#/components/schemas/typeLink'
-                - type: array
+                - title: "Create multiple pages using array" 
+                  type: array
                   items:
                     anyOf:
                       - $ref: '#/components/schemas/typePage'
@@ -227,7 +229,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ResponseErrorBrief'
               examples:
-                example-1:
+                Not Found:
                   value:
                     status: 0
                     title: string
@@ -741,7 +743,7 @@ components:
       description: |
         Response payload for the BigCommerce API.
       type: object
-      title: ''
+      title: 'Body'
       properties:
         data:
           type: array
@@ -775,6 +777,12 @@ components:
       type: object
       description: Properties of the page modification request body.
       properties:
+        channel_id:
+          type: integer
+          description: |
+            The ID of the channel where this page should be shown.
+          example: 12
+          default: 1
         name:
           type: string
           description: |
@@ -812,6 +820,12 @@ components:
             - feed
             - link
             - blog
+        body:
+          type: string
+          description: |
+            HTML or variable that populates the element of this page, in default/desktop view. Required in a `POST` request if the page type is `raw`.
+          example: <div>Hello World!</div>
+          nullable: true
         is_homepage:
           type: boolean
           description: |
@@ -826,12 +840,6 @@ components:
           maxLength: 255
         meta_title:
           type: string
-          nullable: true
-        body:
-          type: string
-          description: |
-            HTML or variable that populates the element of this page, in default/desktop view. Required in a `POST` request if the page type is `raw`.
-          example: <div>Hello World!</div>
           nullable: true
         feed:
           type: string
@@ -876,12 +884,6 @@ components:
           description: |
             Relative URL on the storefront for this page.
           example: /my-store-page
-        channel_id:
-          type: integer
-          description: |
-            The ID of the channel where this page should be shown.
-          example: 12
-          default: 1
     PagePutBulk:
       allOf:
         - type: object
@@ -959,6 +961,7 @@ components:
     typePage:
       description: |
         `type: page`. A user-defined plain-text page.
+      title: page
       allOf:
         - $ref: '#/components/schemas/anyTypePage'
         - $ref: '#/components/schemas/pageMeta'
@@ -966,6 +969,7 @@ components:
     typeBlog:
       description: |-
         A page that contains blog posts. Use caution; `blog`-type pages can only be created in the store control panel, but you may be able to change the type of a blog page to something else with this API. Use the [blog feature of the REST Content API](/docs/rest-content/store-content/blog-posts#create-a-blog-post) to work with blog posts and tags.
+      title: blog
       allOf:
         - readOnly: true
         - $ref: '#/components/schemas/anyTypePage'
@@ -981,6 +985,7 @@ components:
     typeContactForm:
       description: |-
         `type: contact_form`. A user-customizable page that contains a contact form. Body content returns HTML.
+      title: contact form
       allOf:
         - $ref: '#/components/schemas/anyTypePage'
         - $ref: '#/components/schemas/pageMeta'
@@ -1007,6 +1012,7 @@ components:
     typeFeed:
       description: |-
         `type: feed`.  Makes RSS-syndicated content feeds available in the menu of other pages that contain markup. No page body.
+      title: feed
       allOf:
         - $ref: '#/components/schemas/anyTypePage'
         - $ref: '#/components/schemas/pageMeta'
@@ -1022,6 +1028,7 @@ components:
     typeRaw:
       description: |-
         `type: raw`. A user-defined page with a body that contains HTML markup or other stringified code.
+      title: raw
       allOf:
         - $ref: '#/components/schemas/anyTypePage'
         - $ref: '#/components/schemas/searchKeywords'
@@ -1042,6 +1049,7 @@ components:
     typeLink:
       description: |-
         `type: link`. A link to an external absolute URL. Displays in the menu of other pages that contain markup. Does not contain a body.
+      title: link
       allOf:
         - $ref: '#/components/schemas/anyTypePage'
         - type: object

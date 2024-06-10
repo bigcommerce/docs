@@ -55,12 +55,12 @@ paths:
         - Categories
       parameters:
         - $ref: '#/components/parameters/CategoryUuidInParam'
-        - $ref: '#/components/parameters/CategoryIdInParam'
-        - $ref: '#/components/parameters/TreeIdInParam'
-        - $ref: '#/components/parameters/ParentIdInParam'
         - $ref: '#/components/parameters/CategoryUuidNotInParam'
+        - $ref: '#/components/parameters/CategoryIdInParam'
         - $ref: '#/components/parameters/CategoryIdNotInParam'
+        - $ref: '#/components/parameters/TreeIdInParam'
         - $ref: '#/components/parameters/TreeIdNotInParam'
+        - $ref: '#/components/parameters/ParentIdInParam'
         - $ref: '#/components/parameters/ParentIdNotInParam'
         - $ref: '#/components/parameters/PageTitleParam'
         - $ref: '#/components/parameters/PageTitleLikeParam'
@@ -115,17 +115,13 @@ paths:
                           current: '?limit=5&page=2'
                           next: '?limit=5&page=3'
         '400':
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorRequest'
-        '500':
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorRequest'
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/GeneralError'
+        '422':
+          $ref: '#/components/responses/GeneralErrorWithErrors'
       operationId: getAllCategories
     post:
       summary: Create Categories
@@ -194,18 +190,16 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorRequest'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/GeneralError'
         '422':
           description: 'The Category was not valid. This is the result of missing required fields, or of invalid data. See the response for more details.'
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-        '500':
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorRequest'
       operationId: createCategories
     put:
       summary: Update Categories
@@ -242,18 +236,16 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorRequest'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/GeneralError'
         '422':
           description: 'The Category was not valid. This is the result of missing required fields, or of invalid data. See the response for more details.'
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-        '500':
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorRequest'
       operationId: updateCategories
     delete:
       summary: Delete categories
@@ -269,7 +261,7 @@ paths:
         - $ref: '#/components/parameters/TreeIdInParam'
         - $ref: '#/components/parameters/ParentIdInParam'
       responses:
-        '204':
+        '202':
           description: Categories are deleted
           content:
             application/json:
@@ -281,12 +273,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorRequest'
-        '500':
-          description: Server error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorRequest'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/GeneralError'
+        '422':
+          $ref: '#/components/responses/GeneralErrorWithErrors'
       operationId: deleteTreeCategories
     parameters:
       - $ref: '#/components/parameters/Accept'
@@ -321,6 +313,12 @@ paths:
                     links:
                       next: '?limit=5&page=2'
                       current: '?limit=5&page=1'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/GeneralError'
+        '422':
+          $ref: '#/components/responses/GeneralErrorWithErrors'
       tags:
         - Category trees
     put:
@@ -355,6 +353,10 @@ paths:
                     channels:
                     - 0
                 meta: {}
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/GeneralError'
         '422':
           description: The Channel was not valid. See the response for more details.
           content:
@@ -381,6 +383,12 @@ paths:
       responses:
         '204':
           description: Deleted
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/GeneralError'
+        '422':
+          $ref: '#/components/responses/GeneralErrorWithErrors'
       tags:
         - Category trees
     parameters:
@@ -418,6 +426,10 @@ paths:
                   type: object
                   properties: {}
                   description: Empty meta object; reserved for use later.
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/GeneralError'
         '404':
           description: The tree was not found.
           content:
@@ -882,9 +894,7 @@ components:
     url:
       title: URL
       description: |
-        The custom URL for the category trees on the storefront. If not provided in a POST request body, the URL is autogenerated from the category name.
-      minLength: 1
-      maxLength: 255
+        If not provided in POST request, the URL is autogenerated from the category name.
       type: object
       properties:
         path:
@@ -926,8 +936,96 @@ components:
       minLength: 1
       type: string
       description: |-
-        The name displayed for the category tree. The name must be unique with respect to the category tree of siblings on the same level (you can duplicate the name for other siblings on another level). Required in a POST.
+        The name displayed for the category. Name is unique with respect to the categoryʼs siblings.
+        Required in a POST.
       example: Bath
+    NotFoundError:
+      required:
+        - status
+        - title
+        - type
+      title: Not Found
+      type: object
+      properties:
+        status:
+          type: integer
+          description: The HTTP status code.
+        title:
+          type: string
+          description: The error title describing the particular error.
+        type:
+          type: string
+    GeneralError:
+      required:
+        - status
+        - title
+        - type
+      title: ''
+      type: object
+      properties:
+        status:
+          type: integer
+          description: The HTTP status code.
+        title:
+          type: string
+          description: The error title describes the particular error.
+        type:
+          type: string
+        code:
+          type: integer
+          description: The custom code of the error.
+    GeneralErrorWithErrors:
+      required:
+        - status
+        - title
+        - type
+        - errors
+      title: ''
+      type: object
+      properties:
+        status:
+          type: integer
+          description: The HTTP status code.
+        title:
+          type: string
+          description: The error title describing the particular error.
+        type:
+          type: string
+        errors:
+          title: Detailed Errors
+          type: object
+          properties: { }
+          additionalProperties: true
+  responses:
+    UnauthorizedError:
+      description: Unauthorized
+      content:
+        plain/text:
+          schema:
+            type: string
+    BadRequestError:
+      description: Bad Request
+      content:
+        plain/text:
+          schema:
+            type: string
+    GeneralError:
+      description: ''
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+    GeneralErrorWithErrors:
+      description: ''
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              errors:
+                $ref: '#/components/schemas/GeneralErrorWithErrors'
+              meta:
+                $ref: '#/components/schemas/MetaData'
   parameters:
     Accept:
       name: Accept

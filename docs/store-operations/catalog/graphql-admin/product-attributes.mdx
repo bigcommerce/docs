@@ -1,0 +1,763 @@
+# Product Attributes
+
+Using the Catalog features of the Admin API, you can set and query product attributes, for example, storefront details, pre-order messages, and whether a product is featured.
+
+Perform the following: 
+- Set a product's [pre-order settings](#pre-order-settings) for the store or a locale within a channel. Pre-order messages communicate info about products that aren't yet available for purchase.
+- Set a product's [storefront details](#storefront-details) for the store or a locale within a channel. Details include product warranty, availability, and search keywords.
+- Set a product as [featured](#featured-products) for the store or a channel. Channel values apply to all locales within the channel.
+
+Attributes for the locale or channel override global values. If you remove an override, the product attribute defaults to its global store value.
+
+For a full schema, see the [GraphQL Admin API reference](https://developer.bigcommerce.com/graphql-admin/reference).
+
+## Input fields
+
+Setting or removing information requires that you specify ID fields in the input. For more information on how to specify ID fields, see [Input fields](/docs/store-operations/catalog/graphql-admin/product-basic-info#input-fields).
+
+## Pre-order settings
+
+Set a product's pre-order settings for a store or a locale within a storefront channel. You can set the pre-order message that shoppers see for products that aren't yet available for purchase.
+
+### Set pre-order settings at the global level
+
+The following example sets a product's pre-order settings for a store, from which channels inherit by default.
+
+<Tabs items={['Request', 'Response']}>
+  <Tab>
+
+    ```graphql filename="Example mutation: Set pre-order settings at the global level" showLineNumbers copy
+    POST https://api.bigcommerce.com/stores/{{STORE_HASH}}/graphql
+    X-Auth-Token: {{ACCESS_TOKEN}}
+    Content-Type: application/json
+    Accept: application/json
+
+    mutation ($input: SetProductPreOrderSettingsInput!) {
+      product {
+        setProductPreOrderSettings (input: $input) {
+          product {
+            preOrderSettings {
+              message
+            }
+          }
+        }
+      }
+    }
+    ```
+
+    ```json filename="GraphQL variables" showLineNumbers copy
+    {
+      "input": {
+        "productId": "bc/store/product/111",
+        "data": {
+          "message": "Product will be released soon"
+        }
+      }
+    }
+    ```
+
+  </Tab>
+  <Tab>
+
+    ```json filename="Example mutation: Set pre-order settings at the global level" showLineNumbers copy
+    {
+      "data": {
+        "product": {
+          "setProductPreOrderSettings": {
+            "product": {
+              "preOrderSettings": {
+                "message": "Product will be released soon"
+              }
+            }
+          }
+        }
+      }
+    }
+    ```
+
+  </Tab>
+</Tabs>
+
+### Set pre-order settings for a locale
+
+The following example sets a product's pre-order settings for the locale within a storefront channel. These settings override global store information.
+
+<Tabs items={['Request', 'Response']}>
+  <Tab>
+
+    ```graphql filename="Example mutation: Set pre-order settings for a locale" showLineNumbers copy
+    POST https://api.bigcommerce.com/stores/{{STORE_HASH}}/graphql
+    X-Auth-Token: {{ACCESS_TOKEN}}
+    Content-Type: application/json
+    Accept: application/json
+
+    mutation ($input: SetProductPreOrderSettingsInput!) {
+      product {
+        setProductPreOrderSettings (input: $input) {
+          product {
+            overridesForLocale (localeContext: {channelId: "bc/store/channel/2", locale: "fr"}) {
+              preOrderSettings {
+                message
+              }
+            }
+          }
+        }
+      }
+    }
+    ```
+
+    ```json filename="GraphQL variables" showLineNumbers copy
+    {
+      "input": {
+        "productId": "bc/store/product/111",
+        "localeContext": {
+          "locale": "fr",
+          "channelId": "bc/store/channel/2"
+        },
+        "data": {
+          "message": "Le produit sortira dans un mois"
+        }
+      }
+    }
+    ```
+
+  </Tab>
+  <Tab>
+
+    ```json filename="Example mutation: Set pre-order settings for a locale" showLineNumbers copy
+    {
+      "data": {
+        "product": {
+          "setProductPreOrderSettings": {
+            "product": {
+              "overridesForLocale": {
+                "preOrderSettings": {
+                  "message": "Le produit sortira dans un mois"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    ```
+
+  </Tab>
+</Tabs>
+
+
+### Remove pre-order settings for a locale
+
+The following example removes the overrides for a product's pre-order settings. This mutation removes the overrides for the locale within the storefront channel, and the pre-order setting defaults to its global store value.  
+
+<Tabs items={['Request', 'Response']}>
+  <Tab>
+
+    ```graphql filename="Example mutation: Remove pre-order settings for a locale" showLineNumbers copy
+    POST https://api.bigcommerce.com/stores/{{STORE_HASH}}/graphql
+    X-Auth-Token: {{ACCESS_TOKEN}}
+    Content-Type: application/json
+    Accept: application/json
+
+    mutation ($input: RemoveProductPreOrderSettingsOverridesInput!) {
+      product {
+        removeProductPreOrderSettingsOverrides (input: $input) {
+          product {
+            overridesForLocale (localeContext: {channelId: "bc/store/channel/2", locale: "fr"}) {
+              preOrderSettings {
+                message
+              }
+            }
+          }
+        }
+      }
+    }
+    ```
+
+    ```json filename="GraphQL variables" showLineNumbers copy
+    {
+      "input": {
+        "productId": "bc/store/product/111",
+        "localeContext": {
+          "locale": "fr",
+          "channelId": "bc/store/channel/2"
+        },
+        "overridesToRemove": ["PRODUCT_PRE_ORDER_MESSAGE"]
+      }
+    }
+    ```
+
+  </Tab>
+  <Tab>
+
+    ```json filename="Example mutation: Remove pre-order settings for a locale" showLineNumbers copy
+    {
+      "data": {
+        "product": {
+          "removeProductPreOrderSettingsOverrides": {
+            "product": {
+              "overridesForLocale": {
+                "preOrderSettings": null
+              }
+            }
+          }
+        }
+      }
+    }
+    ```
+
+  </Tab>
+</Tabs>
+
+### Query pre-order settings
+
+The following example retrieves a product's pre-order settings. You can retrieve global information for the store and overrides for a locale within a storefront channel. 
+
+<Tabs items={['Request', 'Response']}>
+  <Tab>
+
+    ```graphql filename="Example query: Get pre-order settings for a product" showLineNumbers copy
+    POST https://api.bigcommerce.com/stores/{{STORE_HASH}}/graphql
+    X-Auth-Token: {{ACCESS_TOKEN}}
+    Content-Type: application/json
+    Accept: application/json
+
+    query {
+      store {
+        product (id: "bc/store/product/111") {
+          preOrderSettings {
+            message
+          }
+          overridesForLocale (localeContext: {locale: "fr", channelId: "bc/store/channel/2"}) {
+            preOrderSettings {
+              message
+            }
+          }
+        }
+      }
+    }
+    ```
+
+  </Tab>
+  <Tab>
+
+    ```json filename="Example mutation: Get pre-order settings for a product" showLineNumbers copy
+    {
+      "data": {
+        "store": {
+          "product": {
+            "preOrderSettings": {
+              "message": "Product will be released soon"
+            },
+            "overridesForLocale": {
+              "preOrderSettings": {
+                "message": "Le produit sortira dans un mois"
+              }
+            }
+          }
+        }
+      }
+    }
+    ```
+
+  </Tab>
+</Tabs>
+
+
+## Storefront details
+
+Set a product's storefront details for a store or a locale within a storefront channel. Set details like product warranty, availability, and search keywords.
+
+### Set storefront details at the global level
+
+The following example sets a product's storefront details for a store, from which channels inherit by default.
+
+<Tabs items={['Request', 'Response']}>
+  <Tab>
+
+    ```graphql filename="Example mutation: Set storefront details at the global level" showLineNumbers copy
+    POST https://api.bigcommerce.com/stores/{{STORE_HASH}}/graphql
+    X-Auth-Token: {{ACCESS_TOKEN}}
+    Content-Type: application/json
+    Accept: application/json
+
+    mutation ($input: SetProductStorefrontDetailsInput!) {
+      product {
+        setProductStorefrontDetails (input: $input) {
+          product {
+            storefrontDetails {
+              warranty
+              availabilityDescription
+              searchKeywords
+            }
+          }
+        }
+      }
+    }
+    ```
+
+    ```json filename="GraphQL variables" showLineNumbers copy
+    {
+      "input": {
+        "productId": "bc/store/product/111",
+        "data": {
+          "warranty": "1 year warranty",
+          "availabilityDescription": "Available in a month",
+          "searchKeywords": "Best selling"
+        }
+      }
+    }
+    ```
+
+  </Tab>
+  <Tab>
+
+    ```json filename="Example mutation: Set storefront details at the global level" showLineNumbers copy
+    {
+      "data": {
+        "product": {
+          "setProductStorefrontDetails": {
+            "product": {
+              "storefrontDetails": {
+                "warranty": "1 year warranty",
+                "availabilityDescription": "Available in a month",
+                "searchKeywords": "Best selling"
+              }
+            }
+          }
+        }
+      }
+    }
+    ```
+
+  </Tab>
+</Tabs>
+
+### Set storefront details for a locale
+
+The following example sets a product's storefront details for the locale within a storefront channel. These details override global store information.
+
+<Tabs items={['Request', 'Response']}>
+  <Tab>
+
+    ```graphql filename="Example mutation: Set storefront details for a locale" showLineNumbers copy
+    POST https://api.bigcommerce.com/stores/{{STORE_HASH}}/graphql
+    X-Auth-Token: {{ACCESS_TOKEN}}
+    Content-Type: application/json
+    Accept: application/json
+
+    mutation ($input: SetProductStorefrontDetailsInput!) {
+      product {
+        setProductStorefrontDetails (input: $input) {
+          product {
+            overridesForLocale (localeContext: {locale: "fr", channelId: "bc/store/channel/2"}) {
+              storefrontDetails {
+                warranty
+                availabilityDescription
+                searchKeywords
+              }
+            }
+          }
+        }
+      }
+    }
+    ```
+
+    ```json filename="GraphQL variables" showLineNumbers copy
+    {
+      "input": {
+        "productId": "bc/store/product/111",
+        "localeContext": {
+          "locale": "fr",
+          "channelId": "bc/store/channel/2"
+        },
+        "data": {
+          "warranty": "Garantie un an",
+          "availabilityDescription": "Disponible dans un mois",
+          "searchKeywords": "meilleure vente"
+        }
+      }
+    }
+    ```
+
+  </Tab>
+  <Tab>
+
+    ```json filename="Example mutation: Set storefront details for a locale" showLineNumbers copy
+    {
+      "data": {
+        "product": {
+          "setProductStorefrontDetails": {
+            "product": {
+              "overridesForLocale": {
+                "storefrontDetails": {
+                  "warranty": "Garantie un an",
+                  "availabilityDescription": "Disponible dans un mois",
+                  "searchKeywords": "meilleure vente"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    ```
+
+  </Tab>
+</Tabs>
+
+### Remove storefront details for a locale
+
+The following example removes the overrides for a product's storefront details. This mutation removes the overrides for the locale within the storefront channel, and the storefront details default to their global store values.  
+
+Omitting the `overridesToRemove` field from the input removes _all_ overrides for storefront details from the locale.
+
+<Tabs items={['Request', 'Response']}>
+  <Tab>
+
+    ```graphql filename="Example mutation: Remove storefront details for a locale" showLineNumbers copy
+    POST https://api.bigcommerce.com/stores/{{STORE_HASH}}/graphql
+    X-Auth-Token: {{ACCESS_TOKEN}}
+    Content-Type: application/json
+    Accept: application/json
+
+    mutation ($input: RemoveProductStorefrontDetailsOverridesInput!) {
+      product {
+        removeProductStorefrontDetailsOverrides (input: $input) {
+          product {
+            overridesForLocale (localeContext: {channelId: "bc/store/channel/2", locale: "fr"}) {
+              storefrontDetails {
+                warranty
+                availabilityDescription
+                searchKeywords
+              }
+            }
+          }
+        }
+      }
+    }
+    ```
+
+    ```json filename="GraphQL variables" showLineNumbers copy
+    {
+      "input": {
+        "productId": "bc/store/product/111",
+        "localeContext": {
+          "locale": "fr",
+          "channelId": "bc/store/channel/2"
+        },
+        "overridesToRemove": ["PRODUCT_AVAILABILITY_DESCRIPTION_FIELD", "PRODUCT_SEARCH_KEYWORDS", "PRODUCT_WARRANTY"]
+      }
+    }
+    ```
+
+  </Tab>
+  <Tab>
+
+    ```json filename="Example mutation: Remove storefront details for a locale" showLineNumbers copy
+    {
+      "data": {
+        "product": {
+          "removeProductStorefrontDetailsOverrides": {
+            "product": {
+              "overridesForLocale": {
+                "storefrontDetails": {
+                  "warranty": null,
+                  "availabilityDescription": null,
+                  "searchKeywords": null
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    ```
+
+  </Tab>
+</Tabs>
+
+### Query storefront details
+
+The following example retrieves a product's storefront details. You can retrieve global information for the store and overrides for a locale within a storefront channel. 
+
+<Tabs items={['Request', 'Response']}>
+  <Tab>
+
+    ```graphql filename="Example mutation: Get storefront details for a product" showLineNumbers copy
+    POST https://api.bigcommerce.com/stores/{{STORE_HASH}}/graphql
+    X-Auth-Token: {{ACCESS_TOKEN}}
+    Content-Type: application/json
+    Accept: application/json
+
+    query {
+      store {
+        product (id: "bc/store/product/111") {
+          storefrontDetails {
+            warranty
+            availabilityDescription
+            searchKeywords
+          }
+          overridesForLocale (localeContext: {locale: "fr", channelId: "bc/store/channel/2"}) {
+            storefrontDetails {
+              warranty
+              availabilityDescription
+              searchKeywords
+            }
+          }
+        }
+      }
+    }
+    ```
+
+  </Tab>
+  <Tab>
+
+    ```json filename="Example mutation: Get storefront details for a product" showLineNumbers copy
+    {
+      "data": {
+        "store": {
+          "product": {
+            "storefrontDetails": {
+              "warranty": "1 year warranty",
+              "availabilityDescription": "Available in a month",
+              "searchKeywords": "Best selling"
+            },
+            "overridesForLocale": {
+              "storefrontDetails": {
+                "warranty": "Garantie un an",
+                "availabilityDescription": "Disponible dans un mois",
+                "searchKeywords": "meilleure vente"
+              }
+            }
+          }
+        }
+      }
+    }
+    ```
+
+  </Tab>
+</Tabs>
+
+
+## Featured products
+
+Set whether to feature a product for a store or a storefront channel. Channel values apply to all locales within the channel.
+
+### Set featured flag at the global level
+
+The following example sets whether to feature a product for a store, from which channels inherit by default.
+
+<Tabs items={['Request', 'Response']}>
+  <Tab>
+
+    ```graphql filename="Example mutation: Set featured flag at the global level" showLineNumbers copy
+    POST https://api.bigcommerce.com/stores/{{STORE_HASH}}/graphql
+    X-Auth-Token: {{ACCESS_TOKEN}}
+    Content-Type: application/json
+    Accept: application/json
+
+    mutation ($input: SetProductIsFeaturedInput!) {
+      product {
+        setProductIsFeatured (input: $input) {
+          product {
+            isFeatured
+          }
+        }
+      }
+    }
+    ```
+
+    ```json filename="GraphQL variables" showLineNumbers copy
+    {
+      "input": {
+        "productId": "bc/store/product/111",
+        "data": {
+          "isFeatured": true
+        }
+      }
+    }
+    ```
+
+  </Tab>
+  <Tab>
+
+    ```json filename="Example mutation: Set featured flag at the global level" showLineNumbers copy
+    {
+      "data": {
+        "product": {
+          "setProductIsFeatured": {
+            "product": {
+              "isFeatured": true
+            }
+          }
+        }
+      }
+    }
+    ```
+
+  </Tab>
+</Tabs>
+
+### Set featured flag for a channel
+
+The following example sets whether to feature a product in a storefront channel. These override global store information.
+
+<Tabs items={['Request', 'Response']}>
+  <Tab>
+
+    ```graphql filename="Example mutation: Set featured flag for a channel" showLineNumbers copy
+    POST https://api.bigcommerce.com/stores/{{STORE_HASH}}/graphql
+    X-Auth-Token: {{ACCESS_TOKEN}}
+    Content-Type: application/json
+    Accept: application/json
+
+    mutation ($input: SetProductIsFeaturedInput!) {
+      product {
+        setProductIsFeatured (input: $input) {
+          product {
+            overridesForChannel (channelId: "bc/store/channel/2") {
+              isFeatured
+            }
+          }
+        }
+      }
+    }
+    ```
+
+    ```json filename="GraphQL variables" showLineNumbers copy
+    {
+      "input": {
+        "channelId": "bc/store/channel/2",
+        "productId": "bc/store/product/111",
+        "data": {
+          "isFeatured": false
+        }
+      }
+    }
+    ```
+
+  </Tab>
+  <Tab>
+
+    ```json filename="Example mutation: Set featured flag for a channel" showLineNumbers copy
+    {
+      "data": {
+        "product": {
+          "setProductIsFeatured": {
+            "product": {
+              "overridesForChannel": {
+                "isFeatured": false
+              }
+            }
+          }
+        }
+      }
+    }
+    ```
+
+  </Tab>
+</Tabs>
+
+### Remove featured flag for a channel
+
+The following example removes the overrides for whether a product is featured. This mutation removes the override from the storefront channel, and the featured flag defaults to its global store value.  
+
+<Tabs items={['Request', 'Response']}>
+  <Tab>
+
+    ```graphql filename="Example mutation: Remove featured flag for a channel" showLineNumbers copy
+    POST https://api.bigcommerce.com/stores/{{STORE_HASH}}/graphql
+    X-Auth-Token: {{ACCESS_TOKEN}}
+    Content-Type: application/json
+    Accept: application/json
+
+    mutation ($input: RemoveProductIsFeaturedOverrideInput!) {
+      product {
+        removeProductIsFeaturedOverride (input: $input) {
+          product {
+            overridesForChannel (channelId: "bc/store/channel/2") {
+              isFeatured
+            }
+          }
+        }
+      }
+    }
+    ```
+
+    ```json filename="GraphQL variables" showLineNumbers copy
+    {
+      "input": {
+        "channelId": "bc/store/channel/2",
+        "productId": "bc/store/product/111"
+      }
+    }
+    ```
+
+  </Tab>
+  <Tab>
+
+    ```json filename="Example mutation: Remove featured flag for a channel" showLineNumbers copy
+    {
+      "data": {
+        "product": {
+          "removeProductIsFeaturedOverride": {
+            "product": {
+              "overridesForChannel": {
+                "isFeatured": null
+              }
+            }
+          }
+        }
+      }
+    }
+    ```
+
+  </Tab>
+</Tabs>
+
+### Query featured flag
+
+The following example retrieves whether a product is featured. You can retrieve global information for the store and overrides for a storefront channel. 
+
+<Tabs items={['Request', 'Response']}>
+  <Tab>
+
+    ```graphql filename="Example mutation: Get featured flag for a product" showLineNumbers copy
+    POST https://api.bigcommerce.com/stores/{{STORE_HASH}}/graphql
+    X-Auth-Token: {{ACCESS_TOKEN}}
+    Content-Type: application/json
+    Accept: application/json
+
+    query {
+      store {
+        product (id: "bc/store/product/111") {
+          isFeatured
+          overridesForChannel (channelId: "bc/store/channel/2") {
+            isFeatured
+          }
+        }
+      }
+    }
+    ```
+
+  </Tab>
+  <Tab>
+
+    ```json filename="Example mutation: Get featured flag for a product" showLineNumbers copy
+    {
+      "data": {
+        "store": {
+          "product": {
+            "isFeatured": true,
+            "overridesForChannel": {
+              "isFeatured": false
+            }
+          }
+        }
+      }
+    }
+    ```
+
+  </Tab>
+</Tabs>

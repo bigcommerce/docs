@@ -1,0 +1,264 @@
+# Product URL
+
+Using the Catalog features of the Admin API, you can set and query product URLs for a store or a locale within a storefront channel.
+
+Perform the following: 
+- [Set product URLs](#set-product-url-at-the-global-level) for the store. Channels inherit these by default.
+- [Create overrides for a channel's locale](#set-product-url-for-a-locale) using the `overridesForLocale` mutation. The product URL for the locale overrides the global value.
+- [Remove overrides for a channel's locale](#remove-product-url-for-a-locale). The product URL then defaults to its global store value.
+- [Query product URL](#query-product-url), those set at the global level and the overrides.
+
+For a full schema, see the [GraphQL Admin API reference](https://developer.bigcommerce.com/graphql-admin/reference).
+
+## Input fields
+
+Setting or removing information requires that you specify ID fields in the input. For more information on how to specify ID fields, see [Input fields](/docs/store-operations/catalog/graphql-admin/product-basic-info#input-fields).
+
+## Set product URL at the global level
+
+The following example sets a product's URL for a store, from which channels inherit by default.
+
+<Tabs items={['Request', 'Response']}>
+  <Tab>
+
+    ```graphql filename="Example mutation: Set product URL at the global level" showLineNumbers copy
+    POST https://api.bigcommerce.com/stores/{{STORE_HASH}}/graphql
+    X-Auth-Token: {{ACCESS_TOKEN}}
+    Content-Type: application/json
+    Accept: application/json
+
+    mutation ($input: SetProductUrlPathInput!) {
+      product {
+        setProductUrlPath (input: $input) {
+          product {
+            id
+            urlPath {
+              path
+            }
+          }
+        }
+      }
+    }
+    ```
+
+    ```json filename="GraphQL variables" showLineNumbers copy
+    {
+      "input": {
+        "productId": "bc/store/product/111",
+        "data": {
+          "path": "/global-product-111"
+        }
+      }
+    }
+    ```
+
+  </Tab>
+  <Tab>
+
+    ```json filename="Example mutation: Set product URL at the global level" showLineNumbers copy
+    {
+      "data": {
+        "product": {
+          "setProductUrlPath": {
+            "product": {
+              "id": "bc/store/product/111",
+              "urlPath": {
+                "path": "/overrides-product-111"
+              }
+            }
+          }
+        }
+      }
+    }    
+    ```
+
+  </Tab>
+</Tabs>
+
+## Set product URL for a locale
+
+The following example sets a product's URL for the locale within a storefront channel. These settings override global store information.
+
+<Tabs items={['Request', 'Response']}>
+  <Tab>
+
+    ```graphql filename="Example mutation: Set product URL for a locale" showLineNumbers copy
+    POST https://api.bigcommerce.com/stores/{{STORE_HASH}}/graphql
+    X-Auth-Token: {{ACCESS_TOKEN}}
+    Content-Type: application/json
+    Accept: application/json
+
+    mutation ($input: SetProductUrlPathInput!) {
+      product {
+        setProductUrlPath (input: $input) {
+          product {
+            id
+            overridesForLocale (localeContext: { channelId: "bc/store/channel/2", locale: "uk" }) {
+              urlPath {
+                path
+              }
+            }
+          }
+        }
+      }
+    }
+    ```
+
+    ```json filename="GraphQL variables" showLineNumbers copy
+    {
+      "input": {
+        "productId": "bc/store/product/111",
+        "localeContext": {
+          "channelId": "bc/store/channel/2",
+          "locale": "uk"
+        },
+        "data": {
+          "path": "/overrides-product-111"
+        }
+      }
+    }
+    ```
+
+  </Tab>
+  <Tab>
+
+    ```json filename="Example mutation: Set product URL for a locale" showLineNumbers copy
+    {
+      "data": {
+        "product": {
+          "setProductUrlPath": {
+            "product": {
+              "id": "bc/store/product/111",
+              "overridesForLocale": {
+                "urlPath": {
+                  "path": "/overrides-product-111"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    ```
+
+  </Tab>
+</Tabs>
+
+
+## Remove product URL for a locale
+
+The following example removes the overrides for a product's URL. This mutation removes the overrides for the locale within the storefront channel, and the product URL defaults to its global store value.  
+
+<Tabs items={['Request', 'Response']}>
+  <Tab>
+
+    ```graphql filename="Example mutation: Remove product URL for a locale" showLineNumbers copy
+    POST https://api.bigcommerce.com/stores/{{STORE_HASH}}/graphql
+    X-Auth-Token: {{ACCESS_TOKEN}}
+    Content-Type: application/json
+    Accept: application/json
+
+    mutation ($input: RemoveProductUrlPathOverrideInput!) {
+      product {
+        removeProductUrlPathOverride (input: $input) {
+          product {
+            id
+            urlPath {
+              path
+            }
+          }
+        }
+      }
+    }
+    ```
+
+    ```json filename="GraphQL variables" showLineNumbers copy
+    {
+      "input": {
+        "productId": "b/store/product/111",
+        "localeContext": {
+          "channelId": "bc/store/channel/2",
+          "locale": "uk"
+        }
+      }
+    }
+    ```
+
+  </Tab>
+  <Tab>
+
+    ```json filename="Example mutation: Remove product URL for a locale" showLineNumbers copy
+    {
+      "data": {
+        "product": {
+          "removeProductUrlPathOverride": {
+            "product": {
+              "id": "bc/store/product/111",
+              "urlPath": {
+                "path": "/overrides-product-111"
+              }
+            }
+          }
+        }
+      }
+    }
+    ```
+
+  </Tab>
+</Tabs>
+
+## Query product URL
+
+The following example retrieves a product's URL. You can retrieve global information for the store and overrides for a locale within a storefront channel. 
+
+<Tabs items={['Request', 'Response']}>
+  <Tab>
+
+    ```graphql filename="Example query: Get product URL for a product" showLineNumbers copy
+    POST https://api.bigcommerce.com/stores/{{STORE_HASH}}/graphql
+    X-Auth-Token: {{ACCESS_TOKEN}}
+    Content-Type: application/json
+    Accept: application/json
+
+    query {
+      store {
+        product (id: "bc/store/product/111") {
+          id
+          urlPath {
+            path
+          }
+          overridesForLocale (localeContext: { channelId: "bc/store/channel/2", locale: "uk" }) {
+            urlPath {
+              path
+            }
+          }
+        }
+      }
+    }
+    ```
+
+  </Tab>
+  <Tab>
+
+    ```json filename="Example mutation: Get product URL for a product" showLineNumbers copy
+    {
+      "data": {
+        "store": {
+          "product": {
+            "id": "bc/store/product/111",
+            "urlPath": {
+              "path": "/global-product-111",
+            },
+            "overridesForLocale": {
+              "urlPath": {
+                "path": "/overrides-product-111"
+              }
+            }
+          }
+        }
+      }
+    }
+    ```
+
+  </Tab>
+</Tabs>

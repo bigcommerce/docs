@@ -1,0 +1,1439 @@
+# Product Modifier Options
+
+Using the Catalog features of the Admin API, you can set and query information about a product modifier options, for example, option name and values.
+
+You can perform the following:
+- [Set global modifier option information](#set-product-modifier-options-at-the-global-level) for the catalog. Channels inherit these by default.
+- [Create overrides for a channel locale](#set-product-modifier-options-for-a-locale) using the `overridesForLocale` mutation.
+- [Remove overrides for a channel locale](#remove-product-modifier-options-for-a-locale)
+- [Query modifier option information](#query-product-modifier-options), those set at the global level and the overrides.
+
+You can also set and remove information for [shared modifiers](https://support.bigcommerce.com/s/article/Product-Options-v3?language=en_US#smo). The changes affect all products that you assign to the shared modifier. [Querying modifier options](#query-product-modifier-options) returns all modifiers, including shared ones.
+
+For a full schema, see the [GraphQL Admin API reference](https://developer.bigcommerce.com/graphql-admin/reference).
+
+## Input fields
+
+Setting or removing information requires that you specify ID fields in the input. For more information on how to specify ID fields, see [Input fields](/docs/store-operations/catalog/graphql-admin/product-basic-info#input-fields).
+
+## Set product modifier options
+
+Set information about a product modifier option for a store or a locale within a storefront channel. 
+
+The following mutations let you set the name and values for existing modifier options. You must first create the modifier option for the product through the control panel or the REST [Create a product modifier](/docs/rest-catalog/product-modifiers#create-a-product-modifier) endpoint. 
+
+<Callout type="info">
+  The responses may include all modifier options, including those that are shared. However, to _set_ shared modifier options, use the mutations in [Set shared modifier options](#set-shared-modifier-options).
+</Callout>
+
+### Set product modifier options at the global level
+
+The following example sets global product modifier information for the store, from which channels inherit by default. You can set the modifier name and values.
+
+<Tabs items={['Request', 'Response']}>
+  <Tab>
+
+  ```graphql filename="Example mutation: Set product modifier options at the global level" showLineNumbers copy
+  POST https://api.bigcommerce.com/stores/{{STORE_HASH}}/graphql
+  X-Auth-Token: {{ACCESS_TOKEN}}
+  Content-Type: application/json
+  Accept: application/json  
+  
+  mutation ($input: SetProductModifiersInformationInput!) {
+    product {
+      setProductModifiersInformation (input: $input) {
+        product {
+          id
+          modifiers {
+            edges {
+              node {
+                id
+                displayName
+                isRequired
+                isShared
+                ... on CheckboxProductModifier {
+                  checkedByDefault
+                  fieldValue
+                }
+                ... on TextFieldProductModifier {
+                  defaultValue
+                }
+                ... on MultilineTextFieldProductModifier {
+                  defaultValue
+                }
+                ... on NumbersOnlyTextFieldProductModifier {
+                  defaultValueFloat: defaultValue
+                }
+                ... on DropdownProductModifier {
+                  values {
+                    id
+                    label
+                    isDefault
+                  }
+                }
+                ... on RadioButtonsProductModifier {
+                  values {
+                    id
+                    label
+                    isDefault
+                  }
+                }
+                ... on RectangleListProductModifier {
+                  values {
+                    id
+                    label
+                    isDefault
+                  }
+                }
+                ... on SwatchProductModifier {
+                  values {
+                    id
+                    label
+                    isDefault
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  ```
+
+  ```json filename="GraphQL variables" showLineNumbers copy
+  {
+    "input": {
+      "productId": "bc/store/product/111",
+      "data": {
+        "modifiers": [
+          {
+            "modifierId": "bc/store/productModifier/121",
+            "data": {
+              "rectangleList": {
+                "displayName": "Holiday Theme",
+                "values": [
+                  {
+                    "valueId": "bc/store/productModifierValue/113",
+                    "label": "Birthday"
+                  },
+                  {
+                    "valueId": "bc/store/productModifierValue/114",
+                    "label": "Christmas"
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+  ```
+
+</Tab>
+<Tab>
+
+  ```json filename="Example mutation: Set product modifier options at the global level" showLineNumbers copy
+  {
+    "data": {
+      "product": {
+        "setProductModifiersInformation": {
+          "product": {
+            "id": "bc/store/product/111",
+            "modifiers": {
+              "edges": [
+                {
+                  "node": {
+                    "id": "bc/store/productModifier/118",
+                    "displayName": "Include Insurance?",
+                    "isRequired": true,
+                    "isShared": false,
+                    "checkedByDefault": true,
+                    "fieldValue": "Yes"
+                  }
+                },
+                {
+                  "node": {
+                    "id": "bc/store/productModifier/119",
+                    "displayName": "Custom Message",
+                    "isRequired": false,
+                    "isShared": false,
+                    "defaultValue": "Enjoy your gift"
+                  }
+                },
+                {
+                  "node": {
+                    "id": "bc/store/productModifier/121",
+                    "displayName": "Holiday Theme",
+                    "isRequired": false,
+                    "isShared": false,
+                    "values": [
+                      {
+                        "id": "bc/store/productModifierValue/113",
+                        "label": "Birthday",
+                        "isDefault": true
+                      },
+                      {
+                        "id": "bc/store/productModifierValue/114",
+                        "label": "Christmas",
+                        "isDefault": true
+                      }
+                    ]
+                  }
+                },
+                {
+                  "node": {
+                    "id": "bc/store/productModifier/122",
+                    "displayName": "Hood Color",
+                    "isRequired": true,
+                    "isShared": false,
+                    "values": [
+                      {
+                        "id": "bc/store/productModifierValue/115",
+                        "label": "Red Hood",
+                        "isDefault": false
+                      },
+                      {
+                        "id": "bc/store/productModifierValue/116",
+                        "label": "Blue Hood",
+                        "isDefault": false
+                      }
+                    ]
+                  }
+                },
+                {
+                  "node": {
+                    "id": "bc/store/productModifier/123",
+                    "displayName": "Pattern",
+                    "isRequired": false,
+                    "isShared": false,
+                    "values": [
+                      {
+                          "id": "bc/store/productModifierValue/117",
+                          "label": "Plain",
+                          "isDefault": true
+                      },
+                      {
+                          "id": "bc/store/productModifierValue/118",
+                          "label": "Checkered",
+                          "isDefault": true
+                      }
+                    ]
+                  }
+                },
+                {
+                  "node": {
+                    "id": "bc/store/productModifier/124",
+                    "displayName": "Fit Type",
+                    "isRequired": false,
+                    "isShared": false,
+                    "values": [
+                      {
+                          "id": "bc/store/productModifierValue/119",
+                          "label": "Regular fit",
+                          "isDefault": false
+                      },
+                      {
+                          "id": "bc/store/productModifierValue/120",
+                          "label": "Loose fit",
+                          "isDefault": false
+                      }
+                    ]
+                  }
+                },
+                {
+                  "node": {
+                      "id": "bc/store/productModifier/125",
+                      "displayName": "Optional details",
+                      "isRequired": false,
+                      "isShared": false,
+                      "defaultValue": ""
+                  }
+                },
+                {
+                  "node": {
+                      "id": "bc/store/productModifier/127",
+                      "displayName": "Number of Pockets",
+                      "isRequired": true,
+                      "isShared": false,
+                      "defaultValueFloat": 1
+                  }
+                },
+                {
+                  "node": {
+                      "id": "bc/store/productModifier/128",
+                      "displayName": "Anniversary Date",
+                      "isRequired": false,
+                      "isShared": false
+                  }
+                },
+                {
+                  "node": {
+                      "id": "bc/store/productModifier/129",
+                      "displayName": "Custom-printed Image",
+                      "isRequired": false,
+                      "isShared": false
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+  ```    
+
+  </Tab>
+</Tabs>
+
+### Set product modifier options for a locale
+
+The following example sets product modifier option information for the locale within the specified storefront channel. These will override global store information. You can set the modifier option name and values.
+
+<Tabs items={['Request', 'Response']}>
+  <Tab>
+
+    ```graphql filename="Example mutation: Set product modifier options for a locale" showLineNumbers copy
+    POST https://api.bigcommerce.com/stores/{{STORE_HASH}}/graphql
+    X-Auth-Token: {{ACCESS_TOKEN}}
+    Content-Type: application/json
+    Accept: application/json      
+    
+    mutation ($input: SetProductModifiersInformationInput!) {
+      product {
+        setProductModifiersInformation (input: $input) {
+          product {
+            id
+            modifiers {
+              edges {
+                node {
+                  id
+                  displayName
+                  ... on CheckboxProductModifier {
+                    overridesForLocale (localeContext: { channelId: "bc/store/channel/2", locale: "fr"}) {
+                      displayName
+                      fieldValue
+                    }
+                  }
+                  ... on TextFieldProductModifier {
+                    overridesForLocale (localeContext: { channelId: "bc/store/channel/2", locale: "fr"}) {
+                      displayName
+                      defaultValue
+                    }
+                  }
+                  ... on MultilineTextFieldProductModifier {
+                    overridesForLocale (localeContext: { channelId: "bc/store/channel/2", locale: "fr"}) {
+                      displayName
+                      defaultValue
+                    }
+                  }
+                  ... on NumbersOnlyTextFieldProductModifier {
+                    overridesForLocale (localeContext: { channelId: "bc/store/channel/2", locale: "fr"}) {
+                      displayName
+                      defaultValueFloat: defaultValue
+                    }
+                  }
+                  ... on DropdownProductModifier {
+                    overridesForLocale (localeContext: { channelId: "bc/store/channel/2", locale: "fr"}) {
+                      displayName
+                      values {
+                        id
+                        label
+                      }
+                    }
+                  }
+                  ... on RadioButtonsProductModifier {
+                    overridesForLocale (localeContext: { channelId: "bc/store/channel/2", locale: "fr"}) {
+                      displayName
+                      values {
+                        id
+                        label
+                      }
+                    }
+                  }
+                  ... on RectangleListProductModifier {
+                    overridesForLocale (localeContext: { channelId: "bc/store/channel/2", locale: "fr"}) {
+                      displayName
+                      values {
+                        id
+                        label
+                      }
+                    }
+                  }
+                  ... on SwatchProductModifier {
+                    overridesForLocale (localeContext: { channelId: "bc/store/channel/2", locale: "fr"}) {
+                      displayName
+                      values {
+                        id
+                        label
+                      }
+                    }
+                  }
+                  ... on FileUploadProductModifier {
+                    overridesForLocale (localeContext: { channelId: "bc/store/channel/2", locale: "fr"}) {
+                      displayName
+                    }
+                  }
+                  ... on DateFieldProductModifier {
+                    overridesForLocale (localeContext: { channelId: "bc/store/channel/2", locale: "fr"}) {
+                      displayName
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    ```
+
+  ```json filename="GraphQL variables" showLineNumbers copy
+  {
+    "input": {
+      "productId": "bc/store/product/111",
+      "localeContext": {
+          "channelId": "bc/store/channel/2",
+          "locale": "fr"
+      },
+      "data": {
+        "modifiers": [
+          {
+            "modifierId": "bc/store/productModifier/121",
+            "data": {
+              "rectangleList": {
+                "displayName": "Thème de vacances",
+                "values": [
+                  {
+                    "valueId": "bc/store/productModifierValue/113",
+                    "label": "Anniversaire"
+                  },
+                  {
+                    "valueId": "bc/store/productModifierValue/114",
+                    "label": "Noël"
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+  ```
+
+  </Tab>
+  <Tab>
+
+    ```json filename="Example mutation: Set product modifier options for a locale" showLineNumbers copy
+    {
+      "data": {
+        "product": {
+          "setProductModifiersInformation": {
+            "product": {
+              "id": "bc/store/product/111",
+              "modifiers": {
+                "edges": [
+                  {
+                    "node": {
+                      "id": "bc/store/productModifier/118",
+                      "displayName": "Include Insurance?",
+                      "overridesForLocale": null
+                    }
+                  },
+                  {
+                    "node": {
+                      "id": "bc/store/productModifier/119",
+                      "displayName": "Custom Message",
+                      "overridesForLocale": null
+                    }
+                  },
+                  {
+                    "node": {
+                      "id": "bc/store/productModifier/121",
+                      "displayName": "Holiday Theme",
+                      "overridesForLocale": {
+                        "displayName": "Thème de vacances",
+                        "values": [
+                          {
+                            "id": "bc/store/productModifierValue/113",
+                            "label": "Anniversaire"
+                          },
+                          {
+                            "id": "bc/store/productModifierValue/114",
+                            "label": "Noël"
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "node": {
+                      "id": "bc/store/productModifier/122",
+                      "displayName": "Hood Color",
+                      "overridesForLocale": {
+                        "displayName": "Couleur du capot",
+                        "values": [
+                          {
+                            "id": "bc/store/productModifierValue/115",
+                            "label": "Rouge"
+                          },
+                          {
+                            "id": "bc/store/productModifierValue/116",
+                            "label": "Bleu"
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "node": {
+                      "id": "bc/store/productModifier/123",
+                      "displayName": "Pattern",
+                      "overridesForLocale": {
+                        "displayName": "Modèle",
+                        "values": [
+                          {
+                            "id": "bc/store/productModifierValue/117",
+                            "label": "Ordinaire"
+                          },
+                          {
+                            "id": "bc/store/productModifierValue/118",
+                            "label": "A carreaux"
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "node": {
+                      "id": "bc/store/productModifier/124",
+                      "displayName": "Fit Type",
+                      "overridesForLocale": {
+                        "displayName": "Type d'ajustement",
+                        "values": [
+                          {
+                            "id": "bc/store/productModifierValue/119",
+                            "label": "Régulière"
+                          },
+                          {
+                            "id": "bc/store/productModifierValue/120",
+                            "label": "Ample"
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "node": {
+                        "id": "bc/store/productModifier/125",
+                        "displayName": "Optional details",
+                        "overridesForLocale": null
+                    }
+                  },
+                  {
+                    "node": {
+                        "id": "bc/store/productModifier/127",
+                        "displayName": "Number of Pockets",
+                        "overridesForLocale": null
+                    }
+                  },
+                  {
+                    "node": {
+                      "id": "bc/store/productModifier/128",
+                      "displayName": "Anniversary Date",
+                      "overridesForLocale": {
+                        "displayName": "Date d'anniversaire"
+                      }
+                    }
+                  },
+                  {
+                    "node": {
+                      "id": "bc/store/productModifier/129",
+                      "displayName": "Custom-printed Image",
+                      "overridesForLocale": {
+                        "displayName": "Image personnalisée"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+    ```    
+
+  </Tab>
+</Tabs>
+
+### Remove product modifier options for a locale
+
+The following example removes product modifier option information for the locale within the specified storefront channel.
+
+<Tabs items={['Request', 'Response']}>
+  <Tab>
+
+    ```graphql filename="Example mutation: Remove product modifier options for a locale" showLineNumbers copy
+    POST https://api.bigcommerce.com/stores/{{STORE_HASH}}/graphql
+    X-Auth-Token: {{ACCESS_TOKEN}}
+    Content-Type: application/json
+    Accept: application/json
+
+    mutation ($input: RemoveProductModifiersOverridesInput!) {
+      product {
+        removeProductModifiersOverrides (input: $input) {
+          product {
+            id
+            modifiers {
+              edges {
+                node {
+                  id
+                  displayName
+                }
+              }   
+            }
+          }
+        }
+      }
+    }
+    ```
+
+    ```json filename="GraphQL variables" showLineNumbers copy
+    {
+      "input": {
+        "productId": "bc/store/product/111",
+        "localeContext": {
+          "locale": "fr",
+          "channelId": "bc/store/channel/2"
+        },
+        "data": {
+          "modifiers": [
+            {
+              "modifierId": "bc/store/productModifier/118",
+              "data": {
+                "checkbox": {
+                  "fields": [
+                    "CHECKBOX_PRODUCT_MODIFIER_DISPLAY_NAME_FIELD"
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+    ```
+
+  </Tab>
+  <Tab>
+
+    ```json filename="Example mutation: Remove product modifier options for a locale" showLineNumbers copy
+    {
+      "data": {
+        "product": {
+          "removeProductModifiersOverrides": {
+            "product": {
+              "id": "bc/store/product/111",
+              "modifiers": {
+                "edges": [
+                  {
+                    "node": {
+                      "id": "bc/store/productModifier/118",
+                      "displayName": "Include Insurance?"
+                    }
+                  },
+                  {
+                    "node": {
+                      "id": "bc/store/productModifier/119",
+                      "displayName": "Custom Message"
+                    }
+                  },
+                  {
+                    "node": {
+                      "id": "bc/store/productModifier/121",
+                      "displayName": "Holiday Theme"
+                    }
+                  },
+                  {
+                    "node": {
+                      "id": "bc/store/productModifier/122",
+                      "displayName": "Hood Color"
+                    }
+                  },
+                  {
+                    "node": {
+                      "id": "bc/store/productModifier/123",
+                      "displayName": "Pattern"
+                    }
+                  },
+                  {
+                    "node": {
+                      "id": "bc/store/productModifier/124",
+                      "displayName": "Fit Type"
+                    }
+                  },
+                  {
+                    "node": {
+                      "id": "bc/store/productModifier/125",
+                      "displayName": "Optional details"
+                    }
+                  },
+                  {
+                    "node": {
+                      "id": "bc/store/productModifier/127",
+                      "displayName": "Number of Pockets"
+                    }
+                  },
+                  {
+                    "node": {
+                      "id": "bc/store/productModifier/128",
+                      "displayName": "Anniversary Date"
+                    }
+                  },
+                  {
+                    "node": {
+                      "id": "bc/store/productModifier/129",
+                      "displayName": "Custom-printed Image"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+    ```    
+
+  </Tab>
+</Tabs>
+
+## Set shared modifier options
+
+You can set information about a shared modifier option for a store or a locale within a storefront channel. You must first create the shared modifier options through the control panel. Changing a shared modifier option affects all products that you assign to the shared modifier option. You cannot customize shared modifier options on a product level.
+
+The following mutations let you set the name and values for existing shared modifiers. 
+
+### Set shared modifier options at the global level
+
+The following example sets global shared modifier information for the store, from which channels inherit by default. You can set the name and values for existing modifiers.
+
+<Tabs items={['Request', 'Response']}>
+  <Tab>
+
+    ```graphql filename="Example mutation: Set shared modifier options at the global level" showLineNumbers copy
+    POST https://api.bigcommerce.com/stores/{{STORE_HASH}}/graphql
+    X-Auth-Token: {{ACCESS_TOKEN}}
+    Content-Type: application/json
+    Accept: application/json
+
+    mutation ($input: SetSharedProductModifiersInformationInput!) {
+      sharedProductModifiers {
+        setSharedProductModifiersInformation (input: $input) {
+          sharedProductModifiers {
+            id
+          }
+        }
+      }
+    }
+    ```
+
+    ```json filename="GraphQL variables" showLineNumbers copy
+    {
+      "input": {
+        "data": {
+          "modifiers": [
+            {
+              "modifierId": "bc/store/sharedProductModifier/2",
+              "data": {
+                "rectangleList": {
+                  "displayName": "Button type",
+                  "values": [
+                    {
+                      "valueId": "bc/store/sharedProductModifierValue/107",
+                      "label": "Large buttons"
+                    },
+                    {
+                      "valueId": "bc/store/sharedProductModifierValue/108",
+                      "label": "Small buttons"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+    ```
+
+  </Tab>
+  <Tab>
+
+    ```json filename="Example mutation: Set shared modifier options at the global level" showLineNumbers copy
+    {
+      "data": {
+        "sharedProductModifiers": {
+          "setSharedProductModifiersInformation": {
+            "sharedProductModifiers": [
+              {
+                "id": "bc/store/sharedProductModifier/2"
+              }
+            ]
+          }
+        }
+      }
+    }
+    ```    
+
+  </Tab>
+</Tabs>
+
+### Set shared modifier options for a locale
+
+The following example sets shared modifier information for the locale within the specified storefront channel. These override global store information. You can set the name and values for existing modifiers.
+
+<Tabs items={['Request', 'Response']}>
+  <Tab>
+
+    ```graphql filename="Example mutation: Set shared modifier options for a locale" showLineNumbers copy
+    POST https://api.bigcommerce.com/stores/{{STORE_HASH}}/graphql
+    X-Auth-Token: {{ACCESS_TOKEN}}
+    Content-Type: application/json
+    Accept: application/json
+
+    mutation ($input: SetSharedProductModifiersInformationInput!) {
+      sharedProductModifiers {
+        setSharedProductModifiersInformation (input: $input) {
+          sharedProductModifiers {
+            id
+          }
+        }
+      }
+    }
+    ```
+
+    ```json filename="GraphQL variables" showLineNumbers copy
+    {
+      "input": {
+        "localeContext": { 
+          "channelId": "bc/store/channel/2",
+          "locale": "fr"
+        },
+        "data": {
+          "modifiers": [
+            {
+              "modifierId": "bc/store/sharedProductModifier/2",
+              "data": {
+                "rectangleList": {
+                  "displayName": "bouton",
+                  "values": [
+                    {
+                      "valueId": "bc/store/sharedProductModifierValue/107",
+                      "label": "grande"
+                    },
+                    {
+                      "valueId": "bc/store/sharedProductModifierValue/108",
+                      "label": "petite"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+    ```
+
+  </Tab>
+  <Tab>
+
+    ```json filename="Example mutation: Set shared modifier options for a locale" showLineNumbers copy
+    {
+      "data": {
+        "sharedProductModifiers": {
+          "setSharedProductModifiersInformation": {
+            "sharedProductModifiers": [
+              {
+                "id": "bc/store/sharedProductModifier/2"
+              }
+            ]
+          }
+        }
+      }
+    }
+    ```    
+
+  </Tab>
+</Tabs>
+
+### Remove shared modifier options for a locale
+
+The following example removes shared modifier option information for the locale within the specified storefront channel.
+
+<Tabs items={['Request', 'Response']}>
+  <Tab>
+
+    ```graphql filename="Example mutation: Remove shared modifier options for a locale" showLineNumbers copy
+    POST https://api.bigcommerce.com/stores/{{STORE_HASH}}/graphql
+    X-Auth-Token: {{ACCESS_TOKEN}}
+    Content-Type: application/json
+    Accept: application/json
+
+    mutation ($input: RemoveSharedProductModifiersOverridesInput!) {
+      sharedProductModifiers {
+        removeSharedProductModifiersOverrides (input: $input) {
+          sharedProductModifiers {
+            id
+          }
+        }
+      }
+    }
+    ```
+
+    ```json filename="GraphQL variables" showLineNumbers copy
+    {
+      "input": {
+        "localeContext": { 
+          "channelId": "bc/store/channel/2",
+          "locale": "fr"
+        },
+        "data": {
+          "modifiers": [
+            {
+              "modifierId": "bc/store/sharedProductModifier/1",
+              "data": {
+                "textField": {
+                  "fields": ["SHARED_TEXT_FIELD_PRODUCT_MODIFIER_DEFAULT_VALUE_FIELD"]
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+    ```
+
+  </Tab>
+  <Tab>
+
+    ```json filename="Example mutation: Remove shared modifier options for a locale" showLineNumbers copy
+    {
+      "data": {
+        "sharedProductModifiers": {
+          "removeSharedProductModifiersOverrides": {
+            "sharedProductModifiers": [
+              {
+                "id": "bc/store/sharedProductModifier/1"
+              }
+            ]
+          }
+        }
+      }
+    }
+    ```    
+
+  </Tab>
+</Tabs>
+
+## Query modifier options
+
+The following example retrieves modifier information. You can retrieve global information for the store and overrides for the locale within the specified storefront channel. The query returns all modifier options, including those that are shared.
+
+<Tabs items={['Request', 'Response']}>
+  <Tab>
+
+    ```graphql filename="Example query: Get modifier options" showLineNumbers copy
+    POST https://api.bigcommerce.com/stores/{{STORE_HASH}}/graphql
+    X-Auth-Token: {{ACCESS_TOKEN}}
+    Content-Type: application/json
+    Accept: application/json
+
+    query {
+      store {
+        product (id: "bc/store/product/111") {
+          id
+          modifiers (first: 10) {
+            edges {
+              node {
+                __typename
+                id
+                displayName
+                isShared
+                isRequired
+                ... on CheckboxProductModifier {
+                  checkedByDefault
+                  fieldValue
+                  overridesForLocale (localeContext: { channelId: "bc/store/channel/2", locale: "fr" }) {
+                    displayName
+                    fieldValue
+                  }
+                }
+                ... on TextFieldProductModifier {
+                  defaultValue
+                  overridesForLocale (localeContext: { channelId: "bc/store/channel/2", locale: "fr" }) {
+                    displayName
+                    defaultValue
+                  }
+                }
+                ... on MultilineTextFieldProductModifier {
+                  defaultValue
+                  overridesForLocale (localeContext: { channelId: "bc/store/channel/2", locale: "fr" }) {
+                    displayName
+                    defaultValue
+                  }
+                }
+                ... on NumbersOnlyTextFieldProductModifier {
+                  defaultValueFloat: defaultValue
+                  overridesForLocale (localeContext: { channelId: "bc/store/channel/2", locale: "fr" }) {
+                    displayName
+                    defaultValueFloat: defaultValue
+                  }
+                }
+                ... on DropdownProductModifier {
+                  values {
+                    id
+                    label
+                    isDefault
+                  }
+                  overridesForLocale (localeContext: { channelId: "bc/store/channel/2", locale: "fr" }) {
+                    displayName
+                      values {
+                        id
+                        label
+                      }
+                  }
+                }
+                ... on RadioButtonsProductModifier {
+                  values {
+                    id
+                    label
+                    isDefault
+                  }
+                  overridesForLocale (localeContext: { channelId: "bc/store/channel/2", locale: "fr" }) {
+                    displayName
+                    values {
+                      id
+                      label
+                    }
+                  }
+                }
+                ... on RectangleListProductModifier {
+                  values {
+                    id
+                    label
+                    isDefault
+                  }
+                  overridesForLocale (localeContext: { channelId: "bc/store/channel/2", locale: "fr" }) {
+                    displayName
+                    values {
+                      id
+                      label
+                    }
+                  }
+                }
+                ... on SwatchProductModifier {
+                  values {
+                    id
+                    label
+                    isDefault
+                  }
+                  overridesForLocale (localeContext: { channelId: "bc/store/channel/2", locale: "fr" }) {
+                    displayName
+                    values {
+                      id
+                      label
+                    }
+                  }
+                }
+                ... on FileUploadProductModifier {
+                  overridesForLocale (localeContext: { channelId: "bc/store/channel/2", locale: "fr" }) {
+                    displayName
+                  }
+                }
+                ... on DateFieldProductModifier {
+                  overridesForLocale (localeContext: { channelId: "bc/store/channel/2", locale: "fr" }) {
+                    displayName
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    ```
+  </Tab>
+  <Tab>
+
+    ```json filename="Example query: Get modifier options" showLineNumbers copy
+    {
+      "data": {
+        "store": {
+          "product": {
+            "id": "bc/store/product/111",
+            "modifiers": {
+              "edges": [
+                {
+                  "node": {
+                    "__typename": "CheckboxProductModifier",
+                    "id": "bc/store/productModifier/118",
+                    "displayName": "Include Insurance?",
+                    "isShared": false,
+                    "isRequired": true,
+                    "checkedByDefault": true,
+                    "fieldValue": "Yes",
+                    "overridesForLocale": {
+                      "displayName": null,
+                      "fieldValue": null
+                    }
+                  }
+                },
+                {
+                  "node": {
+                    "__typename": "TextFieldProductModifier",
+                    "id": "bc/store/productModifier/119",
+                    "displayName": "Custom Message",
+                    "isShared": false,
+                    "isRequired": false,
+                    "defaultValue": "Enjoy your gift",
+                    "overridesForLocale": {
+                      "displayName": null,
+                      "fieldValue": null
+                    }
+                  }
+                },
+                {
+                  "node": {
+                    "__typename": "RectangleListProductModifier",
+                    "id": "bc/store/productModifier/121",
+                    "displayName": "Holiday Theme",
+                    "isShared": false,
+                    "isRequired": false,
+                    "values": [
+                      {
+                        "id": "bc/store/productModifierValue/113",
+                        "label": "Birthday",
+                        "isDefault": true
+                      },
+                      {
+                        "id": "bc/store/productModifierValue/114",
+                        "label": "Christmas",
+                        "isDefault": true
+                      }
+                    ],
+                    "overridesForLocale": {
+                      "displayName": "Thème de vacances",
+                      "values": [
+                        {
+                          "id": "bc/store/productModifierValue/113",
+                          "label": "Anniversaire"
+                        },
+                        {
+                          "id": "bc/store/productModifierValue/114",
+                          "label": "Noël"
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "node": {
+                    "__typename": "SwatchProductModifier",
+                    "id": "bc/store/productModifier/122",
+                    "displayName": "Hood Color",
+                    "isShared": false,
+                    "isRequired": true,
+                    "values": [
+                      {
+                        "id": "bc/store/productModifierValue/115",
+                        "label": "Red Hood",
+                        "isDefault": false
+                      },
+                      {
+                        "id": "bc/store/productModifierValue/116",
+                        "label": "Blue Hood",
+                        "isDefault": false
+                      }
+                    ],
+                    "overridesForLocale": {
+                      "displayName": "Couleur du capot",
+                      "values": [
+                        {
+                          "id": "bc/store/productModifierValue/115",
+                          "label": "Rouge"
+                        },
+                        {
+                          "id": "bc/store/productModifierValue/116",
+                          "label": "Bleu"
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "node": {
+                    "__typename": "RectangleListProductModifier",
+                    "id": "bc/store/productModifier/123",
+                    "displayName": "Pattern",
+                    "isShared": false,
+                    "isRequired": false,
+                    "values": [
+                      {
+                        "id": "bc/store/productModifierValue/117",
+                        "label": "Plain",
+                        "isDefault": true
+                      },
+                      {
+                        "id": "bc/store/productModifierValue/118",
+                        "label": "Checkered",
+                        "isDefault": true
+                      }
+                    ],
+                    "overridesForLocale": {
+                      "displayName": "Modèle",
+                      "values": [
+                        {
+                          "id": "bc/store/productModifierValue/117",
+                          "label": "ordinaire"
+                        },
+                        {
+                          "id": "bc/store/productModifierValue/118",
+                          "label": "à carreaux"
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "node": {
+                    "__typename": "RectangleListProductModifier",
+                    "id": "bc/store/productModifier/124",
+                    "displayName": "Fit Type",
+                    "isShared": false,
+                    "isRequired": false,
+                    "values": [
+                      {
+                        "id": "bc/store/productModifierValue/119",
+                        "label": "Regular fit",
+                        "isDefault": false
+                      },
+                      {
+                        "id": "bc/store/productModifierValue/120",
+                        "label": "Loose fit",
+                        "isDefault": false
+                      }
+                    ],
+                    "overridesForLocale": {
+                      "displayName": "Type d'ajustement",
+                      "values": [
+                        {
+                          "id": "bc/store/productModifierValue/119",
+                          "label": "Régulière"
+                        },
+                        {
+                          "id": "bc/store/productModifierValue/120",
+                          "label": "Ample"
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "node": {
+                    "__typename": "MultilineTextFieldProductModifier",
+                    "id": "bc/store/productModifier/125",
+                    "displayName": "Optional details",
+                    "isShared": false,
+                    "isRequired": false,
+                    "defaultValue": "",
+                    "overridesForLocale": {
+                      "displayName": null,
+                      "fieldValue": null
+                    }
+                  }
+                },
+                {
+                  "node": {
+                    "__typename": "NumbersOnlyTextFieldProductModifier",
+                    "id": "bc/store/productModifier/127",
+                    "displayName": "Number of Pockets",
+                    "isShared": false,
+                    "isRequired": true,
+                    "defaultValueFloat": 1,
+                    "overridesForLocale": {
+                      "displayName": null,
+                      "defaultValueFloat": null
+                    }
+                  }
+                },
+                {
+                  "node": {
+                    "__typename": "DateFieldProductModifier",
+                    "id": "bc/store/productModifier/128",
+                    "displayName": "Anniversary Date",
+                    "isShared": false,
+                    "isRequired": false,
+                    "overridesForLocale": {
+                      "displayName": "Date d'anniversaire"
+                    }
+                  }
+                },
+                {
+                  "node": {
+                    "__typename": "FileUploadProductModifier",
+                    "id": "bc/store/productModifier/129",
+                    "displayName": "Custom-printed Image",
+                    "isShared": false,
+                    "isRequired": false,
+                    "overridesForLocale": {
+                      "displayName": "image personnalisée"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+    ```    
+
+  </Tab>
+</Tabs>
+
+
+You can retrieve overrides for multiple locales in a channel, as shown in the following example: 
+
+<Tabs items={['Request', 'Response']}>
+  <Tab>
+
+    ```graphql filename="Example query: Get modifier options" showLineNumbers copy
+    POST https://api.bigcommerce.com/stores/{{STORE_HASH}}/graphql
+    X-Auth-Token: {{ACCESS_TOKEN}}
+    Content-Type: application/json
+    Accept: application/json
+
+    query {
+        store {
+            product (id: "bc/store/product/111") {
+                id
+                modifiers (first: 1) {
+                    edges {
+                        node {
+                            __typename
+                            id
+                            displayName
+                            isShared
+                            isRequired
+
+                            // modifier values for rectangle List product modifiers
+                            ... on RectangleListProductModifier {
+
+                                // global values for the store
+                                values {
+                                    id
+                                    label
+                                    isDefault
+                                }
+
+                                // overrides for the UK locale in channel 2
+                                uk: overridesForLocale(localeContext: { channelId: "bc/store/channel/2", locale: "uk" }) {
+                                    displayName
+                                    values {
+                                    id
+                                    label
+                                    }
+                                }
+
+                                // overrides for the France locale in channel 2
+                                fr: overridesForLocale(localeContext: { channelId: "bc/store/channel/2", locale: "fr" }) {
+                                    displayName
+                                    values {
+                                    id
+                                    label
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    ```
+
+  </Tab>
+  <Tab>
+
+    ```json filename="Example query: Get modifier options" showLineNumbers copy
+    {
+      "data": {
+        "store": {
+          "product": {
+            "id": "bc/store/product/111",
+            "modifiers": {
+              "edges": [
+                {
+                  "node": {
+                    "__typename": "RectangleListProductModifier",
+                    "id": "bc/store/productModifier/121",
+                    "displayName": "Holiday Theme",
+                    "isShared": false,
+                    "isRequired": false,
+                    "values": [
+                      {
+                        "id": "bc/store/productModifierValue/113",
+                        "label": "Birthday",
+                        "isDefault": true
+                      },
+                      {
+                        "id": "bc/store/productModifierValue/114",
+                        "label": "Christmas",
+                        "isDefault": true
+                      }
+                    ],
+                    "uk": {
+                      "displayName": "Public Holiday",
+                      "values": [
+                        {
+                          "id": "bc/store/productModifierValue/113",
+                          "label": "New Year's Day"
+                        },
+                        {
+                          "id": "bc/store/productModifierValue/114",
+                          "label": "Chrimbo"
+                        }
+                      ]
+                    },
+                    "fr": {
+                      "displayName": "Thème de vacances",
+                      "values": [
+                        {
+                          "id": "bc/store/productModifierValue/113",
+                          "label": "Anniversaire"
+                        },
+                        {
+                          "id": "bc/store/productModifierValue/114",
+                          "label": "Noël"
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+    ```    
+
+  </Tab>
+</Tabs>

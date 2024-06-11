@@ -1,0 +1,101 @@
+# Locations
+
+_Locations_ allow merchants to track product inventory across multiple physical or virtual locations. 
+Locations also allow merchants to manage their store and warehouse physical addresses in a single source of truth, which can be used by tools such as store locator widgets or app integrations that are concerned with locations where a store’s business is conducted. 
+
+## Managing locations
+
+You can create up to the following number of locations:
+- Standard plan: up to 4
+- Plus plan: up to 5
+- Pro plan: up to 8
+- Enterprise plan: 100; can be customized by request
+
+You can disable, remove visibility, and [delete locations](/docs/rest-management/locations#delete-locations).
+
+The `enabled` and `storefront_visibility` flags for a location determine whether a location is available for Storefront and Management APIs.
+- Both flags determine if a location will return through any of the Storefront APIs, including getting available pickup methods. The flags control location visibility through the Storefront APIs.
+- However, the `enabled` flag also controls:
+    - Whether a location can be used to create orders and pickup methods. 
+    - Whether you can edit stock levels through the management APIs
+    - If any stock for products at a location contribute to the "available to sell" total returned by the Storefront APIs.  
+- For example, a location can be "enabled", allowing orders to be fulfilled at that location through the Order V2 or Checkout APIs. If its `storefront_visibility` is set to false, the details of that location are omitted from the Storefront APIs.
+
+The [Locations API](/docs/rest-management/locations) allows you to manage locations. For examples, see [Merchant Configuration](/docs/integrations/buy-online-pick-up-in-store/end-to-end-guide/configuration) under the End-to-end guides.
+
+You can query locations using the GraphQL Storefront API. For examples, see [Query Locations with the GraphQL Storefront API](/docs/storefront/graphql/locations/queries). 
+
+<Callout type="info">
+  Due to the asynchronous nature of the Locations API, there may be a short delay before data is updated after the endpoints are called. Endpoints that manage these locations and inventory at these locations return a `transaction_id` for any write requests.
+</Callout>
+
+### Location metafields
+
+Manage location metafields using the [Locations API](/docs/rest-management/locations).
+
+To create a location metafield, send a request to the [Create a location metafield](/docs/rest-management/locations/metafields#create-a-metafield) endpoint. Each metafield must have a unique combination of `key` and `value` for a `namespace`. 
+
+<Tabs items={['Request', 'Response']}>
+  <Tab>
+
+    ```http filename="Example request: Create a location metafield" showLineNumbers copy
+    POST https://api.bigcommerce.com/stores/{{STORE_HASH}}/v3/inventory/locations/{{LOCATION_ID}}/metafields
+    X-Auth-Token: {{ACCESS_TOKEN}}
+    Content-Type: application/json
+    Accept: application/json
+
+    {
+      "key": "location status",
+      "value": "upcoming",
+      "namespace": "headquarters",
+      "permission_set": "write_and_sf_access",
+      "description": "new location"
+    }
+    ```
+
+  </Tab>
+  <Tab>
+
+    ```json filename="Example response: Create a location metafield" showLineNumbers copy
+    {
+      "data": {
+          "id": 4,
+          "key": "location status",
+          "value": "upcoming",
+          "namespace": "headquarters",
+          "permission_set": "write_and_sf_access",
+          "resource_type": "location",
+          "resource_id": 1,
+          "description": "new location",
+          "date_created": "2023-03-16T15:14:47+00:00",
+          "date_modified": "2023-03-16T15:14:47+00:00"
+    },
+      "meta": {}
+    }
+    ```
+
+  </Tab>
+</Tabs>
+
+
+Location metafields that have storefront access permissions (i.e. permission set as `read_and_sf_access` or `write_and_sf_access`) can be returned in the GraphQL Storefront API.
+For example queries of this, see [Query Locations with the GraphQL Storefront API](/docs/storefront/graphql/locations/queries). 
+
+## Resources
+
+- [Locations API Reference](/docs/rest-management/locations)
+
+    - [Create Locations](/docs/rest-management/locations#create-locations)
+    - [Update Locations](/docs/rest-management/locations#update-locations)
+    - [Get Locations](/docs/rest-management/locations#get-locations)
+    - [Delete locations](/docs/rest-management/locations#delete-locations)
+
+    - [Create a location metafield](/docs/rest-management/locations/metafields#create-a-metafield)
+    - [Update a location metafield](/docs/rest-management/locations/metafields#update-a-metafield)
+    - [Get a location metafield](/docs/rest-management/locations/metafields#get-a-metafield)
+    - [Get location metafields](/docs/rest-management/locations/metafields#get-metafields)
+    - [Delete a location metafield](/docs/rest-management/locations/metafields#delete-a-metafield)
+
+- [Get Locations](/docs/storefront/graphql/locations/settings)
+    - [Query Locations with the GraphQL Storefront API](/docs/storefront/graphql/locations/queries)
+

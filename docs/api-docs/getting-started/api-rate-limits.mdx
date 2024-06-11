@@ -1,8 +1,33 @@
 # Adaptive concurrency limits
 
-BigCommerce aims to ensure outstanding platform reliability. To maintain dependability, we recommend adhering to industry-standard rate limiting when developing.
+BigCommerce aims to provide outstanding platform reliability. To maintain dependability, adaptive concurrency limits are applied to both REST and GraphQL APIs. These limits enhance quality for merchants by regulating multiple API calls. In this doc we'll outline how these limits work on the BigCommerce platform.
 
-## Overview
+<Callout type="info">
+  BigCommerce recommends adhering to industry-standard rate limiting when developing. 
+</Callout>
+
+## How limits work
+
+Each API request consumes one quota unit. When the quota is reached, subsequent requests are rejected until the quota is refreshed. 
+A store's quota is shared across all apps accesing the store, preventing a single app from using the entire quota. The available quota for an app adjusts as other clients make or stop requests. 
+
+Try locating an API header using CLI. Use the `curl` command to find the rate limit for the endpoint in this example. 
+
+``` bash filename="Example: cURL command" showLineNumbers copy
+    curl -I https://api.bigcommerce.com/stores/{{STORE_HASH}}/v3/catalog/products
+```
+
+The maximum quota limit is returned in the API response header.
+
+### API response headers
+
+API response headers are part of the response returned by an API request and can be found in the headers section. Here's an example of an API response header:
+
+///Example here
+
+In this example, the headers provide information such as the status of the request, content type, length, connection status, date, and rate limit details.
+
+## Concurrency limits by plan type
 
 Apps using OAuth are rate-limited based on a quota refreshed every few seconds. The maximum quota varies by store plan and requested resources:
 
@@ -13,18 +38,19 @@ Apps using OAuth are rate-limited based on a quota refreshed every few seconds. 
 | Pro | 60k per hour (450 / 30sec) |
 | Plus & Standard | 20k per hour (150 / 30sec) | 
 
-  The **Unlimited** rate plan for select BigCommerce Enterprise clients is not rate limited by requests per time but may face physical infrastructure-related constraints that may limit the maximum throughput of requests for a given resource. For more on resource constraints, see [object-related limits (Help Center)](https://support.bigcommerce.com/s/article/Platform-Limits#storelimits).
+### Unlimited rate plans
+
+  The **Unlimited** rate plan for select BigCommerce Enterprise clients is not rate limited by requests per time but may face physical infrastructure-related constraints that may limit the maximum throughput of requests for a given resource. 
+  
+  For more on resource constraints, see [object-related limits (Help Center)](https://support.bigcommerce.com/s/article/Platform-Limits#storelimits).
 
 <Callout type="warning">
-  **BigCommerce reserves the right to limit unreasonable API activity for platform stability, per our [Terms of Service](https://www.bigcommerce.com/terms/api-terms/).**
+BigCommerce reserves the right to limit unreasonable API activity for platform stability, per our [Terms of Service](https://www.bigcommerce.com/terms/api-terms/).
 </Callout>
 
-Each API request consumes one quota unit. When the quota is reached, subsequent requests are rejected until the quota is refreshed. A store's quota is shared across all apps accesing the store, preventing a single app from using the entire quota. The available quota for an app adjusts as other clients make or stop requests.
+## Concurrency limit best practices
 
-## Rate limit methods
-To manage your platform's resources effectively, use the following practices.
-
-### Handle rate limit status codes
+### Handle adaptive concurrency limit status codes
 
 <Callout type="info">
   As of January 2022, BigCommerce header field names are case-insensitive. Learn more about BigCommerce [response header conventions](/docs/start/about#response-headers).
@@ -68,3 +94,4 @@ Use the `X-Rate-Limit-Time-Reset-MS` header to wait before retrying:
   $milliseconds = $response->getHeader("X-Rate-Limit-Time-Reset-Ms");
   usleep($milliseconds);
 ```
+## Resources

@@ -1,97 +1,145 @@
-# Adaptive concurrency limits
+# API Rate limits
 
-BigCommerce aims to provide outstanding platform reliability. To maintain dependability, adaptive concurrency limits are applied to both REST and GraphQL APIs. These limits enhance quality for merchants by regulating multiple API calls. In this doc we'll outline how these limits work on the BigCommerce platform.
+BigCommerce aims to provide outstanding platform reliability. To ensure dependability, we use rate limits for both REST and GraphQL APIs. These limits enhance quality for merchants by regulating multiple API calls. In this document, we'll provide information on rate limits along with some best practices to put in place.
 
 <Callout type="info">
-  BigCommerce recommends adhering to industry-standard rate limiting when developing. 
+
+ BigCommerce recommends adhering to industry-standard rate limits when developing.
+
 </Callout>
 
 ## How limits work
 
-Each API request consumes one quota unit. When the quota is reached, subsequent requests are rejected until the quota is refreshed. 
-A store's quota is shared across all apps accesing the store, preventing a single app from using the entire quota. The available quota for an app adjusts as other clients make or stop requests. 
+Each API request consumes one quota unit. The system rejects later requests once it reaches the quota. This continues until the quota is refreshed.
 
-Try locating an API header using CLI. Use the `curl` command to find the rate limit for the endpoint in this example. 
+All apps accessing the store share the store's quota. This prevents a single app from using the entire quota. The available quota for an app adjusts as other clients make or stop requests.
 
-``` bash filename="Example: cURL command" showLineNumbers copy
-    curl -I https://api.bigcommerce.com/stores/{{STORE_HASH}}/v3/catalog/products
-```
+## Rate limits by plan type
 
-The maximum quota limit is returned in the API response header.
-
-### API response headers
-
-API response headers are part of the response returned by an API request and can be found in the headers section. Here's an example of an API response header:
-
-///Example here
-
-In this example, the headers provide information such as the status of the request, content type, length, connection status, date, and rate limit details.
-
-## Concurrency limits by plan type
-
-Apps using OAuth are rate-limited based on a quota refreshed every few seconds. The maximum quota varies by store plan and requested resources:
+Apps using OAuth are rate-limited based on a quota that's refreshed every few seconds. The maximum quota varies by store plan and requested resources.
 
 | Plan Type| Quota |
+
 |:------------------|:-------|
-| Enterprise and Enterprise-Test | by plan and [resource](https://support.bigcommerce.com/s/article/Platform-Limits#storelimits) | 
-| Other sandboxes (Dev/Partner/Employee) | by [resource](https://support.bigcommerce.com/s/article/Platform-Limits#storelimits) | 
+
+| Enterprise and Enterprise-Test | by plan and [resource](https://support.bigcommerce.com/s/article/Platform-Limits#storelimits) |
+
+| Other sandboxes (Dev/Partner/Employee) | by [resource](https://support.bigcommerce.com/s/article/Platform-Limits#storelimits) |
+
 | Pro | 60k per hour (450 / 30sec) |
-| Plus & Standard | 20k per hour (150 / 30sec) | 
 
-### Unlimited rate plans
+| Plus & Standard | 20k per hour (150 / 30sec) |
 
-  The **Unlimited** rate plan for select BigCommerce Enterprise clients is not rate limited by requests per time but may face physical infrastructure-related constraints that may limit the maximum throughput of requests for a given resource. 
-  
-  For more on resource constraints, see [object-related limits (Help Center)](https://support.bigcommerce.com/s/article/Platform-Limits#storelimits).
+### Unlimited rate plan
+
+The Unlimited rate plan is for some BigCommerce Enterprise clients. It has no request rate limits. But, it may face limits from physical infrastructure. These limits may cap the maximum request throughput for a resource.
+
+ For more on resource constraints, see [object-related limits (Help Center)](https://support.bigcommerce.com/s/article/Platform-Limits#storelimits).
 
 <Callout type="warning">
-BigCommerce reserves the right to limit unreasonable API activity for platform stability, per our [Terms of Service](https://www.bigcommerce.com/terms/api-terms/).
+
+BigCommerce can limit excessive API use to keep the platform stable. This is per our [Terms of Service](https://www.bigcommerce.com/terms/api-terms/).
+
 </Callout>
 
-## Concurrency limit best practices
+## Best practices
 
-### Handle adaptive concurrency limit status codes
+Manage API rate limits by following these crucial guidelines for success. 
+
+Process rate limit status codes accurately, distribute request loads evenly, store results,  and repeat requests strategically to boost app performance and prevent outages.
+
+ 
+
+### Handle rate limit status codes
 
 <Callout type="info">
-  As of January 2022, BigCommerce header field names are case-insensitive. Learn more about BigCommerce [response header conventions](/docs/start/about#response-headers).
+
+ As of January 2022, BigCommerce header field names are case-insensitive. Learn more about BigCommerce [response header conventions](/docs/start/about#response-headers).
+
 </Callout>
 
 API response headers show your position in the rate-limiting algorithm:
 
 ```http filename="Standard plan example: Rate limit headers"
+
 X-Rate-Limit-Time-Window-Ms: 30000
+
 X-Rate-Limit-Time-Reset-Ms: 15000
+
 X-Rate-Limit-Requests-Quota: 150
+
 X-Rate-Limit-Requests-Left: 35
+
 ```
 
-A [429: Too Many Requests](/docs/start/about/status-codes#4xx-client-error) response indicates that the rate limits are met for this request. The `X-Rate-Limit-Time-Reset-Ms` header shows when to retry.
-
-For more details on response headers, see [About Our API](/docs/start/about#bigcommerce-specific-response-headers).
-
-### Distribute the load
-
-Spread requests over time to avoid spikes.
-
-### Caching results
-
-Cache frequent results to reduce API calls.
-
-### Retry requests responsibly
+#### Seeing a `429` response?
 
 On receiving a `429` response, pause further requests until the quota refreshes:
 
 ```http filename="Example: 429 response" showLineNumbers copy
-  HTTP/1.1 429 Too Many Requests
-  Date: Mon, 03 Feb 2022 20:36:00 GMT
-  Content-Type: application/json
-  X-Rate-Limit-Time-Reset-Ms: 15000
+
+ HTTP/1.1 429 Too Many Requests
+
+ Date: Mon, 03 Feb 2022 20:36:00 GMT
+
+ Content-Type: application/json
+
+ X-Rate-Limit-Time-Reset-Ms: 15000
+
 ```
 
 Use the `X-Rate-Limit-Time-Reset-MS` header to wait before retrying:
 
 ```php filename="PHP example for delaying response" showLineNumbers copy
-  $milliseconds = $response->getHeader("X-Rate-Limit-Time-Reset-Ms");
-  usleep($milliseconds);
+
+ $milliseconds = $response->getHeader("X-Rate-Limit-Time-Reset-Ms");
+
+ usleep($milliseconds);
+
 ```
+
+For more details on response headers, see [About Our API](/docs/start/about#bigcommerce-specific-response-headers).
+
+### Distribute the load
+
+To avoid spikes in API requests and ensure efficient use of your quota, spread out your API calls over time. The practice helps prevent hitting rate limits by balancing the number of requests sent in a given timeframe.
+
+You can use strategies such as using asynchronous processes, batching requests, and using a queue. They will help you distribute the load evenly. You can also keep a smooth request rate by adjusting the rate based on the API response headers.
+
+### Caching results
+
+Cache frequent results to reduce API calls. See, [AndreasCachingDoc](/goeshere)
+
+### Retry requests responsibly
+
+To retry requests responsibly when using the BigCommerce API, follow these steps:
+
+1. Monitor for `429` Responses: When you receive a `429: Too Many Requests` response, it indicates that you've hit the rate limit.
+
+2. Check the Retry-After Header: Use the `X-Rate-Limit-Time-Reset-Ms` header to determine how long to wait before retrying. This header provides the time in milliseconds until your quota resets.
+
+3. Pause Before Retrying: Implement a delay in your code based on the `X-Rate-Limit-Time-Reset-Ms` value. For example, in PHP:
+
+```php filename="PHP" showLineNumbers copy
+
+ $milliseconds = $response->getHeader("X-Rate-Limit-Time-Reset-Ms");
+
+ usleep($milliseconds * 1000);
+
+```
+
+If retries continue to hit rate limits, gradually increase the wait time to avoid overwhelming the server.
+
+By following these steps, you can ensure your requests are retried responsibly on the BigCommerce platform.
+
 ## Resources
+
+### Related articles
+
+* [Platform limits - Store limits](/https://support.bigcommerce.com/s/article/Platform-Limits?language=en_US#storelimits) (BigCommerce Knowledge Base)
+
+* [About our APIs - Response headers](/https://developer.bigcommerce.com/docs/start/about#response-headers)
+
+## Additional resources
+
+* [BigCommerce: Incorporated terms - API terms](/https://www.bigcommerce.com/terms/api-terms/) (BigCommerce terms of service)

@@ -3,9 +3,7 @@
 BigCommerce aims to provide outstanding platform reliability. To ensure dependability, we use rate limits for both REST and GraphQL APIs. These limits enhance quality for merchants by regulating multiple API calls. In this document, we'll provide information on rate limits along with some best practices to put in place.
 
 <Callout type="info">
-
  BigCommerce recommends adhering to industry-standard rate limits when developing.
-
 </Callout>
 
 ## How limits work
@@ -19,15 +17,10 @@ All apps accessing the store share the store's quota. This prevents a single app
 Apps using OAuth are rate-limited based on a quota that's refreshed every few seconds. The maximum quota varies by store plan and requested resources.
 
 | Plan Type| Quota |
-
 |:------------------|:-------|
-
 | Enterprise and Enterprise-Test | by plan and [resource](https://support.bigcommerce.com/s/article/Platform-Limits#storelimits) |
-
 | Other sandboxes (Dev/Partner/Employee) | by [resource](https://support.bigcommerce.com/s/article/Platform-Limits#storelimits) |
-
 | Pro | 60k per hour (450 / 30sec) |
-
 | Plus & Standard | 20k per hour (150 / 30sec) |
 
 ### Unlimited rate plan
@@ -37,9 +30,7 @@ The Unlimited rate plan is for some BigCommerce Enterprise clients. It has no re
  For more on resource constraints, see [object-related limits (Help Center)](https://support.bigcommerce.com/s/article/Platform-Limits#storelimits).
 
 <Callout type="warning">
-
 BigCommerce can limit excessive API use to keep the platform stable. This is per our [Terms of Service](https://www.bigcommerce.com/terms/api-terms/).
-
 </Callout>
 
 ## Best practices
@@ -48,28 +39,19 @@ Manage API rate limits by following these crucial guidelines for success.
 
 Process rate limit status codes accurately, distribute request loads evenly, store results,  and repeat requests strategically to boost app performance and prevent outages.
 
- 
-
 ### Handle rate limit status codes
 
 <Callout type="info">
-
  As of January 2022, BigCommerce header field names are case-insensitive. Learn more about BigCommerce [response header conventions](/docs/start/about#response-headers).
-
 </Callout>
 
 API response headers show your position in the rate-limiting algorithm:
 
 ```http filename="Standard plan example: Rate limit headers"
-
 X-Rate-Limit-Time-Window-Ms: 30000
-
 X-Rate-Limit-Time-Reset-Ms: 15000
-
 X-Rate-Limit-Requests-Quota: 150
-
 X-Rate-Limit-Requests-Left: 35
-
 ```
 
 #### Seeing a `429` response?
@@ -77,32 +59,24 @@ X-Rate-Limit-Requests-Left: 35
 On receiving a `429` response, pause further requests until the quota refreshes:
 
 ```http filename="Example: 429 response" showLineNumbers copy
-
  HTTP/1.1 429 Too Many Requests
-
  Date: Mon, 03 Feb 2022 20:36:00 GMT
-
  Content-Type: application/json
-
  X-Rate-Limit-Time-Reset-Ms: 15000
-
 ```
 
 Use the `X-Rate-Limit-Time-Reset-MS` header to wait before retrying:
 
 ```php filename="PHP example for delaying response" showLineNumbers copy
-
  $milliseconds = $response->getHeader("X-Rate-Limit-Time-Reset-Ms");
-
  usleep($milliseconds);
-
 ```
 
 For more details on response headers, see [About Our API](/docs/start/about#bigcommerce-specific-response-headers).
 
 ### Distribute the load
 
-To avoid spikes in API requests and ensure efficient use of your quota, spread out your API calls over time. The practice helps prevent hitting rate limits by balancing the number of requests sent in a given timeframe.
+To avoid spikes in API requests and ensure efficient use of your quota, spread out your API calls over time. The practice helps prevent hitting rate limits by balancing the number of requests sent in a given time-frame.
 
 You can use strategies such as using asynchronous processes, batching requests, and using a queue. They will help you distribute the load evenly. You can also keep a smooth request rate by adjusting the rate based on the API response headers.
 
@@ -121,11 +95,8 @@ To retry requests responsibly when using the BigCommerce API, follow these steps
 3. Pause Before Retrying: Implement a delay in your code based on the `X-Rate-Limit-Time-Reset-Ms` value. For example, in PHP:
 
 ```php filename="PHP" showLineNumbers copy
-
  $milliseconds = $response->getHeader("X-Rate-Limit-Time-Reset-Ms");
-
  usleep($milliseconds * 1000);
-
 ```
 
 If retries continue to hit rate limits, gradually increase the wait time to avoid overwhelming the server.

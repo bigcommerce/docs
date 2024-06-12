@@ -1,0 +1,105 @@
+
+# Glossary
+
+The following glossary describes key App Extensions features.
+
+## Context
+
+An App Extension's **context** describes the control panel location where the Extension's UI loads. The context determines the window dimensions of the iFrame where the Extension's UI loads. There are currently two possible contexts:
+
+| Enum | Description |
+|:-----|:------------|
+| `PANEL` | The iFrame target is a side panel overlay that opens on the right side of the current [model](#model) view. Panels include expander arrows in the upper left corner that toggle the panel to full screen and then back to the narrower width, so panel markup should be responsive. The control panel URL does not change when the user clicks the App Extension's **Action** menu item. |
+| `LINK` | The iFrame target is the app's usual location, in the store control panel's **Apps** sub-menu. When the user clicks the App Extension menu item, the control panel navigates them away from the [model](#model) view they were interacting with when they clicked to open the App Extension. The iFrame size is the same as other pages of your app that load in the **Apps** sub-menu. The control panel URL changes when the user clicks the App Extension's **Action** menu item. |
+
+## Model
+
+An App Extension's **model** describes the control panel view it extends. Currently, App Extensions apply to the **View All** page of an API entity. There are currently three possible models:
+
+| Enum | Description |
+|:-----|:------------|
+| `PRODUCTS` | App Extension menu items render in the **Action** menu for each product on the **[View Products](https://login.bigcommerce.com/deep-links/manage/products)** page. |
+| `ORDERS` | App Extension menu items render in the **Action** menu for each order on the **[View Orders](https://login.bigcommerce.com/deep-links/manage/orders)** page. |
+| `CUSTOMERS` | App Extension menu items render in the **Action** menu for each customer on the **[View Customers](https://login.bigcommerce.com/deep-links/manage/customers)** page. |
+
+## Label
+
+An App Extension's **label** is the human-readable link text that describes it in the **Action** menu of each item listed on its [model](#model) page.
+
+For example, in the following App Extension, when a user is on the **View Orders** page and clicks **Add personal thanks** in the **Action** menu for any order, **Add personal thanks** is the label.
+
+```json filename="Partial App Extension query response, Add personal thanks" showLineNumbers copy
+{
+  "id": "bc/store/appExtension/2",
+  "url": "/orders/${id}/personal-thanks",
+  "model": "ORDERS",
+  "label": {
+    "defaultValue": "Add personal thanks"
+  }
+}
+```
+
+## Label.defaultValue
+
+Use English for an App Extension's default label. BigCommerce uses this link text when the control panel locale settings do not correspond with any of the locale codes defined in the App Extension at `label.locales.localeCode`. The technical string length limit is 255 characters, but for the most predictable user experience, we suggest a length of ≤25 characters.
+
+## Label.locales
+
+In the `AppExtension` mutation, the `label.locales` array describes alternate label text for control panel users using languages other than English. The locale labels render based on the **Preferred language** configured in **[My Profile > Profile Information](https://login.bigcommerce.com/deep-links/manage/user-settings/profile)**. For a list of locales the control panel currently supports, see [User Profile: Edit Profile (Help Center)](https://support.bigcommerce.com/s/article/User-Profile#edit-profile). 
+
+For example, in the following App Extension, when a user with their control panel language set to French is on the **View Orders** page and clicks **Envoyez un merci personnel** in the **Action** menu for any order, **Envoyez un merci personnel** is the label.
+
+```json filename="Partial App Extension query response, Add personal thanks" showLineNumbers copy
+{
+  "id": "bc/store/appExtension/2",
+  "url": "/orders/${id}/personal-thanks",
+  "model": "ORDERS",
+  "label": {
+    "defaultValue": "Add personal thanks",
+    "locales": [
+      {
+        "value": "Envoyez un merci personnel",
+        "localeCode": "fr-FR"
+      }
+    ]
+  }
+}
+```
+
+## Label.locales.localeCode
+
+For a list of locales the control panel currently supports, see [User Profile: Edit Profile (Help Center)](https://support.bigcommerce.com/s/article/User-Profile#edit-profile). 
+
+## Label.locales.value
+
+BigCommerce uses this link text when the control panel locale settings correspond with the text's accompanying locale code. The technical string length limit is 255 characters, but for the most predictable user experience, we suggest a length of ≤25 characters.
+
+## URL
+
+The `url` is the App Extension's path, or *deep link*. In the `AppExtension` mutation, the `url` contains variable parameters templated as JavaScript ES6+ strings. **The string length limit is 255 characters.**
+
+When the user clicks the App Extension's [label](#label), BigCommerce sends your app a [load callback](#load-callback). The load callback's [signed_payload_jwt](#signed_payload_jwt) contains a `url` property in which the variable parameters you defined are replaced with data points injected by the referring model. Consider the following App Extension and action diagram:
+
+```json filename="Partial App Extension query response, Add personal thanks" showLineNumbers copy
+{
+  "id": "bc/store/appExtension/2",
+  "url": "/orders/${id}/personal-thanks",
+  "model": "ORDERS",
+  "label": {
+    "defaultValue": "Add personal thanks"
+  }
+}
+```
+
+![App Extension URL diagram](https://storage.googleapis.com/bigcommerce-production-dev-center/images/app-extensions/app-extensions-scope.png "App Extension URL diagram")
+
+
+## signed_payload_jwt
+
+The contextual information your app needs to load an App Extension is delivered using properties of our load callback's `signed_payload_jwt`.
+
+For more information, see [Handling App Callbacks: Data Properties in the signed_payload_jwt](/docs/integrations/apps/guide/callbacks#data-properties-in-the-signed_payload_jwt).
+
+## Load callback
+
+Clicking an App Extension menu item triggers the **load** callback. If you're using the [Next.js starter app](https://github.com/bigcommerce/sample-app-nodejs), a significant amount of app callback complexity is handled for you under the covers. If you're using a different stack or want to learn more, see [Handling App Callbacks](/docs/integrations/apps/guide/callbacks#render-the-app-with-load).

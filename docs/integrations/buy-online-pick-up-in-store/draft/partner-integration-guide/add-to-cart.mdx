@@ -1,0 +1,88 @@
+## Implementing a BOPIS Add to Cart Flow
+
+A common pattern used by online brands is allowing a shopper to choose to pick up or ship directly from the Product Details page. 
+
+This can reduce friction for shoppers who already have a preferred local store location (or your best estimate of their local store) by letting them add to cart and lock in a pickup location in one click. 
+
+Then, depending on the payment options available, the shopper could complete Checkout in just a couple of clicks.
+
+
+![Selecting fulfillment type from the product page](https://storage.googleapis.com/bigcommerce-production-dev-center/images/fulfillment%20product%20page.png "Selecting fulfillment type from the product page")
+
+## How to Implement a BOPIS Add to Cart Flow
+
+You will need to customize a store's Theme to display appropriate options based on the desired experience.
+
+Whether you implement a dropdown, radio buttons, or separate buttons to select between shipping and BOPIS, you will need to interact with both the Cart and Checkout APIs to take advantage of the new BOPIS features in BigCommerce.
+
+Use the [Carts API](#) to add the item(s) to cart.
+{/* https://bigcommerce.stoplight.io/docs/api-beta-multi-location-inventory/YXBpOjIzMTM0ODM-carts */}
+
+```http filename="Example request: Add cart line items" showLineNumbers copy
+POST https://api.bigcommerce.com/stores/{{STORE_HASH}}/v3/cart/{cartId}/items
+X-Auth-Token: {{access_token}}
+Content-Type: application/json
+Accept: application/json
+{
+...
+
+"lineItems": [
+  {
+    "quantity": 1,
+    "productId": 5,
+    "variantId": 55
+  }
+]
+
+...
+}
+```
+
+This returns line item ids which will need to be referenced in subsequent calls.
+
+```json filename="Example response: Add cart line items" showLineNumbers copy
+{
+...
+  "lineItems": {
+    "physicalItems": [
+      {
+        "id": 20, // line item id
+        "qty": 1,
+        "productId": 5,
+        "variantId": 55,
+        ...
+      }
+    ]
+  }
+...
+}
+```
+
+Next, use the updated [Checkout API](#) to create a new Consignment (or use an existing one). If the shopper is using the Pick Up method, the `pickupMethodId` is the `id` retrieved from [Get Pickup Methods](#).
+{/* https://bigcommerce.stoplight.io/docs/api-beta-multi-location-inventory/b3A6MTk4MDkzOTc-add-new-consignment-to-checkout */}
+{/* https://bigcommerce.stoplight.io/docs/api-beta-multi-location-inventory/b3A6Mzk4Njc3MTk-get-pickup-methods */}
+
+```http filename="Example request: Add consignment to checkout" showLineNumbers copy
+POST https://api.bigcommerce.com/stores/{{STORE_HASH}}/v3/checkouts/{checkoutId}/consignments
+X-Auth-Token: {{access_token}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  ...
+
+  "lineItems": [
+    {
+      id: 20,
+      quantity: 1
+    }
+  ]
+  "pickupOption": {
+    "pickupMethodId": 1
+    }
+  "address": []
+}
+```
+
+
+You can continue to modify Consignment via the Checkout API, updating the selected pickup option or even switching the Consignment back to a "shipping" type.

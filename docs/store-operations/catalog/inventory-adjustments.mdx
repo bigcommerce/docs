@@ -1,0 +1,407 @@
+# Inventory Overview
+
+BigCommerce's Inventory API is an asynchronous API that enables merchants to track a store's inventory and make updates to the number of products in the store's catalog.
+
+This article provides examples for adjusting a store's inventory and describes how BigCommerce handles concurrent adjustment requests.
+
+## Breaking changes to Catalog API
+
+### Writing inventory
+
+The existing [Catalog APIs](/docs/rest-catalog) no longer add or update inventory. Catalog endpoints that partly perform these functions now themselves use the Inventory API under the hood. The most direct way to update inventory is using the Inventory API.
+
+### Reading Inventory
+
+Although you can still read product inventory values using Catalog endpoints, the behavior has changed slightly. The stock levels returned using the Catalog API reflect the total inventory the merchant has available to sell. This provides limited backwards compatibility with any apps or integrations that facilitate selling a merchant's products through external sales channels, such as Amazon.
+
+## Inventory adjustments
+
+Due to the asynchronous nature of the Inventory API, there may be a short delay before data is updated after the endpoints are called. Endpoints that manage these inventories and locations for these inventories return a `transaction_id` for any write requests.
+
+The total inventory for a product cannot exceed 2,147,483,647 _at a single location_. The total inventory includes that of its variants. The inventory for a variant can reach 2,147,483,647 at each location.
+
+Using shirts as an example, you can store 2,147,483,647 shirts at each location.
+For shirts with variants, this total includes all the shirts for its variants. 
+You can store up to 2,147,483,647 shirts for a variant. For example, you can have 2,147,483,647 small red shirts or 2,147,483,647 large blue shirts.
+
+<Callout type="info">
+  #### Limit handling in Inventory versus Catalog API 
+  - The Inventory API handles limits in a different way than the Catalog API. 
+  - In the Inventory API, the store does not save the product or variant if you exceed the inventory limit.
+  - In the Catalog API, the store sets the inventory level to the limit if you exceed the limit. If a product has variants, the store may not save the inventory for a variant. For more information, see the [Update a product variant](/docs/rest-catalog/product-variants#update-a-product-variant) endpoint.
+</Callout>
+
+<Callout type="warning">
+  The Inventory API is not [channel aware](/docs/storefront/multi-storefront). Automated or bulk operations you perform with the Inventory API can change stock levels for products and variants that are not available on the storefront you intend to affect.
+</Callout>
+
+
+### Optimizing performance
+
+Keep the following points in mind to optimize API performance and stability:
+- Wait to send new requests until the current request returns a 200 success status code.
+- Update up to 2,000 products or variants per request. For example, you can update the inventory for 2,000 products (or variants) at one location, 200 products (or variants) at 10 locations, or 20 products (or variants) at 100 locations.
+- Do not perform _bulk_ operations using the Inventory API in parallel with _bulk_ operations that use the Catalog or Orders APIs. Doing so may cause unpredictable, incorrect calculation results, as the Catalog and Orders APIs may force inventory calculations.
+- Group _bulk_ absolute adjustments by _location_. For an example, see [Create absolute adjustments](#create-absolute-adjustment).
+
+## Absolute adjustment
+
+Use absolute adjustments as the default method for updating inventory. Absolute adjustments have lower complexity than [relative adjustments](#relative-adjustment), which synchronize with orders.
+
+### Example quantities
+
+| Property            | Quantity |
+| ------------------- | -------- |
+| Initial Stock       | `0`      |
+| Safety buffer       | `0`      |
+| Absolute Adjustment | `100`    |
+
+### Create absolute adjustment
+
+```http filename="Example request: Create absolute adjustment" showLineNumbers copy
+PUT https://api.bigcommerce.com/stores/{{STORE_HASH}}/v3/inventory/adjustments/absolute
+X-Auth-Token: {{ACCESS_TOKEN}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "reason": "absolute adjustment example",
+  "items": [
+    {
+      "location_id": 1,
+      "variant_id": 74,
+      "quantity": 100
+    }
+  ]
+}
+```
+
+For the best performance, group the payload data by _location_, not item, for bulk adjustments, as shown in the following example:
+
+```json filename="Example request body: Create a bulk absolute adjustment" showLineNumbers copy
+// Specify adjustments for location 1 before specifying adjustments for location 2
+
+{
+  "reason": "Bulk absolute adjustment",
+  "items": [
+    {
+      "location_id": 1,     // adjustments for location 1
+      "variant_id": 15,
+      "quantity": 100
+    },
+    {
+      "location_id": 1,
+      "variant_id": 20,
+      "quantity": 100
+    },
+    {
+      "location_id": 2,     // adjustments for location 2
+      "variant_id": 15,
+      "quantity": 100
+    },
+    {
+      "location_id": 2,
+      "variant_id": 20,
+      "quantity": 100
+    }    
+  ]
+}
+```
+
+### Get location stock
+
+<Tabs items={['Request', 'Response']}>
+  <Tab>
+
+    ```http filename="Example request: Get location stock" showLineNumbers copy
+    GET https://api.bigcommerce.com/stores/{{STORE_HASH}}/v3/locations/1/items?variant_id:in=74
+    X-Auth-Token: {{ACCESS_TOKEN}}
+    Content-Type: application/json
+    Accept: application/json
+    ```
+
+  </Tab>
+  <Tab>
+
+    ```json filename="Example response: Get location stock" showLineNumbers copy
+    {
+      "data":[
+        {
+          "identity":{
+            "sku": "SM13",
+            "variant_id": 74,
+            "product_id": 111
+          },
+          "available_to_sell": 100,
+          "total_inventory_onhand": 100,
+          "settings":{
+            "safety_stock": 0,
+            "is_in_stock": true,
+            "warning_level": 5
+          }
+        }
+      ]
+    }
+    ```
+
+  </Tab>
+</Tabs>
+
+<Callout type="info">
+  There is some time delay between adjustment operations and actual stock level updates. So, if you call Get Stock request immediately after the adjustment operation, you might find the stock level unchanged.
+</Callout>
+
+## Relative adjustment
+
+Use relative adjustments only when you do not know absolute quantities. For example, making order-related inventory changes through a third-party may require relative adjustments. Otherwise, use [absolute adjustments](#absolute-adjustment) for updating inventory.
+
+To make a relative adjustment to an inventory level, send a request to the [Relative inventory adjustments](/docs/rest-management/inventory/adjustments#relative-adjustment) endpoint. To retrieve inventory at a location, send a request to the [Get inventory at a location](/docs/rest-management/inventory/items#get-inventory-at-a-location) endpoint.
+
+### Example quantities
+
+| Property      | Quantity |
+| ------------- | -------- |
+| Initial Stock | `50`     |
+| Safety buffer | `0`      |
+| Adjustment    | `-25`    |
+
+### Create a relative adjustment 
+
+
+```http filename="Example request: Create relative adjustment" showLineNumbers copy
+POST https://api.bigcommerce.com/stores/{{STORE_HASH}}/v3/inventory/adjustments/relative
+X-Auth-Token: {{ACCESS_TOKEN}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "reason": "single relative adjustment operation",
+  "items": [
+    {
+      "location_id": 1,
+      "variant_id": 74,
+      "quantity": -25
+    }
+  ]
+}
+```
+
+### Get location stock 
+
+<Tabs items={['Request', 'Response']}>
+  <Tab>
+
+    ```http filename="Example request: Get location stock" showLineNumbers copy
+    GET https://api.bigcommerce.com/stores/{{STORE_HASH}}/v3/inventory/locations/1/items?variant_id:in=74
+    X-Auth-Token: {{ACCESS_TOKEN}}
+    Content-Type: application/json
+    Accept: application/json
+    ```
+
+  </Tab>
+  <Tab>
+
+    ```json filename="Example response: Get location stock" showLineNumbers copy
+    {
+      "data":[
+        {
+          "identity":{
+            "sku":"SM13",
+            "variant_id":74,
+            "product_id":111
+          },
+          "available_to_sell":25,
+          "total_inventory_onhand":25,
+          "settings":{
+            "safety_stock":0,
+            "is_in_stock":true,
+            "warning_level":5
+          }
+        }
+      ]
+    }
+    ```
+
+  </Tab>
+</Tabs>
+
+<Callout type="info">
+  There is some time delay between the adjustment operations and actual updates to the stock level. So, if you call Get Stock request immediately after the adjustment operation you might find stock level unchanged for a while.
+</Callout>
+
+## Relative adjustment with buffer (success)
+
+### Example quantities
+
+| Property            | Quantity |
+| ------------------- | -------- |
+| Initial stock       | `50`     |
+| Safety buffer       | `10`     |
+| Relative adjustment | `-20`    |
+
+### Create relative adjustment
+
+```http filename="Example request: Create relative adjustment" showLineNumbers copy
+POST https://api.bigcommerce.com/stores/{{STORE_HASH}}/v3/inventory/adjustments/relative
+X-Auth-Token: {{ACCESS_TOKEN}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "reason": "single relative adjustment operation",
+  "items": [
+    {
+      "location_id": 1,
+      "variant_id": 74,
+      "quantity": -20
+    }
+  ]
+}
+```
+
+### Get location stock
+
+<Tabs items={['Request', 'Response']}>
+  <Tab>
+
+    ```http filename="Example request: Get location stock" showLineNumbers copy
+    GET https://api.bigcommerce.com/stores/{{STORE_HASH}}/v3/inventory/locations/1/items?variant_id:in=74
+    X-Auth-Token: {{ACCESS_TOKEN}}
+    Content-Type: application/json
+    Accept: application/json
+    ```
+
+  </Tab>
+  <Tab>
+
+    ```json filename="Example response: Get location stock" showLineNumbers copy
+    {
+      ...
+      "available_to_sell": 20,
+      "total_inventory_onhand": 30,
+      ...
+    }
+    ```
+
+  </Tab>
+</Tabs>
+
+<Callout type="info">
+  There is a delay between adjustment operations and stock level updates; if you get location stock immediately after the adjustment operation, you might find stock level unchanged.
+</Callout>
+
+## Relative adjustment with buffer (error)
+
+### Example quantities
+
+| Property      | Description |
+| ------------- | ----------- |
+| Initial Stock | `50`        |
+| Safety buffer | `10`        |
+| Adjustment    | `-41`       |
+
+### Create relative adjustment
+
+```http filename="Example request: Create relative adjustment" showLineNumbers copy
+POST https://api.bigcommerce.com/stores/{{STORE_HASH}}/v3/inventory/adjustments/relative
+X-Auth-Token: {{ACCESS_TOKEN}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "reason": "single relative adjustment operation",
+  "items": [
+    {
+      "location_id": 1,
+      "variant_id": 74,
+      "quantity": -41
+    }
+  ]
+}
+```
+
+Since the relative adjustment of `-41` would bring the item's stock below the safety buffer, the above request would error; stock would be unchanged.
+
+## Concurrent adjustments
+
+Concurrent adjustments occur when two or more adjustment requests adjust the **same item** at the **same location** at the **same time**. For example, consider the adjustments in the table below (which assumes all requests in a single row occur simultaneously).
+
+| Example | Concurrency |
+|-|-|
+| Relative adjustment item **A** at Location **1**| No |
+| Relative adjustment item **A** at Location **1** <br /> Relative adjustment item A at Location **2** | No |
+| Absolute Adjustment Item **A** at Location **1**| No |
+| Absolute Adjustment item **A** at location **1** <br /> Absolute Adjustment item **B** at location **1** | No |
+| Relative adjustment item **A** at location **1** <br /> Relative adjustment item **A** at location **1** | Yes|
+| Relative adjustment item **A** at location **1**, item **B** at location **2** <br /> Relative adjustment item **B** at location **1** | No |
+| Relative adjustment item **A** at location **1**, item **B** at location **2** <br /> Relative adjustment item **B** at location **2** | Yes |
+| Relative adjustment item **A** at location **1**, item **B** at location **2** <br /> Absolute adjustment item **A** at location **1** | Yes |
+
+## Concurrent adjustment handling
+
+Internally, concurrent requests are handled one-by-one and have a strict order, to avoid overselling. Position of the adjustment operation in this strict order sequence determines whether it can or can't deduct item stock quantity when stock is low or near zero.
+
+Assuming all adjustments in one row are relative and executed simultaneously (and assuming no other concurrent operations were performed), the table below demonstrates how BigCommerce handles concurrent adjustments.
+
+| Example | Initial Stock | Adjustment Sequence                                                                   | Result                                                                             |
+| ------- | ------------- | ------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| A       | 10            | 1. Operation **A**: `-10` <br /> 2. Operation **B**: `-1`                               | Operation **A**: success <br /> Operation **B**: error                               |
+| B       | 10            | 1. Operation **B**: `-1` <br /> 2. Operation **A**: `-10`                               | Operation **A**: success <br /> Operation **B**: error                               |
+| C       | 10            | 1. Operation **B**: `-1` <br /> 2. Operation **A**: `-10` <br /> 3. Operation **C**: `-2` | Operation **B**: success <br /> Operation **A**: error <br /> Operation **C**: error   |
+| D       | 10            | 1. Operation **B**: `-1` <br /> 2. Operation **C**: `-2` <br /> 3. Operation **A**: `-10` | Operation **B**: success <br /> Operation **A**: success <br /> Operation **C**: error |
+| E       | 10            | 1. Operation **A**: `-10` <br /> 2. Operation **C**: `-2` <br /> 3. Operation **B**: `-1` | Operation **B**: success <br /> Operation **A**: error <br /> Operation **C**: error   |
+| F       | 10            | 1. Operation **A**: `-11` <br /> 2. Operation **C**: `-2` <br /> 3. Operation **B**: `-1` | Operation **B**: error <br /> Operation **A**: error <br /> Operation **C**: error     |
+
+Let's go deeper into the **C** and **F** edge case. It is only possible in concurrent relative adjustment operations, because we never return insufficient stock error in absolute adjustment. Even though there is a strict internal sequence, each operation is isolated and handled independently.
+
+There are three major stages of each operation in a client (synchronous) part of the request:
+
+- **Stage A**: Pre-check (verification on eventually consistent data, without concurrent requests verification)
+- **Stage B**: Make strict adjustment order (store adjustment "intention" into persistent memory)
+- **Stage C**: Post-check (include concurrent adjustments and verify stock limit on master data, respects the concurrent adjustments strict order)
+- **Stage D**: Decide whether operation success or failure. Fail the operation and return ERROR or execute other business logic and return SUCCESS.
+
+So, if Operation **B** and Operation **C** are on **Stage C**, each of them decide the item's stock is insufficient to proceed with the operation: Operation **B** (-1 + -10  > 10), Operation **C** (-2 + -10 > 10).
+
+This edge case is only possible when the store is on the high load with concurrent adjustments and insufficient item stock.
+
+## Concurrent absolute adjustments
+
+Absolute adjustment handling is based on a **First-In-First-Handled** strategy, which is simpler than relative adjustment handling. There is no pre-check and post-check operations under-the-hood (because absolute adjustments can't be rejected with insufficient quantity). Despite that, the order of concurrent absolute adjustments is hard to predict.
+
+| Initial Stock | Concurrent Operations                            | Result Stock |
+| ------------- | ------------------------------------------------ | ------------ |
+| 10            | Operation **A**: `0` <br /> Operation **B**: `100` | `100`        |
+| 10            | Operation **A**: `0` <br /> Operation **B**: `100` | `0`          |
+
+As you can see sending concurrent absolute operations at the same time you never know which will be the first. Try to avoid sending concurrent absolute operations.
+
+## Concurrent mixed operations
+
+Relative and absolute adjustments are mostly independent concepts. The only point of intersection between them is item stock value.
+
+Considering the async nature of operations, relative adjustment applies new absolute stock value when absolute operation is completely handled by the server-side async job process.
+
+It means the following: if relative adjustment operation was started the pre-check stage BEFORE absolute operation completely handled, it applies the item stock value that was before the absolute adjustment.
+
+Here are some examples:
+
+| Initial stock | Concurrent Operations                          | Intermediate State of Absolute Adjustment | Final State                                                          |
+| ------------- | ---------------------------------------------- | ----------------------------------------- | -------------------------------------------------------------------- |
+| `10`          | Relative **A**: `-10` <br /> Absolute **B**: `5` | Completed                                 | Relative **A**: error <br /> Stock after Absolute **B** operation: `5` |
+| `10`          | Relative **A**: `-10` <br /> Absolute **B**: `5` | In Progress                               | Relative **A**: error <br /> Stock after Absolute **B** operation: `5` |
+| `10`          | Relative **A**: `-10` <br /> Absolute **B**: `5` | In Progress                               | Relative **A**: error <br /> Stock after Absolute **B** operation: `5` |
+| `10`          | Relative **A**: `-10` <br /> Absolute **B**: `5` | Completed                                 | Relative **A**: error <br /> Stock after Absolute **B** operation: `5` |
+| `0`           | Relative **A**: `-10` <br /> Absolute **B**: `5` | In Progress                               | Relative **A**: error <br /> Stock after Absolute **B** operation: `5` |
+| `100`         | Relative **A**: `-10` <br /> Absolute **B**: `5` | In Progress                               | Relative **A**: error <br /> Stock after Absolute **B** operation: `5` |
+
+## Definitions
+
+| Term                   | Definition                                                                                                         |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Concurrent adjustments | Occur when two or more adjustment requests adjust the **same item** at the **same location** at the **same time**. |
+| Relative adjustment    | Addition or subtraction of an item's stock at a specific location                                                  |
+| Absolute adjustment    | Override of an item's stock at a specific location                                                                 |
+| Mixed operation        | Occurs when a concurrent adjustment operations contains both absolute and relative adjustments                     |
+| Safety Stock           | The quantity of product that is stored to prevent an out-of-stock situation. It serves as insurance against sudden/rapid fluctuations in demand. Safety stock quantity is not included in the Available to Sell quantity that may be displayed to customers on the storefront.                                                          |
+

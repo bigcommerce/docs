@@ -1,0 +1,175 @@
+import { Callout, Tab, Tabs } from "nextra-theme-docs";
+import Icon from "@components/icons/Icon";
+import Eyebrow from "@components/LandingPages/Eyebrow";
+import CardGrid from "@components/Card/CardGrid";
+import { LandingCardGroup } from "@components/LandingPages/store-management/LandingCardGroup";
+import LandingCard from "@components/Card/LandingCard";
+import Steps from "@components/MDX/Steps";
+
+<Eyebrow title="Metafields" />
+
+# Metafields
+
+Metafields are user defined key-value pairs that developers can attach to BigCommerce data objects. You can use them to add a layer of custom information to products, carts, and more. In most cases, metafields offer specific knowledge that&rsquo;s needed to fully define or enhance a custom store feature.
+
+## Use cases
+
+In the catalog context, you can add metafields to display unique identifiers that customers look for when they make purchasing decisions. For example, for a small batch coffee brand, you might define a metafield on their variant objects to store the **roasted on** date.
+
+The following list of use cases is an example of what you can do with metafields in a variety of object contexts:
+
+<CardGrid>
+  <LandingCardGroup
+    cards={[
+      {
+        title: "Products",
+        description: "Aggregate data from variants into one product metafield.",
+        link: "https://developer.bigcommerce.com/docs/rest-catalog/products/metafields",
+        icon: <Icon includesWrapper name="art-track" />,
+      },
+      { title: "Variants",
+        description: `Add information available at the product level, like GTINs or videos.`,
+        link: "https://developer.bigcommerce.com/docs/rest-catalog/product-variants/metafields",
+        icon: <Icon includesWrapper name="variant" />,
+      },
+      {
+        title: "Categories",
+        description: `Link a category with the matching categories in other languages.`,
+        link: `https://developer.bigcommerce.com/docs/rest-catalog/categories/metafields`,
+        icon: <Icon includesWrapper name="scatter-plot" />,
+      },
+      {
+        title: "Brands",
+        description: `Use widgets to show different information for each brand.`,
+        link: `https://developer.bigcommerce.com/docs/rest-catalog/brands/metafields`,
+        icon: <Icon includesWrapper name="brand" />,
+      },
+      {
+        title: "Carts",
+        description: `Retain subscription settings until the shopper finishes checking out.`,
+        link: `https://developer.bigcommerce.com/docs/rest-management/carts/metafields`,
+        icon: <Icon includesWrapper name="shopping-cart" />,
+      },
+      {
+        title: "Customers",
+        description: `Associate customers with CRM or ERP-style data.`,
+        link: `https://developer.bigcommerce.com/docs/rest-management/customers/metafields`,
+        icon: <Icon includesWrapper name="people" />,
+
+      },
+      {
+        title: "Orders",
+        description: `Save extra fulfillment information.`,
+        link: `https://developer.bigcommerce.com/docs/rest-catalog/brands/metafields`,
+        icon: <Icon includesWrapper name="order" />,
+      },
+      {
+        title: "Locations",
+        description: `Save the shipping options available from that location.`,
+        link: `https://developer.bigcommerce.com/docs/rest-management/locations/metafields`,
+        icon: <Icon includesWrapper name="storefront" />,
+      },
+
+]}
+/>
+
+<LandingCard
+    variant="secondary"
+    title="Channels"
+    description={`Associate channels with locations Save an array of languages or other localization features shoppers can toggle between; for example, Canadian storefronts might toggle between English and French.`}
+    href="https://developer.bigcommerce.com/docs/rest-management/channels/metafields"
+    icon={<Icon includesWrapper name="platform" />}
+    fullWidth
+  />
+</CardGrid>
+
+## Supported objects
+
+You can work with metafields using the REST Management API, the GraphQL Storefront API, and the GraphQL Admin API.
+
+Currently, the following objects support metafields:
+
+- Customers
+- Carts
+- Channels
+- Brands
+- Categories
+- Products
+- Variants
+- Locations
+- Orders
+
+## Permissions
+
+The table describes the visibility and writability permissions available for metafield properties.
+
+| Value                  | Description                                                                   |
+| :--------------------- | :---------------------------------------------------------------------------- |
+| `app_only`             | Private to the app that owns the field.                                       |
+| `read`                 | Visible to other API consumers.                                               |
+| `write`                | Open for reading and writing by other API consumers.                          |
+| `read_and_sf_access`   | Visible to other API consumers, including on storefront.                      |
+| ` write_and_sf_access` | Open for reading and writing by other API consumers, including on storefront. |
+
+## Create a metafield
+
+In this example, you&rsquo;re working with the same small batch coffee brand. To drive sales, the roaster wants to make product variant recommendations to customers based on their order history. Your solution defines a customer metafield that captures the most recent order.
+
+### Prerequisites
+
+- A BigCommerce store
+- Access to the `customerId`
+
+### Steps
+
+Use the [Create a customer metafield](/docs/rest-management/customers/customer-metafields#create-customer-metafields) endpoint to save the description of the most recent variant the customer purchased.
+
+<Callout type="warning">
+  The `key` field has a max character limit of 255 and a minimum of 1. The
+  `value` field has a max character limit of 65535 characters and a minimum of 1
+  .
+</Callout>
+
+<Tabs items={["Request", "Response"]}>
+<Tab>
+
+```http filename="Example request" showLineNumbers copy
+POST https://api.bigcommerce.com/stores/{store_hash}/v3/customers/{customerId}/metafields
+Accept: application/json
+Content-Type: application/json
+X-Auth-Token: {access_token}
+
+{
+  "permission_set": "app_only",
+  "namespace": "Custom Product Reccomendations",
+  "key": "blonde roast",
+  "value": " Sunny Collective Blonde Roast, Whole Bean, (4 oz)",
+  "description": "Customer's purchase history recommendations"
+}
+```
+</Tab>
+<Tab>
+
+```json filename="Example success response" showLineNumbers copy
+{
+    "data": {
+        "id": 13,
+        "key": "blonde roast",
+        "value": "Sunny Collective Blonde Roast, Whole Bean, (4 oz)",
+        "namespace": "Custom Product Reccomendations",
+        "permission_set": "app_only",
+        "resource_type": "customer",
+        "resource_id": {customerId},
+        "description": "Customer's purchase history recommendations",
+        "date_created": "2024-04-12T19:28:57+00:00",
+        "date_modified": "2024-04-12T19:28:57+00:00",
+        "owner_client_id": "jazzjw4pnoz04343wfif2zrrkil5p"
+    },
+    "meta": {}
+}
+```
+
+</Tab>
+</Tabs>
+
+A success response returns a copy of the metafield object to confirm that the metafield is attached to the customer. Your application can now access the most recent purchase the customer made directly from the customer object.

@@ -1298,7 +1298,10 @@ paths:
         - image_file: Form posts are the only accepted upload option.
 
         Only one image at a time can be created.
-        Limit image size to 1MB.
+        
+        Supported file types are `JPEG/JPG`, `GIF`, `PNG` and `ICO`.
+        
+        Limit image size to `8MB`.
         To update a *Category Image*, use the [Update categories](/docs/rest-catalog/category-trees/categories#update-categories) endpoint and an `image_url`.
       operationId: createCategoryImage
       parameters:
@@ -1340,6 +1343,10 @@ paths:
                 title: Error Response 
                 type: object
                 properties: {}
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           description: |
             The resource was not found.
@@ -1397,6 +1404,31 @@ paths:
         '204':
           description: ''
           content: {}
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: |
+            The resource was not found.
+          content:
+            application/json:
+              schema:
+                title: Not Found
+                type: object
+                properties:
+                  status:
+                    type: integer
+                    description: |
+                      404 HTTP status code.
+                  title:
+                    type: string
+                    description: The error title describing the particular error.
+                  type:
+                    type: string
+                  instance:
+                    type: string
+                description: Error payload for the BigCommerce API.
     parameters:
       - $ref: '#/components/parameters/Accept'
       - $ref: '#/components/parameters/CategoryIdParam'
@@ -1427,6 +1459,10 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/productSortOrder'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           description: The requested category was not found.
           content:
@@ -1460,12 +1496,18 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/productSortOrder'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           description: The requested category was not found.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/error_Base'
+        '415':
+          $ref: '#/components/responses/Unsupported'
         '422':
           description: |-
             Unprocessable entity.
@@ -2639,6 +2681,24 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/error_Base'
+    UnauthorizedError:
+      description: Unauthorized
+      content:
+        plain/text:
+          schema:
+            type: string
+    Forbidden:
+      description: Forbidden
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unsupported:
+      description: Unsupported Media Type
+      content:
+        plain/text:
+          schema:
+            type: string
   parameters:
     CategoryIdParam:
       name: category_id

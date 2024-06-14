@@ -2,10 +2,9 @@ openapi: '3.0.1'
 info:
   title: Storefront Checkouts
   description: |-
-    Manage checkout operations and data using front-end JavaScript on BigCommerce
-    Stencil-powered storefronts.
-
-    For info about API accounts, see our [Guide to API Accounts](/docs/start/authentication/api-accounts).
+    Manage checkout operations and data on BigCommerce-hosted storefronts. To work with headless storefronts, use the [GraphQL Storefront API](/graphql-storefront/reference).
+    
+    The REST Storefront API uses [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) headers for authentication, and therefore has no required scopes. You do not need to send any BigCommerce-specific tokens with your requests to these endpoints.
         
     For info about authenticating BigCommerce APIs, see [Authentication and Example Requests](/docs/start/authentication#same-origin-cors-authentication).
   version: ''
@@ -31,6 +30,9 @@ tags:
   - name: Checkout Store Credit
 paths:
   '/checkouts/{checkoutId}':
+    parameters:
+      - $ref: '#/components/parameters/Accept'
+      - $ref: '#/components/parameters/CheckoutIdPath'
     get:
       tags:
         - Checkout
@@ -43,40 +45,9 @@ paths:
         > #### Note
         > * Substitute your storefront domain for `yourstore.example.com`. 
         > * The Send a Test Request feature is not currently supported for this endpoint.  
-      operationId: CheckoutsByCheckoutIdGet
+      operationId: getCheckout
       parameters:
-        - name: checkoutId
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: include
-          in: query
-          description: |-
-            * `cart.lineItems.physicalItems.options` - physical options
-            * `cart.lineItems.digitalItems.options` - digital options
-            * `cart.lineItems.physicalItems.categoryNames` - physical categories
-            * `cart.lineItems.digitalItems.categoryNames` - digital categories
-            * `cart.lineItems.customItems.categoryNames` - custom categories
-            * `customer` - customer
-            * `customer.customerGroup` - customer group
-            * `payments` - payments
-            * `promotions` - promotions
-            * `consignments.availableShippingOptions` - shipping options
-          schema:
-            type: string
-            default: consignments.availableShippingOptions
-            enum:
-              - cart.lineItems.physicalItems.options
-              - cart.lineItems.digitalItems.options
-              - cart.lineItems.physicalItems.categoryNames
-              - cart.lineItems.digitalItems.categoryNames
-              - cart.lineItems.customItems.categoryNames
-              - customer
-              - customer.customerGroup
-              - payments
-              - promotions
-              - consignments.availableShippingOptions
+        - $ref: '#/components/parameters/IncludeShippingDefault'
       responses:
         '200':
           description: ''
@@ -106,7 +77,7 @@ paths:
                   lineItems:
                     physicalItems:
                       - id: 243c9ca2-22b4-417a-8b09-b3fc05778b52
-                        parentId: {}
+                        parentId: ''
                         variantId: 345
                         productId: 174
                         sku: ''
@@ -235,13 +206,9 @@ paths:
         > #### Note
         > * Substitute your storefront domain for `yourstore.example.com`. 
         > * The Send a Test Request feature is not currently supported for this endpoint.  
-      operationId: CheckoutsByCheckoutIdPut
+      operationId: updateCheckout
       parameters:
-        - name: checkoutId
-          in: path
-          required: true
-          schema:
-            type: string
+        - $ref: '#/components/parameters/ContentType'
       requestBody:
         content:
           application/json:
@@ -277,7 +244,7 @@ paths:
                   lineItems:
                     physicalItems:
                       - id: 243c9ca2-22b4-417a-8b09-b3fc05778b52
-                        parentId: {}
+                        parentId: ''
                         variantId: 345
                         productId: 174
                         sku: ''
@@ -366,6 +333,11 @@ paths:
                 customerMessage: ''
       x-codegen-request-body-name: body
   '/checkouts/{checkoutId}/carts/{cartId}/items/{itemId}':
+    parameters:
+      - $ref: '#/components/parameters/CheckoutIdPath'
+      - $ref: '#/components/parameters/CartIdPath'
+      - $ref: '#/components/parameters/ItemIdPath'
+      - $ref: '#/components/parameters/Accept'
     put:
       tags:
         - Checkout Cart Items
@@ -377,26 +349,11 @@ paths:
 
         > #### Notes
         > * Substitute your storefront domain for `yourstore.example.com`. 
-        > * The Send a Test Request feature is not currently supported for this endpoint. 
+        > * The Send a Test Request feature is not currently supported for this endpoint.  
         > * Please note that this API endpoint is not concurrent safe, meaning multiple simultaneous requests could result in unexpected and inconsistent results.
-      operationId: CheckoutsCartsItemsItemIdByCheckoutIdAndCartIdPut
+      operationId: updateCheckoutLineItem
       parameters:
-        - name: checkoutId
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: cartId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-        - name: itemId
-          in: path
-          required: true
-          schema:
-            type: string
+        - $ref: '#/components/parameters/ContentType'
       requestBody:
         content:
           application/json:
@@ -432,7 +389,7 @@ paths:
                   lineItems:
                     physicalItems:
                       - id: 243c9ca2-22b4-417a-8b09-b3fc05778b52
-                        parentId: {}
+                        parentId: ''
                         variantId: 345
                         productId: 174
                         sku: ''
@@ -530,24 +487,7 @@ paths:
         > #### Note
         > * Substitute your storefront domain for `yourstore.example.com`. 
         > * The Send a Test Request feature is not currently supported for this endpoint.  
-      operationId: CheckoutsCartsItemsItemIdByCheckoutIdAndCartIdDelete
-      parameters:
-        - name: checkoutId
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: cartId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-        - name: itemId
-          in: path
-          required: true
-          schema:
-            type: string
+      operationId: deleteCheckoutLineItem
       responses:
         '200':
           description: 'NOTE: Discounted line items are re-evaluated on cart actions and may be automatically added back to your cart with a new line item ID to satisfy promotional requirements.'
@@ -590,7 +530,7 @@ paths:
                   lineItems:
                     physicalItems:
                       - id: 69791a88-85c9-4c19-8042-e537621e8a55
-                        parentId: {}
+                        parentId: ''
                         variantId: 364
                         productId: 184
                         sku: SMA-RED
@@ -615,7 +555,7 @@ paths:
                         giftWrapping: {}
                         addedByPromotion: false
                       - id: ba2c619d-e6b4-48c2-8809-d88e424ed450
-                        parentId: {}
+                        parentId: ''
                         variantId: 341
                         productId: 170
                         sku: ''
@@ -638,7 +578,7 @@ paths:
                         giftWrapping: {}
                         addedByPromotion: false
                       - id: c72d6651-978d-45e5-881b-c2bb5f7ff1d5
-                        parentId: {}
+                        parentId: ''
                         variantId: 376
                         productId: 158
                         sku: SKU-A0C8A203
@@ -662,7 +602,7 @@ paths:
                         addedByPromotion: false
                     digitalItems:
                       - id: 6477a4a1-02cf-4287-8bf2-fd043bdd5234
-                        parentId: {}
+                        parentId: ''
                         variantId: 360
                         productId: 189
                         name: Gather Journal Issue 7 - Digital
@@ -771,6 +711,10 @@ paths:
                 updatedTime: '2018-09-18T16:59:45+00:00'
                 customerMessage: 'Thank you, BigCommerce'
   '/checkouts/{checkoutId}/billing-address':
+    parameters:
+      - $ref: '#/components/parameters/CheckoutIdPath'
+      - $ref: '#/components/parameters/Accept'
+      - $ref: '#/components/parameters/ContentType'
     post:
       tags:
         - Checkout Billing Address
@@ -787,13 +731,7 @@ paths:
         > * Sending `email` property as a payload in POST request triggers the abandoned cart notification process.
         > * Substitute your storefront domain for `yourstore.example.com`. 
         > * The Send a Test Request feature is not currently supported for this endpoint.  
-      operationId: CheckoutsBillingAddressByCheckoutIdPost
-      parameters:
-        - name: checkoutId
-          in: path
-          required: true
-          schema:
-            type: string
+      operationId: addCheckoutBillingAddress
       requestBody:
         content:
           application/json:
@@ -829,7 +767,7 @@ paths:
                   lineItems:
                     physicalItems:
                       - id: 243c9ca2-22b4-417a-8b09-b3fc05778b52
-                        parentId: {}
+                        parentId: ''
                         variantId: 345
                         productId: 174
                         sku: ''
@@ -922,8 +860,12 @@ paths:
         '429':
           description: Unable to determine if provided email is associated with an account. The customer must sign in.
           content: {}
-      x-codegen-request-body-name: body
   '/checkouts/{checkoutId}/billing-address/{addressId}':
+    parameters:
+      - $ref: '#/components/parameters/CheckoutIdPath'
+      - $ref: '#/components/parameters/AddressIdPath'
+      - $ref: '#/components/parameters/Accept'
+      - $ref: '#/components/parameters/ContentType'
     put:
       tags:
         - Checkout Billing Address
@@ -934,21 +876,7 @@ paths:
         > #### Note
         > * Substitute your storefront domain for `yourstore.example.com`. 
         > * The Send a Test Request feature is not currently supported for this endpoint.  
-      operationId: CheckoutsBillingAddressByCheckoutIdAndAddressIdPut
-      parameters:
-        - name: checkoutId
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: addressId
-          in: path
-          required: true
-          schema:
-            exclusiveMaximum: false
-            exclusiveMinimum: false
-            type: number
-            format: double
+      operationId: updateCheckoutBillingAddress
       requestBody:
         content:
           application/json:
@@ -997,7 +925,7 @@ paths:
                   lineItems:
                     physicalItems:
                       - id: 69791a88-85c9-4c19-8042-e537621e8a55
-                        parentId: {}
+                        parentId: ''
                         variantId: 364
                         productId: 184
                         sku: SMA-RED
@@ -1022,7 +950,7 @@ paths:
                         giftWrapping: {}
                         addedByPromotion: false
                       - id: ba2c619d-e6b4-48c2-8809-d88e424ed450
-                        parentId: {}
+                        parentId: ''
                         variantId: 341
                         productId: 170
                         sku: ''
@@ -1045,7 +973,7 @@ paths:
                         giftWrapping: {}
                         addedByPromotion: false
                       - id: c72d6651-978d-45e5-881b-c2bb5f7ff1d5
-                        parentId: {}
+                        parentId: ''
                         variantId: 376
                         productId: 158
                         sku: SKU-A0C8A203
@@ -1069,7 +997,7 @@ paths:
                         addedByPromotion: false
                     digitalItems:
                       - id: 6477a4a1-02cf-4287-8bf2-fd043bdd5234
-                        parentId: {}
+                        parentId: ''
                         variantId: 360
                         productId: 189
                         name: Gather Journal Issue 7 - Digital
@@ -1185,6 +1113,11 @@ paths:
           content: {}
       x-codegen-request-body-name: body
   '/checkouts/{checkoutId}/consignments':
+    parameters:
+      - $ref: '#/components/parameters/CheckoutIdPath'
+      - $ref: '#/components/parameters/IncludeShippingDefault'
+      - $ref: '#/components/parameters/Accept'
+      - $ref: '#/components/parameters/ContentType'
     post:
       tags:
         - Checkout Consignments
@@ -1193,19 +1126,20 @@ paths:
         Adds a new *Consignment* to *Checkout*.
 
         Perform the following two steps to define the fulfillment of the items in the cart.
-          ### For **shipping** consignments:
-            1. Add a new Consignment to Checkout.
-                * Send a `POST` request to `/consignments` with each shipping address, line item IDs, and quantities. Each address can have its own line item IDs.
-                * Provide a full valid customer address before placing the order. If provided, the order placement will succeed. 
-                * As part of the request URL make sure to add `include=consignments.availableShippingOptions` to return the available shipping options based on the items, the address, and the shipping location. This will return `availableShippingOptions` in the response.
+        ### For **shipping** consignments:
+          1. Add a new Consignment to Checkout.
+              * Send a `POST` request to `/consignments` with each shipping address, line item IDs, and quantities. Each address can have its own line item IDs.
+              * Provide a full valid customer address before placing the order. If provided, the order placement will succeed. 
+              * As part of the request URL make sure to add `include=consignments.availableShippingOptions` to return the available shipping options based on the items, the address, and the shipping location. This will return `availableShippingOptions` in the response.
 
               * Required Fields:
                 * `shipping_address` (deprecated) or `address`
                 * `lineItems`
-            2. Update the Consignment with Shipping Options using the [REST Storefront API](/checkouts/checkout-consignments#update-a-consignment), the [REST Management API](/docs/rest-management/checkouts/checkout-consignments#update-checkout-consignment) or the [GraphQL Storefront API](/docs/storefront/cart-checkout/guide/graphql-storefront).
-                  
-          ### For **pickup** consignments:
-            1. Create a new consignment object. 
+              
+          2. Update the Consignment with Shipping Options using the [REST Storefront API](/docs/rest-storefront/checkouts/checkout-consignments#update-a-consignment), the [REST Management API](/docs/rest-management/checkouts/checkout-consignments#update-checkout-consignment) or the [GraphQL Storefront API](/docs/storefront/cart-checkout/guide/graphql-storefront).
+                
+        ### For **pickup** consignments:
+          1. Create a new consignment object. 
               - Send a `POST` request to `/consignments` with line item IDs and quantities.
               - Provide a `pickupMethodId`. This is the `id` of the Pickup Method provided in the response body of the Storefront Pickup Options API.
               - Required Fields:
@@ -1216,20 +1150,9 @@ paths:
 
         > #### Notes
         > * Substitute your storefront domain for `yourstore.example.com`. 
-        > * The Send a Test Request feature is not currently supported for this endpoint.
+        > * The Send a Test Request feature is not currently supported for this endpoint.  
         > * Please note that this API endpoint is not concurrent safe, meaning multiple simultaneous requests could result in unexpected and inconsistent results.
-      operationId: CheckoutsConsignmentsByCheckoutIdPost
-      parameters:
-        - name: checkoutId
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: include
-          in: query
-          schema:
-            type: string
-            default: consignments.availableShippingOptions
+      operationId: createCheckoutConsignment
       requestBody:
         content:
           application/json:
@@ -1267,7 +1190,7 @@ paths:
                   lineItems:
                     physicalItems:
                       - id: 243c9ca2-22b4-417a-8b09-b3fc05778b52
-                        parentId: {}
+                        parentId: ''
                         variantId: 345
                         productId: 174
                         sku: ''
@@ -1356,6 +1279,10 @@ paths:
                 updatedTime: '2019-01-10T17:19:47+00:00'
                 customerMessage: ''
   '/checkouts/{checkoutId}/consignments/{consignmentId}':
+    parameters:
+      - $ref: '#/components/parameters/CheckoutIdPath'
+      - $ref: '#/components/parameters/ConsignmentIdPath'
+      - $ref: '#/components/parameters/Accept'
     put:
       tags:
         - Checkout Consignments
@@ -1386,25 +1313,12 @@ paths:
         > #### Notes
         > * You cannot pass both an `address` and a `shippingOptionId` because the shipping option may not be available for the new address 
         > * Substitute your storefront domain for `yourstore.example.com`. 
-        > * The Send a Test Request feature is not currently supported for this endpoint.
+        > * The Send a Test Request feature is not currently supported for this endpoint.  
         > * Please note that this API endpoint is not concurrent safe, meaning multiple simultaneous requests could result in unexpected and inconsistent results.
-      operationId: CheckoutsConsignmentsByCheckoutIdAndConsignmentIdPut
+      operationId: updateCheckoutConsignment
       parameters:
-        - name: checkoutId
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: consignmentId
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: include
-          in: query
-          schema:
-            type: string
-            default: consignments.availableShippingOptions, consignments.availablePickupOptions
+        - $ref: '#/components/parameters/IncludeShippingPickupDefault'
+        - $ref: '#/components/parameters/ContentType'
       requestBody:
         content:
           application/json:
@@ -1440,7 +1354,7 @@ paths:
                   lineItems:
                     physicalItems:
                       - id: 243c9ca2-22b4-417a-8b09-b3fc05778b52
-                        parentId: {}
+                        parentId: ''
                         variantId: 345
                         productId: 174
                         sku: ''
@@ -1539,18 +1453,7 @@ paths:
         > #### Note
         > * Substitute your storefront domain for `yourstore.example.com`. 
         > * The Send a Test Request feature is not currently supported for this endpoint.  
-      operationId: CheckoutsConsignmentsByCheckoutIdAndConsignmentIdDelete
-      parameters:
-        - name: checkoutId
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: consignmentId
-          in: path
-          required: true
-          schema:
-            type: string
+      operationId: deleteCheckoutConsignment
       responses:
         '200':
           description: ''
@@ -1580,7 +1483,7 @@ paths:
                   lineItems:
                     physicalItems:
                       - id: 243c9ca2-22b4-417a-8b09-b3fc05778b52
-                        parentId: {}
+                        parentId: ''
                         variantId: 345
                         productId: 174
                         sku: ''
@@ -1668,6 +1571,10 @@ paths:
                 updatedTime: '2019-01-10T17:19:47+00:00'
                 customerMessage: ''
   '/checkouts/{checkoutId}/gift-certificates':
+    parameters:
+      - $ref: '#/components/parameters/CheckoutIdPath'
+      - $ref: '#/components/parameters/Accept'
+      - $ref: '#/components/parameters/ContentType'
     post:
       tags:
         - Checkout Gift Certificates
@@ -1681,13 +1588,7 @@ paths:
         > * The rate limit is 20/hour (only for unique gift-certificate codes).
         > * Substitute your storefront domain for `yourstore.example.com`. 
         > * The Send a Test Request feature is not currently supported for this endpoint.  
-      operationId: CheckoutsGiftCertificatesByCheckoutIdPost
-      parameters:
-        - name: checkoutId
-          in: path
-          required: true
-          schema:
-            type: string
+      operationId: addCheckoutGiftCertificate
       requestBody:
         content:
           application/json:
@@ -1723,7 +1624,7 @@ paths:
                   lineItems:
                     physicalItems:
                       - id: 243c9ca2-22b4-417a-8b09-b3fc05778b52
-                        parentId: {}
+                        parentId: ''
                         variantId: 345
                         productId: 174
                         sku: ''
@@ -1816,8 +1717,13 @@ paths:
             application/json:
               schema:
                 type: object
+                properties: {}
       x-codegen-request-body-name: body
   '/checkouts/{checkoutId}/gift-certificates/{giftCertificateCode}':
+    parameters:
+      - $ref: '#/components/parameters/CheckoutIdPath'
+      - $ref: '#/components/parameters/GiftCertificateCodePath'
+      - $ref: '#/components/parameters/Accept'
     delete:
       tags:
         - Checkout Gift Certificates
@@ -1830,18 +1736,7 @@ paths:
         > #### Note
         > * Substitute your storefront domain for `yourstore.example.com`. 
         > * The Send a Test Request feature is not currently supported for this endpoint.  
-      operationId: CheckoutsGiftCertificatesByCheckoutIdAndGiftCertificateCodeDelete
-      parameters:
-        - name: checkoutId
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: giftCertificateCode
-          in: path
-          required: true
-          schema:
-            type: string
+      operationId: deleteCheckoutGiftCertificate
       responses:
         '200':
           description: ''
@@ -1850,6 +1745,10 @@ paths:
               schema:
                 $ref: '#/components/schemas/checkout_Full'
   '/checkouts/{checkoutId}/coupons':
+    parameters:
+      - $ref: '#/components/parameters/CheckoutIdPath'
+      - $ref: '#/components/parameters/Accept'
+      - $ref: '#/components/parameters/ContentType'
     post:
       tags:
         - Checkout Coupons
@@ -1863,13 +1762,7 @@ paths:
         > #### Note
         > * Substitute your storefront domain for `yourstore.example.com`. 
         > * The Send a Test Request feature is not currently supported for this endpoint.  
-      operationId: CheckoutsCouponsByCheckoutIdPost
-      parameters:
-        - name: checkoutId
-          in: path
-          required: true
-          schema:
-            type: string
+      operationId: addCheckoutCoupon
       requestBody:
         content:
           application/json:
@@ -1910,7 +1803,7 @@ paths:
                   lineItems:
                     physicalItems:
                       - id: 243c9ca2-22b4-417a-8b09-b3fc05778b52
-                        parentId: {}
+                        parentId: ''
                         variantId: 345
                         productId: 174
                         sku: ''
@@ -1999,6 +1892,10 @@ paths:
                 customerMessage: ''
       x-codegen-request-body-name: body
   '/checkouts/{checkoutId}/coupons/{couponCode}':
+    parameters:
+      - $ref: '#/components/parameters/CheckoutIdPath'
+      - $ref: '#/components/parameters/CouponCodePath'
+      - $ref: '#/components/parameters/Accept'
     delete:
       tags:
         - Checkout Coupons
@@ -2009,18 +1906,7 @@ paths:
         > #### Note
         > * Substitute your storefront domain for `yourstore.example.com`. 
         > * The Send a Test Request feature is not currently supported for this endpoint.  
-      operationId: CheckoutsCouponsByCheckoutIdAndCouponCodeDelete
-      parameters:
-        - name: checkoutId
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: couponCode
-          in: path
-          required: true
-          schema:
-            type: string
+      operationId: deleteCheckoutCoupon
       responses:
         '200':
           description: ''
@@ -2242,6 +2128,9 @@ paths:
                 updatedTime: '2018-09-18T17:47:35+00:00'
                 customerMessage: ''
   '/checkouts/{checkoutId}/store-credit':
+    parameters:
+      - $ref: '#/components/parameters/CheckoutIdPath'
+      - $ref: '#/components/parameters/Accept'
     post:
       tags:
         - Checkout Store Credit
@@ -2252,13 +2141,9 @@ paths:
         > #### Note
         > * Substitute your storefront domain for `yourstore.example.com`. 
         > * The Send a Test Request feature is not currently supported for this endpoint.
-      operationId: CheckoutStoreCreditAdd
+      operationId: addCheckoutStoreCredit
       parameters:
-        - name: checkoutId
-          in: path
-          required: true
-          schema:
-            type: string
+        - $ref: '#/components/parameters/ContentType'
       responses:
         '200':
           description: ''
@@ -2276,13 +2161,7 @@ paths:
         > #### Note
         > * Substitute your storefront domain for `yourstore.example.com`. 
         > * The Send a Test Request feature is not currently supported for this endpoint.  
-      operationId: CheckoutsStoreCreditRemove
-      parameters:
-        - name: checkoutId
-          in: path
-          required: true
-          schema:
-            type: string
+      operationId: removeCheckoutStoreCredit
       responses:
         '200':
           description: ''
@@ -2290,7 +2169,12 @@ paths:
             application/json:
               schema:
                 type: object
+                properties: {}
   '/checkouts/{checkoutId}/spam-protection':
+    parameters:
+      - $ref: '#/components/parameters/CheckoutIdPath'
+      - $ref: '#/components/parameters/Accept'
+      - $ref: '#/components/parameters/ContentType'
     post:
       tags:
         - Checkout Spam Protection
@@ -2302,12 +2186,6 @@ paths:
         > * Substitute your storefront domain for `yourstore.example.com`. 
         > * The Send a Test Request feature is not currently supported for this endpoint.  
       operationId: checkoutSpamProtection
-      parameters:
-        - name: checkoutId
-          in: path
-          required: true
-          schema:
-            type: string
       requestBody:
         content:
           application/json:
@@ -2710,7 +2588,7 @@ components:
                       description: The currency name.
                     code:
                       type: string
-                      description: 'ISO-4217 currency code. (See: http://en.wikipedia.org/wiki/ISO_4217.)'
+                      description: 'ISO-4217 currency code. (See: https://www.iso.org/iso-4217-currency-codes.html.)'
                     symbol:
                       type: string
                       description: The currency symbol.
@@ -2776,13 +2654,11 @@ components:
                 lineItems:
                   type: object
                   description: ''
-                  items:
-                    title: Line Item
-                    required:
-                      - digitalItems
-                      - physicalItems
-                    type: object
-                    properties:
+                  title: Line Items
+                  required:
+                    - digitalItems
+                    - physicalItems
+                  properties:
                       physicalItems:
                         type: array
                         description: ''
@@ -3086,7 +2962,6 @@ components:
               description: A cart contains a collection of items, prices, discounts, etc. It does not contain customer-related data.
             billingAddress:
               title: Address Response
-              type: object
               allOf:
                 - title: Address Properties
                   required:
@@ -3164,7 +3039,6 @@ components:
                     x-deprecated: true
                   address:
                     title: Address Response
-                    type: object
                     allOf:
                       - title: Address Properties
                         required:
@@ -3231,7 +3105,6 @@ components:
                     description: This is available only when "include=consignments.availableShippingOptions" is presented in the URL.
                     items:
                       title: Shipping Option Entity
-                      type: object
                       allOf:
                         - title: Selected Shipping Option
                           type: object
@@ -3571,10 +3444,10 @@ components:
             properties:
               itemId:
                 type: string
-                description: ''
+                description: The ID of a line item.
               quantity:
                 type: integer
-                description: ''
+                description: The quantity of the line item.
                 format: int32
         shippingOptionId:
           type: string
@@ -3677,10 +3550,10 @@ components:
             properties:
               itemId:
                 type: string
-                description: ''
+                description: The ID of a line item.
               quantity:
                 type: integer
-                description: ''
+                description: The quantity of a line item.
                 format: int32
         shippingOptionId:
           type: string
@@ -3716,7 +3589,7 @@ components:
               description: The currency name.
             code:
               type: string
-              description: 'ISO-4217 currency code. (See: http://en.wikipedia.org/wiki/ISO_4217.)'
+              description: 'ISO-4217 currency code. (See: https://www.iso.org/iso-4217-currency-codes.html.)'
             symbol:
               type: string
               description: The currency symbol.
@@ -3762,275 +3635,273 @@ components:
         lineItems:
           type: object
           description: ''
-          items:
-            title: Line Item
-            required:
-              - digitalItems
-              - physicalItems
-            type: object
-            properties:
-              physicalItems:
-                type: array
-                description: ''
-                items:
-                  title: Item Physical
-                  required:
-                    - quantity
-                  type: object
-                  properties:
-                    id:
-                      type: string
-                      description: The line-item ID.
-                    parentId:
-                      type: string
-                      description: The product is part of a bundle such as a product pick list, then the parentId or the main product ID will populate.
-                    variantId:
-                      type: integer
-                      description: ID of the variant.
-                    productId:
-                      type: integer
-                      description: ID of the product.
-                    sku:
-                      type: string
-                      description: SKU of the variant.
-                    name:
-                      type: string
-                      description: The itemʼs product name.
-                    url:
-                      type: string
-                      description: The product URL.
-                    quantity:
-                      type: number
-                      description: Quantity of this item.
-                      format: double
-                    isTaxable:
-                      type: boolean
-                      description: Whether the item is taxable.
-                    imageUrl:
-                      type: string
-                      description: A publicly-accessible URL for an image of this item.
-                    discounts:
-                      type: array
-                      description: A list of discounts applied to this item, as an array of AppliedDiscount objects.
-                      items:
-                        title: Applied Discount
-                        type: object
-                        properties:
-                          name:
-                            type: string
-                            description: The name provided by the merchant.
-                          discountedAmount:
-                            type: number
-                            description: The discounted amount applied within a given context.
-                            format: double
-                    discountAmount:
-                      type: number
-                      description: The total value of all discounts applied to this item (excluding coupon).
-                      format: double
-                    couponAmount:
-                      type: number
-                      description: The total value of all coupons applied to this item.
-                      format: double
-                    listPrice:
-                      type: number
-                      description: The item’s list price, as quoted by the manufacturer or distributor.
-                      format: double
-                    salePrice:
-                      type: number
-                      description: The itemʼs price after all discounts are applied. The final price before tax calculation.
-                      format: double
-                    extendedListPrice:
-                      type: number
-                      description: The itemʼs list price multiplied by the quantity.
-                      format: double
-                    extendedSalePrice:
-                      type: number
-                      description: The itemʼs sale price multiplied by the quantity.
-                      format: double
-                    comparisonPrice:
-                      type: number
-                      description: The itemʼs comparison price
-                    extendedComparisonPrice:
-                      type: number
-                      description: The itemʼs comparison price multiplied by the quantity.
-                    type:
-                      type: string
-                      description: the product type - physical or digital
-                    addedByPromotion:
-                      type: boolean
-                      description: If the item was added automatically by a promotion, such as a coupon or buy one, get one.
-                    isShippingRequired:
-                      type: boolean
-                      description: Whether this item requires shipping to a physical address.
-                    isMutable:
-                      type: boolean
-                      description: ''
-                    giftWrapping:
-                      title: Gift Wrapping
+          title: Line Items
+          required:
+            - digitalItems
+            - physicalItems
+          properties:
+            physicalItems:
+              type: array
+              description: ''
+              items:
+                title: Item Physical
+                required:
+                  - quantity
+                type: object
+                properties:
+                  id:
+                    type: string
+                    description: The line-item ID.
+                  parentId:
+                    type: string
+                    description: The product is part of a bundle such as a product pick list, then the parentId or the main product ID will populate.
+                  variantId:
+                    type: integer
+                    description: ID of the variant.
+                  productId:
+                    type: integer
+                    description: ID of the product.
+                  sku:
+                    type: string
+                    description: SKU of the variant.
+                  name:
+                    type: string
+                    description: The itemʼs product name.
+                  url:
+                    type: string
+                    description: The product URL.
+                  quantity:
+                    type: number
+                    description: Quantity of this item.
+                    format: double
+                  isTaxable:
+                    type: boolean
+                    description: Whether the item is taxable.
+                  imageUrl:
+                    type: string
+                    description: A publicly-accessible URL for an image of this item.
+                  discounts:
+                    type: array
+                    description: A list of discounts applied to this item, as an array of AppliedDiscount objects.
+                    items:
+                      title: Applied Discount
                       type: object
                       properties:
                         name:
                           type: string
-                          description: ''
-                        message:
-                          type: string
-                          description: ''
-                        amount:
+                          description: The name provided by the merchant.
+                        discountedAmount:
                           type: number
-                          description: ''
+                          description: The discounted amount applied within a given context.
                           format: double
-              digitalItems:
-                type: array
-                description: ''
-                items:
-                  title: Item Digital
-                  required:
-                    - quantity
-                  type: object
-                  properties:
-                    id:
-                      type: string
-                      description: The line-item ID.
-                    parentId:
-                      type: string
-                      description: Bundled items will have their parentʼs item ID.
-                    variantId:
-                      type: number
-                      description: ID of the variant.
-                      format: double
-                    productId:
-                      type: number
-                      description: ID of the product.
-                      format: double
-                    sku:
-                      type: string
-                      description: SKU of the variant.
-                    name:
-                      type: string
-                      description: The itemʼs product name.
-                    url:
-                      type: string
-                      description: The product URL.
-                    quantity:
-                      type: number
-                      description: Quantity of this item.
-                      format: double
-                    isTaxable:
-                      type: boolean
-                      description: Whether the item is taxable.
-                    imageUrl:
-                      type: string
-                      description: A publicly-accessible URL for an image of this item.
-                    discounts:
-                      type: array
-                      description: A list of discounts applied to this item, as an array of AppliedDiscount objects.
-                      items:
-                        title: Applied Discount
-                        type: object
-                        properties:
-                          name:
-                            type: string
-                            description: The name provided by the merchant.
-                          discountedAmount:
-                            type: number
-                            description: The discounted amount applied within a given context.
-                            format: double
-                    discountAmount:
-                      type: number
-                      description: The total value of all discounts applied to this item (excluding coupon).
-                      format: double
-                    couponAmount:
-                      type: number
-                      description: The total value of all coupons applied to this item.
-                      format: double
-                    listPrice:
-                      type: number
-                      description: The item’s list price, as quoted by the manufacturer or distributor.
-                      format: double
-                    salePrice:
-                      type: number
-                      description: The itemʼs price after all discounts are applied. The final price before tax calculation.
-                      format: double
-                    extendedListPrice:
-                      type: number
-                      description: The itemʼs list price multiplied by the quantity.
-                      format: double
-                    extendedSalePrice:
-                      type: number
-                      description: The itemʼs sale price multiplied by the quantity.
-                      format: double
-                    type:
-                      type: string
-                      description: The product type - physical or digital.
-                    isShippingRequired:
-                      type: boolean
-                      description: Whether this item requires shipping to a physical address.
-                    downloadFileUrls:
-                      type: array
-                      description: URLs to download all product files.
-                      items:
+                  discountAmount:
+                    type: number
+                    description: The total value of all discounts applied to this item (excluding coupon).
+                    format: double
+                  couponAmount:
+                    type: number
+                    description: The total value of all coupons applied to this item.
+                    format: double
+                  listPrice:
+                    type: number
+                    description: The item’s list price, as quoted by the manufacturer or distributor.
+                    format: double
+                  salePrice:
+                    type: number
+                    description: The itemʼs price after all discounts are applied. The final price before tax calculation.
+                    format: double
+                  extendedListPrice:
+                    type: number
+                    description: The itemʼs list price multiplied by the quantity.
+                    format: double
+                  extendedSalePrice:
+                    type: number
+                    description: The itemʼs sale price multiplied by the quantity.
+                    format: double
+                  comparisonPrice:
+                    type: number
+                    description: The itemʼs comparison price
+                  extendedComparisonPrice:
+                    type: number
+                    description: The itemʼs comparison price multiplied by the quantity.
+                  type:
+                    type: string
+                    description: the product type - physical or digital
+                  addedByPromotion:
+                    type: boolean
+                    description: If the item was added automatically by a promotion, such as a coupon or buy one, get one.
+                  isShippingRequired:
+                    type: boolean
+                    description: Whether this item requires shipping to a physical address.
+                  isMutable:
+                    type: boolean
+                    description: ''
+                  giftWrapping:
+                    title: Gift Wrapping
+                    type: object
+                    properties:
+                      name:
                         type: string
-                    downloadPageUrl:
-                      type: string
-                      description: The URL for the combined downloads page.
-                    downloadSize:
-                      type: string
-                      description: 'Specifies the combined download size in human-readable style; for example, `30MB`.'
-              giftCertificate:
-                type: array
-                description: ''
-                items:
-                  title: Item Gift Certificate
-                  required:
-                    - amount
-                    - recipient
-                    - sender
-                    - theme
-                  type: object
-                  properties:
-                    id:
-                      type: string
-                      description: Gift certificate identifier
-                    name:
-                      type: string
-                      description: 'The name of the purchased gift certificate; for example, `$20 Gift Certificate`.'
-                    theme:
-                      type: string
-                      description: 'Currently supports `Birthday`, `Boy`, `Celebration`, `Christmas`, `General`, and `Girl`.'
-                    amount:
-                      type: number
-                      description: 'Value must be between $1.00 and $1,000.00.'
-                      format: double
-                    taxable:
-                      type: boolean
-                      description: ''
-                    sender:
-                      title: Contact Entity
+                        description: ''
+                      message:
+                        type: string
+                        description: ''
+                      amount:
+                        type: number
+                        description: ''
+                        format: double
+            digitalItems:
+              type: array
+              description: ''
+              items:
+                title: Item Digital
+                required:
+                  - quantity
+                type: object
+                properties:
+                  id:
+                    type: string
+                    description: The line-item ID.
+                  parentId:
+                    type: string
+                    description: Bundled items will have their parentʼs item ID.
+                  variantId:
+                    type: number
+                    description: ID of the variant.
+                    format: double
+                  productId:
+                    type: number
+                    description: ID of the product.
+                    format: double
+                  sku:
+                    type: string
+                    description: SKU of the variant.
+                  name:
+                    type: string
+                    description: The itemʼs product name.
+                  url:
+                    type: string
+                    description: The product URL.
+                  quantity:
+                    type: number
+                    description: Quantity of this item.
+                    format: double
+                  isTaxable:
+                    type: boolean
+                    description: Whether the item is taxable.
+                  imageUrl:
+                    type: string
+                    description: A publicly-accessible URL for an image of this item.
+                  discounts:
+                    type: array
+                    description: A list of discounts applied to this item, as an array of AppliedDiscount objects.
+                    items:
+                      title: Applied Discount
                       type: object
                       properties:
                         name:
                           type: string
-                          description: ''
-                        email:
-                          type: string
-                          description: ''
-                    recipient:
-                      title: Contact Entity
-                      type: object
-                      properties:
-                        name:
-                          type: string
-                          description: ''
-                        email:
-                          type: string
-                          description: ''
-                    message:
+                          description: The name provided by the merchant.
+                        discountedAmount:
+                          type: number
+                          description: The discounted amount applied within a given context.
+                          format: double
+                  discountAmount:
+                    type: number
+                    description: The total value of all discounts applied to this item (excluding coupon).
+                    format: double
+                  couponAmount:
+                    type: number
+                    description: The total value of all coupons applied to this item.
+                    format: double
+                  listPrice:
+                    type: number
+                    description: The item’s list price, as quoted by the manufacturer or distributor.
+                    format: double
+                  salePrice:
+                    type: number
+                    description: The itemʼs price after all discounts are applied. The final price before tax calculation.
+                    format: double
+                  extendedListPrice:
+                    type: number
+                    description: The itemʼs list price multiplied by the quantity.
+                    format: double
+                  extendedSalePrice:
+                    type: number
+                    description: The itemʼs sale price multiplied by the quantity.
+                    format: double
+                  type:
+                    type: string
+                    description: The product type - physical or digital.
+                  isShippingRequired:
+                    type: boolean
+                    description: Whether this item requires shipping to a physical address.
+                  downloadFileUrls:
+                    type: array
+                    description: URLs to download all product files.
+                    items:
                       type: string
-                      description: Limited to 200 characters.
-                    type:
-                      type: string
-                      description: Explicitly specifying the gift certificate type.
-              customItems:
+                  downloadPageUrl:
+                    type: string
+                    description: The URL for the combined downloads page.
+                  downloadSize:
+                    type: string
+                    description: 'Specifies the combined download size in human-readable style; for example, `30MB`.'
+            giftCertificate:
+              type: array
+              description: ''
+              items:
+                title: Item Gift Certificate
+                required:
+                  - amount
+                  - recipient
+                  - sender
+                  - theme
+                type: object
+                properties:
+                  id:
+                    type: string
+                    description: Gift certificate identifier
+                  name:
+                    type: string
+                    description: 'The name of the purchased gift certificate; for example, `$20 Gift Certificate`.'
+                  theme:
+                    type: string
+                    description: 'Currently supports `Birthday`, `Boy`, `Celebration`, `Christmas`, `General`, and `Girl`.'
+                  amount:
+                    type: number
+                    description: 'Value must be between $1.00 and $1,000.00.'
+                    format: double
+                  taxable:
+                    type: boolean
+                    description: ''
+                  sender:
+                    title: Contact Entity
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                        description: ''
+                      email:
+                        type: string
+                        description: ''
+                  recipient:
+                    title: Contact Entity
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                        description: ''
+                      email:
+                        type: string
+                        description: ''
+                  message:
+                    type: string
+                    description: Limited to 200 characters.
+                  type:
+                    type: string
+                    description: Explicitly specifying the gift certificate type.
+            customItems:
                 type: array
                 items:
                   title: Item Custom
@@ -4152,7 +4023,7 @@ components:
               lineItems:
                 physicalItems:
                   - id: 243c9ca2-22b4-417a-8b09-b3fc05778b52
-                    parentId: {}
+                    parentId: ''
                     variantId: 345
                     productId: 174
                     sku: ''
@@ -4239,9 +4110,144 @@ components:
             updatedTime: '2019-01-10T17:19:47+00:00'
             customerMessage: ''
   parameters:
-    include:
-      name: include
-      in: query
+    Accept:
+      name: Accept
+      in: header
+      required: true
+      description: 'The [MIME type](https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types) of the response body.'
       schema:
         type: string
-        default: consignments.availableShippingOptions
+        default: 'application/json'
+    ContentType:
+      name: Content-Type
+      in: header
+      required: true
+      description: 'The [MIME type](https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types) of the request body.'
+      schema:
+        type: string
+        default: 'application/json'
+    CheckoutIdPath:
+      name: checkoutId
+      in: path
+      required: true
+      description: The ID of the subject checkout. Identical to the cart ID.
+      schema:
+        type: string
+        format: uuid
+    CartIdPath:
+      name: cartId
+      in: path
+      required: true
+      description: The ID of the cart associated with this checkout. Identical to the checkout ID.
+      schema:
+        type: string
+        format: uuid
+    ItemIdPath:
+      name: itemId
+      in: path
+      required: true
+      description: The ID of an item being purchased.
+      schema:
+        type: string
+    AddressIdPath:
+      name: addressId
+      in: path
+      required: true
+      description: The ID of the subject address.
+      schema:
+        exclusiveMaximum: false
+        exclusiveMinimum: false
+        type: number
+        format: double
+    ConsignmentIdPath:
+      name: consignmentId
+      in: path
+      required: true
+      description: The ID of the subject consignment.
+      schema:
+        type: string
+    GiftCertificateCodePath:
+      name: giftCertificateCode
+      in: path
+      required: true
+      description: The code of the subject gift certificate.
+      schema:
+        type: string
+    CouponCodePath:
+      name: couponCode
+      in: path
+      required: true
+      description: The code of the subject coupon.
+      schema:
+        type: string
+    IncludeShippingDefault:
+      name: include
+      in: query
+      description: |-
+        * `cart.lineItems.physicalItems.options` - physical options
+        * `cart.lineItems.digitalItems.options` - digital options
+        * `cart.lineItems.physicalItems.categoryNames` - physical categories
+        * `cart.lineItems.digitalItems.categoryNames` - digital categories
+        * `cart.lineItems.customItems.categoryNames` - custom categories
+        * `customer` - customer
+        * `customer.customerGroup` - customer group
+        * `payments` - payments
+        * `promotions` - promotions
+        * `consignments.availableShippingOptions` - shipping options
+        * `consignments.availablePickupOptions` - pickup options
+      style: form
+      explode: false
+      schema:
+        type: array
+        default: 
+          - consignments.availableShippingOptions
+        items:
+          type: string
+          enum:
+            - cart.lineItems.physicalItems.options
+            - cart.lineItems.digitalItems.options
+            - cart.lineItems.physicalItems.categoryNames
+            - cart.lineItems.digitalItems.categoryNames
+            - cart.lineItems.customItems.categoryNames
+            - customer
+            - customer.customerGroup
+            - payments
+            - promotions
+            - consignments.availableShippingOptions
+            - consignments.availablePickupOptions
+    IncludeShippingPickupDefault:
+      name: include
+      in: query
+      description: |-
+        * `cart.lineItems.physicalItems.options` - physical options
+        * `cart.lineItems.digitalItems.options` - digital options
+        * `cart.lineItems.physicalItems.categoryNames` - physical categories
+        * `cart.lineItems.digitalItems.categoryNames` - digital categories
+        * `cart.lineItems.customItems.categoryNames` - custom categories
+        * `customer` - customer
+        * `customer.customerGroup` - customer group
+        * `payments` - payments
+        * `promotions` - promotions
+        * `consignments.availableShippingOptions` - shipping options
+        * `consignments.availablePickupOptions` - pickup options
+      style: form
+      explode: false
+      schema:
+        type: array
+        default:
+          - consignments.availableShippingOptions
+          - consignments.availablePickupOptions
+        items:
+          type: string
+          enum:
+            - cart.lineItems.physicalItems.options
+            - cart.lineItems.digitalItems.options
+            - cart.lineItems.physicalItems.categoryNames
+            - cart.lineItems.digitalItems.categoryNames
+            - cart.lineItems.customItems.categoryNames
+            - customer
+            - customer.customerGroup
+            - payments
+            - promotions
+            - consignments.availableShippingOptions
+            - consignments.availablePickupOptions

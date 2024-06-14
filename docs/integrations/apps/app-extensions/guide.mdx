@@ -1,0 +1,591 @@
+# App Extensions: Guide
+
+This guide describes how to get started developing App Extensions. It contains the following:
+
+- An App Extensions-flavored variation on setting up a draft app
+- Example requests and responses for the App Extensions mutations and query
+- Implementation and code examples
+
+## Prerequisites
+
+Before getting started working with App Extensions, make sure you have the following:
+
+- A BigCommerce store; we recommend using a [sandbox store](/docs/start/about/sandboxes) or other non-production store.
+- A [Developer Portal](https://devtools.bigcommerce.com/my/apps) account registered to the same email account that owns the sandbox store.
+- General familiarity with developing BigCommerce apps. To familiarize yourself, see the [Apps Guide](/docs/integrations/apps) or [Apps Quick Start](/docs/integrations/apps/quick-start).
+
+## OAuth scopes
+
+<Callout type="info">
+  Use an [app-level API
+  account](/docs/start/authentication/api-accounts#app-level-api-accounts) to
+  make App Extensions API calls. Neither
+  [store-level](/docs/start/authentication/api-accounts#store-level-api-accounts)
+  nor
+  [account-level](/docs/start/authentication/api-accounts#store-level-api-accounts)
+  API accounts can manage App Extensions.
+</Callout>
+
+The following section describes the process for creating an app profile and app-level API account. Configure the following OAuth scopes as directed in [Setup](#setup):
+
+| Name | Permission | Parameter | Description |
+| :--- | :--------- | :-------- | :---------- |
+| App Extensions | manage | `store_app_extensions_manage` | Manage App Extensions; requires an app-level API account |
+| Other |  |  | As needed for the app to function; for a list, see [OAuth scopes](/docs/start/authentication/api-accounts#oauth-scopes). |
+
+## Setup
+
+<Callout type="info">
+  Unlike store-level API accounts, you can edit an app-level API account's list
+  of authorized scopes during development.
+</Callout>
+
+<Steps>
+  ### Create an app profile
+
+  Generate an [app-level API account](/docs/start/authentication/api-accounts#app-level-api-accounts) by [creating an app profile](/docs/integrations/apps/guide/developer-portal#create-an-app-profile) in a [Developer Portal account](https://devtools.bigcommerce.com/my/apps) registered to the same email account that owns the development store. 
+    
+  Add the [required OAuth scopes](#oauth-scopes) from the preceding section on the **Technical** tab of the app profile dialog, then click **Update & Close**. 
+  
+  For more information on creating app profiles, see [Managing Apps in the Developer Portal](/docs/integrations/apps/guide/developer-portal).
+
+  The following image shows the `App Extensions : manage` scope on the **Technical** tab of the Developer Portal's app profile dialog:
+
+  ![App Extensions scope](https://storage.googleapis.com/bigcommerce-production-dev-center/images/app-extensions/app-extensions-scope.png "App Extensions scope")
+
+  ### Create a draft app
+
+  You can fork our [Next.js starter app](https://github.com/bigcommerce/sample-app-nodejs) to get started quickly.
+
+  After you clone the starter app repository, [start the development server](https://github.com/bigcommerce/sample-app-nodejs/blob/main/package.json#L7) and [serve the draft app over https using ngrok](/docs/integrations/apps/quick-start#add-and-start-ngrok).
+
+  For more information on persisting ngrok tunnels longer, see [ngrok configuration](/docs/integrations/apps/quick-start#ngrok-configuration).
+
+  For more information on working with draft apps, see the [Apps Quick Start](/docs/integrations/apps/quick-start) or [Apps Guide](/docs/integrations/apps).
+
+  ```shell filename="Draft app terminal commands" showLineNumbers copy
+  git clone git@github.com:bigcommerce/sample-app-nodejs.git app-with-extensions
+
+  cd app-with-extensions
+
+  npm install
+
+  npm run dev
+
+  # open new terminal window
+
+  npm install ngrok
+
+  ngrok http 3000
+  ```
+
+  ### Edit the draft app's environment variables
+
+  Copy `.env-sample` and rename it `.env`. Add the app profile's **client ID** and **client secret**. Select a database type and enter your connection credentials. Configure the app callback URLs by replacing the [domain name](https://developer.mozilla.org/en-US/docs/Learn/Common_questions/Web_mechanics/What_is_a_URL#authority) segment of the pre-populated **auth callback URL** with the ngrok instance's domain name. For more on configuring additional environment variables, see the [starter app README](https://github.com/bigcommerce/sample-app-nodejs) and [.env-sample](https://github.com/bigcommerce/sample-app-nodejs/blob/main/.env-sample).
+
+  For more information on working with app environment variables, see the [Apps Quick Start](/docs/integrations/apps/quick-start#configure-environment-variables).
+
+  ```shell filename=".env" showLineNumbers copy
+  #Get the Client ID and Secret from the Developer Portal
+  # https://developer.bigcommerce.com/api-docs/apps/quick-start#register-a-draft-app
+  CLIENT_ID={app client id}
+  CLIENT_SECRET={app secret}
+
+  # Test locally with ngrok
+  # https://developer.bigcommerce.com/api-docs/apps/guide/development#testing-locally-with-ngrok
+  AUTH_CALLBACK=https://{ngrok_url}/api/auth
+
+  # Replace jwt key with a 32+ random character secret
+  JWT_KEY={SECRET}
+
+  # Specify the type of database
+  DB_TYPE=firebase
+
+  # If using firebase, enter your config here
+  FIRE_API_KEY={firebase key}
+  FIRE_DOMAIN={firebase domain}
+  FIRE_PROJECT_ID={firebase project id}
+
+  # If using mysql, enter your config here
+  MYSQL_HOST={mysql host}
+  MYSQL_DATABASE={mysql database name}
+  MYSQL_USERNAME={mysql username}
+  MYSQL_PASSWORD={mysql password}
+  MYSQL_PORT={mysql port *optional*}
+
+  # BigCommerce API URL
+  API_URL=api.bigcommerce.com
+  ```
+
+  ### Seed the database
+
+  Use the starter app's [db:setup script](https://github.com/bigcommerce/sample-app-nodejs/blob/main/package.json#L12), then restart the development server.
+
+  ```shell filename="Seed the database" showLineNumbers copy
+  npm run db:setup
+
+  npm run dev
+  ```
+
+  ### Add the ngrok callback URLs to the app profile
+
+  Copy the ngrok domain name from the `.env` file to the matching inputs on the **Technical** tab of the **app profile**.
+
+  ![Callback URLs](https://storage.googleapis.com/bigcommerce-production-dev-center/images/app-extensions/callback-urls.png "Callback URLs")
+
+  ### Install the draft app on your store
+
+  For directions, see the [Apps Quick Start](/docs/integrations/apps/quick-start#install-the-app).
+
+</Steps>
+
+## Example requests
+
+This section contains examples of App Extensions-related GraphQL Admin API queries and mutations. It presents mutations and their variables separately. You can use a tool like [Postman](https://postman.com) or [Altair](https://altairgraphql.dev/) to make requests; if you prefer to get started quickly in Postman, see the [App Extensions Postman collection](/docs/integrations/apps/app-extensions/postman).
+
+Use the following HTTP configuration to send requests:
+
+```http filename="GraphQL Admin API HTTP configuration" showLineNumbers copy
+POST https://api.bigcommerce.com/stores/{{store_hash}}/graphql
+X-Auth-Token: {{access_token}}
+Accept: application/json
+Content-Type: application/json
+```
+
+The following examples direct you to stringify the GraphQL query portion of your requests, but how this works in practice varies depending on the client you use.
+
+### Create an App Extension
+
+The [createAppExtension](/graphql-admin/reference#definition-AppExtensionMutations) mutation registers an App Extension that opens a side panel on the store control panel's customers page to let users read and write notes about interactions with specific customers.
+
+<Tabs items={['Mutation', 'Variables', 'Request and Response']}>
+  <Tab>
+
+    ```graphql filename="Example mutation: createAppExtension" showLineNumbers copy
+    mutation AppExtension($input: CreateAppExtensionInput!) {
+      appExtension {
+        createAppExtension(input: $input) {
+          appExtension {
+            id
+            context
+            model
+            url
+            label {
+              defaultValue
+              locales {
+                value
+                localeCode
+              }
+            }
+          }
+        }
+      }
+    }
+    ```
+
+  </Tab>
+  <Tab>
+
+    ```json filename="Example variables: createAppExtension" showLineNumbers copy
+    {
+      "input": {
+        "context": "PANEL",
+        "model": "CUSTOMERS",
+        "url": "/customers/${id}/interactions",
+        "label": {
+          "defaultValue": "Interactions",
+          "locales": [
+            {
+              "value": "Interaction Notes",
+              "localeCode": "en-US"
+            },
+            {
+              "value": "Notas de interacción",
+              "localeCode": "es-MX"
+            }
+          ]
+        }
+      }
+    }
+    ```
+
+  </Tab>
+  <Tab>
+
+    ```http filename="Example request: createAppExtension" showLineNumbers copy
+    POST https://api.bigcommerce.com/stores/{{store_hash}}/graphql
+    X-Auth-Token: {{access_token}}
+    Accept: application/json
+    Content-Type: application/json
+
+    {
+      "query": "`mutation`", //stringify the value from the Mutation tab
+      "variables": variables //use the value from the variables tab
+    }
+
+    ```
+
+    ```json filename="Example response: createAppExtension" showLineNumbers copy
+    {
+      "data": {
+        "appExtension": {
+          "createAppExtension": {
+            "appExtension": {
+              "id": "bc/store/appExtension/2",
+              "context": "PANEL",
+              "model": "CUSTOMERS",
+              "url": "/customers/${id}/interactions",
+              "label": {
+                "defaultValue": "Interactions",
+                "locales": [
+                  {
+                    "value": "Interaction Notes",
+                    "localeCode": "en-US"
+                  },
+                  {
+                    "value": "Notas de interacción",
+                    "localeCode": "es-MX"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+    ```
+
+  </Tab>
+</Tabs>
+
+### Get a store's App Extensions
+
+The [Store appExtensions](/graphql-admin/reference#query-store) query returns a list of the store's App Extensions registered to the API account that makes the request, along with any details requested using the query schema. Note that all GraphQL requests use the `POST` method.
+
+<Tabs items={['Query', 'Request and Response']}>
+  <Tab>
+
+    ```graphql filename="Example query: Get store appExtensions" showLineNumbers copy
+    query {
+      store {
+        appExtensions {
+          edges {
+            node {
+              id
+              url
+              model
+            }
+          }
+        }
+      }
+    }
+    ```
+
+  </Tab>
+  <Tab>
+
+    ```http filename="Example request: Store appExtensions" showLineNumbers copy
+    POST https://api.bigcommerce.com/stores/{{store_hash}}/graphql
+    X-Auth-Token: {{access_token}}
+    Accept: application/json
+    Content-Type: application/json
+
+    {
+      "query": "`query`" //stringify the value from the Query tab
+    }
+
+    ```
+
+    ```json filename="Example response: Store appExtensions" showLineNumbers copy
+    {
+      "data": {
+        "store": {
+          "appExtensions": {
+            "edges": [
+              {
+                "node": {
+                  "id": "bc/store/appExtension/1",
+                  "url": "/product-app-extension/${id}",
+                  "model": "PRODUCTS"
+                }
+              },
+              {
+                "node": {
+                  "id": "bc/store/appExtension/2",
+                  "url": "/customers/${id}/interactions",
+                  "model": "CUSTOMERS"
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+    ```
+
+  </Tab>
+</Tabs>
+
+### Update an App Extension
+
+The [updateAppExtension](/graphql-admin/reference#definition-AppExtensionMutations) mutation can update the `label` object and the `url` of an existing App Extension. All other properties are non-mutable.
+
+Changes to the `label` object overwrite existing values, rather than upserting. Be sure to send the full label object you intend the App Extension to have.
+
+Note that the `UpdateAppExtensionInput` has two properties, `id` and `data`. Add the desired new values for the `url` or `label` properties to the `data` attribute.
+
+<Tabs items={['Mutation', 'Variables', 'Request and Response']}>
+  <Tab>
+
+    ```graphql filename="Example mutation: updateAppExtension" showLineNumbers copy
+    mutation AppExtension($input: UpdateAppExtensionInput!) {
+      appExtension {
+        updateAppExtension(input: $input) {
+          appExtension {
+            id
+            url
+            label {
+              defaultValue
+            }
+          }
+        }
+      }
+    }
+    ```
+
+  </Tab>
+  <Tab>
+
+    ```json filename="Example variables: updateAppExtension" showLineNumbers copy
+    {
+      "input": {
+        "id": "bc/store/appExtension/2",
+        "data": {
+          "url": "/interactions/customers/${id}"
+        }
+      }
+    }
+    ```
+
+  </Tab>
+  <Tab>
+
+    ```http filename="Example request: updateAppExtension" showLineNumbers copy
+    POST https://api.bigcommerce.com/stores/{{store_hash}}/graphql
+    X-Auth-Token: {{access_token}}
+    Accept: application/json
+    Content-Type: application/json
+
+    {
+      "query": "`mutation`", //stringify the value from the Mutation tab
+      "variables": variables //use the value from the variables tab
+    }
+
+    ```
+
+    ```json filename="Example response: updateAppExtension" showLineNumbers copy
+    {
+      "data": {
+        "appExtension": {
+          "updateAppExtension": {
+            "appExtension": {
+              "id": "bc/store/appExtension/2",
+              "url": "/interactions/customers/${id}",
+              "label": {
+                "defaultValue": "Interactions"
+              }
+            }
+          }
+        }
+      }
+    }
+    ```
+
+  </Tab>
+</Tabs>
+
+### Delete an App Extension
+
+The [deleteAppExtension](/graphql-admin/reference#definition-AppExtensionMutations) mutation deletes an App Extension. It cannot be recovered. Note that you can request an additional property that isn't accessible to the other queries and mutations, `deletedAppExtensionId`. You can't request any other properties in the delete mutation.
+
+<Tabs items={['Mutation', 'Variables', 'Request and Response']}>
+  <Tab>
+
+    ```graphql filename="Example mutation: deleteAppExtension" showLineNumbers copy
+    mutation AppExtension($input: DeleteAppExtensionInput!) {
+      appExtension {
+        deleteAppExtension(input: $input) {
+            deletedAppExtensionId
+        }
+      }
+    }
+    ```
+
+  </Tab>
+  <Tab>
+
+    ```json filename="Example variables: deleteAppExtension" showLineNumbers copy
+    {
+      "input": {
+        "id": "bc/store/appExtension/2"
+      }
+    }
+    ```
+
+  </Tab>
+  <Tab>
+
+    ```http filename="Example request: deleteAppExtension" showLineNumbers copy
+    POST https://api.bigcommerce.com/stores/{{store_hash}}/graphql
+    X-Auth-Token: {{access_token}}
+    Accept: application/json
+    Content-Type: application/json
+
+    {
+      "query": "`mutation`", //stringify the value from the Mutation tab
+      "variables": variables //use the value from the variables tab
+    }
+
+    ```
+
+    ```json filename="Example response: deleteAppExtension" showLineNumbers copy
+    {
+      "data": {
+        "appExtension": {
+          "deleteAppExtension": {
+            "deletedAppExtensionId": "bc/store/appExtension/2"
+          }
+        }
+      }
+    }
+    ```
+
+  </Tab>
+</Tabs>
+
+## Example code
+
+### Starter app
+
+The BigCommerce [Next.js starter app (GitHub)](https://github.com/bigcommerce/sample-app-nodejs/tree/app-extensions) contains a branch that features a working, end-to-end App Extensions reference implementation.
+
+### Code sample
+
+The following Node.js code sample uses the [node-fetch http request package](https://www.npmjs.com/package/node-fetch) to create a color picker App Extension that opens in a side panel on the **View Products** page of the merchant's store control panel.
+
+<Tabs items={['Configuration', 'Request Logic']}>
+  <Tab>
+
+```js filename="create-color-picker-extension.js" showLineNumbers copy
+import setAppExtension from "./set-app-extension";
+
+// Hardcoded example of store-specific credentials
+const subjectStore = {
+  store_hash: "qwerty",
+  // the store's access_token from your DB
+  access_token: "xxxxxalphanumxxxxx"
+};
+
+// stringified GraphQL Mutation
+const registerAppExtensionMutation = `
+mutation AppExtension($input: CreateAppExtensionInput!) {
+  appExtension {
+    createAppExtension(input: $input) {
+      appExtension {
+        id
+        context
+        model
+        url
+        label {
+          defaultValue
+          locales {
+            value
+            localeCode
+          }
+        }
+      }
+    }
+  }
+}
+`;
+
+// This GraphQL variable describes the particular App Extension your app is registering; modify for your use case
+const colorPickerExtension = {
+  input: {
+    context: "PANEL",
+    model: "PRODUCTS",
+    url: "/product/${id}/pigment",
+    label: {
+      defaultValue: "Select Color",
+      locales: [
+        {
+          value: "Pick Color",
+          localeCode: "en-US"
+        },
+        {
+          value: "Choisissez la couleur",
+          localeCode: "fr-FR"
+        },
+      ],
+    },
+  },
+};
+
+return setAppExtension(
+  subjectStore,
+  registerAppExtensionMutation,
+  colorPickerExtension
+);
+```
+
+  </Tab>
+  <Tab>
+
+    ```js filename="set-app-extension.js" showLineNumbers copy
+    // set-app-extension.js
+    import fetch from 'node-fetch';
+
+    const newAppExtension = async(store, query, variables) => {
+
+      let {store_hash, access_token} = store;
+
+      try {
+
+        let response = await fetch({
+          method: 'POST',
+          url: `https://api.bigcommerce.com/stores/${store_hash}/graphql`,
+          headers: {
+            'X-Auth-Token': access_token,
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+          },
+          body: {
+            query,
+            variables
+          }
+        });
+
+        let data = await response.json();
+        console.log(data);
+
+      } catch(error) {
+        console.log(error);
+      };
+    }
+
+    export default async(store, query, variables) => await newAppExtension(store, query, variables);
+    ```
+
+  </Tab>
+</Tabs>
+
+## Resources
+
+### Related articles
+
+- [Developer Portal](https://devtools.bigcommerce.com)
+- [Single-Click App OAuth Flow](/docs/integrations/apps/guide/auth)
+
+### External resources
+
+- [node-fetch http request package (npmjs.com)](https://www.npmjs.com/package/node-fetch)

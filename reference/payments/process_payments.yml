@@ -3,12 +3,12 @@ info:
   version: ''
   title: Payment Processing
   description: |
-    > The Payments API processes payments using payment instruments such as credit cards or PayPal accounts. To learn more about Payments, see the [Payments Overview](/docs/store-operations/payments). 
+    > The Payments API processes payments using payment instruments such as credit cards or PayPal accounts. To learn more about Payments, see the [Payments Overview](/docs/store-operations/payments).
 
     The Payment Processing API uses BigCommerce's PCI-compliant payments server and a supported payment gateway to charge customers. The payment portal you choose may support charging stored instruments and/or making refund transactions. For a list of compatible payment gateways, as well as a guide through the API call sequence needed to make charges, see the [Payments Overview](/docs/store-operations/payments#compatible-payment-gateways).
 
     A Payment Access Token (_PAT_) is required to authorize payment processing requests. The X-Auth-Token header is not required in requests to the payment processing endpoint. To generate a PAT, use the [Create a Payment Access Token](/docs/rest-payments/tokens#create-payment-access-token) endpoint or the `completeCheckout` mutation in the [GraphQL Storefront API](/docs/storefront/cart-checkout/guide/graphql-storefront#handling-payments). For a payment processing authentication example request, see the related section in our [Authentication article](/docs/start/authentication#bigcommerce-generated-jwts).
-    
+
     Also note that payment processing requests use the BigCommerce Payments Gateway, which uses a different server than our other REST APIs. Please see the server URL for the payment processing endpoint.
 
     > To learn more about authenticating Payments endpoints, locate the **Authentication** section at the top of each endpoint, then click **Show Details**.
@@ -18,15 +18,15 @@ info:
     * [Payments Overview](/docs/store-operations/payments)
     * [Process payments authentication example request](/docs/start/authentication#bigcommerce-generated-jwts)
     * [Orders Overview](/docs/store-operations/orders)
-    
+
      ### Webhooks
-    
+
     * [Carts](https://developer.bigcommerce.com/api-docs/channels/guide/webhooks#carts)
     * [Orders](https://developer.bigcommerce.com/api-docs/store-management/webhooks/webhook-events#orders)
     * [Price list assignment](https://developer.bigcommerce.com/api-docs/channels/guide/webhooks#price-list-assignments)
 
     ### Additional Payments endpoints
-    
+
     * [Get accepted payment methods](/docs/rest-payments/methods#get-accepted-payment-methods)
     * [Create a Payment Access Token](/docs/rest-payments/tokens#create-payment-access-token)
     * [Get a customer's stored instruments](/docs/rest-management/customers/customer-stored-instruments#get-stored-instruments)
@@ -81,6 +81,7 @@ paths:
                         - $ref: '#/components/schemas/GiftCertificate'
                         - $ref: '#/components/schemas/StoreCredit'
                         - $ref: '#/components/schemas/TokenizedCard'
+                        - $ref: '#/components/schemas/StoredBankAccount'
                     payment_method_id:
                       description: Identifier for payment method that will be used for this payment and `id` from the Get Accepted Payment Methods API
                       type: string
@@ -96,15 +97,13 @@ paths:
                   payment:
                     instrument:
                       type: card
-                      cardholder_name: string
-                      number: string
-                      expiry_month: 1
-                      expiry_year: 0
-                      verification_value: stri
-                      issue_month: 1
-                      issue_year: 0
-                      issue_number: 0
-                    payment_method_id: string
+                      number: '4111111111111111'
+                      cardholder_name: Jane Doe
+                      expiry_month: 12
+                      expiry_year: 2020
+                      verification_value: '411'
+                    payment_method_id: authorizenet.card
+                    save_instrument: true
               Stored Card:
                 value:
                   payment:
@@ -121,6 +120,13 @@ paths:
                       type: stored_paypal_account
                       token: 2c129313bcffe4501ec5fa2764c8c16320e38c7ba9e8cdf95583b541bb05ad91
                     payment_method_id: braintree.paypal
+              Stored Bank Account:
+                value:
+                  payment:
+                    instrument:
+                      type: stored_bank_account
+                      token: 2c129313bcffe4501ec5fa2764c8c16320e38c7ba9e8cdf95583b541bb05ad91
+                    payment_method_id: braintree.ach
               Gift Certificate:
                 value:
                   payment:
@@ -136,7 +142,7 @@ paths:
                     payment_method_id: bigcommerce.store_credit
               Tokenized Card:
                 value:
-                  payment: 
+                  payment:
                     instrument:
                       type: tokenized_card
                       token: K7KW-M9GX-6PQ3
@@ -145,44 +151,6 @@ paths:
                       expiration_month: 12
                       expiration_year: 2030
                     payment_method_id: bolt.card
-        required: true
-        x-examples:
-          application/json:
-            payment:
-              instrument: {}
-              payment_method_id: Lorem in
-              amount: 81505146
-              currency_code: NYE
-          Payment Access Token: |-
-            curl -X POST \
-              https://payments.bigcommerce.com/stores/{store_hash}/payments \
-              -H 'Accept: application/vnd.bc.v1+json' \
-              -H 'Authorization: PAT eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE1NsdfasftIsIm5iZiI6MTU1MTM5MDU0MiwiaXNzIjoicGF5bWVudHMuYmlnY29tbWVyY2UuY29tIiwic3ViIjoianJhaDZnbW4iLCJqdGkiOiI3Nzg3ZmU1Zi01OWJmLTQ3ZWMtYTFmZC00ZDQ3ZTkwNjFlNWMiLCJpYXQiOjE1NTEzOTA1NDIsImRhdGEiOnsic3RvcmVfaWQiOjEwMjU2NDYsIm9yZGVyX2lkIjoyMTUsImFtb3VudCI6OTgwMCwiY3VycmVuY3kiOiJVU0QifX0.WbR90d8m4gn8wK7kPMDEoVq8B0hHC5Ul5H4Hpqq6Yvo' \
-              -H 'Content-Type: application/json' \
-          Vaulted Card:
-            payment:
-              instrument:
-                type: stored_card
-                token: vaulted instrument token
-                verification_value: '123'
-              payment_method_id: stripe.card
-              save_instrument: true
-          Credit Card: |-
-            {
-              "payment": {
-                "instrument": {
-                  "type": "card",
-                  "number": "4111111111111111",
-                  "cardholder_name": "BP",
-                  "expiry_month": 12,
-                  "expiry_year": 2020,
-                  "verification_value": "411"
-                },
-                "payment_method_id": "authorizenet.card",
-                 "save_instrument": true
-              }
-            }
-        description: ''
       responses:
         '202':
           description: Payment has been successfully processed
@@ -244,6 +212,7 @@ paths:
                   errors:
                     description: ''
                     type: object
+                    properties: {}
                     additionalProperties:
                       type: string
                 required:
@@ -278,6 +247,7 @@ paths:
                   errors:
                     description: ''
                     type: object
+                    properties: {}
                     additionalProperties:
                       type: string
                 required:
@@ -312,6 +282,7 @@ paths:
                   errors:
                     description: ''
                     type: object
+                    properties: {}
                     additionalProperties:
                       type: string
                 required:
@@ -346,6 +317,7 @@ paths:
                   errors:
                     description: ''
                     type: object
+                    properties: {}
                     additionalProperties:
                       type: string
                 required:
@@ -475,6 +447,25 @@ components:
         example-1:
           type: stored_paypal_account
           token: stringstringstringstringstringstringstringstringstringstringstri
+    StoredBankAccount:
+      title: StoredBankAccount
+      type: object
+      x-internal: false
+      properties:
+        type:
+          type: string
+          description: Type to classify this payment instrument (required)
+          enum:
+            - stored_bank_account
+        token:
+          description: Identifier representing this stored bank account (required)
+          type: string
+          minLength: 64
+          maxLength: 64
+      x-examples:
+        example-1:
+          type: stored_bank_account
+          token: stringstringstringstringstringstringstringstringstringstringstri
     GiftCertificate:
       title: GiftCertificate
       type: object
@@ -545,15 +536,15 @@ components:
         The required scopes are granted to the `payment_access_token` upon generation.
 
         ### Authentication header
-        
+
         | Header | Argument | Description |
         |:-------|:---------|:------------|
         |`Authorization`|`PAT {{PAYMENT_ACCESS_TOKEN}}`| Obtained using the Create Access Token endpoint.|
 
         ### Further reading
-        
+
         For an outline of the Process Payment API call flow and more information about authenticating, see [Authentication and Example Requests](/docs/start/authentication#bigcommerce-generated-jwts).
-        
+
         For a list of API status codes, see [API Status Codes](/docs/start/about/status-codes).
       type: http
       scheme: bearer

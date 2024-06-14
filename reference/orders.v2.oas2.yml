@@ -86,7 +86,7 @@ paths:
           content:
             application/json:
               schema: {}
-      operationId: getAnOrder
+      operationId: getOrder
     put:
       description: |-
         Updates an *Order*. 
@@ -96,6 +96,8 @@ paths:
         To update a product in an order, include `id` in the body. The body should only contain the fields that need to be updated. Those fields that are omitted will not be changed.
         
         To remove a product from an order, set that product’s `quantity` to `0`.
+
+        After the update, the PUT request clears all discounts and promotions applied to the order. Since the order data syncs with other ERP systems, like Amazon or eBay, the updated order returns to the default setting, removing any applied discounts.
         
         To learn more about creating or updating orders, see [Orders Overview](/docs/store-operations/orders).
       summary: Update an Order
@@ -183,7 +185,7 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/order_Resp'
-      operationId: updateAnOrder
+      operationId: updateOrder
     delete:
       description: Archives an order. To remove a single product from an order, see `PUT /orders/{order_id}`.
       summary: Archive an Order
@@ -192,7 +194,7 @@ paths:
       responses:
         '204':
           description: ''
-      operationId: deleteAnOrder
+      operationId: deleteOrder
   '/orders/count':
     parameters:
       - $ref: '#/components/parameters/Accept'
@@ -204,7 +206,7 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/ordersCount_Resp'
-      operationId: getCountOrder
+      operationId: getOrdersCount
   '/orders':
     parameters:
       - $ref: '#/components/parameters/Accept'
@@ -236,14 +238,14 @@ paths:
         - $ref: '#/components/parameters/page'
         - $ref: '#/components/parameters/limit'
         - $ref: '#/components/parameters/sort'
-        - $ref: '#/components/parameters/is_deleted'
         - $ref: '#/components/parameters/channel_id'
         - $ref: '#/components/parameters/order_includes'
+        - $ref: '#/components/parameters/external_order_id'
       responses:
         '200':
           $ref: '#/components/responses/orderCollection_Resp'
       summary: Get All Orders
-      operationId: getAllOrders
+      operationId: getOrders
     post:
       description: |-
         Creates an *Order*. To learn more about creating or updating orders, see [Orders Overview](/docs/store-operations/orders).
@@ -427,7 +429,7 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/order_Resp'
-      operationId: createAnOrder
+      operationId: createOrder
     delete:
       description: Archives all orders.
       summary: Delete All Orders
@@ -438,7 +440,7 @@ paths:
       responses:
         '204':
           description: ''
-      operationId: deleteAllOrders
+      operationId: deleteOrders
   '/orders/{order_id}/coupons':
     parameters:
       - $ref: '#/components/parameters/Accept'
@@ -464,13 +466,16 @@ paths:
           $ref: '#/components/responses/orderCouponsCollection_Resp'
       tags:
         - Order Coupons
-      operationId: getAllOrderCoupons
+      operationId: getOrderCoupons
   '/orders/{order_id}/products':
     parameters:
       - $ref: '#/components/parameters/Accept'
       - $ref: '#/components/parameters/order_id_path'
     get:
-      description: Lists 50 order products on an order using `order_id`. By default, items sort from lowest to highest according to a newly created ID, separate from the `order_id` and the `product_id`.
+      description: |- 
+        Lists 50 order products on an order using `order_id`. By default, items are sorted from lowest to highest according to a newly created ID, separate from the `order_id` and the `product_id`.
+        
+        **Note**: The response `id` is required when you [create order shipments](/docs/store-operations/orders#creating-order-shipments).
       summary: List Order Products
       parameters:
         - $ref: '#/components/parameters/ContentType'
@@ -481,7 +486,7 @@ paths:
           $ref: '#/components/responses/orderProductsCollection_Resp'
       tags:
         - Order Products
-      operationId: getAllOrderProducts
+      operationId: getOrderProducts
   '/orders/{order_id}/shipping_addresses':
     parameters:
       - $ref: '#/components/parameters/Accept'
@@ -500,7 +505,7 @@ paths:
           $ref: '#/components/responses/orderShippingAddressCollection_Resp'
       tags:
         - Order Shipping Addresses
-      operationId: getAllShippingAddresses
+      operationId: getOrderShippingAddresses
   '/order_statuses':
     parameters:
       - $ref: '#/components/parameters/Accept'
@@ -532,7 +537,7 @@ paths:
           $ref: '#/components/responses/orderStatusCollection_Resp'
       tags:
         - Order Status
-      operationId: getOrderStatus
+      operationId: getOrderStatuses
   '/order_statuses/{status_id}':
     parameters:
       - $ref: '#/components/parameters/Accept'
@@ -565,7 +570,7 @@ paths:
           $ref: '#/components/responses/orderStatus_Resp'
       tags:
         - Order Status
-      operationId: getAOrderStatus
+      operationId: getOrderStatusesStatus
   '/orders/{order_id}/taxes':
     parameters:
       - $ref: '#/components/parameters/Accept'
@@ -609,7 +614,7 @@ paths:
           $ref: '#/components/responses/orderShipmentCollection_Resp'
       tags:
         - Order Shipments
-      operationId: getAllOrderShipments
+      operationId: getOrderShipments
     post:
       description: |
         Creates an *Order Shipment*. For more details, see [Shipping an Order](/docs/store-operations/orders#creating-order-shipments).
@@ -628,7 +633,18 @@ paths:
 
         3. Supply a custom `tracking_link`: By providing a value for the `tracking_link` property, you can use your own tracking link within the BigCommerce control panel and in customer-facing emails. The API response will return your supplied tracking link as part of the `tracking_link` property in the response. In situations when there isn't a `generated_tracking_link`, the property in the API response will remain empty. 
         
-        Acceptable values for `shipping_provider` include an empty string (`""`), `auspost`, `carrier_{your_carrier_id}` (only used if the carrier is a [third-party Shipping Provider](/docs/integrations/shipping)), `canadapost`, `endicia`, `usps`, `fedex`, `royalmail`, `ups`, `upsready`, `upsonline`, or `shipperhq`.
+        Acceptable values for `shipping_provider` include the following, and this list may be updated at any time: 
+         - `""`, an empty string
+         - `auspost`
+         - `canadapost`
+         - `endicia`
+         - `usps`
+         - `fedex`
+         - `royalmail`
+         - `ups`
+         - `upsready`
+         - `shipperhq`
+         - `carrier_{your_carrier_id}`, when the carrier is a [third-party Shipping Provider](/docs/integrations/shipping) 
         
         Acceptable values for `tracking_carrier` include an empty string (`""`) or one of the valid [tracking-carrier values](https://github.com/bigcommerce/dev-docs/blob/master/assets/csv/tracking_carrier_values.csv).
       summary: Create Order Shipment
@@ -655,7 +671,7 @@ paths:
           description: ''
       tags:
         - Order Shipments
-      operationId: deleteAllOrderShipments
+      operationId: deleteOrderShipments
   '/orders/{order_id}/shipments/count':
     parameters:
       - $ref: '#/components/parameters/Accept'
@@ -668,7 +684,7 @@ paths:
           $ref: '#/components/responses/orderCount_Resp'
       tags:
         - Order Shipments
-      operationId: getCountShipments
+      operationId: getOrderShipmentsCount
   '/orders/{order_id}/shipments/{shipment_id}':
     parameters:
       - $ref: '#/components/parameters/Accept'
@@ -754,7 +770,7 @@ paths:
       description: Gets a product line item associated with the order.
       tags:
         - Order Products
-      operationId: getAnOrderProduct
+      operationId: getOrderProduct
   '/orders/{order_id}/shipping_addresses/{id}':
     parameters:
       - $ref: '#/components/parameters/Accept'
@@ -776,10 +792,10 @@ paths:
         Returned in the response is shipping_quotes object. Please use the Get Shipping Quotes Endpoint. Using the response will return a 204 for the shipping quote.
       tags:
         - Order Shipping Addresses
-      operationId: getAShippingAddress
+      operationId: getOrderShippingAddress
     put:
       summary: Update a Shipping Address
-      operationId: updateAShippingAddress
+      operationId: updateOrderShippingAddress
       responses:
         '200':
           description: OK
@@ -903,22 +919,21 @@ paths:
         This is a read-only endpoint and the output can vary based on the shipping quote. A shipping quote can only be generated using the storefront at this time. Orders that are created in the control panel or using the API return a 204 for this endpoint since a shipping quote is not generated during that process.
       tags:
         - Order Shipping Addresses Quotes
-      operationId: getShippingQuotes
+      operationId: getOrderShippingAddressShippingQuotes
   '/orders/{order_id}/consignments':
     parameters:
-      - schema:
-          type: string
-        name: order_id
-        in: path
-        required: true
       - name: include
         in: query
         description: |-
           * `consignments.line_items` - include the response returned from the request to the `/orders/{order_id}/products` endpoint in consignments.
+        style: form
+        explode: false
         schema:
-          type: string
-          enum:
-            - consignments.line_items
+          type: array
+          items:
+            type: string
+            enum:
+              - consignments.line_items
     get:
       summary: Get Consignments
       tags:
@@ -956,7 +971,7 @@ paths:
                             resource: /orders/129/products/12
         '404':
           $ref: '#/components/responses/404_Resp'
-      operationId: get-orders-orderId-consignments
+      operationId: getOrderConsignments
       description: 'Get all consignments for an order. '
       parameters:
         - $ref: '#/components/parameters/order_id_path'
@@ -1015,7 +1030,7 @@ paths:
                     method_id: 5
         '404':
           $ref: '#/components/responses/404_Resp'
-      operationId: get-orders-orderId-consignments-shipping-shippingId-shippingQuotes
+      operationId: getOrderConsignmentShippingQuotes
       description: |-
         Get all shipping quotes persisted on an order for a shipping consignment.
         This is a read-only endpoint whose response depends on the shipping quote. You can only generate a shipping quote using the storefront at this time. Orders that are created in the control panel, or using the API, return a 204 status response since you can't generate a shipping quote during that process.
@@ -1040,6 +1055,12 @@ components:
       schema:
         type: string
         default: 'application/json'
+    external_order_id:
+      name: external_order_id
+      in: query
+      description: The order ID in another system, such as the Amazon Order ID if this is an Amazon order. After setting it, you can update this field using a POST or PUT request.
+      schema:
+        type: string
     min_id:
       name: min_id
       in: query
@@ -1097,12 +1118,6 @@ components:
       description: The cart ID of the order.
       schema:
         type: string
-    is_deleted:
-      name: is_deleted
-      in: query
-      description: If the order was deleted or archived.
-      schema:
-        type: boolean
     payment_method:
       name: payment_method
       in: query
@@ -1197,7 +1212,7 @@ components:
     is_flagged:
       name: is_flagged
       in: query
-      description: 'If the message is [flagged](https://support.bigcommerce.com/s/article/Communicating-with-Customers#Messages).'
+      description: 'Whether the message is [flagged](https://support.bigcommerce.com/s/article/Communicating-with-Customers#Messages).'
       schema:
         type: boolean
     order_id_path:
@@ -1231,7 +1246,7 @@ components:
     channel_id:
       name: channel_id
       in: query
-      description: The Channel ID of the Order.
+      description: The channel ID of the sales channel the shopper used to place the order.
       schema:
         type: integer
     shipping_consignment_id:
@@ -1248,11 +1263,15 @@ components:
         * `consignments` - include the response returned from the request to the `/orders/{order_id}/consignments` endpoint.
         
         * `consignments.line_items` - include the response returned from the request to the `/orders/{order_id}/products` endpoint in consignments. This implies `include=consignments`.
+      style: form
+      explode: false
       schema:
-        type: string
-        enum:
-          - consignments
-          - consignments.line_items
+        type: array
+        items:
+          type: string
+          enum:
+            - consignments
+            - consignments.line_items
   responses:
     orderStatusCollection_Resp:
       description: Get All Order Status Collection Response.
@@ -1432,7 +1451,6 @@ components:
                   discount_amount: '0.0000'
                   coupon_discount: '0.0000'
                   shipping_address_count: 1
-                  is_deleted: false
                   ebay_order_id: '0'
                   cart_id: a8458391-ef68-4fe5-9ec1-442e6a767364
                   billing_address:
@@ -1647,7 +1665,6 @@ components:
                 discount_amount: '5.0000'
                 coupon_discount: '5.0000'
                 shipping_address_count: 1
-                is_deleted: false
                 ebay_order_id: '0'
                 cart_id: 7e48f7ef-2e88-4817-aea4-b0ed01490114
                 billing_address:
@@ -1740,7 +1757,6 @@ components:
                 discount_amount: '0'
                 coupon_discount": 0
                 shipping_address_count: 1
-                is_deleted: false
                 ebay_order_id: '0'
                 cart_id: 8b84f622-faf1-4c10-887b-f5dff2f9eaf4
                 billing_address:
@@ -2545,20 +2561,20 @@ components:
                 timestamp: 'Mon, 20 Aug 2018 14:47:13 +0000'
                 shipping_provider_id: bcrealtime
                 shipping_provider_quote:
-                  rate:
-                    value: '44.11'
-                    unit: USD
-                  transitTime: 1 business day
-                  name: UPS Next Day Air®
-                  signatureConfirmationFee: {}
-                  carrierName: ''
-                  carrierCode: {}
-                  code: {}
-                  deliveryMessage: ''
-                  labelSizes: []
-                  insuredMailFee: {}
-                  dates: []
-                  rateId: {}
+                  - rate:
+                      value: '44.11'
+                      unit: USD
+                    transitTime: 1 business day
+                    name: UPS Next Day Air®
+                    signatureConfirmationFee: {}
+                    carrierName: ''
+                    carrierCode: {}
+                    code: {}
+                    deliveryMessage: ''
+                    labelSizes: []
+                    insuredMailFee: {}
+                    dates: []
+                    rateId: {}
                 provider_code: upsready
                 carrier_code: ''
                 rate_code: ''
@@ -2641,6 +2657,28 @@ components:
       type: apiKey
       in: header
   schemas:
+    shipping_provider_standard:
+      title: Standard Shipping Provider
+      type: string
+      description: An enum identifying one of several core shipping providers.
+      enum:
+        - auspost
+        - canadapost
+        - endicia
+        - usps
+        - fedex
+        - ups
+        - upsready
+        - upsonline
+        - shipperhq
+        - royalmail
+        - ''
+      example: shipperhq
+    shipping_provider_custom:
+      title: Custom Shipping Provider
+      type: string
+      description: A string identifying the shipping provider. Some shipping providers may not be listed in the preceding enum list. In addition, if the carrier is a [third-party Shipping Provider](/docs/integrations/shipping), the string takes the form `carrier_{your_carrier_id}`.
+      example: carrier_1234567
     order_Resp:
       title: order_Resp
       description: Order object returned in responses.
@@ -2808,13 +2846,13 @@ components:
           example: 1
           type: integer
         base_cost_price:
-          description: The product’s cost price.  This can be set using the Catalog API. (Float, Float-As-String, Integer) 
+          description: The product’s cost price.  This can be set using the Catalog API. (Float, Float-As-String, Integer)
           example: '50.0000'
           type: string
         cost_price_inc_tax:
           description: |-
             The product’s cost price including tax. (Float, Float-As-String, Integer)
-            The cost of your products to you; this is never shown to customers, but can be used for accounting purposes. 
+            The cost of your products to you; this is never shown to customers, but can be used for accounting purposes.
           example: '50.0000'
           type: string
         cost_price_ex_tax:
@@ -2923,7 +2961,7 @@ components:
           type: string
           nullable: true
           readOnly: true
-        brand: 
+        brand:
           description: The productʼs brand.
           type: string
         applied_discounts:
@@ -3153,26 +3191,16 @@ components:
           example: Ship by Weight
           type: string
         shipping_provider:
-          type: string
-          description: Enum of the BigCommerce shipping-carrier integration/module.
-          enum:
-            - auspost
-            - canadapost
-            - carrier_{your_carrier_id} (only used if the carrier is a [third-party Shipping Provider](/docs/integrations/shipping))
-            - endicia
-            - usps
-            - fedex
-            - ups
-            - upsready
-            - upsonline
-            - shipperhq
-            - ''
+          anyOf:
+            - $ref: '#/components/schemas/shipping_provider_standard'
+            - $ref: '#/components/schemas/shipping_provider_custom'
         tracking_carrier:
           type: string
           title: Tracking Carrier
           description: |-
             Tracking carrier for the shipment.
             Acceptable values for `tracking_carrier` include an empty string (`""`) or one of the valid [tracking-carrier values](https://github.com/bigcommerce/dev-docs/blob/master/assets/csv/tracking_carrier_values.csv).
+          example: ""
         tracking_link:
           type: string
           description: The custom tracking link supplied on POST or PUT shipments. For the auto-generated tracking link see the `generated_tracking_link` property.
@@ -3390,6 +3418,7 @@ components:
             - type: number
             - type: string
             - type: array
+              items: {}
           example: 123BAF
           items:
             type: string
@@ -3465,6 +3494,7 @@ components:
             type: string
           customer:
             type: object
+            properties: {}
       title: orderMessages
       x-internal: false
     shippingQuotes_Resource:
@@ -3509,7 +3539,10 @@ components:
         shipping_provider_quote:
           type: array
           description: This can vary based on the shipping provider. Manual shipping methods such as fixed will return an empty array. Shipping providers such as UPS will return an object with the shipping information. Since the shipping quote is tied to a shipping address only one quote will return in the response.
-          items: {}
+          items:
+            type: object
+            properties: {}
+            additionalProperties: true
         provider_code:
           type: string
           example: shipping_byweight
@@ -3553,25 +3586,16 @@ components:
           example: Ship by Weight
           type: string
         shipping_provider:
-          type: string
-          description: Enum of the BigCommerce shipping-carrier integration/module.
-          enum:
-            - auspost
-            - canadapost
-            - carrier_{your_carrier_id} (only used if the carrier is a [third-party Shipping Provider](/docs/integrations/shipping))
-            - endicia
-            - usps
-            - fedex
-            - ups
-            - upsready
-            - upsonline
-            - shipperhq
+          anyOf:
+            - $ref: '#/components/schemas/shipping_provider_standard'
+            - $ref: '#/components/schemas/shipping_provider_custom'
         tracking_carrier:
           type: string
           title: Tracking Carrier
           description: |-
             Tracking carrier for the shipment.
             Acceptable values for `tracking_carrier` include an empty string (`""`) or one of the valid [tracking-carrier values](https://github.com/bigcommerce/dev-docs/blob/master/assets/csv/tracking_carrier_values.csv).
+          example: ""
         comments:
           type: string
           description: Comments the shipper wishes to add.
@@ -3608,25 +3632,16 @@ components:
           example: Ship by Weight
           type: string
         shipping_provider:
-          type: string
-          description: Enum of the BigCommerce shipping-carrier integration/module.
-          enum:
-            - auspost
-            - canadapost
-            - carrier_{your_carrier_id} (only used if the carrier is a [third-party Shipping Provider](/docs/integrations/shipping))
-            - endicia
-            - usps
-            - fedex
-            - ups
-            - upsready
-            - upsonline
-            - shipperhq
+          anyOf:
+            - $ref: '#/components/schemas/shipping_provider_standard'
+            - $ref: '#/components/schemas/shipping_provider_custom'
         tracking_carrier:
           type: string
           title: Tracking Carrier
           description: |-
             Tracking carrier for the shipment.
             Acceptable values for `tracking_carrier` include an empty string (`""`) or one of the valid [tracking-carrier values](https://github.com/bigcommerce/dev-docs/blob/master/assets/csv/tracking_carrier_values.csv).
+          example: ""
         tracking_link:
           type: string
           description: The custom tracking link supplied on POST or PUT shipments. For the auto-generated tracking link see the `generated_tracking_link` property.
@@ -3664,7 +3679,6 @@ components:
       x-internal: false
     ordersCountStatus:
       title: ordersCountStatus
-      type: object
       allOf:
         - $ref: '#/components/schemas/orderStatus_Base'
         - type: object
@@ -3696,8 +3710,6 @@ components:
           description: The value of the base wrapping cost expressed as a floating point number to four decimal places in string format.
           example: '0.0000'
           type: string
-        billing_address:
-          $ref: '#/components/schemas/billingAddress_Base'
         channel_id:
           description: Shows where the order originated. The channel_id will default to 1.
           example: 1
@@ -3710,9 +3722,6 @@ components:
           type: string
         date_created:
           description: The date the order was created, formatted in the RFC-2822 standard. You set this attribute on Order creation (POST) to support the migration of historical orders. If you do not provide a value, then it will default to the current date/time. e.g., `Tue, 20 Nov 2012 00:00:00 +0000`.
-          type: string
-        default_currency_code:
-          description: The currency code of the transactional currency the shopper pays in; writeable when multi-currency is enabled.
           type: string
         discount_amount:
           description: Amount of discount for this transaction. (Float, Float-As-String, Integer)
@@ -3774,10 +3783,6 @@ components:
             Note: You can set either `ip_address` or `ip_address_v6`. Setting the `ip_address_v6` value will reset the `ip_address` value and vice versa.
           example: '2001:db8:3333:4444:5555:6666:7777:8888'
           maxLength: 39
-        is_deleted:
-          description: Indicates whether the order was deleted (archived). Set to to true, to archive an order.
-          example: false
-          type: boolean
         items_shipped:
           description: The number of items that have been shipped.
           example: 0
@@ -3835,15 +3840,12 @@ components:
           type: string
         tax_provider_id:
           description: |
+            Read-only.
             BasicTaxProvider - Tax is set to manual and order is created in the store.
             
             AvaTaxProvider - Tax is set to automatic and order is created in the store. Used for Avalara.
             
             "" (empty string) - The order is created with the API, or the tax provider is unknown.
-          enum:
-            - BasicTaxProvider
-            - AvaTaxProvider
-            - ''
           type: string
         customer_locale:
           type: string
@@ -4080,8 +4082,14 @@ components:
           example: false
           type: boolean
         order_source:
-          description: Orders submitted from the storeʼs website will include a `www` value. Orders submitted with the Checkout API will be set to `checkout_api`.
-          example: www, iPhone, Android, mobile, manual
+          description: |-
+            The `order_source` is set upon order creation and reflects the origin of the order. It will indicate whether the order was created by one of the following:
+            * storefront 
+            * control panel
+            * manual order
+            * /v2/orders API
+            * Checkout API
+            * or by an integration with an external platform such as Facebook by Meta or Amazon.
           type: string
         consignments:
           $ref: '#/components/schemas/orderConsignments_Resource'
@@ -4096,12 +4104,7 @@ components:
           example: 7
           description: The status ID of the order.
         billing_address:
-          type: object
-          properties:
-            form_fields:
-              type: array
-              items:
-                $ref: '#/components/schemas/formFields'
+          $ref: '#/components/schemas/billingAddress_Resp'
     orderCustomProduct_Put:
       type: object
       title: Custom product
@@ -4204,8 +4207,8 @@ components:
                 description: |-
                   The product’s cost price including tax. (Float, Float-As-String, Integer)
                   The cost of your products to you; this is never shown to customers, but can be used for accounting purposes.
-                example: '50.0000' 
-              price_ex_tax:  
+                example: '50.0000'
+              price_ex_tax:
                 type: string
                 description: |-
                   The products cost price excluding tax. (Float, Float-As-String, Integer)
@@ -4299,7 +4302,7 @@ components:
           type: string
         variant_id:
           type: integer
-          description: '""'
+          description: 'Products `variant_id`. PUT or POST. This field is not available for custom products.'
         wrapping_id:
           type: integer
           description: ID of the gift wrapping that will be used for this product. If provided, then `wrapping_cost_ex_tax` and `wrapping_cost_inc_tax` are required. When updating an order product line item, if `wrapping_id` is set to `0` and no other wrapping fields are provided,then the wrapping will be removed from the order product.
@@ -4408,7 +4411,7 @@ components:
               example: '0'
               type: string
             external_id:
-              description: (Read-only) The order ID in another system, such as the Amazon Order ID if this is an Amazon order.  
+              description: (Read-only) The order ID in another system, such as the Amazon Order ID if this is an Amazon order.
               example: null
               type: string
               nullable: true
@@ -4459,10 +4462,6 @@ components:
                 Note: You can set either `ip_address` or `ip_address_v6`. Setting the `ip_address_v6` value will reset the `ip_address` value and vice versa.
               example: '2001:db8:3333:4444:5555:6666:7777:8888'
               maxLength: 39
-            is_deleted:
-              description: Indicates whether the order was deleted (archived). Set to to true, to archive an order.
-              example: false
-              type: boolean
             items_shipped:
               description: The number of items that have been shipped.
               example: 0
@@ -4529,15 +4528,12 @@ components:
               type: string
             tax_provider_id:
               description: |
+                Read-only.
                 BasicTaxProvider - Tax is set to manual and order is created in the store.
                 
                 AvaTaxProvider - Tax is set to automatic and order is created in the store. Used for Avalara.
                 
                 "" (empty string) - The order is created with the API, or the tax provider is unknown.
-              enum:
-                - BasicTaxProvider
-                - AvaTaxProvider
-                - ''
               type: string
             customer_locale:
               type: string
@@ -4547,7 +4543,7 @@ components:
               type: string
               nullable: true
               example: external-order-id
-              description: The order ID in another system, such as the Amazon Order ID if this is an Amazon order. After setting it, you can update this field using a POST or PUT request. 
+              description: The order ID in another system, such as the Amazon Order ID if this is an Amazon order. After setting it, you can update this field using a POST or PUT request.
             total_ex_tax:
               description: Override value for the total, excluding tax. If specified, the field `total_inc_tax` is also required. (Float, Float-As-String, Integer)
               example: '225.0000'
@@ -4570,6 +4566,11 @@ components:
       allOf:
         - type: object
           properties:
+            billing_address:
+              $ref: '#/components/schemas/billingAddress_Base'
+            default_currency_code:
+              description: The currency code of the transactional currency the shopper pays in is writable when multi-currency is enabled.
+              type: string
             products:
               type: array
               items:
@@ -4594,6 +4595,15 @@ components:
               items:
                 $ref: '#/components/schemas/formFields'
     billingAddress_Put:
+      allOf:
+        - $ref: '#/components/schemas/billingAddress_Base'
+        - type: object
+          properties:
+            form_fields:
+              type: array
+              items:
+                $ref: '#/components/schemas/formFields'
+    billingAddress_Resp:
       allOf:
         - $ref: '#/components/schemas/billingAddress_Base'
         - type: object
@@ -4779,7 +4789,6 @@ components:
           description: Pickup locationʼs phone number.
           maxLength: 125
           example: +1 111-111-1111
-      x-examples: {}
     orderProduct_Put:
       title: orderProduct_Put
       anyOf:

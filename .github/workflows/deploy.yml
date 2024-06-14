@@ -1,25 +1,24 @@
-name: Deploy
+name: Rebuild Production Dev Center
 
 on:
   push:
     branches:
       - main
   workflow_dispatch:
-    inputs:
-      buildWithCache:
-        description: 'Build with cache'
-        default: true
-        required: false
-        type: boolean
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
-      
-    - name: Trigger Vercel Deploy Hook
+    steps:      
+    - name: Trigger CircleCI Build
       run: |
-        curl -X POST ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}?buildCache=${{ inputs.buildWithCache }}
+        curl --location 'https://circleci.com/api/v2/project/gh/bigcommerce/developer-center/pipeline' \
+        --header 'Circle-Token: ${{ secrets.CIRCLECI_TOKEN }}' \
+        --header 'content-type: application/json' \
+        --data '{
+            "branch": "main",
+             "parameters": {
+                 "build_environment": "production",
+                 "github_triggering_actor": "${{ github.actor }}"
+             }
+        }'

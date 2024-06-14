@@ -1,0 +1,291 @@
+# Product SEO Information
+
+<Callout type="info">
+  This feature is currently available for Enterprise stores and Partner Sandboxes. If the feature is not working as expected, please contact technical support, as the feature likely needs to be enabled for the individual store.
+  To become an enterprise customer, contact your BigCommerce Customer Service Manager or our [support team](https://support.bigcommerce.com/s/contact?language=en_US).
+</Callout>
+
+Using the Catalog features of the Admin API, you can set and query product SEO information, for example, page title and meta description.
+
+You can perform the following:
+- [Set global product SEO information](#set-product-seo-information-at-the-global-level) for the catalog. Channels inherit these by default.
+- [Create overrides for a channel and channel locale](#set-product-seo-information-for-a-locale) using the `overridesForLocale` mutation. 
+- [Remove overrides for a channel and channel locale](#remove-product-seo-information-for-a-locale). A channel then inherits global values.
+- [Query product SEO information](#query-product-seo-information), those set at the global level and the overrides.
+
+For a full schema, see the [GraphQL Admin API reference](https://developer.bigcommerce.com/graphql-admin/reference).
+
+## Input fields
+
+Setting or removing information requires that you specify ID fields in the input. For more information on how to specify ID fields, see [Input fields](/docs/store-operations/catalog/graphql-admin/product-basic-info#input-fields).
+
+## Set product SEO information at the global level
+
+The following example sets global product SEO information for the store, from which channels inherit by default. You can set the title and meta description for the product page.
+
+<Tabs items={['Request', 'Response']}>
+  <Tab>
+
+    ```graphql filename="Example mutation: Set product SEO information globally" showLineNumbers copy
+    POST https://api.bigcommerce.com/stores/{{STORE_HASH}}/graphql
+    X-Auth-Token: {{ACCESS_TOKEN}}
+    Content-Type: application/json
+    Accept: application/json
+
+    mutation (
+      $input: SetProductSeoInformationInput!
+    ) {
+      product {
+        setProductSeoInformation(input: $input) {
+          product {
+            id
+            seoInformation {
+              pageTitle
+              metaDescription
+            }
+          }
+        }
+      }
+    }
+    ```
+    ```json filename="GraphQL variables" showLineNumbers copy
+    {
+      "input": {
+        "productId": "bc/store/product/111",
+        "data": {
+          "pageTitle": "Global page title",
+          "metaDescription": "Global meta description"
+        }
+      }
+    }
+    ```
+  </Tab>
+  <Tab>
+
+    ```json filename="Example mutation: Set product SEO information at the global level" showLineNumbers copy
+    {
+      "data": {
+        "product": {
+          "setProductSeoInformation": {
+            "product": {
+              "id": "bc/store/product/111",
+              "seoInformation": {
+                "pageTitle": "Journal",
+                "metaDescription": "journal book"
+              }
+            }
+          }
+        }
+      }
+    }
+    ```    
+
+  </Tab>
+</Tabs>
+
+
+## Set product SEO information for a locale
+
+The following example sets product SEO information for the specified storefront channel and locale within the channel. These will override global store information. You can set the title and meta description for the product page.
+
+<Tabs items={['Request', 'Response']}>
+  <Tab>
+
+    ```graphql filename="Example mutation: Set product SEO information for a locale" showLineNumbers copy
+    POST https://api.bigcommerce.com/stores/{{STORE_HASH}}/graphql
+    X-Auth-Token: {{ACCESS_TOKEN}}
+    Content-Type: application/json
+    Accept: application/json
+
+    mutation (
+      $input: SetProductSeoInformationInput!
+    ) {
+      product {
+        setProductSeoInformation(input: $input) {
+          product {
+            id
+            overridesForLocale (localeContext: { channelId: "bc/store/channel/2", locale: "fr" }) {
+              seoInformation {
+                pageTitle
+                metaDescription
+              }
+            }
+          }
+        }
+      }
+    }
+    ```
+    ```json filename="GraphQL variables" showLineNumbers copy
+    {                                           
+      "input": {                                
+        "productId": "bc/store/product/111",    
+        "localeContext": {
+          "channelId": "bc/store/channel/2",      
+          "locale": "fr"
+        },                       
+        "data": {                               
+          "pageTitle": "Page title override FR",
+          "metaDescription": "Meta description override FR"
+        }                                                       
+      }
+    }
+    ```
+  </Tab>
+  <Tab>
+
+    ```json filename="Example mutation: Set product SEO information for a locale" showLineNumbers copy
+    {
+      "data": {
+        "product": {
+          "setProductSeoInformation": {
+            "product": {
+              "id": "bc/store/product/111",
+              "overridesForLocale": {
+                "seoInformation": {
+                  "pageTitle": "Page title override FR",
+                  "metaDescription": "Meta description override FR"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    ```
+
+  </Tab>
+</Tabs>
+
+## Remove product SEO information for a locale
+
+The following example removes product SEO information for the specified channel and locale.
+
+Omitting the `overridesToRemove` field from the input removes _all_ overrides for product SEO information from the locale.
+
+<Tabs items={['Request', 'Response']}>
+  <Tab>
+
+    ```graphql filename="Example mutation: Remove product SEO information for a locale" showLineNumbers copy
+    POST https://api.bigcommerce.com/stores/{{STORE_HASH}}/graphql
+    X-Auth-Token: {{ACCESS_TOKEN}}
+    Content-Type: application/json
+    Accept: application/json
+
+    mutation (
+      $input: RemoveProductSeoInformationOverridesInput!
+    ) {
+      product {
+        removeProductSeoInformationOverrides(input: $input) {
+          product {
+            id
+            overridesForLocale (localeContext: { channelId: "bc/store/channel/2", locale: "fr" }) {
+              seoInformation {
+                pageTitle
+                metaDescription
+              }
+            }
+          }
+        }
+      }
+    }
+    ```
+    ```json filename="GraphQL variables" showLineNumbers copy
+    {
+      "input": {
+        "productId": "bc/store/product/111",
+        "localeContext": {
+          "channelId": "bc/store/channel/2",      
+          "locale": "fr"
+        },  
+        "overridesToRemove": ["PRODUCT_PAGE_TITLE_FIELD"]
+      }
+    }
+    ```
+  </Tab>
+  <Tab>
+
+    ```json filename="Example mutation: Remove product SEO information for a locale" showLineNumbers copy
+    {
+      "data": {
+        "product": {
+          "removeProductSeoInformationOverrides": {
+            "product": {
+              "id": "bc/store/product/111",
+              "overridesForLocale": {
+                "seoInformation": {
+                  "pageTitle": "Page title override FR",
+                  "metaDescription": "Meta description override FR"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+## Query product SEO information
+
+The following example retrieves product SEO information. You can retrieve global information for the store and overrides for the specified channel and locale.
+
+<Tabs items={['Request', 'Response']}>
+  <Tab>
+
+    ```graphql filename="Example query: Get product SEO information" showLineNumbers copy
+    POST https://api.bigcommerce.com/stores/{{STORE_HASH}}/graphql
+    X-Auth-Token: {{ACCESS_TOKEN}}
+    Content-Type: application/json
+    Accept: application/json
+
+    query {
+      store {
+        product (id: "bc/store/product/111") {
+          id
+          seoInformation {
+            pageTitle
+            metaDescription
+          }
+          overridesForLocale(localeContext: { channelId: "bc/store/channel/2", locale: "fr" }) {
+            seoInformation {
+              pageTitle
+              metaDescription
+            }
+          }
+        }
+      }
+    }
+    ```
+  </Tab>
+  <Tab>
+
+    ```json filename="Example query: Get product SEO information" showLineNumbers copy
+    {
+      "data": {
+        "store": {
+          "product": {
+            "id": "bc/store/product/111",
+            "seoInformation": {
+              "pageTitle": "Example global page title",
+              "metaDescription": "Example global meta description"
+            },
+            "overridesForLocale": {
+              "seoInformation": {
+                "pageTitle": "Page title override FR",
+                "metaDescription": "Meta description override FR"
+              }
+            }
+          }
+        }
+      }
+    }
+    ```    
+
+  </Tab>
+</Tabs> 
+
+<Callout type="info">
+  - The `id` field contains the product's global ID that you can retrieve from the [Get all products](/docs/rest-catalog/products#get-all-products) endpoint. For example, a product with a global ID of 111 will have an `id` of `"bc/store/product/111"`.  
+  - The `channelId` field contains the channel's global ID that you can retrieve from the [Get all channels](/docs/rest-management/channels#get-all-channels) endpoint. For example, a channel with a global ID of 2 will have a `channelId` of `"bc/store/channel/2"`.
+</Callout>

@@ -32,26 +32,11 @@ paths:
         - Wishlists
       summary: Get All Wishlists
       description: Returns a list of wishlists. Optional filter parameters can be passed in.
-      operationId: WishlistsGet
+      operationId: getWishlists
       parameters:
-        - name: customer_id
-          in: query
-          description: All wishlists relating to the customer.
-          schema:
-            type: integer
-            format: int32
-        - name: page
-          in: query
-          description: The page number of results per page. 1 is the default and starts from record 0.
-          schema:
-            type: integer
-            format: int32
-        - name: limit
-          in: query
-          description: The numbers of items to return per page. Default is 50 and maximum is 250.
-          schema:
-            type: integer
-            format: int32
+        - $ref: '#/components/parameters/CustomerIdQuery'
+        - $ref: '#/components/parameters/PageQuery'
+        - $ref: '#/components/parameters/LimitQuery'
         - $ref: '#/components/parameters/Accept'
       responses:
         '200':
@@ -162,7 +147,7 @@ paths:
         **Required Fields**
         * name
         * customer_id
-      operationId: WishlistsPost
+      operationId: createWishlist
       parameters:
         - $ref: '#/components/parameters/Accept'
         - $ref: '#/components/parameters/ContentType'
@@ -243,20 +228,15 @@ paths:
                     type: string
   '/wishlists/{wishlist_id}/items/{item_id}':
     parameters:
-      - $ref: '#/components/parameters/WishlistID'
+      - $ref: '#/components/parameters/WishlistIdPath'
       - $ref: '#/components/parameters/Accept'
-      - name: item_id
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int32
+      - $ref: '#/components/parameters/ItemIdPath'
     delete:
       tags:
         - Wishlists Items
       summary: Delete Wishlist Item
       description: Deletes a wishlist item.
-      operationId: WishlistsItemsByIdDelete
+      operationId: deleteWishlistItem
       responses:
         '200':
           description: ''
@@ -317,6 +297,7 @@ paths:
             application/json:
               schema:
                 type: object
+                properties: {}
         '500':
           description: Internal server error.
           content:
@@ -334,14 +315,14 @@ paths:
                     type: string
   '/wishlists/{wishlist_id}':
     parameters:
-    - $ref: '#/components/parameters/WishlistID'
+    - $ref: '#/components/parameters/WishlistIdPath'
     - $ref: '#/components/parameters/Accept'
     get:
       tags:
         - Wishlists
       summary: Get a Wishlist
       description: Returns a single wishlist.
-      operationId: WishlistsByIdGet
+      operationId: getWishlist
       responses:
         '200':
           description: ''
@@ -402,6 +383,7 @@ paths:
             application/json:
               schema:
                 type: object
+                properties: {}
         '500':
           description: Internal server error.
           content:
@@ -425,7 +407,7 @@ paths:
         Updates a wishlist.
 
         Use this endpoint to update existing wishlist items, change the wishlistʼs name and whether the wishlist is available publicly. To add or delete a wishlist item, see [Wishlist Items](/docs/rest-management/wishlists/wishlists-items).
-      operationId: WishlistsByIdPut
+      operationId: updateWishlist
       parameters:
         - $ref: '#/components/parameters/ContentType'
       requestBody:
@@ -508,7 +490,7 @@ paths:
         - Wishlists
       summary: Delete a Wishlist
       description: Deletes a wishlist.
-      operationId: WishlistsByIdDelete
+      operationId: deleteWishlist
       responses:
         '204':
           description: ''
@@ -545,14 +527,14 @@ paths:
                     type: string
   '/wishlists/{wishlist_id}/items':
     parameters:
-    - $ref: '#/components/parameters/WishlistID'
+    - $ref: '#/components/parameters/WishlistIdPath'
     - $ref: '#/components/parameters/Accept'
     post:
       tags:
         - Wishlists Items
       summary: Add Wishlist Item
       description: Adds a wishlist item. More than one item can be added at a time.
-      operationId: WishlistsItemsByIdPost
+      operationId: addWishlistItem
       parameters:
         - $ref: '#/components/parameters/ContentType'
       requestBody:
@@ -807,7 +789,7 @@ components:
           $ref: '#/components/schemas/pagination'
       x-internal: false
   parameters:
-    WishlistID:
+    WishlistIdPath:
       name: wishlist_id
       in: path
       description: ID of the Wishlist.
@@ -815,6 +797,37 @@ components:
       schema:
         type: integer
         format: int32
+    ItemIdPath:
+      name: item_id
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int32
+    CustomerIdQuery:
+      name: customer_id
+      in: query
+      description: All wishlists relating to the customer.
+      schema:
+        type: integer
+        format: int32
+    PageQuery:
+      name: page
+      in: query
+      description: The page number of results to return. 1 is the default and starts from record 0. Use in conjunction with the limit query parameter to request a specific set of records.
+      schema:
+        type: integer
+        format: int32
+        default: 1
+    LimitQuery:
+      name: limit
+      in: query
+      description: The number of items to return per page. Default is 50 and maximum is 250.
+      schema:
+        type: integer
+        format: int32
+        default: 50
+        maximum: 250
     Accept:
       name: Accept
       in: header

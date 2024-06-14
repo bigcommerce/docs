@@ -8,16 +8,24 @@ servers:
 info:
   title: Storefront Cookie Consent
   description: |-
-    Specify shopper cookie consent preferences.
+    Specify shopper cookie consent preferences on BigCommerce-hosted storefronts. To work with headless storefronts, use the [GraphQL Storefront API](/graphql-storefront/reference).
     
-    For info about API accounts, see our [Guide to API Accounts](/docs/start/authentication/api-accounts).
+    The REST Storefront API uses [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) headers for authentication, and therefore has no required scopes. You do not need to send any BigCommerce-specific tokens with your requests to these endpoints.
         
     For info about authenticating BigCommerce APIs, see [Authentication and Example Requests](/docs/start/authentication#same-origin-cors-authentication).
   version: Storefront
+  termsOfService: 'https://www.bigcommerce.com/terms'
+  contact:
+    name: BigCommerce
+    url: 'https://www.bigcommerce.com'
+    email: support@bigcommerce.com
 tags:
   - name: Consent
 paths:
   /consent:
+    parameters:
+      - $ref: '#/components/parameters/Accept'
+      - $ref: '#/components/parameters/ContentType'
     post:
       summary: Set Cookie Consent Preferences
       tags:
@@ -45,10 +53,9 @@ paths:
       description: |
         Sets the status of a customer's consent to allow data collection by cookies and scripts according to the following consent categories:
 
-
-          2. Analytics — These cookies provide statistical information on site usage so the store owner can improve the website over time.  
-          3. Functional — These cookies enable enhanced functionality, such as videos and live chat. If a shopper does not allow these, then some or all of these functions may not work properly. 
-          4. Targeting; Advertising — These cookies allow merchants to create profiles or personalize content to enhance users' shopping experience.
+          1. Analytics — These cookies provide statistical information on site usage so the store owner can improve the website over time.  
+          2. Functional — These cookies enable enhanced functionality, such as videos and live chat. If a shopper does not allow these, then some or all of these functions may not work properly. 
+          3. Targeting; Advertising — These cookies allow merchants to create profiles or personalize content to enhance users' shopping experience.
           
           
         This endpoint only works if the cookie consent feature is enabled. It is assumed the shopper has not consented to anything until a value is explicitly set. The request body must be populated with a complete set of allowed and denied categories.
@@ -57,8 +64,7 @@ paths:
 
         > #### Note
         > * Substitute your storefront domain for `yourstore.example.com`. 
-      operationId: postConsent
-    parameters: []
+      operationId: postCookieConsent
 components:
   schemas:
     ConsentPreferences:
@@ -99,3 +105,20 @@ components:
         - allow
         - deny
       x-internal: false
+  parameters:
+    Accept:
+      name: Accept
+      in: header
+      required: true
+      description: 'The [MIME type](https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types) of the response body.'
+      schema:
+        type: string
+        default: 'application/json'
+    ContentType:
+      name: Content-Type
+      in: header
+      required: true
+      description: 'The [MIME type](https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types) of the request body.'
+      schema:
+        type: string
+        default: 'application/json'

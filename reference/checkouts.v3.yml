@@ -44,22 +44,9 @@ paths:
         **Notes**
 
         The cart ID and checkout ID are the same.
-      operationId: CheckoutsByCheckoutIdGet
+      operationId: getCheckout
       parameters:
-        - name: include
-          in: query
-          description: |-
-            * `cart.line_items.physical_items.options` - physical options
-            * `cart.line_items.digital_items.options` - digital options
-            * `consignments.available_shipping_options` - shipping options
-            * `promotions.banners` - promotion options
-          schema:
-            type: string
-            enum:
-              - cart.line_items.physical_items.options
-              - cart.line_items.digital_items.options
-              - consignments.available_shipping_options
-              - promotions.banners
+        - $ref: '#/components/parameters/IncludeGeneral'
       responses:
         '200':
           description: ''
@@ -840,7 +827,7 @@ paths:
 
         **Limits:**
         * 2000 characters for customer message
-      operationId: CheckoutsByCheckoutIdPut
+      operationId: updateCheckout
       parameters:
         - $ref: '#/components/parameters/Content-Type'
       requestBody:
@@ -1604,15 +1591,20 @@ paths:
         - Checkout Discounts
       summary: Add Discount to Checkout
       description: |-
-        Adds a discount to an existing *checkout*.
+        Adds a discount to an existing checkout.
+        
+        Use this endpoint to apply the following discounts:
+        * Apply a manual discount to a cart. In this case, you can distribute the discount between each line item in the cart based on the item value.
+        * Apply a manual discount against a specific line item.
+        * Apply a manual discount at the item-level with a cart-level discount.
 
-        This discount only applies to `line_items`. When you call this API, you clear out all existing discounts applied to line items, including product and order-based discounts.
+        Notes:
+        * When you call this API, you clear out all existing discounts applied to line items, including product and order-based discounts.
+        * You cannot apply a manual discount to a specific line item if you have already applied a coupon or automatic promotion to it.
 
-        This endpoint splits the discount between line items based on the item value.
-
-        Required Fields
-        * discounted_amount
-      operationId: post-store_hash-v3-checkouts-checkoutId-discounts
+        Required Fields:
+        * `discounted_amount` at the cart-level or at the item-level
+      operationId: addCheckoutDiscount
       parameters:
         - $ref: '#/components/parameters/checkoutId'
         - $ref: '#/components/parameters/Accept'
@@ -1639,6 +1631,17 @@ paths:
                           name:
                             type: string
                             example: manual
+                    line_items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                              id:
+                                type: string
+                                example: 8edef915-8e8e-4ebd-bece-31fbb1191a7e
+                              discounted_amount:
+                                type: number
+                                example: 15
         required: false
       responses:
         '200':
@@ -2393,7 +2396,7 @@ paths:
         **Required Fields**
         * email
         * country_code
-      operationId: CheckoutsBillingAddressByCheckoutIdPost
+      operationId: addCheckoutBillingAddress
       parameters:
         - $ref: '#/components/parameters/checkoutId'
         - $ref: '#/components/parameters/Accept'
@@ -3158,7 +3161,7 @@ paths:
         - Checkout Billing Address
       summary: Update Checkout Billing Address
       description: Updates an existing billing address on a checkout.
-      operationId: CheckoutsBillingAddressByCheckoutIdAndAddressIdPut
+      operationId: updateCheckoutBillingAddress
       parameters:
         - $ref: '#/components/parameters/checkoutId'
         - $ref: '#/components/parameters/Accept'
@@ -3948,17 +3951,13 @@ paths:
 
         * `postal_code`
         * `state_or_province`
-      operationId: CheckoutsConsignmentsByCheckoutIdPost
+        
+      operationId: addCheckoutConsignment
       parameters:
         - $ref: '#/components/parameters/checkoutId'
         - $ref: '#/components/parameters/Accept'
         - $ref: '#/components/parameters/Content-Type'
-        - name: include
-          in: query
-          schema:
-            type: string
-            enum:
-              - consignments.available_shipping_options
+        - $ref: '#/components/parameters/IncludeShippingOptions'
       requestBody:
         content:
           application/json:
@@ -3983,9 +3982,9 @@ paths:
                       custom_fields:
                         - field_id: "string"
                           field_value: "string"
-                      line_items:
-                          item_id: "118f8774-387c-485e-a095-6ef76d5f1bbd"
-                          quantity: 1 
+                    line_items: 
+                      - item_id: "118f8774-387c-485e-a095-6ef76d5f1bbd"
+                        quantity: 1 
               Pickup Consignment:
                 value: 
                   - line_items:
@@ -4768,22 +4767,12 @@ paths:
 
         Please note that this API endpoint is not concurrent safe, meaning multiple simultaneous requests could result in unexpected and inconsistent results.
         
-      operationId: CheckoutsConsignmentsByCheckoutIdAndConsignmentIdPut
+
+        2. Assign a shipping option to the new consignment by sending a `PUT` request to update the consignment's `shipping_option_id` with a returned value from `data.consignments[N].available_shipping_option[N].id` obtained in Step One. 
+      operationId: updateCheckoutConsignment
       parameters:
         - $ref: '#/components/parameters/Content-Type'
-        - name: include
-          in: query
-          description: Include to get available shipping options.
-          schema:
-            type: string
-            enum:
-              - consignments.available_shipping_options
-            x-enum-elements:
-              - name: Enum_consignments.availableShippingOptions
-                description: ''
-          x-enum-elements:
-            - name: Enum_consignments.availableShippingOptions
-              description: ''
+        - $ref: '#/components/parameters/IncludeShippingOptions'
       requestBody:
         content:
           application/json:
@@ -5540,7 +5529,7 @@ paths:
         Removes an existing consignment from a checkout.
 
         Removing the last consignment will remove the cart from the customer it is assigned to. Create a new redirect URL for the customer so they can access the cart again.
-      operationId: CheckoutsConsignmentsByCheckoutIdAndConsignmentIdDelete
+      operationId: deleteCheckoutConsignment
       responses:
         '200':
           description: ''
@@ -6296,7 +6285,7 @@ paths:
 
         **Limits**
         * Coupon codes have a 50-character limit. 
-      operationId: CheckoutsCouponsByCheckoutIdPost
+      operationId: addCheckoutCoupon
       parameters:
         - $ref: '#/components/parameters/checkoutId'
         - $ref: '#/components/parameters/Accept'
@@ -7061,7 +7050,7 @@ paths:
         - Checkout Coupons
       summary: Delete Checkout Coupon
       description: Deletes a coupon code from a checkout.
-      operationId: CheckoutsCouponsByCheckoutIdAndCouponCodeDelete
+      operationId: deleteCheckoutCoupon
       parameters:
         - $ref: '#/components/parameters/checkoutId'
         - $ref: '#/components/parameters/Accept'
@@ -7635,7 +7624,7 @@ paths:
         * Order duplication copies the existing order, assigns a new order number, and sets the new order status to `incomplete`.
         * Once the order is paid, the cart is deleted.
         * Cart deletion occurs if you are using BigCommerce to accept payments on orders.
-      operationId: createAnOrder
+      operationId: createOrder
       parameters:
         - $ref: '#/components/parameters/checkoutId'
         - $ref: '#/components/parameters/Accept'
@@ -7664,7 +7653,7 @@ paths:
         - Checkout Settings
       summary: Get Checkout Settings
       description: Get checkout settings
-      operationId: GetCheckoutSettings
+      operationId: getCheckoutSettings
       responses:
         '200':
           description: ''
@@ -7696,7 +7685,7 @@ paths:
         - Checkout Settings
       summary: Update Checkout Settings
       description: Update checkout settings
-      operationId: UpdateCheckoutSettings
+      operationId: updateCheckoutSettings
       parameters:
         - $ref: '#/components/parameters/Content-Type'
       requestBody:
@@ -7740,7 +7729,7 @@ paths:
       tags:
         - Checkout Token
       summary: Create Checkout Token
-      operationId: checkout-token
+      operationId: createCheckoutToken
       parameters:
         - $ref: '#/components/parameters/Content-Type'
       responses:
@@ -7785,6 +7774,8 @@ paths:
                     example: 'https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes'
                   errors:
                     type: object
+                    properties: {}
+                    additionalProperties: true
         '422':
           description: Invalid JSON request body - missing or invalid data.
           content:
@@ -7868,7 +7859,7 @@ components:
               properties:
                 code:
                   type: string
-                  description: 'ISO-4217 currency code. (See: http://en.wikipedia.org/wiki/ISO_4217.)'
+                  description: 'ISO-4217 currency code. (See: https://www.iso.org/iso-4217-currency-codes.html.)'
                   example: USD
             base_amount:
               type: number
@@ -7880,7 +7871,7 @@ components:
               description: ID of channel
             discount_amount:
               type: number
-              description: Order-based discounted amount only - Excludes coupon discounts and product-based discounts.
+              description: The amount includes order-level automatic promotions plus manual discounts and excludes coupon and product-based discounts.
               format: double
               example: 0.5
             cart_amount_inc_tax:
@@ -8225,6 +8216,7 @@ components:
           title: Address Response
           allOf:
             - title: Address Properties
+              type: object
               properties:
                 first_name:
                   type: string
@@ -8276,11 +8268,11 @@ components:
                       field_value:
                         type: string
                         description: 'This can also be an array for fields that need to support a list of values (e.g., a set of check boxes.)'
-            - properties:
+            - type: object
+              properties:
                 id:
                   type: string
                   description: ''
-          type: object
         consignments:
           type: array
           description: ''
@@ -8294,11 +8286,14 @@ components:
                 description: ''
               shippingAddress:
                 type: object
+                properties: {}
+                additionalProperties: true
                 x-deprecated: true
               address:
                 title: Address Response
                 allOf:
                   - title: Address Properties
+                    type: object
                     properties:
                       first_name:
                         type: string
@@ -8353,11 +8348,11 @@ components:
                     required:
                       - email
                       - country_code
-                  - properties:
+                  - type: object
+                    properties:
                       id:
                         type: string
                         description: ''
-                type: object
               available_shipping_options:
                 type: array
                 description: This is available only when "include=consignments.available_shipping_options" is presented in the URL.
@@ -8653,6 +8648,8 @@ components:
             required:
               - country_code
               - email
+              - state_or_province
+              - postal_code
             type: object
             properties:
               first_name:
@@ -8818,6 +8815,15 @@ components:
               pickup_method_id:
                 type: integer
                 example: 1
+          custom_shipping:
+            type: object
+            properties:
+              price:
+                type: number
+                example: 12.9
+              description:
+                type: string
+                example: "custom shipping"
       description: One or more of these three fields are mandatory. `address` and `line_items` can be updated in one request. `shipping_option_id` has to be updated in a separate request because changing the address or line items can invalidate the previously available shipping options.
       x-internal: false
     CouponCodeRequest:
@@ -9703,13 +9709,34 @@ components:
       schema:
         type: string
         default: application/json
-    includeShippingOption:
+    IncludeShippingOptions:
       name: include
       in: query
+      required: false
+      description: Include the shipping options available to this checkout.
       schema:
         type: string
         enum:
           - consignments.available_shipping_options
+    IncludeGeneral:
+      name: include
+      in: query
+      description: |-
+        * `cart.line_items.physical_items.options` - physical options
+        * `cart.line_items.digital_items.options` - digital options
+        * `consignments.available_shipping_options` - shipping options
+        * `promotions.banners` - promotion options
+      style: form
+      explode: false
+      schema:
+        type: array
+        items:
+          type: string
+          enum:
+            - cart.line_items.physical_items.options
+            - cart.line_items.digital_items.options
+            - consignments.available_shipping_options
+            - promotions.banners
   securitySchemes:
     X-Auth-Token:
       name: X-Auth-Token

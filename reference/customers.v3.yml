@@ -6,7 +6,7 @@ info:
     Create and manage customers.
 
     ## Resources
-    * [Customer and Subscribers Overview](/docs/store-operations/customers/customers-subscribers-overview).
+    * [Customers Overview](/docs/store-operations/customers).
   termsOfService: 'https://www.bigcommerce.com/terms'
   contact:
     name: BigCommerce
@@ -23,17 +23,18 @@ security:
   - X-Auth-Token: []
 tags:
   - name: Customers
-    description: BigCommerce Customers API Definition.
-  - name: Customer Addresses
-  - name: Customer Attributes
-  - name: Customer Attribute Values
-  - name: Customer Form Field Values
-  - name: Customer Consent
-  - name: Customer Form Fields
-  - name: Customer Stored Instruments
-  - name: Customer Settings
-  - name: Customer Settings Channel
-  - name: Customer Validate Credentials
+  - name: Addresses
+  - name: Attributes
+  - name: Attribute Values
+  - name: Consent
+  - name: Form Fields
+  - name: Form Field Values
+  - name: Metafields
+  - name: Metafields Batch
+  - name: Channel Settings
+  - name: Global Settings
+  - name: Stored Instruments
+  - name: Validate Credentials
 paths:
   '/customers':
     get:
@@ -46,7 +47,7 @@ paths:
       summary: Get All Customers
       tags:
         - Customers
-      operationId: CustomersGet
+      operationId: getCustomers
       deprecated: false
       parameters:
         - name: page
@@ -125,8 +126,12 @@ paths:
         - name: 'email:in'
           in: query
           description: 'Filter items by email. `email:in=janedoe@example.com`'
+          style: form
+          explode: false
           schema:
-            type: string
+            type: array
+            items:
+              type: string
         - name: 'name:in'
           in: query
           description: Filter items by first_name and last_name. `name=james moriarty`
@@ -140,7 +145,7 @@ paths:
           in: query
           description: |-
             Filter items by substring in first_name and last_name.
-            `name:like=moriarty, sherlock`
+            `name:like=moriarty,sherlock`
             Concatenates the first_name and last_name fields.
           style: form
           explode: false
@@ -171,6 +176,7 @@ paths:
              * `segment_ids`- segments the customer belongs to (Beta)
 
              `include=addresses,storecredit,attributes,formfields,shopper_profile_id,segment_ids`
+          style: form
           explode: false
           schema:
             type: array
@@ -230,7 +236,7 @@ paths:
       summary: Create Customers
       tags:
         - Customers
-      operationId: CustomersPost
+      operationId: createCustomers
       deprecated: false
       requestBody:
         content:
@@ -278,7 +284,6 @@ paths:
                       - name: "test"
                         value: "test"
         required: true
-        x-examples: {}
         description: ''
       responses:
         '200':
@@ -311,16 +316,18 @@ paths:
         * registration_ip_address
         * date_created
         * date_modified
+        * origin_channel_id
 
 
         **Notes**
 
         * Attributes Values can not be updated using Update a Customer. Use the [Update customer attribute values](/docs/rest-management/customers/customer-attribute-values#upsert-customer-attribute-values) endpoint.
         * channel_ids -- Updating the list of channels a customer can access may create some side effects in a multi-storefront situation. This list determines which customer account we will use to authenticate a shopper given a channel.
+        * origin_channel_id -- This is an immutable value set as a reference to the channel of origin when a customer is created.
       summary: Update Customers
       tags:
         - Customers
-      operationId: CustomersPut
+      operationId: updateCustomers
       deprecated: false
       responses:
         '200':
@@ -385,7 +392,7 @@ paths:
       summary: Delete Customers
       tags:
         - Customers
-      operationId: CustomersDelete
+      operationId: deleteCustomers
       deprecated: false
       parameters:
         - in: query
@@ -408,7 +415,7 @@ paths:
     get:
       description: Returns a list of Customer Addresses. Optional filter parameters can be passed in.
       summary: Get All Customer Addresses
-      operationId: CustomersAddressesGet
+      operationId: getCustomersAddresses
       deprecated: false
       parameters:
         - name: Accept
@@ -464,10 +471,14 @@ paths:
             Indicates whether to include customer address sub-resources:
             * `formfields` - address form fields
             `include=formfields`
+          style: form
+          explode: false
           schema:
-            type: string
-            enum:
-              - formfields
+            type: array
+            items:
+              type: string
+              enum:
+                - formfields
         - name: 'id:in'
           in: query
           description: |-
@@ -483,7 +494,7 @@ paths:
         '200':
           $ref: '#/components/responses/AddressCollectionResponse'
       tags:
-        - Customer Addresses
+        - Addresses
     post:
       description: |-
         Creates a Customer Address. Multiple customer addresses can be created in one call.
@@ -495,6 +506,8 @@ paths:
         * **city**
         * **country_code**
         * **address1**
+        * **state_or_province**
+        * **postal_code**
 
         **Notes**
         * A unique customer address is a combination of the following core address fields:
@@ -513,7 +526,7 @@ paths:
         * An attempt to create an address that already exists will result in no change to the address or custom form field values, an HTTP 200 return code, and the address will be absent from the response body.
         * The default rate limit for this endpoint is 10 concurrent requests.
       summary: Create a Customer Address
-      operationId: CustomersAddressesPost
+      operationId: createCustomersAddresses
       deprecated: false
       parameters:
         - name: Accept
@@ -578,7 +591,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
       tags:
-        - Customer Addresses
+        - Addresses
     put:
       description: |-
         Updates a Customer Address. Multiple customer addresses can be updated in one call.
@@ -604,7 +617,7 @@ paths:
           * **postal_code**
         * An attempt to update an address such that it becomes identical to another address that already exists will result in no change to the target address or custom form field values. The response will have an HTTP 200 return code, and the address will be absent from the response body.
       summary: Update a Customer Address
-      operationId: CustomersAddressesPut
+      operationId: updateCustomersAddresses
       deprecated: false
       parameters:
         - name: Accept
@@ -672,7 +685,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
       tags:
-        - Customer Addresses
+        - Addresses
     delete:
       description: |-
         Deletes a Customer Address.
@@ -680,7 +693,7 @@ paths:
         **Required Query**
         * id:in -- ID of the *Customer Address*
       summary: Delete a Customer Address
-      operationId: CustomersAddressesDelete
+      operationId: deleteCustomersAddresses
       deprecated: false
       parameters:
         - name: Accept
@@ -710,14 +723,14 @@ paths:
           description: ''
           headers: {}
       tags:
-        - Customer Addresses
+        - Addresses
   '/customers/validate-credentials':
     post:
       tags:
-        - Customer Validate Credentials
+        - Validate Credentials
       description: Validate a customer credentials - This endpoint has special rate limiting protections to protect against abuse.
       summary: Validate a customer credentials
-      operationId: CustomerValidateCredentials
+      operationId: validateCustomerCredentials
       requestBody:
         required: true
         content:
@@ -765,17 +778,24 @@ paths:
   '/customers/settings':
     get:
       tags:
-        - Customer Settings
+        - Global Settings
       description: Returns the global-level customer settings.
       summary: Get Customer Settings
-      operationId: CustomerSettingsGet
+      operationId: getCustomersSettings
       responses:
         '200':
           description: Returns customer settings values for global level.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CustomerSettingsObject'
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/CustomerSettingsObject'
+                  meta:
+                    type: object
+                    properties: {}
+                    additionalProperties: true
               examples:
                 data:
                   value:
@@ -787,10 +807,10 @@ paths:
                       default_customer_group_id: 1
     put:
       tags:
-        - Customer Settings
+        - Global Settings
       description: Updates the customer settings on the global level.
       summary: Update Customer Settings
-      operationId: CustomerSettingsPut
+      operationId: updateCustomersSettings
       requestBody:
         content:
           application/json:
@@ -812,7 +832,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CustomerSettingsObject'
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/CustomerSettingsObject'
+                  meta:
+                    type: object
+                    properties: {}
+                    additionalProperties: true
               examples:
                 data:
                   value:
@@ -826,7 +853,7 @@ paths:
   '/customers/settings/channels/{channel_id}':
     get:
       tags:
-        - Customer Settings Channel
+        - Channel Settings
       description: |-
         Returns the customer settings per channel.
 
@@ -834,7 +861,7 @@ paths:
 
          * `null` indicates that there is no override per given channel and values are inherited from the global level.
       summary: Get Customer Settings per Channel
-      operationId: CustomerSettingsChannelGet
+      operationId: getCustomersSettingsChannel
       parameters:
         - in: path
           name: channel_id
@@ -847,7 +874,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CustomerChannelSettingsObject'
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/CustomerChannelSettingsObject'
+                  meta:
+                    type: object
+                    properties: {}
+                    additionalProperties: true
               examples:
                 data:
                   value:
@@ -859,7 +893,7 @@ paths:
                       allow_global_logins: true
     put:
       tags:
-        - Customer Settings Channel
+        - Channel Settings
       description: |-
         Update the customer settings per channel
 
@@ -871,7 +905,7 @@ paths:
 
         * Setting `null` will delete override per given channel, and values will be inherited from the global level. Make sure the channel has `allow_global_logins` enabled.
       summary: Update Customer Settings per Channel
-      operationId: CustomerSettingsChannelPut
+      operationId: updateCustomersSettingsChannel
       parameters:
         - in: path
           name: channel_id
@@ -900,7 +934,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CustomerSettingsObject'
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/CustomerSettingsObject'
+                  meta:
+                    type: object
+                    properties: {}
+                    additionalProperties: true
               examples:
                 example:
                   value:
@@ -922,7 +963,7 @@ paths:
     get:
       description: Returns a list of Customer Attributes. You can pass in optional filter parameters.
       summary: Get All Customer Attributes
-      operationId: CustomersAttributesGet
+      operationId: getCustomersAttributes
       deprecated: false
       parameters:
         - name: page
@@ -1009,7 +1050,7 @@ paths:
         '200':
           $ref: '#/components/responses/CustomerAttributesResponse'
       tags:
-        - Customer Attributes
+        - Attributes
     post:
       description: |-
         Creates a Customer Attribute. Multiple customer attributes can be created in one call.
@@ -1029,7 +1070,7 @@ paths:
 
         A store cannot have more than 50 customer attributes.
       summary: Create a Customer Attribute
-      operationId: CustomersAttributesPost
+      operationId: createCustomersAttributes
       deprecated: false
       parameters:
         - name: Accept
@@ -1065,7 +1106,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
       tags:
-        - Customer Attributes
+        - Attributes
     put:
       description: |-
         Updates a Customer Attribute. Multiple customer attributes can be updated in one call.
@@ -1078,7 +1119,7 @@ paths:
         **Limits**
         * Limit of 3 concurrent requests.
       summary: Update a Customer Attribute
-      operationId: CustomersAttributesPut
+      operationId: updateCustomersAttributes
       deprecated: false
       parameters:
         - name: Accept
@@ -1114,7 +1155,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
       tags:
-        - Customer Attributes
+        - Attributes
     delete:
       description: |-
         Deletes Customer Attributes from the store.
@@ -1122,7 +1163,7 @@ paths:
         **Required Query**
         * id:in -- ID of the *Customer Attribute*
       summary: Delete Customer Attributes
-      operationId: CustomersAttributesDelete
+      operationId: deleteCustomersAttributes
       deprecated: false
       parameters:
         - name: 'id:in'
@@ -1151,12 +1192,12 @@ paths:
           description: ''
           headers: {}
       tags:
-        - Customer Attributes
+        - Attributes
   '/customers/attribute-values':
     get:
       description: Returns a list of Customer Attribute Values. Optional filter parameters can be passed in.
       summary: Get All Customer Attribute Values
-      operationId: CustomersAttributeValuesGet
+      operationId: getCustomersAttributeValues
       deprecated: false
       parameters:
         - name: Accept
@@ -1240,7 +1281,7 @@ paths:
         '200':
           $ref: '#/components/responses/CustomerAttributeValueCollectionResponse'
       tags:
-        - Customer Attribute Values
+        - Attribute Values
     put:
       description: |-
         Upserts Customer Attribute Values. Updates the attribute values on the Customer. Multiple customer attribute values can be updated in one call.
@@ -1250,7 +1291,7 @@ paths:
         **Limits**
         * 10 per call limit.
       summary: Upsert Customer Attribute Values
-      operationId: CustomersAttributeValuesPut
+      operationId: upsertCustomersAttributeValues
       deprecated: false
       parameters:
         - name: Accept
@@ -1307,7 +1348,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
       tags:
-        - Customer Attribute Values
+        - Attribute Values
     delete:
       description: |-
         Deletes Customer Attribute Values. Deletes the attribute value from the customer.
@@ -1315,7 +1356,7 @@ paths:
         **Required Query**
         * id:in - ID of the *Customer Attribute Value*
       summary: Delete Customer Attribute Values
-      operationId: CustomersAttributeValuesDelete
+      operationId: deleteCustomersAttributeValues
       deprecated: false
       parameters:
         - name: 'id:in'
@@ -1346,7 +1387,7 @@ paths:
           description: ''
           headers: {}
       tags:
-        - Customer Attribute Values
+        - Attribute Values
   '/customers/form-field-values':
     get:
       responses:
@@ -1363,9 +1404,9 @@ paths:
         Returns a list of form field values for the Customer or Customer Address object.
 
         To learn about adding and managing form fields, see [Adding and Editing Fields in the Account Signup Form](https://support.bigcommerce.com/s/article/Editing-Form-Fields).
-      operationId: CustomerFormFieldsGet
+      operationId: getCustomersFormFieldValues
       tags:
-        - Customer Form Field Values
+        - Form Field Values
       parameters:
         - name: Accept
           in: header
@@ -1445,9 +1486,9 @@ paths:
 
         **Limits**
         * Limit of 10 concurrent requests.
-      operationId: CustomerFormFieldValuePUT
+      operationId: updateCustomerFormFieldValues
       tags:
-        - Customer Form Field Values
+        - Form Field Values
       requestBody:
         content:
           application/json:
@@ -1469,11 +1510,11 @@ paths:
                     value: Mushrooms
   '/customers/{customerId}/consent':
     get:
-      description: Gets the status of a customer's consent to allow data collection by cookies and scripts while shopping on a storefront.
+      description: Gets the status of a customerʼs consent to allow data collection by cookies and scripts while shopping on a storefront.
       summary: Get Customer Consent
       tags:
-        - Customer Consent
-      operationId: CustomersConsentByCustomerId_GET
+        - Consent
+      operationId: getCustomerConsent
       deprecated: false
       responses:
         '200':
@@ -1497,11 +1538,11 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
     put:
-      description: Updates the status of a customer's consent to allow data collection by cookies and scripts while shopping on a storefront.
+      description: Updates the status of a customerʼs consent to allow data collection by cookies and scripts while shopping on a storefront.
       summary: Update Customer Consent
       tags:
-        - Customer Consent
-      operationId: CustomersConsentByCustomerId_PUT
+        - Consent
+      operationId: updateCustomerConsent
       deprecated: false
       parameters:
         - name: Content-Type
@@ -1548,11 +1589,11 @@ paths:
     get:
       summary: Get Stored Instruments
       tags:
-        - Customer Stored Instruments
+        - Stored Instruments
       description: |-
         Lists all available stored instruments for a customer. This list will include all types of stored instruments namely card, account and bank_account instruments
 
-      operationId: liststoredinstruments
+      operationId: getCustomerStoredInstruments
       parameters:
         - $ref: '#/components/parameters/customerId'
       responses:
@@ -1571,7 +1612,7 @@ paths:
                     propertyName: type
                     mapping:
                       stored_card: '#/components/schemas/CardInstrument'
-                      stored_paypal_account: '#/components/schemas/PaypalAccountInstrument'
+                      stored_paypal_account: '#/components/schemas/PayPalAccountInstrument'
                       stored_bank_account: '#/components/schemas/BankAccountInstrument'
               examples:
                 example-1:
@@ -1615,21 +1656,538 @@ paths:
               example:
                 code: 403
                 message: Missing scope
-    parameters:
-      - schema:
-          type: string
-        name: customerId
-        in: path
+  '/customers/{customerId}/metafields':
+    get:
+      summary: Get Customer Metafields
+      tags:
+        - Metafields
+      description: Gets customer metafields by passing the `customerId` in the query parameters.
+      operationId: getCustomersMetafields
+      parameters:
+        - $ref: '#/components/parameters/customerId'
+      requestBody:
         required: true
+        content: 
+          application/json:
+            schema:
+             $ref: '#/components/schemas/Metafield'
+      responses:
+        '200':
+          $ref: '#/components/responses/MetafieldCollectionResponse'
+    post:
+      summary: Create Customer Metafields
+      tags:
+        - Metafields
+      description: Creates Customer metafields by passing the `customerId` in the query parameters.
+      operationId: createCustomerMetafields
+      parameters:
+        - $ref: '#/components/parameters/customerId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MetafieldBase_Post'
+      responses:
+        '200':
+          description: Response payload for the BigCommerce API.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetaFieldCollectionPostPutResponses'
+        '400':
+          description: Bad Request. Inupt is invalid.
+          content:
+            application/json:
+              schema:
+                description: ''
+                type: object
+                properties:
+                  status:
+                    type: number
+                  title:
+                    type: string
+                    minLength: 1
+                  type:
+                    type: string
+                    minLength: 1
+                  detail:
+                    type: string
+                    minLength: 1
+              example:
+                status: 400
+                title: Input is invalid
+                type: 'https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes'
+                detail: Syntax error
+        '409':  
+          description: |
+            The `Metafield` conflicts with another `Metafield`. This can result from duplicate unique key combinations of the appʼs client id, namespace, key, resource_type, and resource_id.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: The `Metafield` was not valid. This is the result of missing required fields, or of invalid data. See the response for more details. 
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  '/customers/{customerId}/metafields/{metafieldId}':
+    get:
+      summary: Get Customer Metafields List
+      description: |
+        Lists available metafields for a customer. To retrieve the list, use `customerId` and `metafieldId` in the query parameters.
+      operationId: getMetafieldsCustomerId
+      tags:
+        - Metafields
+      parameters: 
+        - name: customerId
+          in: path
+          description: The ID that belongs to the customer.
+          required: true
+          schema:
+            type: integer
+        - name: metafieldId
+          in: path
+          description: The ID that is generated for a metafield when created.
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Metafield'
+      responses:
+        '200':
+          $ref: '#/components/responses/MetafieldCollectionResponse'
+        '404':
+          description: |
+            Not found (A metafield was not found with this query).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFound'
+              examples:
+                example-1:
+                  value:
+                    status: 404
+                    title: The resource at that URL is not found.
+                    type: 'https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes'
+    put:
+      summary: Update a Metafield
+      tags:
+        - Metafields
+      description: Updates customer metafields. To update the customer metafields, use 'customerId' and 'metafield' in the query parameters.
+      operationId: updateCustomerMetafield
+      parameters: 
+        - name: metafieldId
+          in: query
+          description: The ID that is generated for a metafield when created.
+          schema:
+            type: integer
+        - $ref: '#/components/parameters/metafieldId'
+        - $ref: '#/components/parameters/customerId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                allOf:
+                  - $ref: '#/components/schemas/MetafieldBase_Put'
+                  - type: object
+                    properties:
+                      id:
+                        type: integer
+                        example: 42
+                        description: |
+                          The ID of metafield to update.
+                    required:
+                      - id
+        description: ''
+      responses:
+        '200':
+          description: Response payload for the BigCommerce API.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetaFieldCollectionPostPutResponses'
+        '400':
+          description: Bad Request. Input is invalid.
+          content:
+            application/json:
+              schema:
+                description: ''
+                type: object
+                properties:
+                  status:
+                    type: number
+                  title:
+                    type: string
+                    minLength: 1
+                  type:
+                    type: string
+                    minLength: 1
+                  detail:
+                    type: string
+                    minLength: 1
+              example:
+                status: 400
+                title: Input is invalid
+                type: 'https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes'
+                detail: Syntax error
+        '404':
+          description: |
+            Not found (A metafield was not found with this query).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFound'
+              examples:
+                example-1:
+                  value:
+                    status: 404
+                    title: The resource at that URL is not found.
+                    type: 'https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes'
+    delete:
+      summary: Delete Customer Metafields
+      tags:
+        - Metafields
+      description: |
+        Deletes customer metafields. To delete customer metafields, use 'customerId' and 'metafieldId' in the query parameters.
+      parameters:
+        - $ref: '#/components/parameters/customerId'
+        - $ref: '#/components/parameters/metafieldId'
+      operationId: deleteCustomerMetafieldsId
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: integer
+        description: ''
+      responses:
+        '204':
+          description: | 
+            Response object for customer metafields deletion with success.
+        '404':
+          description: |
+            Not found (A metafield was not found with this query).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFound'
+              examples:
+                example-1:
+                  value:
+                    status: 404
+                    title: The resource at that URL is not found.
+                    type: 'https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes'
+  '/customers/metafields':
+    get:
+      summary: Get All Customer Metafields
+      tags:
+        - Metafields Batch
+      description: Get all customer metafields.
+      operationId: getAllCustomersMetafields
+      responses:
+        '200':
+          description: |
+            List of `Metafield` objects.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetaFieldCollectionResponse'
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/MetafieldKeyParam'
+        - $ref: '#/components/parameters/MetafieldKeyInParam'
+        - $ref: '#/components/parameters/MetafieldNamespaceParam'
+        - $ref: '#/components/parameters/MetafieldNamespaceInParam'
+        - $ref: '#/components/parameters/DirectionParam'
+        - $ref: '#/components/parameters/IncludeFieldsParamMetafields'
+    post:
+      summary: Create Multiple Metafields
+      tags:
+        - Metafields Batch
+      description: Create multiple metafields.
+      operationId: createCustomersMetafields
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                allOf:
+                  - $ref: '#/components/schemas/MetafieldBase_Post'
+                  - type: object
+                    properties:
+                      resource_id:
+                        type: integer
+                        example: 42
+                        description: |
+                          The ID for the resource with which the metafield is associated.
+                    required:
+                      - resource_id
+        description: ''
+      responses:
+        '200':
+          description: Response payload for the BigCommerce API.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetaFieldCollectionPostPutResponses'
+        '400':
+          description: Bad Request. Input is invalid.
+          content:
+            application/json:
+              schema:
+                description: ''
+                type: object
+                properties:
+                  status:
+                    type: number
+                  title:
+                    type: string
+                    minLength: 1
+                  type:
+                    type: string
+                    minLength: 1
+                  detail:
+                    type: string
+                    minLength: 1
+              example:
+                status: 400
+                title: Input is invalid
+                type: 'https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes'
+                detail: Syntax error
+        '422':
+          description: |
+            Response object for metafields creation with partial success.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetaFieldCollectionResponsePartialSuccess_POST_PUT'
+    put:
+      summary: Update Multiple Metafields
+      tags:
+        - Metafields Batch
+      description: Create multiple metafields.
+      operationId: updateCustomersMetafields
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                allOf:
+                  - $ref: '#/components/schemas/MetafieldBase_Put'
+                  - type: object
+                    properties:
+                      id:
+                        type: integer
+                        example: 42
+                        description: |
+                          The ID of metafield to update.
+                    required:
+                      - id
+        description: ''
+      responses:
+        '200':
+          description: Response payload for the BigCommerce API.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetaFieldCollectionPostPutResponses'
+        '400':
+          description: Bad Request. Input is invalid.
+          content:
+            application/json:
+              schema:
+                description: ''
+                type: object
+                properties:
+                  status:
+                    type: number
+                  title:
+                    type: string
+                    minLength: 1
+                  type:
+                    type: string
+                    minLength: 1
+                  detail:
+                    type: string
+                    minLength: 1
+              example:
+                status: 400
+                title: Input is invalid
+                type: 'https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes'
+                detail: Syntax error
+        '422':
+          description: |
+            Response object for metafields creation with partial success.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetaFieldCollectionResponsePartialSuccess_POST_PUT'
+    delete:
+      summary: Delete Multiple Metafields
+      tags:
+        - Metafields Batch
+      description: Delete all customer metafields.
+      operationId: deleteCustomersMetafields
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: integer
+        description: Metafields ID list.
+      responses:
+        '200':
+          description: |
+            Response object for metafields deletion with success.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetaFieldCollectionDeleteResponseSuccess'
+        '400':
+          description: Bad Request. Input is invalid.
+          content:
+            application/json:
+              schema:
+                description: ''
+                type: object
+                properties:
+                  status:
+                    type: number
+                  title:
+                    type: string
+                    minLength: 1
+                  type:
+                    type: string
+                    minLength: 1
+                  detail:
+                    type: string
+                    minLength: 1
+              example:
+                status: 400
+                title: Input is invalid
+                type: 'https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes'
+                detail: Syntax error
+        '422':
+          description: |
+            Response object for metafields deletion with partial success.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetaFieldCollectionResponsePartialSuccess_DELETE'
 components:
   parameters:
+    metafieldId:
+      name: metafieldId
+      in: path
+      description: The ID of the metafield belonging to the customer. The metafieldId is a generated response when sending a POST query to the Create a Customer Metafields endpoint.
+      required: true
+      schema:
+        type: integer
     customerId:
       name: customerId
       in: path
       required: true
-      description: ''
+      description: The ID of the customer.
+      schema:
+        type: integer
+    PageParam:
+      name: page
+      description: |
+        Specifies the page number in a limited (paginated) list of products.
+      required: false
+      in: query
+      schema:
+        type: integer
+    MetafieldKeyParam:
+      name: key
+      in: query
+      description: Filter based on a metafieldʼs key.
+      required: false
       schema:
         type: string
+    MetafieldKeyInParam:
+      name: key:in
+      in: query
+      description: |-
+        Filter based on comma-separated metafieldʼs keys. Could be used with vanilla 'key' query parameter.
+      required: false
+      style: form
+      explode: false
+      schema:
+        type: array
+        items:
+          type: string
+    MetafieldNamespaceParam:
+      name: namespace
+      in: query
+      description: Filter based on a metafieldʼs namespaces.
+      required: false
+      schema:
+        type: string
+    MetafieldNamespaceInParam:
+      name: namespace:in
+      in: query
+      description: Filter based on comma-separated metafieldʼs namespaces. Could be used with vanilla `namespace` query parameter.
+      required: false
+      style: form
+      explode: false
+      schema:
+        type: array
+        items:
+          type: string
+    LimitParam:
+      name: limit
+      description: |
+        Controls the number of items per page in a limited (paginated) list of products.
+      required: false
+      in: query
+      schema:
+        type: integer
+    DirectionParam:
+      name: direction
+      description: |
+        Sort direction. Acceptable values are: `asc`, `desc`.
+      required: false
+      in: query
+      schema:
+        type: string
+        enum:
+          - asc
+          - desc
+    IncludeFieldsParamMetafields:
+      name: include_fields
+      in: query
+      description: Fields to include, in a comma-separated list. The ID and the specified fields will be returned.
+      style: form
+      explode: false
+      schema:
+        type: array
+        items:
+          type: string
+          enum:
+            - resource_id
+            - key
+            - value
+            - namespace
+            - permission_set
+            - resource_type
+            - description
+            - owner_client_id
+            - date_created
+            - date_modified
   responses:
     CustomerCollectionResponse:
       description: Customer Collection Response
@@ -1676,7 +2234,8 @@ components:
                     channel_ids:
                       - 1
                     shopper_profile_id: "82511e54-4040-40fe-b742-2b25655f205b"
-                    segment_ids: ["5bb733a9-5491-47b3-9451-9ae8d6a6bc6b"]
+                    segment_ids: 
+                      - "5bb733a9-5491-47b3-9451-9ae8d6a6bc6b"
                 meta:
                   pagination:
                     total: 0
@@ -1837,6 +2396,7 @@ components:
                       postal_code: '78759'
                       state_or_province: Texas
                   meta: {}
+                type: object
                 properties:
                   data:
                     type: array
@@ -1917,6 +2477,8 @@ components:
                   meta:
                     $ref: '#/components/schemas/MetaOpen'
               - title: DuplicateAddressCollectionResponse
+                type: object
+                properties: {}
                 example: {}
             type: object
             properties:
@@ -2069,12 +2631,12 @@ components:
                     - customer_id
               meta:
                 title: Collection Meta
-                description: 'Data about the response, including pagination and collection totals.'
+                description: Data about the response, including pagination and collection totals.
                 type: object
                 properties:
                   pagination:
                     title: Pagination
-                    description: 'Data about the response, including pagination and collection totals.'
+                    description: Data about the response, including pagination and collection totals.
                     type: object
                     properties:
                       total:
@@ -2247,12 +2809,12 @@ components:
                   title: 'Form Field Value '
               meta:
                 title: Collection Meta
-                description: 'Data about the response, including pagination and collection totals.'
+                description: Data about the response, including pagination and collection totals.
                 type: object
                 properties:
                   pagination:
                     title: Pagination
-                    description: 'Data about the response, including pagination and collection totals.'
+                    description: Data about the response, including pagination and collection totals.
                     type: object
                     properties:
                       total:
@@ -2470,6 +3032,107 @@ components:
                     name: What is your favorite pizza topping?
                     value: Mushrooms
                 meta: {}
+    MetafieldCollectionResponse:
+      description: Response payload for the BigCommerce API.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id: 
+                      type: integer
+                      description: Unique ID of the *Metafield*. Read-Only.
+                      readOnly: true
+                      example: 0
+                    key:
+                      type: string
+                      description: The key for the metafields.
+                      example: Staff Name
+                    value:
+                      type: string
+                      description: The description for the metafield.
+                      example: Ronaldo
+                    namespace:
+                      type: string
+                      description: |
+                        Namespace for the metafield, for organizational purposes.
+                      example: Sales Department
+                      minLength: 1
+                      maxLength: 64
+                    permission_set:
+                      type: string
+                      description: |
+                        Determines the visibility and writeability of the field by other API consumers.
+                        | Value | Description |
+                        | :--- | :--- |
+                        | `app_only` | Private to the app that owns the field. |
+                        | `read` | Visible to other API consumers. |
+                        | `write` | Open for reading and writing by other API consumers. |
+                        | `read_and_sf_access` | Visible to other API consumers, including on storefront. |
+                        | `write_and_sf_access` | Open for reading and writing by other API consumers, including on storefront. |
+                      enum:
+                        - app_only
+                        - read
+                        - write
+                        - read_and_sf_access
+                        - write_and_sf_access
+                    resource_type:
+                      type: string
+                      description: |
+                        The type of resource with which the metafield is associated.
+                      enum:
+                        - brand
+                        - product
+                        - variant
+                        - category
+                        - cart
+                        - channel
+                        - location
+                        - order
+                        - customer
+                      example: cart 
+                    resource_id:
+                      type: integer
+                      description: |
+                        The unique identifier for the resource with which the metafield is associated.
+                      example: 0
+                      readOnly: true
+                    description: 
+                      type: string
+                      description: |
+                        Description for the metafields.
+                      example: order
+                    date_created:
+                      type: string
+                      format: date-time
+                      description: Date and time of the metafieldʼs creation.
+                      example: '2022-06-16T18:39:00+00:00'
+                    date_modified:
+                      type: string
+                      format: date-time
+                      description: Date and time when the metafield was last updated.
+                      example: '2022-06-16T18:39:00+00:00'
+                    owner_client_id:
+                      type: string
+                      description: Client ID for the metafield's creator.
+                      readOnly: true
+                      example: ramciw4fnoz87it3ynjfif2zrkil5p
+                  required:
+                    - namespace
+                    - key
+                    - value
+                    - permission_set
+                    - resource_type
+                    - resource_id
+                    - description
+                    - id
+                    - date_created
+                    - date_modified       
     consent_Resp:
       description: ''
       content:
@@ -2507,7 +3170,7 @@ components:
   schemas:
     Pagination:
       title: Pagination
-      description: 'Data about the response, including pagination and collection totals.'
+      description: Data about the response, including pagination and collection totals.
       type: object
       properties:
         total:
@@ -2535,7 +3198,7 @@ components:
       x-internal: false
     _metaCollection:
       title: _metaCollection
-      description: 'Data about the response, including pagination and collection totals.'
+      description: Data about the response, including pagination and collection totals.
       type: object
       properties:
         pagination:
@@ -2565,6 +3228,7 @@ components:
           type: string
         errors:
           type: object
+          properties: {}
           additionalProperties:
             type: string
       x-internal: false
@@ -2737,7 +3401,9 @@ components:
         channel_ids:
           description: Array of channels the customer can access.
           type: array
-          example: [1,2]
+          example: 
+            - 1
+            - 2
           items:
             type: integer
         form_fields:
@@ -2839,7 +3505,7 @@ components:
           format: int32
         value:
           description: |-
-            Attribute value. This will always be a string, regardless of the attribute's type. 
+            Attribute value. This will always be a string, regardless of the attributeʼs type. 
 
             Corresponds to `attribute_value` used in customer attribute values `GET` requests.
           type: string
@@ -3194,6 +3860,8 @@ components:
         - city
         - country_code
         - customer_id
+        - state_or_province
+        - postal_code
       x-examples:
         Example:
           value:
@@ -3286,7 +3954,7 @@ components:
         - address1
         - city
         - country_code
-      description: The `address` object for the `customer` object's `addresses` array.
+      description: The `address` object for the `customer` objectʼs `addresses` array.
       x-internal: false
     customerAddresses_CustomerPost:
       title: customerAddresses_CustomerPost
@@ -3374,20 +4042,18 @@ components:
         - address1
         - city
         - country_code
-      description: The `address` object for the `customer` object's `addresses` array.
+      description: The `address` object for the `customer` objectʼs `addresses` array.
       x-internal: false  
     customerAuthentication_PostPut:
       title: customerAuthentication_PostPut
-      allOf:
-        - properties:
-            force_password_reset:
-              description: 'If `true`, this customer will be forced to change password on next login.'
-              type: boolean
-        - properties:
-            new_password:
-              description: New password for customer. Write only field.
-              type: string
       type: object
+      properties:
+        force_password_reset:
+          description: 'If `true`, this customer will be forced to change password on next login.'
+          type: boolean
+        new_password:
+          description: New password for customer. Write only field.
+          type: string
       x-internal: false
     Links:
       title: Links
@@ -3735,7 +4401,7 @@ components:
             policy_url:
               type: string
               example: 'https://bigcommmerce.com/policy'
-              description: The URL for a website's privacy policy.
+              description: The URL for a websiteʼs privacy policy.
         customer_group_settings:
           type: object
           description: The settings for a collection of customers.
@@ -3772,7 +4438,7 @@ components:
             policy_url:
               type: string
               example: 'https://bigcommmerce.com/policy'
-              description: The URL for a website's privacy policy.
+              description: The URL for a websiteʼs privacy policy.
         customer_group_settings:
           type: object
           description: The settings for a collection of customers.
@@ -3829,4 +4495,631 @@ components:
         is_valid:
           type: boolean
           description: indicates if the provided credentials are valid.
+      x-internal: false
+    Metafield:
+      type: object
+      description: |
+        Common metafield properties.
+      properties:
+        permission_set:
+          type: string
+          description: |
+            Determines the visibility and writeability of the field by other API consumers.
+            | Value | Description |
+            | :--- | :--- |
+            | `app_only` | Private to the app that owns the field. |
+            | `read` | Visible to other API consumers. |
+            | `write` | Open for reading and writing by other API consumers. |
+            | `read_and_sf_access` | Visible to other API consumers, including on storefront. |
+            | `write_and_sf_access` | Open for reading and writing by other API consumers, including on storefront. |
+          enum:
+            - app_only
+            - read
+            - write
+            - read_and_sf_access
+            - write_and_sf_access
+        namespace:
+          type: string
+          description: |
+            Namespace for the metafield, for organizational purposes.
+          example: Sales Department
+          minLength: 1
+          maxLength: 64
+        key:
+          type: string
+          description: |
+            The name of the field, for example: `location_id`, `color`.
+          minLength: 1
+          maxLength: 64
+          example: Staff Name
+        value:
+          type: string
+          description: |
+            The value of the field, for example: `1`, `blue`.
+          minLength: 1
+          maxLength: 65535
+          example: Ronaldo
+        description:
+          type: string
+          description: |
+            Description for the metafields.
+          example: order
+          minLength: 0
+          maxLength: 255
+        resource_type:
+          type: string
+          description: |
+            The type of resource with which the metafield is associated.
+          enum:
+            - brand
+            - product
+            - variant
+            - category
+            - cart
+            - channel
+            - location
+            - order
+            - customer
+          example: cart
+        resource_id:
+          type: integer
+          description: |
+            The unique identifier for the resource with which the metafield is associated.
+          example: 424242
+          readOnly: true
+        id:
+          type: integer
+          description: The unique identifier for the metafield.
+        date_created:
+          type: string
+          format: date-time
+          description: Date and time of the metafieldʼs creation.
+          example: '2022-06-16T18:39:00+00:00'
+        date_modified:
+          type: string
+          format: date-time
+          description: Date and time when the metafield was last updated.
+          example: '2022-06-16T18:39:00+00:00'
+        owner_client_id:
+          type: string
+          description: Client ID for the metafieldʼs creator.
+          example: ramciw4fnoz87it3ynjfif2zrkil5p
+          readOnly: true
+      required:
+        - namespace
+        - key
+        - value
+        - permission_set
+        - resource_type
+        - resource_id
+        - description
+        - id
+        - date_created
+        - date_modified
+      x-internal: false
+    MetaFieldCollectionResponse:
+      type: object
+      description: |
+        Response payload for the BigCommerce API.
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Metafield'
+      x-internal: false
+    MetaFieldCollectionPostPutResponses:
+      type: object
+      description: Response payload for the BigCommerce API.
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Metafield'
+        errors:
+          type: array
+          items: {}
+          description: Empty for 200 responses.
+          example: []
+        meta:
+          $ref: '#/components/schemas/CollectionMeta'
+    MetaFieldCollectionResponsePartialSuccess_POST_PUT:
+      type: object
+      description: |
+        Response payload for the BigCommerce API.
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Metafield'
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Error'
+        meta:
+          $ref: '#/components/schemas/WriteCollectionPartialSuccessMeta'
+    MetaFieldCollectionResponsePartialSuccess_DELETE:
+      type: object
+      description: |
+        Response payload for the BigCommerce API.
+      properties:
+        data:
+          type: array
+          items:
+            type: integer
+            description: |
+              The unique identifier for the metafield.
+          example: 
+            - 123
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Error'
+        meta:
+          $ref: '#/components/schemas/WriteCollectionPartialSuccessMeta'
+      x-internal: false
+    MetaFieldCollectionDeleteResponseSuccess:
+      type: object
+      description: |
+        Response payload for the BigCommerce API.
+      properties:
+        data:
+          type: array
+          items:
+            type: integer
+            description: |
+              The unique identifier for the metafield.
+          example:
+            - 123
+            - 124
+            - 125
+        errors:
+          type: array
+          items: {}
+          description: Empty for 200 responses.
+          example: []
+        meta:
+          $ref: '#/components/schemas/WriteCollectionSuccessMeta'
+      x-internal: false
+    WriteCollectionPartialSuccessMeta:
+      type: object
+      description: Additional data about the response.
+      properties:
+        total:
+          type: integer
+          description: |
+            Total number of items in the result set.
+          example: 3
+        success:
+          type: integer
+          description: |
+            Total number of items that were successfully deleted.
+          example: 1
+        failed:
+          type: integer
+          description: |
+            Total number of items that failed to be deleted.
+          example: 2
+      title: Collection Meta
+      x-internal: false
+    WriteCollectionSuccessMeta:
+      type: object
+      description: Additional data about the response.
+      properties:
+        total:
+          type: integer
+          description: |
+            Total number of items in the result set.
+          example: 3
+        success:
+          type: integer
+          description: |
+            Total number of items that were successfully deleted.
+          example: 3
+        failed:
+          type: integer
+          description: |
+            Total number of items that failed to be deleted.
+          example: 0
+      title: Collection Meta
+      x-internal: false
+    Total:
+      type: integer
+      description: |
+        Total number of items in the result set.
+      example: 3
+    Success:
+      type: integer
+      description: |
+        Total number of items that were successfully deleted.
+      example: 1
+    Failed:
+      type: integer
+      description: |
+        Total number of items that failed to be deleted.
+      example: 2
+    Error:
+      type: object
+      description: |
+        Error response payload for the BigCommerce API.
+      properties:
+        status:
+          type: integer
+          description: |
+            The HTTP status code for the error.
+          example: 422
+        title:
+          type: string
+          description: |
+            The error title.
+          example: Bulk operation has failed
+        type:
+          type: string
+          description: |
+            The error type.
+          example: https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes
+        errors:
+          $ref: '#/components/schemas/ErrorDetail'
+    ErrorDetail:
+      type: object
+      properties: {}
+      additionalProperties: true
+      description: |
+        Error detail response payload for the BigCommerce API.
+      example:
+        "1": "Unauthorized to delete"
+        "2": "Metafield does not exist"
+    CollectionMeta:
+      type: object
+      description: Data about the response, including pagination and collection totals.
+      properties:
+        pagination:
+          type: object
+          description: Data about the response, including pagination and collection totals.
+          title: Pagination
+          properties:
+            total:
+              type: integer
+              description: |
+                Total number of items in the result set.
+              example: 36
+            count:
+              type: integer
+              description: |
+                Total number of items in the collection response.
+              example: 36
+            per_page:
+              type: integer
+              description: |
+                The amount of items returned in the collection per page, controlled by the limit parameter.
+              example: 50
+            current_page:
+              type: integer
+              description: |
+                The page you are currently on within the collection.
+              example: 1
+            total_pages:
+              type: integer
+              description: |
+                The total number of pages in the collection.
+              example: 1
+            links:
+              type: object
+              description: |
+                Pagination links for the previous and next parts of the whole collection.
+              properties:
+                previous:
+                  type: string
+                  description: |
+                    Link to the previous page returned in the response.
+                current:
+                  type: string
+                  description: |
+                    Link to the current page returned in the response.
+                  example: '?page=1&limit=50'
+                next:
+                  type: string
+                  description: |
+                    Link to the next page returned in the response.
+      additionalProperties: true
+      title: Collection Meta
+      x-internal: false
+    MetafieldBase_Post:
+      type: object
+      description: |
+        Common Metafield properties.
+      x-internal: false
+      properties:
+        permission_set:
+          type: string
+          description: |
+            Determines the visibility and writeability of the field by other API consumers.
+            | Value | Description |
+            | :--- | :--- |
+            | `app_only` | Private to the app that owns the field. |
+            | `read` | Visible to other API consumers. |
+            | `write` | Open for reading and writing by other API consumers. |
+            | `read_and_sf_access` | Visible to other API consumers, including on the storefront. |
+            | `write_and_sf_access` | Open for reading and writing by other API consumers, including on the storefront. |
+          enum:
+            - app_only
+            - read
+            - write
+            - read_and_sf_access
+            - write_and_sf_access
+        namespace:
+          type: string
+          description: |
+            Namespace for the metafield, for organizational purposes.
+          example: Sales Department
+          minLength: 1
+          maxLength: 64
+        key:
+          type: string
+          description: |
+            The name of the field, for example: `location_id`, `color`.
+          minLength: 1
+          maxLength: 64
+          example: Staff Name
+        value:
+          type: string
+          description: |
+            The value of the field, for example: `1`, `blue`.
+          minLength: 1
+          maxLength: 65535
+          example: Ronaldo
+        description:
+          type: string
+          description: |
+            Description for the metafields.
+          minLength: 0
+          maxLength: 255
+          example: Name of Staff Member
+      required:
+        - permission_set
+        - namespace
+        - key
+        - value
+    MetafieldBase_Put:
+      type: object
+      description: |
+        Common Metafield properties.
+      x-internal: false
+      properties:
+        permission_set:
+          type: string
+          description: |
+            Determines the visibility and writeability of the field by other API consumers.
+            | Value | Description |
+            | :--- | :--- |
+            | `app_only` | Private to the app that owns the field. |
+            | `read` | Visible to other API consumers. |
+            | `write` | Open for reading and writing by other API consumers. |
+            | `read_and_sf_access` | Visible to other API consumers, including on the storefront. |
+            | `write_and_sf_access` | Open for reading and writing by other API consumers, including on the storefront. |
+          enum:
+            - app_only
+            - read
+            - write
+            - read_and_sf_access
+            - write_and_sf_access
+        namespace:
+          type: string
+          description: |
+            Namespace for the metafield, for organizational purposes.
+          example: Sales Department
+          minLength: 1
+          maxLength: 64
+        key:
+          type: string
+          description: |
+            The name of the field, for example: `location_id`, `color`.
+          minLength: 1
+          maxLength: 64
+          example: Staff Name
+        value:
+          type: string
+          description: |
+            The value of the field, for example: `1`, `blue`.
+          minLength: 1
+          maxLength: 65535
+          example: Ronaldo
+        description:
+          type: string
+          description: |
+            Description for the metafields.
+          minLength: 0
+          maxLength: 255
+          example: Name of Staff Member
+    metafield_Full:
+      title: metafield_Full
+      allOf:
+        - type: object
+          properties:
+            id:
+              type: integer
+              description: Unique ID of the *Metafield*. Read-Only.
+              readOnly: true
+              example: 6
+        - $ref: '#/components/schemas/metafield_Base'
+        - type: object
+          properties:
+            resource_type:
+              type: string
+              description: |
+                The type of resource with which the metafield is associated.
+              example: customer
+              enum:
+                - category
+                - brand
+                - product
+                - variant
+                - customer
+              x-required:
+                - post
+            resource_id:
+              maximum: 10000000000
+              minimum: 0
+              type: integer
+              description: |
+                The ID of the resource with which the metafield is associated.
+              example: 111
+              x-required:
+                - post
+            date_created:
+              type: string
+              description: |
+                Date and time of the metafieldʼs creation. Read-Only.
+              readOnly: true
+              format: date-time
+              example: '2018-05-07T20:14:17+00:00'
+            date_modified:
+              type: string
+              description: |
+                Date and time when the metafield was last updated. Read-Only.
+              readOnly: true
+              format: date-time
+              example: '2018-05-07T20:14:17+00:00'
+      x-internal: false
+    metafield_Base:
+      title: metafield_Base
+      type: object
+      description: 'Metafield for products, categories, variants, and brands; the max number of metafields allowed on each is 50. For more information, see [Platform Limits](https://support.bigcommerce.com/s/article/Platform-Limits) in the Help Center.'
+      x-internal: false
+      properties:
+        key:
+          maxLength: 64
+          minLength: 1
+          type: string
+          description: |
+            The name of the field, for example: `location_id`, `color`. Required for POST.
+          example: Location
+          x-required:
+            - post
+        value:
+          maxLength: 65535
+          minLength: 1
+          type: string
+          description: |
+            The value of the field, for example: `1`, `blue`. Required for POST.
+          example: 4HG
+          x-required:
+            - post
+        namespace:
+          maxLength: 64
+          minLength: 1
+          type: string
+          description: |
+            Namespace for the metafield, for organizational purposes. This is set by the developer. Required for POST.
+          example: Warehouse Locations
+          x-required:
+            - post
+        permission_set:
+          type: string
+          description: |-
+            Determines the visibility and writeability of the field by other API consumers.
+
+            |Value|Description
+            |-|-|
+            |`app_only`|Private to the app that owns the field|
+            |`read`|Visible to other API consumers|
+            |`write`|Open for reading and writing by other API consumers|
+            |`read_and_sf_access`|Visible to other API consumers, including on storefront|
+            |`write_and_sf_access`|Open for reading and writing by other API consumers, including on storefront|
+          enum:
+            - app_only
+            - read
+            - write
+            - read_and_sf_access
+            - write_and_sf_access
+        description:
+          maxLength: 255
+          minLength: 0
+          type: string
+          description: |
+            Description for the metafields.
+          example: Location in the warehouse
+      required:
+        - permission_set
+        - namespace
+        - key
+        - value
+    metaEmpty_Full:
+      type: object
+      title: Response meta
+      properties: { }
+      additionalProperties: true
+      description: Response metadata.
+    metaCollection_Full:
+      title: metaCollection_Full
+      type: object
+      properties:
+        pagination:
+          $ref: '#/components/schemas/pagination_Full'
+      description: Data about the response, including pagination and collection totals.
+      x-internal: false
+    NotFound:
+      description: Error payload for the BigCommerce API.
+      type: object
+      properties:
+        status:
+          description: |
+            404 HTTP status code.
+          type: integer
+        title:
+          description: The error title describing the particular error.
+          type: string
+        type:
+          type: string
+        instance:
+          type: string
+      title: Not Found
+      x-internal: false
+    pagination_Full:
+      title: pagination_Full
+      type: object
+      properties:
+        total:
+          type: integer
+          description: |
+            Total number of items in the result set.
+          example: 36
+        count:
+          type: integer
+          description: |
+            Total number of items in the collection response.
+          example: 36
+        per_page:
+          type: integer
+          description: |
+            The amount of items returned in the collection per page, controlled by the limit parameter.
+          example: 50
+        current_page:
+          type: integer
+          description: |
+            The page you are currently on within the collection.
+          example: 1
+        total_pages:
+          type: integer
+          description: |
+            The total number of pages in the collection.
+          example: 1
+        links:
+          type: object
+          properties:
+            previous:
+              type: string
+              description: |
+                Link to the previous page returned in the response.
+            current:
+              type: string
+              description: |
+                Link to the current page returned in the response.
+              example: '?page=1&limit=50'
+            next:
+              type: string
+              description: |
+                Link to the next page returned in the response.
+          description: |
+            Pagination links for the previous and next parts of the whole collection.
+      description: Data about the response, including pagination and collection totals.
       x-internal: false

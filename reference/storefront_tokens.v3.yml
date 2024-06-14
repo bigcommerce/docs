@@ -1,102 +1,28 @@
 openapi: '3.0.1'
 info:
-  title: Storefront Token
+  title: GraphQL Storefront API tokens
   description: |-
     Get and manage tokens used to authenticate cross-origin requests to the [GraphQL Storefront API](/docs/storefront/graphql).
 
-    ## [API tokens](/docs/rest-authentication/tokens#create-a-token)
+    Add a [token creation scope](/docs/start/authentication/api-accounts#token-creation-scopes) to the [store-level or app-level API account](/docs/start/authentication/api-accounts) you use to generate tokens.
 
-    Generate tokens (JWT) for authenticating cross-origin requests to the [GraphQL Storefront API](/docs/storefront/graphql). To [create a token](/docs/rest-authentication/tokens#create-a-token), send a `POST` request to `/stores/{{STORE_HASH}}/v3/storefront/api-token`.
+    ## Storefront tokens
 
-    ```http
-    POST https://api.bigcommerce.com/stores/{{STORE_HASH}}/v3/storefront/api-token
-    X-Auth-Token: {{ACCESS_TOKEN}}
-    Content-Type: application/json
-    Accept: application/json
+    This type of token is the most appropriate to use from a web browser when you're serving a static site that only supports anonymous shopping. If you're creating a token for backend implementation, you wish to support signing in customers, or you're developing a frontend app that proxies requests, such as a NextJS app, use a [customer impersonation token](#customer-impersonation-tokens). 
 
-    {
-      "channel_id": 1,
-      "expires_at": 1602288000,
-      "allowed_cors_origins": 
-        ["https://store.example.com"]
-      
-    }
-    ```
+    ## Customer impersonation tokens
 
-    |Property|Type|Description|
-    |-|-|-|
-    |`channel_id`|int| Must be a valid channel ID on the store (required) |
-    |`expires_at`|int| Unix timestamp in seconds (required). Does not support milliseconds, microseconds, or nanoseconds. |
-    |`allowed_cors_origins`|array[str]| Allowed origins for cross origin requests (required) |
+    Customer impersonation token-authenticated requests receive store information from the perspective of the customer with the ID specified in the `X-Bc-Customer-Id` header. The customer will automatically see the correct pricing, product availability, order history, and account details.
 
-    [**Response:**](/docs/rest-authentication/tokens#create-a-token)
-
-    ```json
-    {
-      "token":"...eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiJ9...",
-      "meta": {
-        // ...
-      }
-    }
-    ```
-
-
-
-    ## [Customer impersonation tokens](/docs/rest-authentication/tokens/customer-impersonation-token#create-a-token)
-
-    Generate tokens that can make queries from the perspective of a particular customer in headless or server-side code using the [GraphQL Storefront API](/docs/storefront/graphql#customer-impersonation-tokens). To [create a customer impersonation token](/docs/rest-authentication/tokens/customer-impersonation-token#create-a-token), send a `POST` request to `/v3/storefront/api-token-customer-impersonation`.
-
-    ```http
-    POST https://api.bigcommerce.com/stores/{STORE_HASH}/v3/storefront/api-token-customer-impersonation
-    X-Auth-Token: {{ACCESS_TOKEN}}
-    Accept: application/json
-    Content-Type: application/json
-    ```
-
-    [**Response:**](/docs/rest-authentication/tokens/customer-impersonation-token#create-a-token)
-
-    ```json
-    {
-      "data":
-      {
-        "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
-      }
-      "meta": {}
-    }
-    ```
-
-    Customer impersonation token authenticated requests made to the GraphQL API receive store information from the perspective of the customer with the ID specified in the `X-Bc-Customer-Id` header sent with the GraphQL `POST` request. Pricing, product availability, customer account, and customer details will be reflected. Consider this sample request using a [customer impersonation token](/docs/rest-authentication/tokens/customer-impersonation-token#create-a-token) to run a request in the context of customer ID `123`.
-
-    ```http
-    POST https://store.example.com/graphql
-    Authorization: Bearer {{CUSTOMER_IMPERSONATION_TOKEN}}
-    X-Bc-Customer-Id: 123
-
-    {
-        "query": "query CustomerInformation {\n  customer {\n    firstName\n    lastName\n    email\n  }\n}"
-    }
-    ```
-
+    This special token is not necessary if you only wish to query information from an anonymous shopper's perspective.
 
     > #### Warning
-    > * Customer impersonation tokens should **never** be exposed publicly, for example, to JavaScript or HTML. These tokens should **not** be used for frontend requests.
-    > * Unlike normal GraphQL API tokens, these tokens are sensitive and should be treated like secrets, just as you might treat an OAuth token.
-    > * Attempts to run requests using these tokens from a web browser will be rejected.
-
-
-    ## Revoking tokens
-    To [revoke a token](/docs/rest-authentication/tokens#revoke-a-token), send a `DELETE` request to `/v3/storefront/api-token`.
-
-    ```http
-    DELETE /stores/{{STORE_HASH}}/v3/storefront/api-token-customer-impersonation
-    host: api.bigcommerce.com
-    x-Auth-Token: {{ACCESS_TOKEN}}
-    Sf-Api-Token: {{CUSTOMER_ID}}
-    ```
+    > Unless your frontend client proxies requests, attempts to authenticate from the brower using customer impersonation tokens will be rejected.
 
     ## Additional information
 
-    * [GraphQL API Overview](/docs/storefront/graphql)
+    * [GraphQL Storefront API overview](/docs/storefront/graphql)
+    * [Authenticating requests to the GraphQL Storefront API](/docs/start/authentication/graphql-storefront)
   termsOfService: 'https://www.bigcommerce.com/terms'
   contact:
     name: BigCommerce
@@ -241,7 +167,6 @@ components:
     TokenPostImpersonation:
       type: object
       x-internal: false
-      x-examples: {}
       properties:
         channel_id:
           type: integer
@@ -260,10 +185,10 @@ components:
       type: object
       properties:
         allowed_cors_origins:
-          maxItems: 1
+          maxItems: 2
           minItems: 1
           type: array
-          description: List of allowed domains for Cross-Origin Request Sharing. Currently only accepts a single element.
+          description: List of allowed domains for Cross-Origin Request Sharing. Currently accepts a maximum of two domains per created token.
           items:
             maxLength: 1
             minLength: 1
@@ -317,6 +242,7 @@ components:
       x-internal: false
     DetailedErrors:
       type: object
+      properties: {}
       additionalProperties:
         type: string
       x-internal: false

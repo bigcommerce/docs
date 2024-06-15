@@ -1,0 +1,970 @@
+openapi: '3.0.1'
+info:
+  title: User
+  description: BigCommerce B2B Edition Company User
+  contact: {}
+  version: v3
+servers:
+  - url: 'https://api-b2b.bigcommerce.com/api/v3/io'
+security:
+  - authToken: []
+tags:
+  - name: User
+    description: Company user management.
+paths:
+  '/users/{userId}':
+    get:
+      tags:
+        - User
+      summary: Get a User
+      description: Get a company user's information by user ID.
+      operationId: companies_user_by_id
+      parameters:
+        - name: userId
+          in: path
+          description: Unique numeric ID of this user.
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Response Success
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: ../../../models/utils/response-object.yaml
+                  - type: object
+                    properties:
+                      data:
+                        $ref: ../../../models/user/user.yaml
+              examples: {}
+            example-1:
+              example:
+                code: 200
+                data:
+                  id: 1
+                  uuid: 095be615
+                  catalogId: 2
+                  email: user@example.com
+                  firstName: Tom
+                  lastName: Cat
+                  phoneNumber: '112233'
+                  role: 1
+                  createdAt: 1574999690
+                  updatedAt: 1574999690
+                message: success
+        '404':
+          $ref: '#/components/responses/404'
+        '422':
+          $ref: '#/components/responses/422'
+        '500':
+          $ref: '#/components/responses/500'
+      security:
+        - authToken: []
+    put:
+      tags:
+        - User
+      summary: Update a User
+      description: Update a company user info
+      operationId: companies_user_update
+      parameters:
+        - name: userId
+          in: path
+          description: Unique numeric ID of this user.
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: ../../../models/user/user-without-company.yaml
+                - type: object
+                  properties:
+                    channelIds:
+                      type: array
+                      description: BigCommerce channel id list. Do not input this field if you don't want to update user channels
+                      items:
+                        type: integer
+            examples:
+              example-1:
+                value:
+                  id: 4
+                  email: string
+                  firstName: Tom
+                  lastName: Cat
+                  phoneNumber: '112233'
+                  role: 1
+                  uuid: 1e01472b-858f-49cd-be85-91aa0ae3bbc9
+        required: false
+      responses:
+        '200':
+          description: Updated successful
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: ../../../models/utils/response-object.yaml
+                  - type: object
+                    properties:
+                      data:
+                        $ref: ../../../models/user/user.yaml
+              examples:
+                example-1:
+                  value:
+                    code: 200
+                    meta:
+                      message: SUCCESS
+                    data:
+                      id: 1
+                      uuid: 095be615
+                      createdAt: 1574999690
+                      updatedAt: 1574999690
+                      companyId: 2
+                      email: user@example.com
+                      firstName: Tom
+                      lastName: Cat
+                      phoneNumber: '112233'
+                      role: 1
+                      customerId: 12
+            example-1:
+              example:
+                code: 200
+                data:
+                  id: 1
+                  uuid: 095be615
+                  catalogId: 2
+                  email: user@example.com
+                  firstName: Tom
+                  lastName: Cat
+                  phoneNumber: '112233'
+                  role: 1
+                  createdAt: 1574999690
+                  updatedAt: 1574999690
+                message: success
+        '404':
+          $ref: '#/components/responses/404'
+        '422':
+          $ref: '#/components/responses/422'
+      security:
+        - authToken: []
+      x-codegen-request-body-name: body
+    delete:
+      tags:
+        - User
+      summary: Delete a User
+      description: 'Delete a company user, if this user is the only one administrator of company, will return a 500 Error'
+      operationId: companies_user_delete
+      parameters:
+        - name: userId
+          in: path
+          description: Unique numeric ID of this user.
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Response Success
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: ../../../models/utils/response-object.yaml
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          userId:
+                            type: integer
+                            description: Deleted user Id
+                            example: 1
+              examples:
+                example-1:
+                  value:
+                    code: 200
+                    meta:
+                      message: SUCCESS
+                    data:
+                      userId: 1
+            example-1:
+              example:
+                code: 200
+                data:
+                  userId: 0
+                message: success
+        '404':
+          $ref: '#/components/responses/404'
+        '500':
+          $ref: '#/components/responses/500'
+      security:
+        - authToken: []
+      x-code-samples:
+        - lang: Shell
+          source: |
+            curl --location --request GET 'https://api-b2b.bigcommerce.com/api/v2/io/companies/4/users'                         --header 'authToken: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdG9yZV9oYXNoIjoiZjJvc3hqam54aiIsImRiIjoiZGVmYXVsdCIsImVtYWlsIjoiYnJ1Y2UuaHVhbmdAc2lsa3NvZnR3YXJlLmNvbSJ9._DQFg-3FgtztdQVCGU5Gxfv8j8V3U9Ssaw7ARxUU6pY
+        - lang: Python
+          source: |
+            import requests
+
+            url = "https://api-b2b.bigcommerce.com/api/v2/io/companies/4/users"
+
+            payload = {}
+            headers = {
+              'authToken': 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdG9yZV9oYXNoIjoiZjJvc3hqam54aiIsImRiIjoiZGVmYXVsdCIsImVtYWlsIjoiYnJ1Y2UuaHVhbmdAc2lsa3NvZnR3YXJlLmNvbSJ9._DQFg-3FgtztdQVCGU5Gxfv8j8V3U9Ssaw7ARxUU6pY'
+            }
+
+            response = requests.request("GET", url, headers=headers, data = payload)
+
+            print(response.text.encode('utf8'))
+        - lang: JavaScript
+          source: |
+            var myHeaders = new Headers();
+            myHeaders.append("authToken", "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdG9yZV9oYXNoIjoiZjJvc3hqam54aiIsImRiIjoiZGVmYXVsdCIsImVtYWlsIjoiYnJ1Y2UuaHVhbmdAc2lsa3NvZnR3YXJlLmNvbSJ9._DQFg-3FgtztdQVCGU5Gxfv8j8V3U9Ssaw7ARxUU6pY");
+
+            var requestOptions = {
+              method: 'GET',
+              headers: myHeaders,
+              redirect: 'follow'
+            };
+
+            fetch("https://api-b2b.bigcommerce.com/api/v2/io/companies/4/users", requestOptions)
+              .then(response => response.text())
+              .then(result => console.log(result))
+              .catch(error => console.log('error', error));
+    parameters:
+      - $ref: '#/components/parameters/userId'
+  /users:
+    get:
+      tags:
+        - User
+      summary: Get Users
+      description: 'Get company users, with pagination data'
+      operationId: companies_users_list
+      parameters:
+        - $ref: '#/components/parameters/offset'
+        - $ref: '#/components/parameters/limit'
+        - name: minModified
+          in: query
+          description: Minimum modified timestamp
+          allowEmptyValue: true
+          schema:
+            type: number
+            format: time
+        - name: maxModified
+          in: query
+          description: Maximum modified timestamp
+          allowEmptyValue: true
+          schema:
+            type: number
+        - name: minCreated
+          in: query
+          description: Minimum created timestamp
+          allowEmptyValue: true
+          schema:
+            type: number
+        - name: maxCreated
+          in: query
+          description: Maximum created timestamp
+          allowEmptyValue: true
+          schema:
+            type: number
+        - name: roles
+          in: query
+          description: 'user roles(0=admin 1=senior_buyer 2=junior_buyer) eg.  role[]=1, 2. default empty to get all.'
+          schema:
+            type: array
+        - name: companyId
+          in: query
+          description: Company ID
+          schema:
+            type: integer
+        - schema:
+            type: string
+          in: query
+          name: q
+          description: 'User query string.Supported fields: email, e.g. ?q=xyz@abc.com'
+        - schema:
+            type: string
+            format: email
+          in: query
+          name: email
+          description: Filter users accurately by email. Should be a correct email
+        - schema:
+            type: string
+            enum:
+              - '0'
+              - '1'
+          in: query
+          name: isIncludeExtraFields
+          description: Is show extra fields in the response
+        - schema:
+            type: integer
+          in: query
+          name: channelId
+          description: BigCommerce channel id
+      responses:
+        '200':
+          description: Response Success
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: ../../../models/utils/response-object.yaml
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: ../../../models/user/user.yaml
+                  - type: object
+                    properties:
+                      meta:
+                        allOf:
+                          - $ref: ../../../models/utils/pagination.yaml
+              examples: {}
+            example-1:
+              example:
+                code: 200
+                data:
+                  - id: 1
+                    uuid: 095be615
+                    catalogId: 2
+                    email: user@example.com
+                    firstName: Tom
+                    lastName: Cat
+                    phoneNumber: '112233'
+                    role: 1
+                    createdAt: 1574999690
+                    updatedAt: 1574999690
+                message: success
+                meta:
+                  pagination:
+                    limit: 10
+                    offset: 1
+      security:
+        - authToken: []
+    post:
+      tags:
+        - User
+      summary: Create a User
+      description: 'Create a company user, which belongs company'
+      operationId: companies_users_create
+      requestBody:
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: ../../../models/user/user-base.yaml
+                - type: object
+                  properties:
+                    companyId:
+                      type: integer
+                      example: 2
+                      description: 'Company ID of this user. '
+                    acceptWelcomeEmail:
+                      type: boolean
+                      description: If send accept welcome email to user.
+                    uuid:
+                      type: string
+                      description: UUID of user
+                    channelIds:
+                      type: array
+                      description: BigCommerce channel id
+                      items:
+                        type: integer
+                    originChannelId:
+                      type: integer
+                      description: 'BigCommerce channel id, used for BigCommerce customer origin channel id. This field takes effect only when the store default b2b channel is not configured'
+                  required:
+                    - companyId
+                - $ref: ../../../models/extra_fields/extra_field_values.yaml
+            examples:
+              example-1:
+                value:
+                  companyId: 2
+                  email: user@example.com
+                  firstName: Tom
+                  lastName: Cat
+                  phoneNumber: '112233'
+                  role: 1
+                  acceptWelcomeEmail: true
+                  uuid: 1e01472b-858f-49cd-be85-91aa0ae3bbc9
+                  channelIds:
+                    - 1
+                  originChannelId: 1
+                  extraFields:
+                    - fieldName: string
+                      fieldValue: string
+        required: true
+        description: ''
+      responses:
+        '200':
+          description: Response Success
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: ../../../models/utils/response-object.yaml
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          bcId:
+                            type: integer
+                            description: Created bc customer Id
+                            example: 1
+                          userId:
+                            type: integer
+                            description: Created user Id
+                            example: 2
+              examples:
+                example-1:
+                  value:
+                    code: 200
+                    data:
+                      bcId: 1
+                      userId: 2
+                    message: success
+            example-1:
+              example:
+                code: 200
+                data:
+                  customerId: 0
+                  userId: 0
+                message: success
+      security:
+        - authToken: []
+      x-code-samples:
+        - lang: Shell
+          source: |
+            curl --location --request POST 'https://api-b2b.bigcommerce.com/api/v2/io/companies/4/users'                         --header 'authToken: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdG9yZV9oYXNoIjoiZjJvc3hqam54aiIsImRiIjoiZGVmYXVsdCIsImVtYWlsIjoiYnJ1Y2UuaHVhbmdAc2lsa3NvZnR3YXJlLmNvbSJ9._DQFg-3FgtztdQVCGU5Gxfv8j8V3U9Ssaw7ARxUU6pY'                         --header 'Content-Type: application/json'                         --data-raw '{
+                "firstName": "test",
+                "lastName": "test2",
+                "email": "test323@test.com",
+                "phone": "122331212",
+                "userRole": 1
+            }'
+        - lang: Python
+          source: |
+            import requests
+
+            url = "https://api-b2b.bigcommerce.com/api/v2/io/companies/4/users"
+
+            payload = {
+                "firstName": "test",
+                "lastName": "test2",
+                "email": "test323@test.com",
+                "phone": "122331212",
+                "userRole": 1
+            }
+            headers = {
+              'authToken': 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdG9yZV9oYXNoIjoiZjJvc3hqam54aiIsImRiIjoiZGVmYXVsdCIsImVtYWlsIjoiYnJ1Y2UuaHVhbmdAc2lsa3NvZnR3YXJlLmNvbSJ9._DQFg-3FgtztdQVCGU5Gxfv8j8V3U9Ssaw7ARxUU6pY',
+              'Content-Type': 'application/json'
+            }
+
+            response = requests.request("POST", url, headers=headers, data = payload)
+
+            print(response.text.encode('utf8'))
+        - lang: JavaScript
+          source: |
+            var myHeaders = new Headers();
+            myHeaders.append("authToken", "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdG9yZV9oYXNoIjoiZjJvc3hqam54aiIsImRiIjoiZGVmYXVsdCIsImVtYWlsIjoiYnJ1Y2UuaHVhbmdAc2lsa3NvZnR3YXJlLmNvbSJ9._DQFg-3FgtztdQVCGU5Gxfv8j8V3U9Ssaw7ARxUU6pY");
+            myHeaders.append("Content-Type", "application/json");
+
+            var raw = JSON.stringify({"firstName":"test","lastName":"test2","email":"test323@test.com","phone":"122331212","userRole":1});
+
+            var requestOptions = {
+              method: 'POST',
+              headers: myHeaders,
+              body: raw,
+              redirect: 'follow'
+            };
+
+            fetch("https://api-b2b.bigcommerce.com/api/v2/io/companies/4/users", requestOptions)
+              .then(response => response.text())
+              .then(result => console.log(result))
+              .catch(error => console.log('error', error));
+      x-codegen-request-body-name: data
+  /users/bulk:
+    post:
+      tags:
+        - User
+      summary: Bulk Create Company User
+      description: |-
+        Create company users in batch. All of the user should be in same 
+         company.
+      operationId: companies_users_bulk_create_create
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              description: Request body
+              items:
+                allOf:
+                  - $ref: ../../../models/user/user-base.yaml
+                  - type: object
+                    properties:
+                      acceptWelcomeEmail:
+                        description: (0=will not receive email 1=will receive email)
+                        type: boolean
+                      companyId:
+                        type: integer
+                        description: Company ID of this user
+                        example: 31
+                      uuid:
+                        type: string
+                        description: UUID of user
+                      channelIds:
+                        type: array
+                        description: BigCommerce channel id list
+                        items:
+                          type: integer
+                      originChannelId:
+                        type: integer
+                        description: 'BigCommerce channel id, used for BigCommerce customer origin channel id. This field takes effect only when the store default b2b channel is not configured'
+                    required:
+                      - companyId
+                  - $ref: ../../../models/extra_fields/extra_field_values.yaml
+            examples:
+              example-1:
+                value:
+                  - companyId: 31
+                    email: user@example.com
+                    firstName: Tom
+                    lastName: Cat
+                    phoneNumber: '112233'
+                    role: 1
+                    acceptWelcomeEmail: true
+                    uuid: 095be615
+                    channelId: 1
+                    extraFields:
+                      - fieldName: string
+                        fieldValue: string
+        required: true
+        description: 'Whether the field is required, please refer to the Create User API'
+      responses:
+        '200':
+          description: Response Success
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: ../../../models/utils/response-object.yaml
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            userId:
+                              type: number
+                              description: Created User Id
+                            bcId:
+                              type: number
+                              description: Created bc customer Id
+              examples:
+                example-1:
+                  value:
+                    code: 200
+                    meta:
+                      message: SUCCESS
+                    data:
+                      - bcId: 1
+                        userId: 2
+                      - bcId: 2
+                        userId: 3
+            example-1:
+              example:
+                code: 200
+                message: success
+                data:
+                  - id: 1
+                    uuid: 095be615
+                    catalogId: 2
+                    email: user@example.com
+                    firstName: Tom
+                    lastName: Cat
+                    phoneNumber: '112233'
+                    role: 1
+                    createdAt: 1574999690
+                    updatedAt: 1574999690
+        '404':
+          $ref: '#/components/responses/404'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 409
+                  meta:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: Conflict Error
+                  data:
+                    type: object
+                    properties:
+                      errors:
+                        type: array
+                        items:
+                          allOf:
+                            - $ref: ../../../models/user/user-base.yaml
+                            - type: object
+                              properties:
+                                _detail:
+                                  type: string
+                                  description: Conflict error detail info.
+                                  example: email is existed
+              examples:
+                example-1:
+                  value:
+                    code: 409
+                    meta:
+                      message: Conflict Error
+                    data:
+                      errors:
+                        - companyId: 2
+                          email: user@example.com
+                          firstName: Tom
+                          lastName: Cat
+                          phoneNumber: '112233'
+                          role: 1
+                          bcId: 12
+                          detail: email is existed
+        '413':
+          description: 'Request Entity Too Large. In normal conditions, bulk create or update method support 10 entity in once request. Another case, some fields of entity over limit.'
+          content:
+            application/json:
+              schema:
+                $ref: ../../../models/utils/response-413.yaml
+              examples:
+                example-1:
+                  value:
+                    code: 413
+                    meta:
+                      message: Request Entity Too Large
+                    data: {}
+        '422':
+          description: 'Response Bad Request, some user created failed. plase double check user entity.'
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Response body
+                properties:
+                  code:
+                    type: number
+                    description: Response status code
+                    example: 422
+                  data:
+                    description: Response data
+                    type: object
+                    properties:
+                      errors:
+                        type: array
+                        items:
+                          allOf:
+                            - $ref: ../../../models/user/user-base.yaml
+                            - type: object
+                              properties:
+                                _detail:
+                                  type: string
+                                  example: role is non-existent
+                                  description: The detail of error info
+                  meta:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: Unprocessable entity
+                        description: Response message
+              examples:
+                example-1:
+                  value:
+                    code: 422
+                    data:
+                      errors:
+                        - companyId: 2
+                          email: user@example.com
+                          firstName: Tom
+                          lastName: Cat
+                          phoneNumber: '112233'
+                          role: 1
+                          bcId: 12
+                          detail: role is non-existent
+                        - id: 2
+                          uuid: 095be625
+                          createdAt: 1574999690
+                          updatedAt: 1574999690
+                          companyId: 2
+                          email: user2@example.com
+                          firstName: Tom
+                          lastName: Cat
+                          phoneNumber: '112233'
+                          role: 1
+                          bcId: '13'
+                    meta:
+                      message: Unprocessable entity
+            example-1:
+              example:
+                code: 400
+                data:
+                  id: 1
+                  uuid: 095be615
+                  catalogId: 2
+                  email: user@example.com
+                  firstName: Tom
+                  lastName: Cat
+                  phoneNumber: '112233'
+                  role: 1
+                  createdAt: 1574999690
+                  updatedAt: 1574999690
+                message: bulk create error.
+      security:
+        - authToken: []
+  '/users/customer/{customerId}':
+    get:
+      tags:
+        - User
+      summary: Get a User by Customer ID
+      description: Get a userʼs information by BigCommerce customer ID field.
+      operationId: companies_user_read
+      responses:
+        '200':
+          description: Response Success
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: ../../../models/utils/response-object.yaml
+                  - type: object
+                    properties:
+                      data:
+                        $ref: ../../../models/user/user.yaml
+              examples: {}
+            example-1:
+              example:
+                code: 200
+                data:
+                  id: 1
+                  uuid: 095be615
+                  catalogId: 2
+                  email: user@example.com
+                  firstName: Tom
+                  lastName: Cat
+                  phoneNumber: '112233'
+                  role: 1
+                  createdAt: 1574999690
+                  updatedAt: 1574999690
+                message: success
+        '404':
+          $ref: '#/components/responses/404'
+      security:
+        - authToken: []
+    parameters:
+      - schema:
+          type: integer
+        name: customerId
+        in: path
+        required: true
+        description: Customer ID of BigCommerce customer user.
+  /users/extra-fields:
+    get:
+      summary: Get user extra field configs
+      tags:
+        - User
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: ../../../models/utils/response-object.yaml
+                  - type: object
+                    properties:
+                      data:
+                        $ref: ../../../models/extra_fields/extra_fields.yaml
+                      meta:
+                        $ref: ../../../models/utils/pagination.yaml
+      operationId: get-users-extra-fields
+      parameters:
+        - $ref: ../../storefront/storefront.yaml#/components/parameters/limit
+        - $ref: ../../storefront/storefront.yaml#/components/parameters/offset
+      security:
+        - authToken: []
+components:
+  responses:
+    '404':
+      description: Not Found Error
+      content:
+        application/json:
+          schema:
+            type: object
+            description: Response body
+            properties:
+              code:
+                type: number
+                description: Response status code
+                example: 404
+              data:
+                type: object
+                description: Response data
+              meta:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Not Found Error
+                    description: Error message of this response
+          examples:
+            example-1:
+              value:
+                code: 404
+                data: {}
+                meta:
+                  message: Not Found Error
+    '422':
+      description: Parameter Error
+      content:
+        application/json:
+          schema:
+            description: ''
+            type: object
+            x-examples:
+              example-1:
+                code: 422
+                data:
+                  errMsg:
+                    min_created:
+                      - A valid integer is required.
+                meta:
+                  message: Parameter Error
+            properties:
+              code:
+                type: number
+              data:
+                type: object
+                required:
+                  - errMsg
+                properties:
+                  errMsg:
+                    type: object
+                    required:
+                      - '{field name}'
+                    properties:
+                      '{field name}':
+                        type: array
+                        items:
+                          type: string
+              meta:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+                    minLength: 1
+            required:
+              - code
+              - data
+              - meta
+          examples:
+            min_created:
+              value:
+                code: 422
+                data:
+                  errMsg:
+                    min_created:
+                      - A valid integer is required.
+                meta:
+                  message: Parameter Error
+            'email ':
+              value:
+                code: 422
+                data:
+                  errMsg:
+                    email:
+                      - Enter a valid email address.
+                meta:
+                  message: Parameter Error
+    '500':
+      description: Server Error
+      content:
+        application/json:
+          schema:
+            type: object
+            description: Response body
+            properties:
+              code:
+                type: number
+                description: Response status code
+                example: 500
+              data:
+                type: object
+                description: Response data
+              meta:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Server Error
+                    description: Server Error Response message
+          examples:
+            example-1:
+              value:
+                code: 500
+                data: {}
+                meta:
+                  message: Server Error
+  parameters:
+    limit:
+      name: limit
+      in: query
+      description: 'Pagination limit default: 10'
+      allowEmptyValue: true
+      schema:
+        maximum: 250
+        exclusiveMaximum: true
+        minimum: 1
+        exclusiveMinimum: true
+        type: integer
+        default: 10
+    offset:
+      name: offset
+      in: query
+      description: 'Pagination offset default: 0'
+      allowEmptyValue: true
+      schema:
+        type: integer
+        minimum: 0
+    userId:
+      name: userId
+      in: path
+      description: Unique numeric ID of this user.
+      required: true
+      schema:
+        type: integer
+    companyId:
+      name: companyId
+      in: path
+      description: Unique numeric ID of this company.
+      required: true
+      schema:
+        type: integer
+  securitySchemes:
+    authToken:
+      type: apiKey
+      name: authToken
+      in: header

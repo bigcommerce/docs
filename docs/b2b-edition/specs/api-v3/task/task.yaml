@@ -1,0 +1,407 @@
+openapi: '3.0.0'
+info:
+  title: Task
+  version: '3.0'
+  description: Tasks of the batch operations
+servers:
+  - url: 'https://api-b2b.bigcommerce.com/api/v3/io'
+paths:
+  '/batch/tasks/{taskId}':
+    parameters:
+      - schema:
+          type: string
+        name: taskId
+        in: path
+        required: true
+        description: The async task identify
+    get:
+      summary: Get a task Detail
+      tags:
+        - Task
+      operationId: get-tasks-taskId
+      description: Get a task detail
+      parameters: []
+      security:
+        - authToken: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                description: ''
+                type: object
+                x-examples:
+                  example-1:
+                    code: 200
+                    data:
+                      createdAt: 1622618228
+                      updatedAt: 1622618430
+                      taskName: test
+                      email: kido.zhao@bundleb2b.net
+                      startedAt: 1622618229
+                      finishedAt: 1622618428
+                      taskType: 100
+                      taskStatus: 9
+                      resultDetailUrl: 'https://s3-us-west-2.amazonaws.com/bundleb2b-v3.0-batch-tasks-staging/test-7-1i6zpxpe3g-1622618428-result.csv'
+                      sourceFileUrl: 'https://s3-us-west-2.amazonaws.com/bundleb2b-v3.0-batch-tasks-staging/test-1i6zpxpe3g-1622618227.csv'
+                    meta:
+                      message: SUCCESS
+                properties:
+                  code:
+                    type: number
+                  data:
+                    type: object
+                    required:
+                      - createdAt
+                      - updatedAt
+                      - taskName
+                      - email
+                      - startedAt
+                      - finishedAt
+                      - taskType
+                      - taskStatus
+                      - resultDetailUrl
+                      - sourceFileUrl
+                    properties:
+                      createdAt:
+                        type: number
+                      updatedAt:
+                        type: number
+                      taskName:
+                        type: string
+                        minLength: 1
+                      email:
+                        type: string
+                        minLength: 1
+                        description: The operation user's email
+                      startedAt:
+                        type: number
+                      finishedAt:
+                        type: number
+                      taskType:
+                        type: number
+                        description: The task type
+                      taskStatus:
+                        type: number
+                        description: The task status
+                      resultDetailUrl:
+                        type: string
+                        minLength: 1
+                        description: The task processing result file url
+                      sourceFileUrl:
+                        type: string
+                        minLength: 1
+                        description: The source file url
+                  meta:
+                    type: object
+                    required:
+                      - message
+                    properties:
+                      message:
+                        type: string
+                        minLength: 1
+                required:
+                  - code
+                  - data
+                  - meta
+              examples:
+                example-1:
+                  value:
+                    code: 200
+                    data:
+                      createdAt: 1622618228
+                      updatedAt: 1622618430
+                      taskName: test
+                      email: kido.zhao@bundleb2b.net
+                      startedAt: 1622618229
+                      finishedAt: 1622618428
+                      taskType: 100
+                      taskStatus: 9
+                      resultDetailUrl: 'https://s3-us-west-2.amazonaws.com/bundleb2b-v3.0-batch-tasks-staging/test-7-1i6zpxpe3g-1622618428-result.csv'
+                      sourceFileUrl: 'https://s3-us-west-2.amazonaws.com/bundleb2b-v3.0-batch-tasks-staging/test-1i6zpxpe3g-1622618227.csv'
+                    meta:
+                      message: SUCCESS
+  '/batch/{taskCode}/tasks/{taskName}':
+    parameters:
+      - schema:
+          type: string
+        name: taskName
+        in: path
+        required: true
+        description: The task name the user customized
+      - schema:
+          type: string
+        name: taskCode
+        in: path
+        required: true
+        description: The task code of the task
+    post:
+      summary: Create batch operation async task
+      operationId: post-tasks-batch
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                description: ''
+                type: object
+                x-examples:
+                  example-1:
+                    code: 201
+                    data:
+                      companyId: '147340'
+                    meta:
+                      message: SUCCESS
+                properties:
+                  code:
+                    type: integer
+                  data:
+                    type: object
+                    required:
+                      - taskId
+                    properties:
+                      taskId:
+                        type: integer
+                        description: The unique task identify
+                  meta:
+                    type: object
+                    required:
+                      - message
+                    properties:
+                      message:
+                        type: string
+                        minLength: 1
+                required:
+                  - code
+                  - data
+                  - meta
+              examples:
+                example-1:
+                  value:
+                    code: 200
+                    data:
+                      taskId: 479
+                    meta:
+                      message: SUCCESS
+        '413':
+          description: 'Request Entity Too Large. In normal conditions, bulk create or update method support 10 entity in once request. Another case, some fields of entity over limit.'
+          content:
+            application/json:
+              schema:
+                $ref: ../../../models/utils/response-413.yaml
+        '422':
+          description: Company was not valid. This is the result of missing required fields or invalid data. See the response for more details.
+          content:
+            application/json:
+              schema:
+                description: ''
+                type: object
+                properties:
+                  code:
+                    type: number
+                  data:
+                    type: object
+                    properties:
+                      errors:
+                        type: array
+                        uniqueItems: true
+                        minItems: 1
+                        items:
+                          required:
+                            - id
+                            - detail
+                          properties:
+                            id:
+                              type: string
+                              minLength: 1
+                            detail:
+                              type: string
+                              minLength: 1
+                    required:
+                      - errors
+                  meta:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        minLength: 1
+                    required:
+                      - message
+                required:
+                  - code
+                  - data
+                  - meta
+                x-examples:
+                  example-1:
+                    code: 0
+                    data:
+                      errors:
+                        - id: string
+                          detail: string
+                    meta:
+                      message: string
+      description: Batch task operations
+      security:
+        - authToken: []
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                taskFile:
+                  type: string
+                  description: 'You should put the `taskFile` into the form, because of our API doc tool not support the file type in the form-data.'
+              required:
+                - taskFile
+            examples:
+              example-1:
+                value:
+                  taskFile: task file
+        description: |-
+          There have 3 different request body for different operations.
+
+          We need full data for the create operation;
+
+          For update operation, need contain the updated data and resources' ID;
+
+          And for delete operation, just need resources' ID.
+
+          You should put the `taskFile` into the form, because of our API doc tool not support the file type in the form-data.
+      tags:
+        - Task
+      parameters: []
+  /batch/task-codes:
+    get:
+      summary: Get module batch tasks' codes
+      tags:
+        - Task
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                description: ''
+                type: object
+                x-examples:
+                  example-1:
+                    code: 200
+                    data:
+                      - taskName: COMPANY_CREATE
+                        taskCode: 100
+                        templateFileUrl: 'https://s3-us-west-2.amazonaws.com/bundleb2b-v3.0-batch-tasks-staging/batch_tasks_companies_create_template.csv'
+                      - taskName: COMPANY_UPDATE
+                        taskCode: 101
+                        templateFileUrl: 'https://s3-us-west-2.amazonaws.com/bundleb2b-v3.0-batch-tasks-staging/batch_tasks_companies_update_template.csv'
+                      - taskName: COMPANY_DELETE
+                        taskCode: 102
+                        templateFileUrl: 'https://s3-us-west-2.amazonaws.com/bundleb2b-v3.0-batch-tasks-staging/'
+                      - taskName: ADDRESS_CREATE
+                        taskCode: 200
+                        templateFileUrl: 'https://s3-us-west-2.amazonaws.com/bundleb2b-v3.0-batch-tasks-staging/'
+                      - taskName: ADDRESS_UPDATE
+                        taskCode: 201
+                        templateFileUrl: 'https://s3-us-west-2.amazonaws.com/bundleb2b-v3.0-batch-tasks-staging/'
+                      - taskName: ADDRESS_DELETE
+                        taskCode: 202
+                        templateFileUrl: 'https://s3-us-west-2.amazonaws.com/bundleb2b-v3.0-batch-tasks-staging/'
+                      - taskName: USER_CREATE
+                        taskCode: 300
+                        templateFileUrl: 'https://s3-us-west-2.amazonaws.com/bundleb2b-v3.0-batch-tasks-staging/'
+                      - taskName: USER_UPDATE
+                        taskCode: 301
+                        templateFileUrl: 'https://s3-us-west-2.amazonaws.com/bundleb2b-v3.0-batch-tasks-staging/'
+                      - taskName: USER_DELETE
+                        taskCode: 302
+                        templateFileUrl: 'https://s3-us-west-2.amazonaws.com/bundleb2b-v3.0-batch-tasks-staging/'
+                    meta:
+                      message: SUCCESS
+                properties:
+                  code:
+                    type: number
+                  data:
+                    type: array
+                    uniqueItems: true
+                    minItems: 1
+                    items:
+                      type: object
+                      properties:
+                        taskName:
+                          type: string
+                          minLength: 1
+                        taskCode:
+                          type: number
+                          description: Task code for create batch task
+                        templateFileUrl:
+                          type: string
+                          minLength: 1
+                          description: File template for create task
+                      required:
+                        - taskName
+                        - taskCode
+                        - templateFileUrl
+                  meta:
+                    type: object
+                    required:
+                      - message
+                    properties:
+                      message:
+                        type: string
+                        minLength: 1
+                required:
+                  - code
+                  - data
+                  - meta
+              examples:
+                example-1:
+                  value:
+                    code: 200
+                    data:
+                      - taskName: COMPANY_CREATE
+                        taskCode: 100
+                        templateFileUrl: 'https://s3-us-west-2.amazonaws.com/bundleb2b-v3.0-batch-tasks-staging/xxx.csv'
+                      - taskName: COMPANY_UPDATE
+                        taskCode: 101
+                        templateFileUrl: 'https://s3-us-west-2.amazonaws.com/bundleb2b-v3.0-batch-tasks-staging/xxx.csv'
+                      - taskName: COMPANY_DELETE
+                        taskCode: 102
+                        templateFileUrl: 'https://s3-us-west-2.amazonaws.com/bundleb2b-v3.0-batch-tasks-staging/'
+                      - taskName: ADDRESS_CREATE
+                        taskCode: 200
+                        templateFileUrl: 'https://s3-us-west-2.amazonaws.com/bundleb2b-v3.0-batch-tasks-staging/'
+                      - taskName: ADDRESS_UPDATE
+                        taskCode: 201
+                        templateFileUrl: 'https://s3-us-west-2.amazonaws.com/bundleb2b-v3.0-batch-tasks-staging/'
+                      - taskName: ADDRESS_DELETE
+                        taskCode: 202
+                        templateFileUrl: 'https://s3-us-west-2.amazonaws.com/bundleb2b-v3.0-batch-tasks-staging/'
+                      - taskName: USER_CREATE
+                        taskCode: 300
+                        templateFileUrl: 'https://s3-us-west-2.amazonaws.com/bundleb2b-v3.0-batch-tasks-staging/'
+                      - taskName: USER_UPDATE
+                        taskCode: 301
+                        templateFileUrl: 'https://s3-us-west-2.amazonaws.com/bundleb2b-v3.0-batch-tasks-staging/'
+                      - taskName: USER_DELETE
+                        taskCode: 302
+                        templateFileUrl: 'https://s3-us-west-2.amazonaws.com/bundleb2b-v3.0-batch-tasks-staging/'
+                    meta:
+                      message: SUCCESS
+      operationId: get-batch-task-codes
+      description: 'Get all module batch task codes, use this task code to create a batch task'
+      security:
+        - authToken: []
+    parameters: []
+components:
+  schemas: {}
+  securitySchemes:
+    authToken:
+      name: authToken
+      type: apiKey
+      in: header
+security:
+  - authToken: []
+tags:
+  - name: Task

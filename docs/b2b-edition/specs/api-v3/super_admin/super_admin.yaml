@@ -1,0 +1,1264 @@
+openapi: '3.0.0'
+info:
+  title: Super Admin
+  version: v3
+  description: Super Admin manage.
+servers:
+  - url: 'https://api-b2b.bigcommerce.com/api/v3/io'
+paths:
+  '/companies/{companyId}/super-admins':
+    get:
+      summary: Get a Company's SuperAdmins
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                x-examples:
+                  example-1:
+                    code: 200
+                    data:
+                      - firstName: kobe
+                        id: '74'
+                        lastName: tiantian
+                    meta:
+                      message: SUCCESS
+                      pagination:
+                        limit: 1
+                        offset: 1
+                        totalCount: 989
+                properties:
+                  code:
+                    type: number
+                  data:
+                    type: array
+                    uniqueItems: true
+                    minItems: 1
+                    items:
+                      allOf:
+                        - $ref: ../../../models/super_admin/super_admin.yaml
+                        - type: object
+                          properties:
+                            email:
+                              type: string
+                              description: Email of the super admin
+                            channelList:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  channelId:
+                                    type: integer
+                                    description: BigCommerce channel id
+                                  channelName:
+                                    type: string
+                                    description: Channel name
+                                  iconUrl:
+                                    type: string
+                                    description: Icon url
+                            uuid:
+                              type: string
+                              description: UUID of super admin
+                            phone:
+                              type: string
+                              description: Phone number of super admin
+                        - $ref: ../../../models/extra_fields/extra_field_values.yaml
+                  meta:
+                    allOf:
+                      - type: object
+                        properties:
+                          message:
+                            type: string
+                            minLength: 1
+                        required:
+                          - message
+                      - $ref: ../../../models/utils/pagination.yaml
+                required:
+                  - code
+                  - data
+                  - meta
+              examples:
+                example-1:
+                  value:
+                    code: 0
+                    data:
+                      - id: 0
+                        createdAt: 0
+                        updateAt: 0
+                        firstName: string
+                        lastName: string
+                        email: string
+                    meta:
+                      message: string
+                      pagination:
+                        limit: 2
+                        offset: 0
+                        totalCount: 0
+        '404':
+          $ref: '#/components/responses/404'
+      operationId: get-companies
+      description: Get a Company's all SuperAdmins
+      security:
+        - authToken: []
+      parameters:
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/offset'
+        - schema:
+            type: string
+          in: query
+          name: q
+          description: 'Super admin query string. Supported fields: email, e.g. ?q=xyz@abc.com'
+        - schema:
+            type: string
+            enum:
+              - '0'
+              - '1'
+          in: query
+          description: Is show extra fields in the response
+          name: isIncludeExtraFields
+      tags:
+        - Super Admin
+    parameters:
+      - $ref: '#/components/parameters/companyId'
+    put:
+      summary: Update Company & Super Admins Relationship
+      operationId: put-companies-companyId-super-admins
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: number
+                  data:
+                    type: array
+                    items: {}
+                  meta:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+              examples:
+                example-1:
+                  value:
+                    code: 200
+                    data: []
+                    meta:
+                      message: success
+        '404':
+          $ref: '#/components/responses/404'
+      description: Create or delete the super admin relationships of a company
+      security:
+        - authToken: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                superAdmins:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      superAdminId:
+                        type: integer
+                        description: Unique Super Admin ID
+                      isAssigned:
+                        type: boolean
+                        description: 'Create or delete a relationship, true means create, false means delete'
+                    required:
+                      - superAdminId
+                      - isAssigned
+              required:
+                - superAdmins
+            examples:
+              example-1:
+                value:
+                  superAdmins:
+                    - superAdminId: 1
+                      isAssigned: true
+                    - superAdminId: 2
+                      isAssigned: true
+      tags:
+        - Super Admin
+  '/super-admins/{superAdminId}':
+    parameters:
+      - $ref: '#/components/parameters/superAdminId'
+    put:
+      summary: Update SuperAdmin & Companies Relationship
+      operationId: put-super-admins-superAdminId
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                description: ''
+                type: object
+                properties:
+                  code:
+                    type: number
+                  data:
+                    type: object
+                    properties: {}
+                  meta:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        minLength: 1
+                    required:
+                      - message
+                required:
+                  - code
+                  - data
+                  - meta
+                x-examples:
+                  example-1:
+                    code: 200
+                    data: {}
+                    meta:
+                      message: SUCCESS
+              examples:
+                example-1:
+                  value:
+                    code: 200
+                    data: {}
+                    meta:
+                      message: SUCCESS
+        '404':
+          $ref: '#/components/responses/404'
+      description: Create or delete the company relationships of a superAdmin
+      security:
+        - authToken: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                companies:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      companyId:
+                        type: integer
+                        description: Unique Company ID
+                      isAssigned:
+                        type: boolean
+                        description: 'Create or delete a relationship, true means create, false means delete'
+                    required:
+                      - companyId
+                      - isAssigned
+              required:
+                - companies
+            examples:
+              example-1:
+                value:
+                  companies:
+                    - companyId: 1
+                      isAssigned: true
+                    - companyId: 2
+                      isAssigned: false
+        description: ''
+      tags:
+        - Super Admin
+  /companies/super-admins:
+    get:
+      summary: Get SuperAdmin with Company Count
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                x-examples:
+                  example-1:
+                    code: 200
+                    data:
+                      - firstName: zzz
+                        lastName: aaa
+                        email: zzz@ssalesrep.com
+                        salesRepId: '9208'
+                        companyCount: '6'
+                      - firstName: Walter
+                        lastName: White
+                        email: Walter.White@gmail.com
+                        salesRepId: '293'
+                        companyCount: '3'
+                    meta:
+                      message: SUCCESS
+                      pagination:
+                        limit: 2
+                        offset: 0
+                        totalCount: 989
+                properties:
+                  code:
+                    type: number
+                  data:
+                    type: array
+                    uniqueItems: true
+                    minItems: 1
+                    items:
+                      allOf:
+                        - allOf:
+                            - $ref: ../../../models/super_admin/super_admin.yaml
+                        - type: object
+                          properties:
+                            companyCount:
+                              type: integer
+                            email:
+                              type: string
+                              description: Email of super admin
+                            uuid:
+                              type: string
+                              description: UUID of super admin
+                            channelList:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  channelId:
+                                    type: integer
+                                    description: BigCommerce Channel id
+                                  channelName:
+                                    type: string
+                                    description: Channel name
+                                  iconUrl:
+                                    type: string
+                                    description: Icon url
+                            phone:
+                              type: string
+                              description: Phone number of super admin
+                        - $ref: ../../../models/extra_fields/extra_field_values.yaml
+                  meta:
+                    allOf:
+                      - type: object
+                        properties:
+                          message:
+                            type: string
+                            minLength: 1
+                        required:
+                          - message
+                      - $ref: ../../../models/utils/pagination.yaml
+                required:
+                  - code
+                  - data
+                  - meta
+              examples:
+                example-1:
+                  value:
+                    code: 200
+                    data:
+                      - firstName: zzz
+                        lastName: aaa
+                        email: zzz@ssalesrep.com
+                        id: '9208'
+                        companyCount: 7
+                        uuid: ''
+                        createdAt: 1622421600
+                        updatedAt: 1622421600
+                      - firstName: Walter
+                        lastName: White
+                        email: Walter.White@gmail.com
+                        id: '293'
+                        companyCount: 3
+                        uuid: ''
+                        createdAt: 1622421600
+                        updatedAt: 1622421600
+                    meta:
+                      message: SUCCESS
+                      pagination:
+                        limit: 2
+                        offset: 0
+                        totalCount: 989
+      operationId: get-companies-super-admins
+      security:
+        - authToken: []
+      parameters:
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/offset'
+        - $ref: '#/components/parameters/orderBy'
+        - schema:
+            type: string
+          in: query
+          name: q
+          description: 'Super admin query string. Supported fields: email, e.g. ?q=xyz@abc.com'
+        - schema:
+            type: string
+          in: query
+          name: uuid
+          description: 'Uuid of super admin '
+        - schema:
+            type: string
+          in: query
+          name: maxCreated
+          description: Maximum created timestamp
+        - schema:
+            type: string
+          in: query
+          name: minCreated
+          description: Minimum created timestamp
+        - schema:
+            type: string
+          in: query
+          name: maxModified
+          description: Maximum modified timestamp
+        - schema:
+            type: string
+          in: query
+          name: minModified
+          description: Minimum modified timestamp
+        - schema:
+            type: string
+            enum:
+              - '0'
+              - '1'
+          in: query
+          description: Is show extra fields in the response
+          name: isIncludeExtraFields
+      description: Get SuperAdmins with Company Count (groupby superAdmin)
+      tags:
+        - Super Admin
+    parameters: []
+  /super-admins/companies:
+    get:
+      summary: Get Companies with SuperAdmin Count
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                description: ''
+                type: object
+                x-examples:
+                  example-1:
+                    code: 200
+                    data:
+                      - addressLine1: ''
+                        addressLine2: ''
+                        catalogId: '2'
+                        city: ''
+                        companyEmail: kobe.tian@bunldeb2b.com
+                        companyId: '34'
+                        companyName: KobeCropTest111
+                        country: ','
+                        description: KobeCropTest111
+                        salesRepCount: '2'
+                        state: ''
+                        zipCode: ''
+                    meta:
+                      message: SUCCESS
+                      pagination:
+                        limit: 1
+                        offset: 1
+                        totalCount: 989
+                properties:
+                  code:
+                    type: number
+                  data:
+                    type: array
+                    uniqueItems: true
+                    minItems: 1
+                    items:
+                      type: object
+                      properties:
+                        addressLine1:
+                          type: string
+                        addressLine2:
+                          type: string
+                        catalogId:
+                          type: integer
+                          nullable: true
+                        city:
+                          type: string
+                        companyEmail:
+                          type: string
+                          minLength: 1
+                        companyId:
+                          type: integer
+                        companyName:
+                          type: string
+                          minLength: 1
+                        country:
+                          type: string
+                          minLength: 1
+                        description:
+                          type: string
+                          minLength: 1
+                        superAdminCount:
+                          type: integer
+                        state:
+                          type: string
+                        zipCode:
+                          type: string
+                      required:
+                        - addressLine1
+                        - addressLine2
+                        - catalogId
+                        - city
+                        - companyEmail
+                        - companyId
+                        - companyName
+                        - country
+                        - description
+                        - superAdminCount
+                        - state
+                        - zipCode
+                  meta:
+                    allOf:
+                      - type: object
+                        properties:
+                          message:
+                            type: string
+                            minLength: 1
+                        required:
+                          - message
+                      - $ref: ../../../models/utils/pagination.yaml
+                required:
+                  - code
+                  - data
+                  - meta
+              examples:
+                example-1:
+                  value:
+                    code: 200
+                    data:
+                      - addressLine1: ''
+                        addressLine2: ''
+                        catalogId: 2
+                        city: ''
+                        companyEmail: kobe.tian@bunldeb2b.com
+                        companyId: 34
+                        companyName: KobeCropTest111
+                        country: ','
+                        description: KobeCropTest111
+                        superAdminCount: 2
+                        state: ''
+                        zipCode: ''
+                    meta:
+                      message: SUCCESS
+                      pagination:
+                        limit: 3
+                        offset: 1
+                        totalCount: 989
+      operationId: get-super-admins-companies
+      parameters:
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/offset'
+        - $ref: '#/components/parameters/orderBy'
+      security:
+        - authToken: []
+      description: Get Companies with SuperAdmin Count (group by company)
+      tags:
+        - Super Admin
+    parameters: []
+  /super-admins:
+    post:
+      summary: Create Super Admin
+      operationId: post-super-admins
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: number
+                  data:
+                    type: object
+                    properties:
+                      userId:
+                        type: integer
+                        description: B2B Edition user id
+                      customerId:
+                        type: integer
+                        description: BigCommerce customer id
+                  meta:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+              examples:
+                example-1:
+                  value:
+                    code: 0
+                    data:
+                      userId: 1
+                      customerId: 1
+                    meta:
+                      message: success
+        '400':
+          description: SuperAdmin was not valid. This is the result of missing required fields or invalid data. See the response for more details.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                  data:
+                    type: object
+                  meta:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+              examples:
+                example-1:
+                  value:
+                    code: 400
+                    data: []
+                    meta:
+                      message: The user already exists.
+      description: Create a super admin without no company assigned
+      security:
+        - authToken: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              allOf:
+                - type: object
+                  properties:
+                    firstName:
+                      type: string
+                      description: First name of the SuperAdmin
+                      minLength: 0
+                      maxLength: 100
+                    lastName:
+                      type: string
+                      description: Last name of the SuperAdmin
+                      minLength: 0
+                      maxLength: 100
+                    phone:
+                      type: string
+                      description: Phone number of the SuperAdmin
+                      minLength: 0
+                      maxLength: 200
+                    email:
+                      type: string
+                      description: Email of the SuperAdmin
+                      minLength: 0
+                      maxLength: 200
+                    uuid:
+                      type: string
+                      description: UUID of the SuperAdmin
+                      maxLength: 100
+                      minLength: 0
+                    channelIds:
+                      type: array
+                      description: 'BigCommerce channel id list. If this fields is missing, super admin can access all enabled channels.'
+                      items:
+                        type: integer
+                    originChannelId:
+                      type: integer
+                      description: 'BigCommerce channel id, used for BigCommerce customer origin channel id. This field takes effect only when the store default b2b channel is not configured'
+                  required:
+                    - firstName
+                    - lastName
+                    - email
+                - $ref: ../../../models/extra_fields/extra_field_values.yaml
+            examples:
+              example-1:
+                value:
+                  firstName: Tom
+                  lastName: Cat
+                  phone: '0000000000'
+                  email: Tom@gmail.com
+                  uuid: ''
+        description: ''
+      tags:
+        - Super Admin
+  '/super-admins/{superAdminId}/companies':
+    parameters:
+      - schema:
+          type: string
+          example: '11'
+        name: superAdminId
+        in: path
+        required: true
+        description: Unique SuperAdmin ID
+    get:
+      summary: Get Companies of a Super Admin
+      tags:
+        - Super Admin
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: number
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        companyId:
+                          type: integer
+                          description: Unique company ID
+                        companyName:
+                          type: string
+                          description: Company name
+                        companyEmail:
+                          type: string
+                          description: Company email
+                      required:
+                        - companyId
+                        - companyName
+                        - companyEmail
+                  meta:
+                    required:
+                      - message
+                      - pagination
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                      pagination:
+                        type: object
+                        properties:
+                          totalCount:
+                            type: integer
+                            description: Total count of companies
+                          offset:
+                            type: integer
+                            description: Pagination offset
+                          limit:
+                            type: integer
+                            description: Pagination limit
+                required:
+                  - data
+              examples:
+                example-1:
+                  value:
+                    code: 0
+                    data:
+                      - companyId: 1
+                        companyName: Tom company
+                        companyEmail: Tom@gmail.com
+                      - companyId: 1
+                        companyName: Jerry company
+                        companyEmail: Jerry@gmail.com
+                    meta:
+                      message: success
+                      pagination:
+                        totalCount: 2
+                        offset: 0
+                        limit: 10
+        '404':
+          $ref: '#/components/responses/404'
+      operationId: get-super-admins-superAdminId-companies
+      security:
+        - authToken: []
+      description: Get companies of a super admin
+      parameters:
+        - schema:
+            type: integer
+          in: query
+          name: offset
+          description: Pagination offset
+        - schema:
+            type: integer
+          in: query
+          name: limit
+          description: Pagination limit
+  /super-admins/bulk:
+    post:
+      summary: Bulk Create Super Admins
+      operationId: post-super-admins-bulk
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                description: ''
+                type: object
+                x-examples:
+                  example-1:
+                    code: 200
+                    data:
+                      superAdminIds:
+                        - 51
+                        - 52
+                        - 53
+                    meta:
+                      message: SUCCESS
+                properties:
+                  code:
+                    type: number
+                  data:
+                    type: object
+                    required:
+                      - superAdminIds
+                    properties:
+                      superAdminIds:
+                        type: array
+                        description: Created successful Super Admin IDs
+                        items:
+                          type: integer
+                  meta:
+                    type: object
+                    required:
+                      - message
+                    properties:
+                      message:
+                        type: string
+                        minLength: 1
+                required:
+                  - code
+                  - data
+                  - meta
+              examples:
+                example-1:
+                  value:
+                    code: 200
+                    data:
+                      superAdminIds:
+                        - 51
+                        - 52
+                        - 53
+                    meta:
+                      message: SUCCESS
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                description: ''
+                type: object
+                x-examples:
+                  example-1:
+                    code: 0
+                    data:
+                      errors:
+                        - id: string
+                          _detail: string
+                    meta:
+                      message: string
+                properties:
+                  code:
+                    type: number
+                  data:
+                    type: object
+                    required:
+                      - errors
+                    properties:
+                      errors:
+                        type: array
+                        uniqueItems: true
+                        minItems: 1
+                        items:
+                          type: object
+                          properties:
+                            _detail:
+                              type: string
+                              minLength: 1
+                              description: Failed detail message
+                          required:
+                            - _detail
+                  meta:
+                    type: object
+                    required:
+                      - message
+                    properties:
+                      message:
+                        type: string
+                        minLength: 1
+                required:
+                  - code
+                  - data
+                  - meta
+              examples:
+                example-1:
+                  value:
+                    code: 0
+                    data:
+                      errors:
+                        - _detail: string
+                    meta:
+                      message: string
+        '413':
+          description: 'Request Entity Too Large. In normal conditions, bulk create or update method support 10 entity in once request. Another case, some fields of entity over limit.'
+          content:
+            application/json:
+              schema:
+                $ref: ../../../models/utils/response-413.yaml
+        '422':
+          description: SuperAdmin was not valid. This is the result of missing required fields or invalid data. See the response for more details.
+          content:
+            application/json:
+              schema:
+                description: ''
+                type: object
+                x-examples:
+                  example-1:
+                    code: 0
+                    data:
+                      errors:
+                        - id: string
+                          _detail: string
+                    meta:
+                      message: string
+                properties:
+                  code:
+                    type: number
+                  data:
+                    type: object
+                    required:
+                      - errors
+                    properties:
+                      errors:
+                        type: array
+                        uniqueItems: true
+                        minItems: 1
+                        items:
+                          type: object
+                          properties:
+                            _detail:
+                              type: string
+                              minLength: 1
+                          required:
+                            - _detail
+                  meta:
+                    type: object
+                    required:
+                      - message
+                    properties:
+                      message:
+                        type: string
+                        minLength: 1
+                required:
+                  - code
+                  - data
+                  - meta
+      description: Bulk create super admins
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              minItems: 1
+              uniqueItems: true
+              x-examples:
+                example-1:
+                  - firstName: Tom
+                    lastName: Cat
+                    phone: '0000000000'
+                    email: Tom21@gmail.com
+                    uuid: '21'
+                  - firstName: Tom
+                    lastName: Cat
+                    phone: '0000000000'
+                    email: Tom22@gmail.com
+                    uuid: '22'
+                  - firstName: Tom
+                    lastName: Cat
+                    phone: '0000000000'
+                    email: Tom23@gmail.com
+                    uuid: '23'
+              items:
+                allOf:
+                  - type: object
+                    properties:
+                      firstName:
+                        type: string
+                        minLength: 1
+                        description: First name of the super admin
+                      lastName:
+                        type: string
+                        minLength: 1
+                        description: Last name of the super admin
+                      phone:
+                        type: string
+                        minLength: 1
+                        description: Phone number of the super admin
+                      email:
+                        type: string
+                        minLength: 1
+                        description: Email of the super admin
+                      uuid:
+                        type: string
+                        minLength: 1
+                        description: UUID of the super admin
+                      channelIds:
+                        type: array
+                        description: BigCommerce channel id list
+                        items:
+                          type: integer
+                      originChannelId:
+                        type: integer
+                        description: 'BigCommerce channel id, used for BigCommerce customer origin channel id. This field takes effect only when the store default b2b channel is not configured'
+                    required:
+                      - firstName
+                      - lastName
+                      - phone
+                      - email
+                      - uuid
+                  - $ref: ../../../models/extra_fields/extra_field_values.yaml
+            examples:
+              example-1:
+                value:
+                  - firstName: Tom
+                    lastName: Cat
+                    phone: '1000000000'
+                    email: Tom21@gmail.com
+                  - firstName: Tom
+                    lastName: Cat
+                    phone: '2000000000'
+                    email: Tom22@gmail.com
+                    uuid: '22'
+                  - firstName: Tom
+                    lastName: Cat
+                    phone: '3000000000'
+                    email: Tom23@gmail.com
+                    uuid: '23'
+      tags:
+        - Super Admin
+      security:
+        - authToken: []
+  '/super-admins/info/{superAdminId}':
+    parameters:
+      - schema:
+          type: string
+        name: superAdminId
+        in: path
+        required: true
+        description: Unique SuperAdmin ID
+    get:
+      summary: Get a super admin info
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                  data:
+                    allOf:
+                      - $ref: ../../../models/super_admin/super_admin.yaml
+                      - type: object
+                        properties:
+                          uuid:
+                            type: string
+                            description: UUID of super admin
+                          phone:
+                            type: string
+                            description: Phone number of super admin
+                          channelList:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                channelId:
+                                  type: integer
+                                  description: BigCommerce channel id
+                                channelName:
+                                  type: string
+                                  description: Channel name
+                                iconUrl:
+                                  type: string
+                                  description: Icon url
+                      - $ref: ../../../models/extra_fields/extra_field_values.yaml
+                  meta:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+      operationId: get-super-admins-info-superAdminId
+      tags:
+        - Super Admin
+      description: Get super admin info
+      parameters: []
+      security:
+        - authToken: []
+    put:
+      summary: Update a super admin info
+      operationId: put-super-admins-info-superAdminId
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                  data:
+                    allOf:
+                      - $ref: ../../../models/super_admin/super_admin.yaml
+                      - type: object
+                        properties:
+                          uuid:
+                            type: string
+                            description: UUID of super admin
+                          phone:
+                            type: string
+                            description: Phone number of super admin
+                          channelList:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                channelId:
+                                  type: integer
+                                  description: BigCommerce channel id
+                                channelName:
+                                  type: string
+                                  description: Channel name
+                                iconUrl:
+                                  type: string
+                                  description: Icon url
+                      - $ref: ../../../models/extra_fields/extra_field_values.yaml
+                  meta:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+      security:
+        - authToken: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              allOf:
+                - type: object
+                  properties:
+                    firstName:
+                      type: string
+                      description: First name
+                    lastName:
+                      type: string
+                      description: Last name
+                    uuid:
+                      type: string
+                      description: UUID of super admin
+                    phone:
+                      type: string
+                      description: Phone number of super admin
+                    channelIds:
+                      type: array
+                      description: BigCommerce channel ids.
+                      items:
+                        type: integer
+                - $ref: ../../../models/extra_fields/extra_field_values.yaml
+        description: ''
+      description: Update super admin info
+      tags:
+        - Super Admin
+components:
+  securitySchemes:
+    authToken:
+      name: authToken
+      type: apiKey
+      in: header
+  examples: {}
+  parameters:
+    companyId:
+      name: companyId
+      in: path
+      required: true
+      schema:
+        type: integer
+        example: 14
+      description: Unique ID of a comapny object
+    limit:
+      name: limit
+      in: query
+      required: false
+      schema:
+        type: integer
+        example: 15
+        default: 10
+        maximum: 200
+        minimum: 1
+      description: Pagination limit
+    offset:
+      name: offset
+      in: query
+      schema:
+        type: integer
+        example: 5
+        minimum: 0
+      description: Pagination offset
+    superAdminId:
+      name: superAdminId
+      in: path
+      required: true
+      schema:
+        type: integer
+        example: 11
+      description: Unique SuperAdmin ID
+    orderBy:
+      name: orderBy
+      in: query
+      required: false
+      schema:
+        type: string
+        enum:
+          - DESC
+          - ASC
+        default: DESC
+        example: ASC
+      description: Order by
+  responses:
+    '404':
+      description: Example response
+      content:
+        application/json:
+          schema:
+            description: ''
+            type: object
+            properties:
+              code:
+                type: number
+              data:
+                type: object
+                properties: {}
+              meta:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    minLength: 1
+                required:
+                  - message
+            required:
+              - code
+              - data
+              - meta
+            x-examples:
+              example-1:
+                code: 404
+                data: {}
+                meta:
+                  message: Not Found Error
+          examples:
+            example-1:
+              value:
+                code: 404
+                data: {}
+                meta:
+                  message: Not Found Error
+tags:
+  - name: Super Admin

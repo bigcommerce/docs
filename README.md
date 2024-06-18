@@ -1,4 +1,4 @@
-# BigCommerce Public Developer Documentation
+# BigCommerce public developer documentation
 
 This repo is the source of truth for the public, open source BigCommerce DevDocs and API reference at [developer.bigcommerce.com](https://developer.bigcommerce.com). It consists of **Markdown React (.mdx)**, **OpenAPI Specification (.yml)**, and **JSON Schema (.json and .yml)** files.
 
@@ -6,7 +6,7 @@ The BigCommerce DX team maintains these open source docs; we welcome your [issue
 
 ## Contributing
 
-If you're interested in contributing, see our [Contribution Guide](CONTRIBUTING.md) and [Code of Conduct](CODE_OF_CONDUCT.md).
+If you're interested in contributing, see our [Contribution guide](CONTRIBUTING.md) and [Code of conduct](CODE_OF_CONDUCT.md).
 
 ## History
 
@@ -29,6 +29,7 @@ Significant dates include the following:
 * In May 2023, we subdivided both the Catalog and Payments API specifications into multiple files.
 * On December 27, 2023, all public docs moved into the [bigcommerce/docs](https://github.com/bigcommerce/docs) repo.
 
+<!--
 ## Directory structure
 
 ```shell
@@ -72,4 +73,4 @@ Significant dates include the following:
 ├── package.json                       
 ├── pull_request_template.md           # template for most pull requests
 └── README.md
-```
+``` -->

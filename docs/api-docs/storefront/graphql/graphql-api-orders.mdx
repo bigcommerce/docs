@@ -1,0 +1,398 @@
+# GraphQL Storefront API: Orders (beta)
+
+<Callout type="info">
+    This feature is currently in beta and is only available to participants. 
+</Callout>
+
+## Overview
+
+BigCommerce's GraphQL Storefront API Orders provides the same access to order objects as the REST Storefront API does. Developers can use frontend GraphQL to create an end-to-end shopper experience. 
+
+This GraphQL API endpoint powers customer solutions as shoppers evolve from guests, to registered customers. Orders related mutations and queries can do the following:
+
+### Get order and details
+
+Get all order details for a specific customer using the `GetOrderDetails` query.
+
+Use `GetOrderDetails` to:
+  - Query for a specific order 
+  - Filter orders by order status
+  - Filter orders by order date
+  - Support for cursor pagination
+
+### Get all orders and details
+
+Get all orders for a specific customer using the `GetAllOrders` query.
+
+Use the `GetAllOrders` query to get details like:
+- Billing address, including the customer's information
+- Order status
+- Consignment orders
+    - Ship or pickup consignments
+    - Products per shipment
+    - Product specifics such as brand, name, variant, quantity, and pricing
+- Specific discounts, and coupons (when applied)
+- Pricing
+    - Get pricing details
+        - Such as tax, gift wrapping, shipping, etc., (when applied)
+        - Total amount
+        - Order placed timestamp
+
+<Callout type="info">
+    **The following features are coming soon**
+    - Payment/Payments information 
+    - Order specific messages
+</Callout>
+
+## Tokens
+
+To make requests, create a [store-level](/docs/start/authentication/api-accounts#store-level-api-accounts) or [app-level](/docs/start/authentication/api-accounts#app-level-api-accounts) API account with one or more of the following token creation OAuth scopes:
+
+| UI Name | Permission | Parameter | Description |
+| :--- | :--- | :--- | :--- |
+| storefront API tokens | modify | `store_storefront-api` | Create payment access tokens, process payments |
+| storefront API customer impersination tokens | modify | `store_storefront_api_customer_impersonation` | Create GraphQL storefront API bearer tokens that allow customer imperonation |
+
+No additional scopes are required to use the GraphQL storefront API. For more information, see [token creation OAuth scopes](/docs/start/authentication/api-accounts#token-creation-scopes).
+
+To generate a bearer token your application can pass to authenticate calls to the GraphQL storefront API, using either the [Create a storefront token](/docs/rest-authentication/tokens#create-a-token) or the [Create a customer impersonation token](/docs/rest-authentication/tokens/customer-impersonation-token#create-a-token) REST endpoint. On a Stencil storefront, you can also access a token directly from the page context. Learn more about [Using auto-generated tokens in Stencil themes](/docs/storefront/graphql#using-auto-generated-tokens-in-stencil-themes).
+
+For more information, see [Creating a token](/docs/storefront/graphql#creating-a-token) in the GraphQL storefront API Overview and [Dynamic tokens](/docs/start/authentication#bigcommerce-generated-jwts) in the Authentication and Example Requests article.
+
+## Example queries and mutations
+
+### Get order details
+In this example, the query is set up to get details for order #106. Use `entityId` to query by customer. 
+
+<Tabs items={[`Request`, `Response`]}>
+    <Tab>
+    ```graphql filename="Example query: Get order details" showLineNumbers copy
+    query GetOrderDetails {
+      site {
+        order(filter: { entityId: 106 }) {
+          billingAddress {
+            address1
+            city
+            company
+            country
+            countryCode
+            email
+            firstName
+            lastName
+            phone
+            postalCode
+            stateOrProvince
+          }
+          consignments {
+            shipping {
+              edges {
+                  cursor
+                  node {
+                  lineItems {
+                    edges {
+                      node {
+                        brand
+                        entityId
+                        imageUrl
+                        name
+                        subTotalListPrice {
+                          currencyCode
+                          value
+                        }
+                      }
+                    }
+                  }
+                  shipments {
+                    edges {
+                      node {
+                        shippingProviderName
+                        tracking {
+                          ... on OrderShipmentUrlOnlyTracking {
+                              __typename
+                          }
+                        }
+                      }
+                    }
+                  }
+                  shippingAddress {
+                    address1
+                    city
+                    firstName
+                    lastName
+                    postalCode
+                    stateOrProvince
+                  }
+                  shippingCost {
+                    currencyCode
+                      value
+                  }
+                }
+              }
+            }
+          }
+          subTotal {
+            currencyCode
+            value
+          }
+          taxTotal {
+            currencyCode
+            value
+          }
+          totalIncTax {
+            currencyCode
+            value
+          }
+          updatedAt {
+            utc
+          }
+        }
+      }
+    }
+    ```
+    </Tab>
+    <Tab>
+    ``` graphQL filename="Example response: Get order details"
+    {
+      "data": {
+        "site": {
+            "order": {
+              "billingAddress": {
+                  "address1": "123456 New Fake Street",
+                  "city": "Austin",
+                  "company": "BC",
+                  "country": "United States",
+                  "countryCode": "US",
+                  "email": "jon.smith@test.com",
+                  "firstName": "Jon",
+                  "lastName": "Smith",
+                  "phone": "123-456-7890",
+                  "postalCode": "78610",
+                  "stateOrProvince": ""
+              },
+              "consignments": {
+                "shipping": {
+                    "edges": [
+                        {
+                          "cursor": "YXJyYXljb25uZWN0aW9uOjA=",
+                          "node": {
+                            "lineItems": {
+                               "edges": [
+                                  {
+                                   "node": {
+                                      "brand": "",
+                                      "entityId": 7,
+                                      "imageUrl": null,
+                                      "name": "Dog Leash w/ Movie",
+                                      "subTotalListPrice": {
+                                          "currencyCode": "USD",
+                                          "value": 40.0
+                                          }
+                                        }
+                                      }
+                                    ]
+                                    },
+                                    "shipments": {
+                                        "edges": []
+                                    },
+                                    "shippingAddress": {
+                                        "address1": null,
+                                        "city": "South Jordan",
+                                        "firstName": "Camille",
+                                        "lastName": "Butterfield",
+                                        "postalCode": "84009",
+                                        "stateOrProvince": "Utah"
+                                    },
+                                    "shippingCost": {
+                                        "currencyCode": "USD",
+                                        "value": 0.0
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                },
+                "subTotal": {
+                    "currencyCode": "USD",
+                    "value": 40.0
+                },
+                "taxTotal": {
+                    "currencyCode": "USD",
+                    "value": 0.0
+                },
+                "totalIncTax": {
+                    "currencyCode": "USD",
+                    "value": 0.0
+                },
+                "updatedAt": {
+                    "utc": "2024-04-02T15:04:08Z"
+                }
+            }
+        }
+      }
+    }
+
+    ```
+    </Tab>
+</Tabs>
+
+### Get all orders and details
+
+#### Filter by order status
+In this example, the query is set up to return a filtered list of all orders with a `COMPLETED` status. 
+
+<Tabs items={[`Request`, `Response`]}>
+    <Tab>
+    ```graphql filename="Example query: Get order details" showLineNumbers copy
+    query GetAllOrders{
+    site {
+    orders(filters: {status: COMPLETED}) {
+        edges {
+        node {
+            consignments {
+            shipping {
+                edges {
+                node {
+                    lineItems {
+                    edges {
+                        node {
+                        brand
+                        entityId
+                        imageUrl
+                        name
+                        productOptions {
+                            name
+                            value
+                        }
+                        quantity
+                        }
+                    }
+                    }
+                }
+                }
+            }
+            }
+            subTotal {
+            currencyCode
+            value
+            }
+        }
+        }
+    }
+    }
+    }
+    ```
+    </Tab>
+    <Tab>
+    ``` graphql filename="Example response: Get order details"
+     {
+      "data": {
+          "site": {
+              "order": {
+                  "billingAddress": {
+                      "address1": "123456 New Fake Street",
+                      "city": "Austin",
+                      "company": "BC",
+                      "country": "United States",
+                      "countryCode": "US",
+                      "email": "jon.smith@test.com",
+                      "firstName": "Jon",
+                      "lastName": "Smith",
+                      "phone": "123-456-7890",
+                      "postalCode": "78610",
+                      "stateOrProvince": ""
+                  },
+                  "consignments": {
+                      "shipping": {
+                          "edges": [
+                              {
+                                  "cursor": "YXJyYXljb25uZWN0aW9uOjA=",
+                                  "node": {
+                                      "lineItems": {
+                                          "edges": [
+                                              {
+                                                  "node": {
+                                                      "brand": "",
+                                                      "entityId": 7,
+                                                      "imageUrl": null,
+                                                      "name": "Dog Leash w/ Movie",
+                                                      "subTotalListPrice": {
+                                                          "currencyCode": "USD",
+                                                          "value": 40.0
+                                                      }
+                                                  }
+                                              }
+                                          ]
+                                      },
+                                      "shipments": {
+                                          "edges": []
+                                      },
+                                      "shippingAddress": {
+                                          "address1": null,
+                                          "city": "South Jordan",
+                                          "firstName": "Camille",
+                                          "lastName": "Butterfield",
+                                          "postalCode": "84009",
+                                          "stateOrProvince": "Utah"
+                                      },
+                                      "shippingCost": {
+                                          "currencyCode": "USD",
+                                          "value": 0.0
+                                      }
+                                  }
+                              }
+                          ]
+                      }
+                  },
+                  "subTotal": {
+                      "currencyCode": "USD",
+                      "value": 40.0
+                  },
+                  "taxTotal": {
+                      "currencyCode": "USD",
+                      "value": 0.0
+                  },
+                  "totalIncTax": {
+                      "currencyCode": "USD",
+                      "value": 0.0
+                  },
+                  "updatedAt": {
+                      "utc": "2024-04-02T15:04:08Z"
+                  }
+              }
+          }
+      }
+    }
+    ```
+    </Tab>
+</Tabs>
+
+Join our [Developer community](/community) to share your feedback with us in the BigCommerceDevs Slack or on our Discord server.
+
+## Resources
+
+### Documentation
+
+* [GraphQL storefront API overview](/docs/storefront/graphql)
+* [Guide to API Accounts: Store-level API accounts](/docs/start/authentication/api-accounts#store-level-api-accounts)
+* [Guide to API accounts: OAuth token creation scopes](/docs/start/authentication/api-accounts#token-creation-scopes)
+* [Authentication and example requests: BigCommerce-generated JWTs](/docs/start/authentication#bigcommerce-generated-jwts)
+
+### API reference
+
+#### Storefront tokens
+
+* [Create a storefront token](/docs/rest-authentication/tokens#create-a-token)
+* [Create a customer impersonation token](/docs/rest-authentication/tokens/customer-impersonation-token#create-a-token)
+
+#### GraphQL Storefront API: orders
+
+* [Storefront Orders](/docs/rest-storefront/orders)
+
+#### REST Management API: orders
+
+* [Orders V2](/docs/rest-management/orders/)
+* [Orders V3](/docs/rest-management/transactions)
+
+### Community
+
+* [Developer community](/community)

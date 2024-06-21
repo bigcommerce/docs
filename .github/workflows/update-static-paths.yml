@@ -8,9 +8,16 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v2
 
       - name: List contents of the repository
         run: |
           echo "Listing all contents of the repository:"
-          ls -R
+          find . -type f | sed 's|^\./||' | jq -R -s -c 'split("\n")[:-1]' > repo-contents.json
+          cat repo-contents.json
+
+      - name: Upload repository contents as artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: repo-contents
+          path: repo-contents.json

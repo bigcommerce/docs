@@ -11,7 +11,6 @@ info:
 tags:
   - name: Manage Webhooks (Single)
   - name: Manage Webhooks (Bulk)
-  - name: Webhook Events
   - name: Webhooks Admin
 security:
   - X-Auth-Token: []
@@ -133,7 +132,7 @@ paths:
         - $ref: '#/components/parameters/Accept'
         - $ref: '#/components/parameters/Content-Type'
     parameters:
-      - $ref: '#/components/parameters/WebhookId' 
+      - $ref: '#/components/parameters/WebhookId'
     put:
       responses:
         '200':
@@ -321,41 +320,6 @@ paths:
           $ref: '#/components/responses/422_UnprocessableEntity'
       tags:
         - Webhooks Admin
-  '/hooks/events':
-    get:
-      tags:
-        - Webhook Events
-      summary: Get Events
-      deprecated: true
-      parameters:
-        - $ref: '#/components/parameters/FilterPageParam'
-        - $ref: '#/components/parameters/FilterLimitParam'
-        - $ref: '#/components/parameters/FilterMaxCreatedAtParam'
-        - $ref: '#/components/parameters/FilterMinCreatedAtParam'
-      operationId: getWebhookEvents
-      responses:
-        '200':
-          description: Successful operation.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/HistoryEvent'
-                  meta:
-                    type: object
-                    properties:
-                      pagination:
-                        $ref: '#/components/schemas/Pagination'
-        '400':
-          $ref: '#/components/responses/400_BadRequest'
-        '401':
-          $ref: '#/components/responses/401_Unauthorized'
-      description: |
-        Get a list of events that were sent but not successfully received. Events are stored for at least one week. This hook/event functionality is superseded by [Delivery exception hooks](/docs/integrations/webhooks/events#delivery-exception-hooks).
 components:
   parameters:
     WebhookId:
@@ -406,22 +370,6 @@ components:
       required: false
       schema:
         type: integer
-    FilterMaxCreatedAtParam:
-      name: 'created_at:max'
-      in: query
-      description: |
-        Maximum value for returned data.
-      required: false
-      schema:
-        type: string
-    FilterMinCreatedAtParam:
-      name: 'created_at:min'
-      in: query
-      description: |
-        Minimum value for returned data.
-      required: false
-      schema:
-        type: string
     Accept:
       in: header
       name: Accept
@@ -3052,30 +3000,6 @@ components:
               type: integer
               example: 1561488106
               description: The time the webhook was most recently updated, represented in UNIX epoch time.
-    HistoryEvent:
-      type: object
-      properties:
-        scope:
-          type: string
-          description: Alias where the event occurred.
-        store_id:
-          type: string
-          description: A numerical identifier that is unique to each store.
-        data:
-          type: object
-          properties: {}
-          additionalProperties: true
-          description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-        hash:
-          type: string
-          description: The payload data encoded in JSON format and then passed through SH1 encryption.
-        created_at:
-          type: integer
-          format: int64
-          description: UTC timestamp, in seconds, that the events was created.
-        producer:
-          type: string
-          description: Will always follow the pattern stores/store_hash. This is the store that created the webhook.
     Pagination:
       type: object
       description: |

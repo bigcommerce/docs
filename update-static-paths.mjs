@@ -50,7 +50,9 @@ async function generateStaticPaths() {
 
     const outputPath = path.join(process.cwd(), 'static-paths.json');
     try {
+        console.log(staticPaths.length, 'static paths generated')
         fs.writeFileSync(outputPath, JSON.stringify(staticPaths, null, 2));
+        console.log('Static paths written to', outputPath);
     } catch (error) {
         console.error('Error generating static paths:', error);
         process.exit(1);

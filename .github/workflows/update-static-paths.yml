@@ -1,6 +1,9 @@
 name: List Repository Contents
 
-on: [push]
+on:
+  push:
+    paths-ignore:
+      - "repo-contents.json"
 
 jobs:
   list-contents:
@@ -10,14 +13,21 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
+      - name: Set up Git
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+
       - name: List contents of the repository
         run: |
           echo "Listing all contents of the repository:"
           find . -type f | sed 's|^\./||' | jq -R -s -c 'split("\n")[:-1]' > repo-contents.json
           cat repo-contents.json
 
-      - name: Upload repository contents as artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: repo-contents
-          path: repo-contents.json
+      - name: Commit and push changes
+        run: |
+          git add repo-contents.json
+          git commit -m "Update repository contents list"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,6 +1,6 @@
-const path = require('path');
-const fs = require('fs');
-const { Octokit } = require("@octokit/rest");
+import path from 'path';
+import fs from 'fs';
+import { Octokit } from '@octokit/rest';
 
 const octokit = new Octokit({
     auth: process.env.GITHUB_TOKEN,
@@ -57,4 +57,4 @@ async function generateStaticPaths() {
     }
 }
 
-module.exports = { listFiles, generateStaticPaths, findStaticPaths };
+export { listFiles, generateStaticPaths, findStaticPaths };

@@ -56,3 +56,5 @@ async function generateStaticPaths() {
         process.exit(1);
     }
 }
+
+module.exports = { listFiles, generateStaticPaths, findStaticPaths };

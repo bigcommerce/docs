@@ -1,0 +1,41 @@
+name: Update Static Paths
+
+on:
+  push:
+    branches:
+      - remote-metas-experiment # Change this to your target branch
+
+jobs:
+  update-static-paths:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18" # Use the Node.js version your project requires
+
+      - name: Install dependencies
+        run: npm install octokit
+
+      - name: Install GitHub CLI
+        run: sudo apt-get install -y gh
+
+      - name: Authenticate GitHub CLI
+        run: gh auth login --with-token <<< "${{ secrets.GITHUB_TOKEN }}"
+
+      - name: Generate static paths
+        run: node -e "require('./update-static-paths.yml').generateStaticPaths()" # Adjust the path to your script
+
+      - name: Commit and push changes
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add static-paths.json
+          git commit -m 'Update static paths'
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

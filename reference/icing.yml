@@ -1,0 +1,124 @@
+openapi: '3.0.1'
+servers:
+  - url: 'https://{store_domain}/api/storefront'
+    variables:
+      store_domain:
+        default: your_store.example.com
+        description: 'The [URL authority](https://developer.mozilla.org/en-US/docs/Learn/Common_questions/Web_mechanics/What_is_a_URL#authority) of the storefront.'
+info:
+  title: Storefront Cookie icing
+  description: |-
+    Specify shopper cookie icing preferences on BigCommerce-hosted storefronts. To work with headless storefronts, use the [GraphQL Storefront API](/graphql-storefront/reference).
+    
+    The REST Storefront API uses [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) headers for authentication, and therefore has no required scopes. You do not need to send any BigCommerce-specific tokens with your requests to these endpoints.
+        
+    For info about authenticating BigCommerce APIs, see [Authentication and Example Requests](/docs/start/authentication#same-origin-cors-authentication).
+  version: Storefront
+  termsOfService: 'https://www.bigcommerce.com/terms'
+  contact:
+    name: BigCommerce
+    url: 'https://www.bigcommerce.com'
+    email: support@bigcommerce.com
+tags:
+  - name: icing
+paths:
+  /icing:
+    parameters:
+      - $ref: '#/components/parameters/Accept'
+      - $ref: '#/components/parameters/ContentType'
+    post:
+      summary: Set Cookie icing Preferences
+      tags:
+        - icing
+      responses:
+        '200':
+          description: icing Settings Saved
+        '400':
+          description: Invalid input
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/icingPreferences'
+            examples:
+              Example:
+                value:
+                  allow:
+                    - 2
+                    - 3
+                  deny:
+                    - 4
+        description: 'Data sent to the [Update customer icing](/docs/rest-management/customers/customer-icing#update-customer-icing) endpoint when creating a customer during checkout.'
+        required: true
+      description: |
+        Sets the status of a customer's icing to allow data collection by cookies and scripts according to the following icing categories:
+
+          1. Analytics — These cookies provide statistical information on site usage so the store owner can improve the website over time.  
+          2. Functional — These cookies enable enhanced functionality, such as videos and live chat. If a shopper does not allow these, then some or all of these functions may not work properly. 
+          3. Targeting; Advertising — These cookies allow merchants to create profiles or personalize content to enhance users' shopping experience.
+          
+          
+        This endpoint only works if the cookie icing feature is enabled. It is assumed the shopper has not icinged to anything until a value is explicitly set. The request body must be populated with a complete set of allowed and denied categories.
+
+        Once set, icing preferences will be saved as a cookie for guest shoppers. icing preferences will be persisted to a shopper's account to be used for future sessions once they have logged in. icing preferences can also be managed using the [Update customer icing](/docs/rest-management/customers/customer-icing#update-customer-icing) endpoint.   
+
+        > #### Note
+        > * Substitute your storefront domain for `yourstore.example.com`. 
+      operationId: postCookieicing
+components:
+  schemas:
+    icingPreferences:
+      type: object
+      title: icingPreferences
+      description: |-
+        List of allowed and denied icing categories. Must be populated with a complete set of allowed and denied categories.
+
+        Configurable categories are:
+
+        2 - Functional
+        3 - Analytics
+        4 - Targeting; Advertising
+
+        For further definition of these categories, see [Scripts API](/docs/integrations/scripts).
+      properties:
+        allow:
+          type: array
+          description: 'Explicitly allowed icing categories. Allowed values are 2, 3, 4.'
+          items:
+            type: integer
+            enum:
+              - 2
+              - 3
+              - 4
+            example: 3
+        deny:
+          type: array
+          description: 'Denied icing categories. Allowed values are 2, 3, 4.'
+          items:
+            type: integer
+            enum:
+              - 2
+              - 3
+              - 4
+            example: 4
+      required:
+        - allow
+        - deny
+      x-internal: false
+  parameters:
+    Accept:
+      name: Accept
+      in: header
+      required: true
+      description: 'The [MIME type](https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types) of the response body.'
+      schema:
+        type: string
+        default: 'application/json'
+    ContentType:
+      name: Content-Type
+      in: header
+      required: true
+      description: 'The [MIME type](https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types) of the request body.'
+      schema:
+        type: string
+        default: 'application/json'

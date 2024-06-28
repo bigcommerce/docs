@@ -1,14 +1,15 @@
 # Caching best practices
 
-BigCommerce supports multiple frameworks that you can use to build your storefront - Stencil, Next.js Commerce, and Catalyst.
+BigCommerce supports multiple framework solutions that you can use to build your storefront, including [Stencil](/docs/storefront/stencil), [Next.js Commerce](/docs/storefront/next-commerce), and [Catalyst](https://www.catalyst.dev/docs).
 
-The following sections describe 
+This article describes the following:
+
 -  General recommendations that apply to all three frameworks.
 -  How the usage and capabilities for each framework give rise to distinct caching best practices.
 
 **Summary of differences and capabilities**
 
-| Feature or aspect	| Stencil | Next.js Commerce | Catalyst |
+| Feature | Stencil | Next.js Commerce | Catalyst |
 | :-- | :-- | :-- | :-- |
 | Primary framework	| BigCommerce's native framework | Next.js	| Headless (supports various frameworks) |
 | Usage scenario | Pre-built themes, quick setup for BigCommerce stores	| Pre-configured e-commerce sites with Next.js	| Custom e-commerce solutions with various front-end technologies |
@@ -34,55 +35,70 @@ The build process automatically generates versioned filenames and updates refere
 
 Stencil is tightly integrated with BigCommerce’s platform and focuses on optimizing the delivery of theme assets.
 
+### Built-in caching
+
 Stencil comes with built-in caching mechanisms that don't require extensive configuration from you:
 
-- Theme-Specific caching: Integrates caching for assets, templates, partials, CSS, and JavaScript into the theme development process.
+- **Theme-specific caching**: Integrates caching for assets, templates, partials, CSS, and JavaScript into the theme development process.
 
-- Server-Side rendering: Emphasizes server-side rendering to pre-render pages and cache them for quick delivery.
+- **Server-side rendering**: Emphasizes server-side rendering to pre-render pages and cache them for quick delivery.
 
-Best Practices:
+### Best practices
 
-- Optimize Theme Assets: Focus on optimizing and caching CSS, JavaScript files, images, and fonts used in themes. 
+- **Optimize theme assets**: Focus on optimizing and caching CSS, JavaScript files, images, and fonts used in themes. 
 
-Stencil uses Webpack to bundle and manage assets. Configure Webpack (typically found in `webpack.config.js` or similar) to include settings for `Cache-Control` headers and plugins for minifying and compressing static assets.
-Execute the Stencil build command (`stencil build`) to compile your theme and apply the configured optimizations.
+    Stencil uses Webpack to bundle and manage assets, which you can configure (`webpack.conf.js`) to include the following:
 
-- Partial Caching: Cache reusable components (partials) to reduce redundant server-side processing.
+    1. Settings for `Cache-Control` headers.
+    2. Plugins for minifying and compressing static assets.
 
-BigCommerce configures and manages Varnish Cache to handle caching at the edge. This includes setting up Edge-Side Includes (ESI), which allows you to independently cache fragments of a page.
-While you can't directly configure Varnish Cache or ESI, you can structure your theme and templates to be cache-friendly:
+    Execute the [Stencil build command](/docs/storefront/stencil/deployment/upload#bundling-your-theme) (`stencil build`) to compile your theme and apply the configured optimizations.
+    <br />
 
-1. Create and use partial templates, smaller, reusable pieces of HTML or template code that can be included in multiple places within a theme. Caching partials is primarily intended for static parts of the page, such as headers and footers.
+- **Cache partials**: Cache [reusable components (partials)](/docs/storefront/stencil/themes/style/composition-and-styling) to reduce redundant server-side processing.
 
-2. You can also structure your templates to use ESI for parts of the page that change less frequently.
+    BigCommerce configures and manages Varnish Cache to handle caching at the edge. This includes setting up Edge-Side Includes (ESI), which allows you to independently cache fragments of a page.
+    
+    While you can't directly configure Varnish Cache or ESI, you can structure your templates to be cache-friendly:
 
+    1. Create and use partial templates, which are reusable pieces of HTML or template code that can be included in multiple places within a theme.
 
-### Next.js Commerce
+    2. Structure your templates to use ESI for parts of the page that change less frequently.
+
+    <Callout type="info">
+    Caching partials is primarily intended for static parts of the page, such as headers and footers.
+    </Callout>
+
+## Next.js Commerce
 
 Directly built on Next.js, Next.js Commerce inherently leverages Next.js-specific features.
 
+### Framework capabilities
+
 The framework's core capabilities for caching include the following:
 
-- [Static Site Generation (SSG)](https://nextjs.org/docs/pages/building-your-application/rendering/static-site-generation): Uses SSG to pre-render pages at build time, serving them as static files for fast delivery.
-- [Incremental Static Regeneration (ISR)](https://nextjs.org/docs/pages/building-your-application/data-fetching/incremental-static-regeneration): Allows static pages to be updated in the background, keeping content fresh without full rebuilds.
-- [Image Optimization](https://nextjs.org/docs/pages/building-your-application/optimizing/images): Uses the Next.js Image component for automatic image optimization.
+- [**Static site generation (SSG)**](https://nextjs.org/docs/pages/building-your-application/rendering/static-site-generation): Uses SSG to pre-render pages at build time, serving them as static files for fast delivery.
+- [**Incremental static regeneration (ISR)**](https://nextjs.org/docs/pages/building-your-application/data-fetching/incremental-static-regeneration): Allows static pages to be updated in the background, keeping content fresh without full rebuilds.
+- [**Image optimization**](https://nextjs.org/docs/pages/building-your-application/optimizing/images): Uses the Next.js Image component for automatic image optimization.
 
-Best Practices:
+### Best practices
 
-- Leverage SSG and ISR: Utilize SSG and ISR for pre-rendering and updating static content, ensuring optimal performance and content freshness.
-- API Response Caching: Cache responses from APIs used by the application.
+- **Use SSG and ISR**: Use SSG and ISR for pre-rendering and updating static content, ensuring optimal performance and content freshness.
+- **Cache API responses**: Cache responses from APIs used by the application.
 
-### Catalyst
+## Catalyst
 
 Catalyst is designed as a headless commerce solution for custom e-commerce experiences.
 
+### Headless architecture
+
 The following headless architecture leads to unique caching best practices:
 
-- Front-end flexibility: Designed to integrate with various front-end technologies, where developers can use modern front-end frameworks and leverage their caching capabilities.
-- API-first approach: Focuses on providing a robust API layer for data fetching and manipulation.
+- **Front-end flexibility**: Designed to integrate with various front-end technologies, where developers can use modern front-end frameworks and leverage their caching capabilities.
+- **API-first approach**: Focuses on providing a robust API layer for data fetching and manipulation.
 
-Best Practices:
+### Best practices
 
-- Advanced API Caching: Focus on caching API responses, particularly for frequently accessed data like product listings, inventory, and pricing.
-- Service Worker Utilization: Extensively use service workers for pre-caching and dynamic caching of API responses.
-- Client-Side Storage: Use client-side storage solutions to cache data locally, reducing the need for repeated API calls.
+- **Cache API responses**: Focus on caching API responses, particularly for frequently accessed data like product listings, inventory, and pricing.
+- **Use service workers**: Use service workers for pre-caching and dynamic caching of API responses.
+- **Use client-side storage**: Use client-side storage solutions to cache data locally, reducing the need for repeated API calls.

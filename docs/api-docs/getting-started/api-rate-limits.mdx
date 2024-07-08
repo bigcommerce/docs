@@ -2,7 +2,7 @@
 
 BigCommerce aims to provide outstanding platform reliability. To ensure dependability, we rely on rate limits for our REST APIs. 
 
-These rate limits enhance quality for merchants by regulating multiple API calls. In this document, we'll provide information on rate limits along with some best practices to put in place.
+These rate limits enhance quality for merchants by regulating excessive API calls. In this document, we'll provide information on rate limits along with some best practices to put in place.
 
 <Callout type="info">
   BigCommerce recommends adhering to industry-standard rate limits when developing.
@@ -10,13 +10,13 @@ These rate limits enhance quality for merchants by regulating multiple API calls
 
 ## How limits work
 
-Each API request consumes one quota unit. The system rejects later requests once it reaches the quota. This continues until the quota is refreshed.
+Each API request consumes one quota unit. The system rejects later requests once it reaches the quota. This continues until the quota is refreshed after the reset interval.
 
 All apps accessing the store share the store's quota. This prevents a single app from using the entire quota. The available quota for an app adjusts as other clients make or stop requests.
 
 ## Rate limits by plan type
 
-Apps using OAuth are rate-limited based on a quota that's refreshed every few seconds. The maximum quota varies by store plan and requested resources.
+Apps using OAuth are rate-limited based on a quota that's refreshed every 30 seconds. The maximum quota varies by store plan and requested resources.
 
 | Plan Type| Quota |
 |:------------------|:-------|
@@ -39,7 +39,7 @@ The Unlimited Rate Plan is for some BigCommerce Enterprise clients. It has no re
 
 Manage API rate limits by following these crucial guidelines for success. 
 
-Process rate limit status codes accurately, distribute request loads evenly, store results, and repeat requests strategically to boost app performance and prevent outages.
+Process rate limit HTTP 429 status code accurately, distribute request loads evenly, store results, and repeat requests strategically to boost app performance and prevent outages.
 
 ### Handle rate limit status codes
 
@@ -47,7 +47,7 @@ Process rate limit status codes accurately, distribute request loads evenly, sto
   As of January 2022, BigCommerce header field names are case-insensitive. Learn more about BigCommerce [response header conventions](/docs/start/about#response-headers).
 </Callout>
 
-API rate limits regulate the amount of calls being made to your app. When the quota limit is met, you can use the API's response HTTP headers to find more information about your current rate limit status:
+API rate limits regulate the amount of calls being made to your app. You can use the API's response HTTP headers to find more information about your current rate limit status:
 
 ```http filename="Standard plan example: Rate limit headers"
 X-Rate-Limit-Time-Window-Ms: 30000
@@ -58,16 +58,16 @@ X-Rate-Limit-Requests-Left: 35
 
 |Name | Description |
 |:------|:-----|
-| X-Rate-Limit-Time-Window-Ms | Shows the size of your current rate limiting window. In this case, it’s 5000 milliseconds. |
-| X-Rate-Limit-Time-Reset-Ms | Shows the size of your current rate limiting window. In this case, it’s 5000 milliseconds. |
-| X-Rate-Limit-Requests-Quota | Shows how many API requests are allowed in the current window for your client. In this case, 25 requests.|
-| X-Rate-Limit-Requests-Left | Details how many remaining requests your client can make in the current window before being rate limited.|
+| X-Rate-Limit-Time-Window-Ms | Shows the size of your current rate limiting window. In this case, it’s 30000 milliseconds. |
+| X-Rate-Limit-Time-Reset-Ms | Shows the size of your current rate limiting window. In this case, it’s 15000 milliseconds. |
+| X-Rate-Limit-Requests-Quota | Shows how many API requests are allowed in the current window for your client. In this case, 150 requests.|
+| X-Rate-Limit-Requests-Left | Details how many remaining requests your client can make in the current window before being rate limited. In this case, 35 requests.|
 
 Not seeing an HTTP header in your response? Continue reading on to the next section. 
 
 #### Seeing a `429` response?
 
-If you encounter a `429` response without an API HTTP header, this is an indication of the platform undergoing a load balance to prevent any downtime from happening.
+If you encounter a `429` response without the API HTTP headers, this is an indication that the platform experiences high load due to excessive traffic on a particular store and the request may be retried at another time.
 
 Here's an example of what a 429 response looks like:
 
@@ -75,7 +75,10 @@ Here's an example of what a 429 response looks like:
  HTTP/1.1 429 Too Many Requests
  Date: Mon, 03 Feb 2022 20:36:00 GMT
  Content-Type: application/json
+ X-Rate-Limit-Time-Window-Ms: 30000
  X-Rate-Limit-Time-Reset-Ms: 15000
+ X-Rate-Limit-Requests-Quota: 150
+ X-Rate-Limit-Requests-Left: 35
 ```
 Continue to reduce the risk of an app outage by slowing down the amount of calls being made. This will reduce any strain on performance.  For more details on response headers, see [About Our API](/docs/start/about#bigcommerce-specific-response-headers).
 

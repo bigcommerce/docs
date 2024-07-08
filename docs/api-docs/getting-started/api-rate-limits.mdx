@@ -1,6 +1,6 @@
 # API Rate limits
 
-BigCommerce aims to provide outstanding platform reliability. To ensure dependability, we rely on rate limits for our REST APIs. 
+BigCommerce aims to provide outstanding platform reliability. To ensure reliability, we implement safeguards in the form of rate limits for our REST APIs. 
 
 These rate limits enhance quality for merchants by regulating excessive API calls. In this document, we'll provide information on rate limits along with some best practices to put in place.
 
@@ -63,25 +63,6 @@ X-Rate-Limit-Requests-Left: 35
 | X-Rate-Limit-Requests-Quota | Shows how many API requests are allowed in the current window for your client. In this case, 150 requests.|
 | X-Rate-Limit-Requests-Left | Details how many remaining requests your client can make in the current window before being rate limited. In this case, 35 requests.|
 
-Not seeing an HTTP header in your response? Continue reading on to the next section. 
-
-#### Seeing a `429` response?
-
-If you encounter a `429` response without the API HTTP headers, this is an indication that the platform experiences high load due to excessive traffic on a particular store and the request may be retried at another time.
-
-Here's an example of what a 429 response looks like:
-
-```http filename="Example: 429 response" showLineNumbers copy
- HTTP/1.1 429 Too Many Requests
- Date: Mon, 03 Feb 2022 20:36:00 GMT
- Content-Type: application/json
- X-Rate-Limit-Time-Window-Ms: 30000
- X-Rate-Limit-Time-Reset-Ms: 15000
- X-Rate-Limit-Requests-Quota: 150
- X-Rate-Limit-Requests-Left: 35
-```
-Continue to reduce the risk of an app outage by slowing down the amount of calls being made. This will reduce any strain on performance.  For more details on response headers, see [About Our API](/docs/start/about#bigcommerce-specific-response-headers).
-
 ### Distribute the load
 
 To avoid spikes in API requests and ensure efficient use of your quota, spread out your API calls over time. The practice helps prevent hitting rate limits by balancing the number of requests sent in a given time frame.
@@ -106,6 +87,23 @@ To retry requests responsibly when using the BigCommerce API, follow these steps
  $milliseconds = $response->getHeader("X-Rate-Limit-Time-Reset-Ms");
  usleep($milliseconds * 1000);
 ```
+
+#### Seeing a `429` response?
+
+If you encounter a `429` response without the API HTTP headers, this is an indication that the platform experiences high load due to excessive traffic on a particular store and the request may be retried at another time.
+
+Here's an example of what a 429 response looks like:
+
+```http filename="Example: 429 response" showLineNumbers copy
+ HTTP/1.1 429 Too Many Requests
+ Date: Mon, 03 Feb 2022 20:36:00 GMT
+ Content-Type: application/json
+ X-Rate-Limit-Time-Window-Ms: 30000
+ X-Rate-Limit-Time-Reset-Ms: 15000
+ X-Rate-Limit-Requests-Quota: 150
+ X-Rate-Limit-Requests-Left: 35
+```
+Continue to reduce the risk of an app outage by slowing down the amount of calls being made. This will reduce any strain on performance.  For more details on response headers, see [About Our API](/docs/start/about#bigcommerce-specific-response-headers).
 
 If retries continue to hit rate limits, gradually increase the wait time to avoid overwhelming the server.
 

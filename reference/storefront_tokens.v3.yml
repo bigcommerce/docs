@@ -62,8 +62,8 @@ paths:
           application/json:
             schema:
               allOf:
-                - $ref: '#/components/schemas/TokenPostSimple'
-                - $ref: '#/components/schemas/TokenPostImpersonation'
+              - $ref: '#/components/schemas/TokenPostSimple'
+              - $ref: '#/components/schemas/TokenPostImpersonation'
         required: false
       responses:
         '200':
@@ -165,32 +165,22 @@ components:
         default: 'application/json'
   schemas:
     TokenPostImpersonation:
-      type: object
       x-internal: false
-      properties:
-        channel_ids:
-          type: array
-          description: A list of channel IDs for the requested token.
-          items:
-            type: integer
-          example: 
-          - 1
-          - 2
-        channel_id:
-          type: integer
-          minimum: 1
-          description: Channel ID for requested token.
-          example: 1
-        expires_at:
-          type: integer
-          description: Unix timestamp (UTC time) defining when the token should expire. Supports seconds, but does not support milliseconds, microseconds, or nanoseconds.
-          example: 1885635176
-          minimum: 0
+      allOf:
+        - type: object
+          properties:
+            expires_at:
+              type: integer
+              description: Unix timestamp (UTC time) defining when the token should expire. Supports seconds, but does not support milliseconds, microseconds, or nanoseconds.
+              example: 1885635176
+              minimum: 0
+          required:
+            - expires_at
+        - oneOf:
+          - $ref: "#/components/schemas/Channels"
+          - $ref: "#/components/schemas/Channel"
       required:
         - expires_at
-      oneOf:
-        - required: ["channel_id"]
-        - required: ["channel_ids"]
     TokenPostSimple:
       type: object
       properties:
@@ -226,6 +216,33 @@ components:
           type: string
           description: JWT Token for accessing the Storefront API
       x-internal: false
+    Channel:
+      title: channel_id
+      type: object
+      x-internal: false
+      properties:
+        channel_id:
+          type: integer
+          minimum: 1
+          description: Channel ID that is valid for the requested token. We support this field for backwards compatibility, but `channel_ids` is preferred.
+          example: 1
+      required:
+        - channel_id
+    Channels:
+      title: channel_ids
+      type: object
+      x-internal: false
+      properties:
+        channel_ids:
+          type: array
+          description: A list of channel IDs that are valid for the requested token.
+          items:
+            type: integer
+          example: 
+          - 1
+          - 2
+      required:
+        - channel_ids
     ErrorResponse:
       allOf:
         - $ref: '#/components/schemas/BaseError'

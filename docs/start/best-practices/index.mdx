@@ -1,6 +1,6 @@
 ---
 title: API Best Practices
-keywords: rate limits, best practices, 
+keywords: best practices, 
 ---
 
 # API Best Practices
@@ -51,74 +51,7 @@ You can use threaded requests in order to quickly update information in an API. 
 
 The [BigCommerce Ruby API client](https://github.com/bigcommerce/bigcommerce-api-ruby) is thread-safe. It satisfies both the need for multiple threads to access the same shared data and the need for only one thread to access a shared piece of data at any given time. This design pattern can reduce the total time that your app requires to complete a series of requests.
 
-## API rate limits
-
-Apps that authenticate with OAuth are rate-limited based on a quota that is refreshed every few seconds. The maximum quota for a store will vary depending on the store plan and resources requested.
-
-| Plans & sandboxes | Quotas |
-|:------------------|:-------|
-| Enterprise plans and Enterprise sandboxes (Enterprise-Test) | by plan\* and [resource](https://support.bigcommerce.com/s/article/Platform-Limits#storelimits) | 
-| All other sandboxes (Dev/Partner/Employee) | by [resource](https://support.bigcommerce.com/s/article/Platform-Limits#storelimits) | 
-| Pro plans| 60k per hour (450 / 30sec) |
-| Plus & Standard plans| 20k per hour (150 / 30sec) | 
-
-<Callout type="warning">
-  \* The **Unlimited** rate plan for select BigCommerce Enterprise clients means that these stores are not rate limited by number of requests per unit of time. However, there are physical infrastructure-related constraints that may limit the maximum throughput of requests for a given resource. For more on resource constraints, consult our article on [object-related limits (Help Center)](https://support.bigcommerce.com/s/article/Platform-Limits#storelimits).
-  
-  BigCommerce reserves the right to limit unreasonable or abusive API activity in the interest of platform stability, per our [Terms of Service](https://www.bigcommerce.com/terms/api-terms/). 
-</Callout>
-
-Each request to the API consumes one available request from the quota. When an app hits the quota limit, subsequent requests are rejected until the quota is refreshed.
-
-A store’s overall quota is distributed across all apps that are accessing that store at a given time. This prevents a single app from consuming the store’s entire quota by itself. The quota available to a single app adjusts as additional clients start and stop making requests.
-
-### Playing nicely with the platform
-
-<Callout type="info">
-  As of January 2022, BigCommerce header field names became functionally case-insensitive. Learn more about BigCommerce [response header conventions](/docs/start/about#response-headers).
-</Callout>
-
-Every API response’s HTTP headers give you full visibility into your position in the rate-limiting algorithm:
-
-```http filename="Standard plan example: Rate limit headers"
-X-Rate-Limit-Time-Window-Ms: 30000
-X-Rate-Limit-Time-Reset-Ms: 15000
-X-Rate-Limit-Requests-Quota: 150
-X-Rate-Limit-Requests-Left: 35
-```
-
-If your implementation's request to the API triggers a [429: Too Many Requests](/docs/start/about/status-codes#4xx-client-error) response, it is encountering rate limits. Responses contain the `X-Rate-Limit-Time-Reset-Ms` header, which specifies the time in milliseconds that your client must wait before its quota refreshes. Retry the request after this time has elapsed.
-
-For more about rate limit headers and how to calculate the timing of your requests to reduce the risk of encountering rate limits, see [About Our API](/docs/start/about#bigcommerce-specific-response-headers).
-
-### Example of 429 status code
-
-When you see a response with an HTTP `429` status code, your client shouldn’t make any further requests until your quota has refreshed:
-
-```http filename="Example: 429 response" showLineNumbers copy
-  HTTP/1.1 429 Too Many Requests
-  Date: Mon, 03 Feb 2022 20:36:00 GMT
-  Content-Type: application/json
-  X-Rate-Limit-Time-Reset-Ms: 15000
-```
-
-Parse the `X-Rate-Limit-Time-Reset-Ms` header to determine how long you have to wait. In this case, it would be 15000 milliseconds.
-Your client can sleep on the specified interval:
-
-```php filename="PHP example for delaying response" showLineNumbers copy
-  $milliseconds = $response->getHeader("X-Rate-Limit-Time-Reset-Ms");
-  usleep($milliseconds);
-```
-
-After waiting for the given number of milliseconds, your client can go back to making API requests.
-
-### Making requests in parallel
-
-You can increase the amount of work your app can do in a given unit of time by sending multiple HTTP requests in parallel. This is perfectly acceptable. However, your app should monitor the rate limiting headers to avoid an HTTP `429` response. Methods for doing this include the following:
-* Slowing your rate of API requests as `X-Rate-Limit-Requests-Left` approaches zero.
-* Determining an acceptable average rate of requests by dividing `X-Rate-Limit-Requests-Quota` by `X-Rate-Limit-Time-Window-Ms`, and then self-throttling to that rate.
-
-Endpoints that accept bulk requests may have specific limitations on the number of accepted parallel requests. For example, making multiple parallel requests to [Upsert price list records](/docs/rest-management/price-lists/price-lists-records#upsert-price-list-records) results in one or more error responses with the [429: Too Many Requests](/docs/start/about/status-codes#4xx-client-error) status code. The current list of limitations is documented in our article on [resource-specific limits (Help Center)](https://support.bigcommerce.com/s/article/Platform-Limits#storelimits). The [API reference](/docs/api) specification for each endpoint or mutation also documents any limits specific to that request.
+Looking for more information on handling requests? Continue with [API rate limits](/docs/start/best-practices/api-rate-limits) to learn about our best practices.
 
 ## Resources
 
@@ -129,6 +62,7 @@ Endpoints that accept bulk requests may have specific limitations on the number 
 * [Filtering Requests](/docs/start/about/common-query-params)
 * [API Status Codes](/docs/start/about/status-codes)
 * [About Our API: Response Headers](/docs/start/about#response-headers)
+* [API rate limits](/docs/start/best-practices/api-rate-limits)
 * [Guide to API Accounts](/docs/start/authentication/api-accounts)[webhook events and their payloads](/docs/integrations/webhooks/events)
 * [Changelog](/release-notes)
 

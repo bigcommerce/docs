@@ -72,13 +72,11 @@ On Stencil storefronts, you can access a token at render time and pass the token
 
 ## Customer access tokens
 
-BigCommerce recommends the use of customer access tokens to authenticate requests to the GraphQL Storefront API because this option offers the best security. The benefits of using a customer impersonation token are the following:
+BigCommerce recommends using customer access tokens to authenticate requests to the GraphQL Storefront API because this option is the most secure. The benefits of using a customer impersonation token are the following:. The benefits of using a customer impersonation token are the following:
 
 * A customer access token is unique to an individual user's account.
 * A customer access token allows a given user to act on different systems.
 * A customer access token becomes invalid on all devices when you log out on one device.
-
-
 
 ### Obtaining a customer access token
 
@@ -89,15 +87,14 @@ There are two options to obtain a customer access token.
 
 #### Login mutation
 
-Enter user email and password to use the login mutation. The login mutation will return a Customer Access Token in response to login actions as a part of the GraphQL body, instead of a cookie header. From there, the customer access token can be stored in the presentation layer’s session management system, and sent with future GraphQL requests.
+Enter your user email and password to use the login mutation. The login mutation will return a Customer Access Token in response to login actions as part of the GraphQL body instead of a cookie header. From there, you can store the customer access token in the presentation layer's session management system and send it with future GraphQL requests.
 
 <Callout type="info">
-You must use the [Create a Token](/docs/rest-authentication/tokens#create-a-token) endpoint to generate the storefront bearer token needed to run the login mutation call. Customer impersonation tokens are not allowed with frontend requests. If you are still having issues creating a customer access token, we recommend clearing your cookies to resolve loading any loading issues. 
+Use the [Create a Token](/docs/rest-authentication/tokens#create-a-token) endpoint to generate the storefront bearer token needed to run the login mutation call. Customer impersonation tokens are not allowed with frontend requests. If you still having issues creating a customer access token, we recommend clearing your cookies to resolve any loading issues. 
 </Callout>
 
 <Tabs items={['Request', 'Response']}>
 <Tab>
-
 ```graphql filename="Example login mutation: Create a customer access token" showLineNumbers copy
 # Creates a customer access token
 
@@ -145,7 +142,7 @@ mutation Login($email: String!, $pass: String!) {
 </Tab>
 </Tabs>
 
-#### Login with a JWT
+### Login with a JWT
 
 The second option is to use the `loginWithCustomerLoginJwt` mutation to pass your customer json web token instead of the user's email and password. In this scenario, you generate a JWT that contains key information in the payload for the login to be successful. You can use this JWT in the login mutation to receive a customer access token.
 
@@ -178,21 +175,18 @@ mutation Login($jwt: String!) {
 
 ```json filename="Example JWT login mutation: Create a customer access token" showLineNumbers copy
 {
-    "data": null,
-    "errors": [
-        {
-            "message": "Invalid login. Please attempt to log in again.",
-            "path": [
-                "loginWithCustomerLoginJwt"
-            ],
-            "locations": [
-                {
-                    "line": 2,
-                    "column": 2
-                }
-            ]
+    "data": {
+        "loginWithCustomerLoginJwt": {
+            "customer": {
+                "entityId": 22,
+                "email": "user@email.com"
+            },
+            "customerAccessToken": {
+                "value": "ee973d6566a7c691af4602f344d866ecaa45bdcbdf2075d29d5e70fd0716b7c5_1721657159",
+                "expiresAt": "2024-07-22T14:05:59Z"
+            }
         }
-    ]
+    }
 }
 ```
 </Tab>
@@ -201,14 +195,13 @@ mutation Login($jwt: String!) {
 
 ### Using a Customer Access Token
 
-You can use customer access tokens for server-to-server and for browser-to-server communications. 
+You can use customer access tokens for server-to-server and browser-to-server communications. 
 
 #### Server-to-server
-The customer access token displays in the graphQL response body. In future queries, you can assign the customer access token displayed in the response body to the `x-bc-Customer-Access-Token` header. You can use this token for a specific shopper session access until invalidated. If you use the logout mutation with the `x-bc-Customer-Access-Token` header, the token is invalidated.
+The server-to-server communication displays the customer access token in the graphQL response body. You can assign this customer access token to the `x-bc-Customer-Access-Token` header in future queries. You can use this token for a specific shopper session access until it is invalidated. The token is invalidated if you use the logout mutation with the `x-bc-Customer-Access-Token` header.
 
 #### Browser-to-server
-The customer access token does not display in the graphQL response body. Instead, you will see a blank response. The response cookie called `SHOP_TOKEN` passes the customer access token to the browser. You can use this token for the specific shopper's session until invalidated. 
-
+The browser-to-server communication does not display the customer access token in the graphQL response body.  Instead, you will see a blank response. The response cookie, `SHOP_TOKEN`, passes the customer access token to the browser. You can use this token for the specific shopper's session until it is invalidated. 
 
 
 ## Customer impersonation tokens

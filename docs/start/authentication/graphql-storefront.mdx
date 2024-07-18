@@ -68,10 +68,10 @@ content-type: application/json
 
 #### Customer access tokens
 
-A customer access token is unique to an individual user's account because it represents an authenticated storefront session for GraphQL requests. You can obtain and use a customer access token only for server-to-server requests, not requests originating from the browser side. Therefore, you must use the customer access token with a regular storefront token. A customer access token becomes invalid on all devices when you log out of a single device. 
+A customer access token is unique to an individual user's account because it represents an authenticated storefront session for GraphQL requests. You can obtain and use a customer access token only for server-to-server requests. Therefore, you must use the customer access token with a regular storefront token. A customer access token becomes invalid on all devices when you log out of a single device. 
 
 <Callout type="warning">
-Do not use this token for browser-side or client-side requests. Browser-side requests require using the [customer impersonation token](#customer-impersonation-token).
+Do not use this token for browser-side or client-side requests. Browser-side requests require using the [customer impersonation token](#customer-impersonation-tokens).
 </Callout>
 
 ##### Obtaining a customer access token
@@ -83,7 +83,7 @@ There are two options to obtain a customer access token.
 
 ###### Login mutation
 
-Enter your user email and password to use the login mutation. The login mutation will return a Customer Access Token in response to login actions as part of the GraphQL body instead of a cookie header. From there, you can store the customer access token in the presentation layer's session management system and send it with future GraphQL requests.
+Enter your user email and password to use the login mutation. The login mutation will return a customer access token in response to login actions as part of the GraphQL body instead of a cookie header. From there, you can store the customer access token in the presentation layer's session management system and send it with future GraphQL requests.
 
 <Callout type="info">
 Use the [Create a Token](/docs/rest-authentication/tokens#create-a-token) endpoint to generate the storefront bearer token needed to run the login mutation call. If you still have issues creating a customer access token, we recommend clearing your cookies to resolve any loading issues. 
@@ -147,7 +147,7 @@ mutation Login($email: String!, $pass: String!) {
 The second option is to use the `loginWithCustomerLoginJwt` mutation to pass your customer JSON web token instead of the user's email and password. In this scenario, you will generate a JWT that contains key information in the payload for the login to be successful. You will use this JWT in the login mutation to receive a customer access token.
 
 <Callout type="info">
-For information on creating a JWT, see the [Customer Login API](/docs/start/authentication/customer-login) article for information on how to create a JWT.
+For information on creating a JWT, see the [Customer Login API](/docs/start/authentication/customer-login) article for instructions.
 </Callout>
 
 <Tabs items={['Request', 'Response']}>
@@ -203,7 +203,7 @@ mutation Login($jwt: String!) {
 
 ##### Using a Customer Access Token
 
-You can assign the customer access token obtained using one of the mutations described above to the `x-Bc-Customer-Access-Token` header for future queries. You can use this token for a specific shopper session access until it is invalidated. The token is invalidated if you use the logout mutation with the `x-Bc-Customer-Access-Token` header.
+You can assign the customer access token obtained using one of the mutations described above to the `x-Bc-Customer-Access-Token` header for future queries. You can use this token for a specific shopper session access until it is invalidated. The token is invalidated when you use the logout mutation with the `x-Bc-Customer-Access-Token` header.
 
 <Tabs items={['Request', 'Response']}>
 <Tab>
@@ -275,11 +275,18 @@ On Stencil storefronts, you can access a token at render time and pass the token
 
 ## Customer impersonation tokens
 
-You can use customer impersonation tokens to authenticate requests to the GraphQL Storefront API in server-to-server and headless interactions. The API will reject any customer impersonation token-authenticated requests that originate from a web browser and are not proxied. Use these tokens in NextJS applications; NextJS proxies requests by default.
+<Callout type="warning">
+Because of the flexible use of this token, BigCommerce recommends using a more secure option like the [customer access token](#customer-access-tokens). Customer impersonation tokens serve the same purpose as customer access tokens by allowing the passing of customer information, but customer access tokens have the following added benefits:
+* A customer access token is unique to an individual user's account.
+* A customer access token allows users to act on different systems.
+* A customer access token becomes invalid on all devices when you log out on a single device.
+</Callout>
 
-Customer impersonation token-authenticated requests can query store information for any customer by passing the customer ID using the `X-Bc-Customer-Id` header. Information that you request will be specific to the subject customer, including product pricing and availability, customer account details, and more.
+You can use customer impersonation tokens to authenticate requests to the GraphQL Storefront API in server-to-server and headless interactions. The API will reject any customer impersonation token-authenticated requests that originate from a web browser and are not proxied. Use these tokens in NextJS applications; NextJS proxies requests by default. 
 
-It is not necessary to generate a new token for each customer ID. You may use a single token at any given time for your application, and specify a distinct customer ID for each set of requests.
+Customer impersonation token-authenticated requests can query store information for any customer by passing the customer ID using the `X-Bc-Customer-Id` header. The information you request will be specific to the customer, including product pricing and availability, customer account details, and more.
+
+Generating a new token for each customer ID is optional. You may use a single token at any given time for your application and specify a distinct customer ID for each set of requests. 
 
 Using a customer impersonation token does not automatically sign a customer in. For that, use the [customer login mutation](#signing-customers-in) or the [Customer Login API](/docs/rest-authentication/customer-login).
 

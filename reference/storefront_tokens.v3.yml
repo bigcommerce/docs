@@ -64,6 +64,11 @@ paths:
               allOf:
                 - $ref: '#/components/schemas/TokenPostSimple'
                 - $ref: '#/components/schemas/TokenPostImpersonation'
+            example:
+              allowed_cors_origins:
+                -  'https://www.yourstorefront.com/'
+              channel_id: 1
+              expires_at: 1885635176
         required: false
       responses:
         '200':
@@ -165,21 +170,21 @@ components:
         default: 'application/json'
   schemas:
     TokenPostImpersonation:
-      type: object
       x-internal: false
-      properties:
-        channel_id:
-          type: integer
-          minimum: 1
-          description: Channel ID for requested token
-          example: 1
-        expires_at:
-          type: integer
-          description: Unix timestamp (UTC time) defining when the token should expire. Supports seconds, but does not support milliseconds, microseconds, or nanoseconds.
-          example: 1885635176
-          minimum: 0
+      allOf:
+        - type: object
+          properties:
+            expires_at:
+              type: integer
+              description: Unix timestamp (UTC time) defining when the token should expire. Supports seconds, but does not support milliseconds, microseconds, or nanoseconds.
+              example: 1885635176
+              minimum: 0
+          required:
+            - expires_at
+        - oneOf:
+          - $ref: "#/components/schemas/Channels"
+          - $ref: "#/components/schemas/Channel"
       required:
-        - channel_id
         - expires_at
     TokenPostSimple:
       type: object
@@ -190,15 +195,9 @@ components:
           type: array
           description: List of allowed domains for Cross-Origin Request Sharing. Currently accepts a maximum of two domains per created token.
           items:
-            maxLength: 1
             minLength: 1
-            pattern: '/^https?:\/\/(?=.{1,254}(?::|$))(?:(?!\d|-)(?![a-z0-9\-]{1,62}-(?:\.|:|$))[a-z0-9\-]{1,63}\b(?!\.$)\.?)+(:\d+)?$/i;'
             type: string
       x-internal: false
-      x-examples:
-        example-1:
-          allowed_cors_origins:
-            - 'https://www.yourstorefront.com/'
     Token_Full:
       type: object
       properties:
@@ -216,6 +215,31 @@ components:
           type: string
           description: JWT Token for accessing the Storefront API
       x-internal: false
+    Channel:
+      title: channel_id
+      type: object
+      x-internal: false
+      properties:
+        channel_id:
+          type: integer
+          minimum: 1
+          description: Channel ID that is valid for the requested token. Use this field to enter a channel ID. Do not use this field if you have more than one channel. We support this field for backwards compatibility, but `channel_ids` is preferred. You can not use both `channel_id` and `channel_ids` in your request.
+          example: 1
+      required:
+        - channel_id
+    Channels:
+      title: channel_ids
+      type: object
+      x-internal: false
+      properties:
+        channel_ids:
+          type: array
+          description: A list of channel IDs that are valid for the requested token. Use this field if you have more than one channel ID. You can not use both `channel_id` and `channel_ids` in your request.
+          items:
+            type: integer
+          example: [667251, 1]
+      required:
+        - channel_ids
     ErrorResponse:
       allOf:
         - $ref: '#/components/schemas/BaseError'

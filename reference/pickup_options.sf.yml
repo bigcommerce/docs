@@ -1,0 +1,175 @@
+openapi: '3.0.1'
+info:
+  title: Storefront Pickup Options
+  version: '3.0'
+  description: |-
+    This API endpoint enables you to search for available pickup options near provided coordinates.
+
+    For info about API accounts, see [API Accounts and OAuth Scopes](/docs/start/authentication/api-accounts).
+        
+    For info about authenticating BigCommerce APIs, see [Authentication and Example Requests](/docs/start/authentication).
+  termsOfService: 'https://www.bigcommerce.com/terms'
+  contact:
+    name: BigCommerce
+    url: 'https://www.bigcommerce.com'
+    email: support@bigcommerce.com
+servers:
+  - url: 'https://{store_domain}/api/storefront'
+    variables:
+      store_domain:
+        default: your_store.example.com
+        description: 'The [URL authority](https://developer.mozilla.org/en-US/docs/Learn/Common_questions/Web_mechanics/What_is_a_URL#authority) of the storefront.'    
+tags:
+  - name: Pickup Options
+    description: BigCommerce Storefront Pickup Options Definition.
+paths:
+  /pickup-options:
+    parameters:
+      - $ref: '#/components/parameters/Accept'
+    post:
+      summary: Find Available Pickup Options
+      operationId: post-pickup-options
+      tags:
+        - Pickup Options
+      description: |-
+        Returns up to 10 available pickup options for the requested items around a radius of the provided search coordinates. 
+
+        The pickup options returned only include options where all requested items are available and can be picked up from a single location.
+      parameters:
+        - $ref: '#/components/parameters/ContentType'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PickupRequestPayload'
+      responses:
+        '200':
+          description: The request has been successfully processed.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PickupOptionsResponse'
+components:
+  parameters: 
+    Accept:
+      name: Accept
+      in: header
+      required: true
+      description: 'The [MIME type](https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types) of the response body.'
+      schema:
+        type: string
+        default: 'application/json'
+    ContentType:
+      name: Content-Type
+      in: header
+      required: true
+      description: 'The [MIME type](https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types) of the request body.'
+      schema:
+        type: string
+        default: 'application/json'
+  schemas:
+    PickupRequestPayload:
+      type: object
+      properties:
+        searchArea:
+          $ref: '#/components/schemas/SearchArea'
+        items:
+          type: array
+          description: Items you include in your search for pickup options.
+          items:
+            $ref: '#/components/schemas/Item'
+    SearchArea:
+      type: object
+      description: Area where you are searching for pickup options.
+      properties:
+        radius:
+          type: object
+          description: Radius around the coordinates where you are searching for pickup options.
+          properties:
+            value:
+              type: integer
+              example: 25
+            unit:
+              type: string
+              enum:
+                - KM
+                - MI
+        coordinates:
+          $ref: '#/components/schemas/Coordinates'
+    Coordinates:
+      type: object
+      description: Coordinates where you are searching for pickup options.
+      properties:
+        latitude:
+          type: number
+          example: 37.7749
+        longitude:
+          type: number
+          example: 122.4194
+    Item:
+      type: object
+      properties:
+        variantId:
+          type: integer
+          example: 24
+        quantity:
+          type: integer
+          example: 98
+    PickupOptionsResponse:
+      type: object
+      properties:
+        pickupOptions:
+          type: array
+          description: Pickup options for the available items.
+          items:
+            $ref: '#/components/schemas/PickupOption'
+    PickupOption:
+      type: object
+      properties:
+        pickupMethod:
+          $ref: '#/components/schemas/PickupMethod'
+        availableItems:
+          type: array
+          description: Items that are available using the pickup method.
+          items:
+            $ref: '#/components/schemas/AvailableItem'
+    PickupMethod:
+      type: object
+      description: Pickup method that can be used with the available items.
+      properties:
+        id:
+          type: integer
+          example: 1
+        locationId:
+          type: integer
+          example: 2
+        displayName:
+          type: string
+          minLength: 0
+          maxLength: 250
+          example: Office Pickup!
+        collectionInstructions:
+          type: string
+          minLength: 0
+          maxLength: 250
+          example: Bring your ID!
+        collectionTimeDescription:
+          type: string
+          minLength: 0
+          maxLength: 250
+          example: Collect during our opening hours of 0900 - 1700
+    AvailableItem:
+      type: object
+      properties:
+        variantId:
+          type: integer
+          example: 55
+        quantity:
+          type: integer
+          example: 12

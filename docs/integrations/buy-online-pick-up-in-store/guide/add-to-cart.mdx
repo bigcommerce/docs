@@ -1,0 +1,79 @@
+# Implementing an Add to Cart Flow for Buy Online, Pick up in Store 
+
+Many online brands allow shoppers to choose pick up or ship directly from the product details page. 
+
+This can reduce friction for shoppers who already have a preferred local store, or for whom you can estimate the location of their local store. These shoppers can add to cart and lock in a pickup location in one click. 
+
+Depending on the payment options available, the shopper could then complete Checkout in just a couple of clicks.
+
+You will need to customize a store's Theme to display appropriate options based on the desired experience.
+
+You will need to interact with both the Cart and Checkout APIs to take advantage of the new _Buy Online, Pick up in Store_ features in BigCommerce. This is needed whether you implement dropdown, radio buttons, or separate buttons to select between shipping or pickup.
+
+Use the [Carts API](/docs/rest-storefront/carts) to add the item(s) to cart.
+
+```http filename="Example request: Add cart line items" showLineNumbers copy
+POST https://{store_domain}/api/storefront/carts/{cartId}/items
+Content-Type: application/json
+Accept: application/json
+
+{
+  ...
+
+  "lineItems": [
+    {
+      "quantity": 1,
+      "productId": 5,
+      "variantId": 55
+    }
+  ]
+
+  ...
+}
+```
+
+This returns line item ids which will need to be referenced in subsequent calls.
+
+```json filename="Example response: Add cart line items" showLineNumbers copy
+{
+...
+  "lineItems": {
+    "physicalItems": [
+      {
+        "id": 20, // line item id
+        "quantity": 1,
+        "productId": 5,
+        "variantId": 55,
+        ...
+      }
+    ]
+  }
+...
+}
+```
+
+Next, use the updated [Checkout API](/docs/rest-storefront/checkouts) to create or use an existing Consignment. If the shopper wants to pick up their items, use the `id` retrieved from [Find available pickup options](/docs/rest-storefront/pickup-options#find-available-pickup-options) for the `pickupMethodId`.
+
+```http filename="Example request: Add consignment to checkout" showLineNumbers copy
+POST https://{store_domain}/api/storefront/checkouts/{checkoutId}/consignments
+Content-Type: application/json
+Accept: application/json
+
+[
+  ...
+
+  "lineItems": [
+    {
+      itemId: 20,
+      quantity: 1
+    }
+  ]
+  "pickupOption": {
+    "pickupMethodId": 1
+    }
+  "address": []
+]
+```
+
+
+You can continue to modify Consignment using the Checkout API, updating the selected pickup option or even switching the Consignment back to a "shipping" type.

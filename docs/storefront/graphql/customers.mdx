@@ -1,0 +1,603 @@
+# GraphQL Storefront API: Customers (Beta)
+
+<Callout type="info">
+    This feature is currently in beta and is only available to participants. 
+</Callout>
+
+BigCommerce's GraphQL Storefront API Customers powers access to customer objects such as the ability to update a customer, get a customer address book, reset a password, and more. Developers can use GraphQL Storefront API to create an end-to-end shopper experience and manage some customer account use cases.
+
+Customer mutations and queries can do the following:
+
+* Register a customer
+* Update a customer
+* Add a customer address
+* Update a customer address
+* Delete a customer address
+* Change a customer password
+* Request a password reset
+* Reset a password
+* Get a customer address book
+
+When you register, change, or reset a password, you can validate it using the password complexity requirements under the [CustomersSettings node](/graphql-storefront/reference#definition-CustomersSettings) before submitting the desired password to the BigCommerce platform.
+
+## Tokens
+
+To make requests, create a [store-level](/docs/start/authentication/api-accounts#store-level-api-accounts) or [app-level](/docs/start/authentication/api-accounts#app-level-api-accounts) API account with one or more of the following token creation OAuth scopes:
+
+| UI Name | Permission | Parameter | Description |
+| :--- | :--- | :--- | :--- |
+| Storefront API tokens | modify | `store_storefront-api` | Create payment access tokens, process payments |
+| Storefront API customer impersonation tokens | modify | `store_storefront_api_customer_impersonation` | Create GraphQL Storefront API bearer tokens that allow customer impersonation |
+
+No additional scopes are required to use the GraphQL Storefront API. For more information, see [token creation OAuth scopes](/docs/start/authentication/api-accounts#token-creation-scopes).
+
+To authenticate calls to the GraphQL Storefront API, your application can generate a bearer token. This can be done by using either the [Create a storefront token](/docs/rest-authentication/tokens#create-a-token) or the [Create a customer impersonation token](/docs/rest-authentication/tokens/customer-impersonation-token#create-a-token) REST endpoint. On a Stencil storefront, you can also access a token directly from the page context. Learn more about [Using auto-generated tokens in Stencil themes](/docs/storefront/graphql#using-auto-generated-tokens-in-stencil-themes).
+
+For more information, see [Creating a token](/docs/storefront/graphql#creating-a-token) in the GraphQL Storefront API Overview and [Dynamic tokens](/docs/start/authentication#bigcommerce-generated-jwts) in the Authentication and Example Requests article.
+
+## reCAPTCHA
+
+Captcha is not required when the reCAPTCHA is disabled in the control panel. Be sure to use a valid user verification response reCAPTCHA token if reCAPTCHA is enabled.
+
+Customer impersonation tokens do not require the use of reCAPTCHA even when the reCAPTCHA setting is enabled. You can bypass the reCAPTCHA and it will still function. Note, if reCAPTCHA is provided it must be valid, otherwise it will be rejected.
+
+## Example queries and mutations
+
+### Register a customer
+
+Register a customer using the form field configuration set up in the control panel for both the account signup and address fields.
+
+<Tabs items={[`Request`, `Response`]}>
+  <Tab>
+    ```graphql filename="Example mutation: Register a customer" showLineNumbers copy
+    mutation {
+      customer {
+        registerCustomer(
+          reCaptchaV2: { token: "" }
+          input: {
+            firstName: "Jon"
+            lastName: "Smith"
+            email: "jon@example.com"
+            password: "Password123!"
+            phone: "123-456-7890"
+            company: "BC"
+            address: {
+              firstName: "Jon"
+              lastName: "Smith"
+              address1: "1234 Fake Street"
+              address2: ""
+              city: "Austin"
+              company: "BC"
+              countryCode: "US"
+              stateOrProvince: "TX"
+              phone: "123-456-7890"
+              postalCode: "78610"
+            }
+            formFields: {
+              checkboxes: [{ fieldEntityId: 1, fieldValueEntityIds: [1, 2, 3] }]
+              multipleChoices: [{ fieldEntityId: 1, fieldValueEntityId: 2 }]
+              numbers: [{ fieldEntityId: 1, number: 1.0 }]
+              texts: [{ fieldEntityId: 1, text: "text" }]
+              passwords: [{ fieldEntityId: 1, password: "password" }]
+            }
+          }
+        ) {
+          customer {
+            firstName
+            lastName
+          }
+          errors {
+            __typename
+            ... on ValidationError {
+              message
+            }
+            ... on CustomerRegistrationError {
+              message
+            }
+            ... on EmailAlreadyInUseError {
+              message
+            }
+            ... on AccountCreationDisabledError {
+              message
+            }
+          }
+        }
+      }
+    }
+    ```
+  </Tab>
+  <Tab>
+    ```json filename="Example mutation: Register a customer" showLineNumbers copy
+    # Success
+
+    {
+      "data": {
+        "customer": {
+          "registerCustomer": {
+            "customer": {
+              "firstName": "Jon",
+              "lastName": "Smith"
+            },
+            "errors": []
+          }
+        }
+      }
+    }
+
+
+    # Error - Email already in use
+
+    {
+      "data": {
+        "customer": {
+          "registerCustomer": {
+            "customer": null,
+            "errors": [
+              {
+                "__typename": "EmailAlreadyInUseError",
+                "message": "The email address is already in use."
+              }
+            ]
+          }
+        }
+      }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+### Update a customer
+
+Update customer information, except for password and address. Use either `resetPassword`, or `changePassword` to reset or update the user password.
+
+<Tabs items={[`Request`, `Response`]}>
+  <Tab>
+    ```graphql filename="Example mutation: Customer update" showLineNumbers copy
+    mutation {
+      customer {
+        updateCustomer(
+          reCaptchaV2: { token: "" }
+          input: {
+            firstName: "Jon"
+            lastName: "Smith"
+            email: "jon@test.com"
+            phone: "123-456-7890"
+            company: "BC"
+            formFields: {
+              # optional
+              checkboxes: [{ fieldEntityId: 1, fieldValueEntityIds: [1, 2, 3] }]
+              multipleChoices: [{ fieldEntityId: 1, fieldValueEntityId: 2 }]
+              numbers: [{ fieldEntityId: 1, number: 1.0 }]
+              texts: [{ fieldEntityId: 1, text: "text" }]
+              passwords: [{ fieldEntityId: 1, password: "password" }]
+            }
+          }
+        ) {
+          customer {
+            firstName
+            lastName
+          }
+          errors {
+            __typename
+            ... on ValidationError {
+              message
+            }
+            ... on CustomerDoesNotExistError {
+              message
+            }
+            ... on EmailAlreadyInUseError {
+              message
+            }
+          }
+        }
+      }
+    }
+    ```
+  </Tab>
+  <Tab>
+    ```json filename="Example mutation: Customer update" " showLineNumbers copy
+    {
+      "data": {
+        "customer": {
+          "updateCustomer": {
+            "customer": {
+              "firstName": "Jonathan",
+              "lastName": "Smith"
+            },
+            "errors": []
+          }
+        }
+      }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+### Add a customer address
+
+The BigCommerce platform can support and store plenty of addresses per customer. Use the `addCustomerAddress` to include multiple addresses to the customer account.  Similar to `registerCustomer`, add `CustomerAddress` using the form field configuration set up in the control panel for address fields.
+
+<Tabs items={[`Request`, `Response`]}>
+  <Tab>
+    ```graphql filename="Example mutation: Add a customer address" showLineNumbers copy
+    mutation {
+      customer {
+        addCustomerAddress(
+          reCaptchaV2: { token: "" }
+          input: {
+            firstName: "Jon"
+            lastName: "Smith"
+            address1: "1234 Fake Street"
+            address2: ""
+            city: "Austin"
+            company: "BC"
+            countryCode: "US"
+            stateOrProvince: "TX"
+            phone: "123-456-7890"
+            postalCode: "78610"
+            formFields: {
+              checkboxes: [{ fieldEntityId: 1, fieldValueEntityIds: [1, 2, 3] }]
+              multipleChoices: [{ fieldEntityId: 1, fieldValueEntityId: 2 }]
+              numbers: [{ fieldEntityId: 1, number: 1.0 }]
+              texts: [{ fieldEntityId: 1, text: "text" }]
+              passwords: [{ fieldEntityId: 1, password: "password" }]
+            }
+          }
+        ) {
+          errors {
+            __typename
+            ... on ValidationError {
+              message
+            }
+            ... on CustomerNotLoggedInError {
+              message
+            }
+            ... on CustomerAddressCreationError {
+              message
+            }
+          }
+        }
+      }
+    }
+    ```
+  </Tab>
+  <Tab>
+    ```json filename="Example mutation: Add a customer address" showLineNumbers copy
+    {
+      "data": {
+        "customer": {
+          "addCustomerAddress": {
+            "errors": []
+          }
+        }
+      }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+### Update a customer address
+
+Use this `updateCustomerAddress` mutation when a customer needs to make changes to an address associated with their account.
+
+<Tabs items={[`Request`, `Response`]}>
+  <Tab>
+    ```graphql filename="Example mutation: Update a customer address" showLineNumbers copy
+    mutation {
+      customer {
+        updateCustomerAddress(
+        reCaptchaV2: { token: "" },
+        input: {
+            addressEntityId: 1,
+            data: {
+            firstName: "Jon",
+            lastName: "Smith",
+            address1: "1234 Fake Street",
+            address2: "",
+            city: "Austin",
+            company: "BC",
+            countryCode: "US",
+            stateOrProvince: "TX",
+            phone: "123-456-7890",
+            postalCode: "78610",
+            formFields: {
+                checkboxes: [
+                {
+                    fieldEntityId: 1,
+                    fieldValueEntityIds: [1,2,3]
+                }
+                ],
+                multipleChoices: [
+                {
+                    fieldEntityId: 1,
+                    fieldValueEntityId: 2
+                }
+                ],
+                numbers: [
+                {
+                    fieldEntityId: 1,
+                    number: 1.0
+                }
+                ],
+                texts: [
+                {
+                    fieldEntityId: 1,
+                    text: "text"
+                }
+                ],
+                passwords: [
+                {
+                    fieldEntityId: 1,
+                    password: "password"
+                }
+                ],
+            } 
+            }
+        }
+        ) {
+        errors {
+            __typename
+            ... on ValidationError {
+            message
+            }
+            ... on CustomerNotLoggedInError {
+            message
+            }
+            ... on AddressDoesNotExistError {
+            message
+            }
+            ... on CustomerAddressUpdateError {
+            message
+            }
+          }
+        }
+      }
+    }
+    ```
+  </Tab>
+  <Tab>
+    ``` json filename="Example mutation: Update a customer address" showLineNumbers copy
+    # Success
+
+    {
+      "data": {
+        "customer": {
+          "updateCustomerAddress": {
+            "errors": []
+          }
+        }
+      }
+    }
+
+  # Error
+  # Address Does Not Exist
+
+  {
+    "data": {
+      "customer": {
+        "updateCustomerAddress": {
+          "errors": [
+            {
+              "__typename": "AddressDoesNotExistError",
+              "message": "An address with the supplied ID does not exist."
+            }
+          ]
+        }
+      }
+    }
+  }
+  ```
+  </Tab>
+</Tabs>
+
+### Delete a customer address
+
+Use this `delete` mutation when a customer needs to delete an address associated with their account.
+
+<Tabs items={[`Request`, `Response`]}>
+  <Tab>
+    ```graphql filename="Example mutation: Delete a customer address" showLineNumbers copy
+    mutation {
+      customer {
+        deleteCustomerAddress(
+          reCaptchaV2: { token: "" }
+          input: { addressEntityId: 1 }
+        ) {
+          errors {
+            __typename
+            ... on CustomerNotLoggedInError {
+              message
+            }
+            ... on CustomerAddressDeletionError {
+              message
+            }
+          }
+        }
+      }
+    }
+    ```
+  </Tab>
+  <Tab>
+    ```json filename="Example mutation: Delete a customer address" showLineNumbers copy
+    {
+      "data": {
+        "customer": {
+          "deleteCustomerAddress": {
+            "errors": []
+          }
+        }
+      }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+### Change a customer password
+
+Use the `changePassword` mutation in cases where the customer needs to update their password. The user must know their current password in order to complete the change.
+
+<Tabs items={[`Request`]}>
+  <Tab>
+    ```graphql filename="Example mutation: Change a user password" showLineNumbers copy
+    mutation {
+      customer {
+        changePassword(
+          input: { currentPassword: "Password1!", newPassword: "Password2!" }
+        ) {
+          errors {
+            ... on ValidationError {
+              path
+              message
+            }
+            ... on CustomerPasswordError {
+              message
+            }
+            ... on CustomerDoesNotExistError {
+              message
+            }
+            ... on CustomerNotLoggedInError {
+              message
+            }
+          }
+        }
+      }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+### Request a password reset
+
+A customer can request a password reset using the `requestResetPassword` mutation example as seen below.
+
+<Tabs items={[`Request`, `Response`]}>
+  <Tab>
+    ```graphql filename="Example mutation: Request a password reset" showLineNumbers copy
+    mutation {
+      customer {
+        requestResetPassword(
+          reCaptchaV2: { token: "" }
+          input: { email: "jon@test.com" }
+        ) {
+          errors {
+            ... on ValidationError {
+              message
+            }
+          }
+        }
+      }
+    }
+    ```
+  </Tab>
+  <Tab>
+    ```json filename="Example mutation: Request a password reset" showLineNumbers copy
+    {
+      "data": {
+        "customer": {
+          "requestResetPassword": {
+            "errors": []
+          }
+        }
+      }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+### Reset a password
+
+When a customer needs a password reset, use the `resetPassword` example mutation to complete the reset.
+
+<Tabs items={[`Request`]}>
+  <Tab>
+    ```graphql filename="Example mutation: Reset a password" showLineNumbers copy
+    mutation {
+      customer {
+        resetPassword(
+          input: {
+            customerEntityId: 1 # Provided in the link contained in the reset password email
+            token: "" # Provided in the link contained in the reset password email
+            newPassword: "NewPassword1234"
+          }
+        ) {
+          errors {
+            ... on ValidationError {
+              message
+            }
+            ... on ChangePasswordError {
+              message
+            }
+          }
+        }
+      }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+### Get a customer address book
+
+Use this query to view all the addresses a customer has added to their account.
+
+<Tabs items={[`Request`]}>
+  <Tab>
+    ```graphql filename="Example query: Get a customer address book" showLineNumbers copy
+    query {
+        customer {
+          firstName
+          lastName
+          formFields {
+              entityId
+              name
+          }
+          addresses {
+              collectionInfo {
+                  totalItems
+              }
+              edges {
+                  node {
+                      entityId
+                      firstName
+                      lastName
+                      address1
+                      city
+                      stateOrProvince
+                      postalCode
+                      formFields {
+                          entityId
+                          name
+                      }
+                  }
+              }
+          }
+        }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+Join our [Developer community](/community) to share your feedback with us in the BigCommerceDevs Slack or on our Discord server.
+
+## Resources
+
+### Documentation
+
+* [GraphQL Storefront API overview](/docs/storefront/graphql)
+* [Guide to API Accounts: Store-level API accounts](/docs/start/authentication/api-accounts#store-level-api-accounts)
+* [Guide to API accounts: OAuth token creation scopes](/docs/start/authentication/api-accounts#token-creation-scopes)
+* [Authentication and example requests: BigCommerce-generated JWTs](/docs/start/authentication#bigcommerce-generated-jwts)
+
+### API reference
+
+#### Storefront tokens
+
+* [Create a storefront token](/docs/rest-authentication/tokens#create-a-token)
+* [Create a customer impersonation token](/docs/rest-authentication/tokens/customer-impersonation-token#create-a-token)
+
+#### REST management API: customers
+
+* [Customers V3](/docs/rest-management/customers/)
+
+### Community
+
+* [Developer community](/community)

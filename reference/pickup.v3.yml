@@ -1,0 +1,405 @@
+openapi: '3.0.3'
+info:
+  title: Pickup
+  version: '3.0'
+  description: This API endpoint enables you to manage pickups.
+  termsOfService: 'https://www.bigcommerce.com/terms'
+  contact:
+    name: BigCommerce
+    url: 'https://www.bigcommerce.com'
+    email: support@bigcommerce.com
+servers:
+  - url: 'https://api.bigcommerce.com/stores/{store_hash}/v3'
+    variables:
+      store_hash:
+        default: store_hash
+        description: Permanent ID of the BigCommerce store.
+    description: BigCommerce API Gateway
+security:
+  - X-Auth-Token: []
+tags:
+  - name: Pickup
+    description: BigCommerce Pickup API Definition.
+paths:
+  '/orders/pickups':
+    parameters:
+      - $ref: '#/components/parameters/Accept'
+    get:
+      operationId: get-pickup
+      tags:
+        - Pickup
+      summary: Get Pickups
+      description: |-
+        Retrieves a list of pickups.
+
+        ## Examples
+
+        You can filter the list to return pickup objects specific to a list of requested pickup or order IDs. 
+        This is achieved by appending the query string `?order_id:in=100,103,202` or `pickup_id:in=1,4` to the 
+        resource `/orders/pickups`.
+
+        ```http
+        GET /orders/pickups?order_id:in=100,300,500
+        ```
+        or
+        ```http
+        GET /orders/pickups?pickup_id:in=7,13,17
+        ```
+      parameters:
+        - name: 'order_id:in'
+          description: Comma separated list of order IDs.
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int64
+        - name: 'pickup_id:in'
+          description: Comma separated list of pickup IDs.
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: The request has been processed and a list of pickups has been returned successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Pickup'
+    post:
+      parameters:
+        - $ref: '#/components/parameters/ContentType'      
+      operationId: post-pickup
+      tags:
+        - Pickup
+      summary: Create Pickups
+      description: |-
+        Creates one or many pickups.
+
+        This is a batch operation that can create up to 100 pickup objects in one request.
+
+        ## Limits
+        * Limit of creating 100 pickup objects per `POST` request.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/PostRequestPickup'
+      responses:
+        '200':
+          description: The request has been successfully processed.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Pickup'
+                  meta:
+                    type: object
+                    properties: {}
+                    additionalProperties: true
+        '422':
+          description: |
+            Incorrect entity. Locations were not valid. This results from missing required fields, invalid data, or partial error. See the response for more details.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      operationId: delete-pickup
+      tags:
+        - Pickup
+      summary: Delete Pickups
+      description: |-
+        Delete pickups by providing a list of `pickup_id`s.
+
+        ## Examples
+        You can use the list of `pickup_ids` to delete the pickup items. This is achieved by appending the query string **?id:in=1,2,3** to the resource **/pickup**.
+
+        ```http
+        DELETE /pickup?id:in=1,2,3
+        ```
+      parameters:
+        - name: 'id:in'
+          description: Comma separated list of pickup IDs.
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: No Content
+    put:
+      parameters:
+        - $ref: '#/components/parameters/ContentType'
+      operationId: put-pickup
+      tags:
+        - Pickup
+      summary: Update Pickups
+      description: 'Update pickups by providing `pickup_id`, `collected_at`, and `ready_at` in the input.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/PutRequestPickup'
+      responses:
+        '200':
+          description: The request has been successfully processed.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Pickup'
+                  meta:
+                    type: object
+                    properties: {}
+                    additionalProperties: true
+        '422':
+          description: |
+            Incorrect entity. Locations were not valid. This results from missing required fields, invalid data, or partial error. See the response for more details.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+components:
+  parameters: 
+    Accept:
+      name: Accept
+      in: header
+      required: true
+      description: 'The [MIME type](https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types) of the response body.'
+      schema:
+        type: string
+        default: 'application/json'
+    ContentType:
+      name: Content-Type
+      in: header
+      required: true
+      description: 'The [MIME type](https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types) of the request body.'
+      schema:
+        type: string
+        default: 'application/json'
+  schemas:
+    BasePickup:
+      type: object
+      properties:
+        pickup_method_id:
+          type: integer
+          minimum: 1
+          example: 2
+          description: ID of pickup method.
+        order_id:
+          type: integer
+          minimum: 1
+          example: 103
+          description: ID of order.
+    Pickup:
+      allOf:
+        - type: object
+          properties:
+            id:
+              type: integer
+              example: 1
+              description: The ID of pickup.
+        - $ref: '#/components/schemas/BasePickup'
+        - type: object
+          properties:
+            ready_at:
+              type: string
+              format: date-time
+              example: '2022-08-15T09:30:44Z'
+              description: 'Datetime when pickup was ready for collection. '
+            created_at:
+              type: string
+              format: date-time
+              example: '2022-08-12T04:15:19.150539Z'
+              description: Datetime when pickup was created.
+            updated_at:
+              type: string
+              format: date-time
+              example: '2022-08-12T04:15:19.150539Z'
+              description: Datetime when pickup was updated.
+            pickup_items:
+              type: array
+              items:
+                $ref: '#/components/schemas/PickupItem'
+    BasePickupItem:
+      type: object
+      properties:
+        order_product_id:
+          type: integer
+          minimum: 1
+          example: 4
+          description: The ID of the product.
+        quantity:
+          type: integer
+          minimum: 1
+          example: 5
+          description: The quantity of an item.
+    PickupItem:
+      allOf:
+        - type: object
+          properties:
+            id:
+              type: integer
+              minimum: 1
+              example: 3
+              description: The ID of pickup.
+        - $ref: '#/components/schemas/BasePickupItem'
+        - type: object
+          properties:
+            status:
+              type: string
+              enum:
+                - AWAITING_COLLECTION
+                - COLLECTED
+              example: COLLECTED
+              description: The status of the pickup.
+            collected_at:
+              type: string
+              format: date-time
+              example: '2022-08-12T04:15:19.150539Z'
+              description: Date and time when the pickup was collected.
+              nullable: true
+    PostRequestPickup:
+      allOf:
+        - $ref: '#/components/schemas/BasePickup'
+        - type: object
+          properties:
+            ready_at:
+              type: string
+              description: |
+                Can be provided as two inputs.
+                Unix: Represents the time in seconds that has elapsed since Unix epoch (00:00:00 UTC on 1 January 1970)
+                ISO-8601: Represents the time in ISO format.
+              example: "'1660555844' or '2022-06-11T00:00:20Z'"
+            collected_at:
+              type: string
+              description: |
+                Can be provided as two inputs.
+                Unix: Represents the time in seconds that has elapsed since Unix epoch (00:00:00 UTC on 1 January 1970).
+                ISO-8601: Represents the time in ISO format.
+                If this value is not supplied, the pickup item collected_at property will be null.
+              example: "'1660831392' or '2022-06-18T00:00:30Z'"
+            pickup_items:
+              type: array
+              items:
+                $ref: '#/components/schemas/PostRequestPickupItem'
+          required:
+            - pickup_method_id
+            - order_id
+            - ready_at
+            - pickup_items
+    PostRequestPickupItem:
+      type: object
+      properties:
+        order_product_id:
+          type: integer
+          minimum: 1
+          example: 4
+          description: The ID of the product.
+        quantity:
+          type: integer
+          minimum: 1
+          example: 5
+          description: The quantity of an item.
+      required:
+        - order_product_id
+        - quantity
+    PutRequestPickup:
+      type: object
+      properties:
+        id:
+          type: integer
+          minimum: 1
+          example: 2
+          deprecated: true
+        pickup_id:
+          type: integer
+          minimum: 1
+          example: 2
+          description: The ID of pickup.
+        ready_at:
+          type: string
+          description: |
+            Can be provided as two inputs.
+            Unix: Represents the time in seconds that has elapsed since Unix epoch (00:00:00 UTC on 1 January 1970)
+            ISO-8601: Represents the time in ISO format.
+          example: "'1660555844' or '2022-06-11T00:00:20Z'"
+        collected_at:
+          type: string
+          description: |
+            Can be provided as two inputs.
+            Unix: Represents the time in seconds that has elapsed since Unix epoch (00:00:00 UTC on 1 January 1970).
+            ISO-8601: Represents the time in ISO format.
+            If this value is not supplied, the pickup item collected_at property will be null.
+          example: "'1660831392' or '2022-06-18T00:00:30Z'"
+      required:
+        - id
+        - pickup_id
+    ErrorResponse:
+      type: object
+      properties:
+        status:
+          type: integer
+          description: The HTTP status code generated by the origin server for this occurrence of the problem.
+          example: 422
+        title:
+          type: string
+          description: Human readable error message.
+          example: JSON data is missing or invalid
+        type:
+          type: string
+          description: |
+            URL identifying the error type. Dereferencing the URL leads to documentation about the error type.
+        errors:
+          type: object
+          description: Detailed summary describing the particular error.
+          properties: {}
+          additionalProperties: true
+  securitySchemes:
+    X-Auth-Token:
+      name: X-Auth-Token
+      description: |-
+        ### OAuth scopes
+
+        | UI Name | Permission | Parameter |
+        |:--------|:-----------|:----------|
+        |  Order Fulfillment | read-only | `store_order_fulfillment_read_only` | 
+        |  Order Fulfillment | modify | `store_order_fulfillment_manage` |
+
+        ### Authentication header
+
+        | Header | Argument | Description |
+        |:-------|:---------|:------------|
+        | `X-Auth-Token` | `access_token` | For more about API accounts that generate `access_token`s, see [API Accounts and OAuth Scopes](/docs/start/authentication/api-accounts). |
+
+        ### Further reading
+
+        For example requests and more information about authenticating BigCommerce APIs, see [Authentication and Example Requests](/docs/start/authentication).
+
+        For more about BigCommerce OAuth scopes, see [API Accounts and OAuth Scopes](/docs/start/authentication/api-accounts#oauth-scopes).
+
+        For a list of API status codes, see [API Status Codes](/docs/start/about/status-codes).
+      type: apiKey
+      in: header

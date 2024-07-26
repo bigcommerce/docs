@@ -83,7 +83,7 @@ There are two options to obtain a customer access token.
 
 ###### Login mutation
 
-Enter your user email and password to use the login mutation. The login mutation will return a customer access token in response to login actions as part of the GraphQL body instead of a cookie header. From there, you can store the customer access token in the presentation layer's session management system and send it with future GraphQL requests.
+Enter your user email and password to use the login mutation. When using the login mutation in a server-to-server context, the mutation will return a customer access token in response to login actions as part of the GraphQL body instead of a cookie header. From there, you can store the customer access token in the presentation layer's session management system and send it with future GraphQL requests. If the login mutation request is from a browser, we will not return the customer access token in the body, and will instead set a cookie. 
 
 <Callout type="info">
 Use the [Create a Token](/docs/rest-authentication/tokens#create-a-token) endpoint to generate the storefront bearer token needed to run the login mutation call. If you still have issues creating a customer access token, we recommend clearing your cookies to resolve any loading issues. 
@@ -203,7 +203,7 @@ mutation Login($jwt: String!) {
 
 ##### Using a Customer Access Token
 
-You can assign the customer access token obtained using one of the mutations described above to the `X-Bc-Customer-Access-Token` header for future queries. You can use this token for a specific shopper session access until it is invalidated. The token is invalidated when you use the logout mutation with the `X-Bc-Customer-Access-Token` header.
+You can assign the customer access token obtained using one of the mutations described above to the `X-Bc-Customer-Access-Token` header for future queries. You can use this token for a specific shopper session access until it is invalidated or if it expires due to time. The token is invalidated when you use the logout mutation with the `X-Bc-Customer-Access-Token` header.
 
 <Tabs items={['Request', 'Response']}>
 <Tab>
@@ -281,11 +281,15 @@ Because of the flexible use of the customer impersonation token, BigCommerce rec
 * A customer access token becomes invalid on all devices when you log out on a single device.
 </Callout>
 
-You can use customer impersonation tokens to authenticate requests to the GraphQL Storefront API in server-to-server and headless interactions. The API will reject any customer impersonation token-authenticated requests that originate from a web browser and are not proxied. Use these tokens in NextJS applications; NextJS proxies requests by default. 
+You can use customer impersonation tokens to authenticate requests to the GraphQL Storefront API in server-to-server and headless interactions. The API will reject any customer impersonation token-authenticated requests that originate from a web browser and are not proxied. 
+
+<Callout type="warning">
+In the future, we will not support all customer features when using a customer impersonation token. More security-sensitive features will only work with the customer access token. For example, features like exposing a customer's Saved Payment Methods will only work with a customer access token.
+</Callout>
 
 Customer impersonation token-authenticated requests will be specific to the customer, including product pricing and availability, customer account details, and more.
 
-Generating a new token for each customer ID is optional. You may use a single token at any given time for your application and specify a distinct customer ID for each set of requests. 
+It is not necessary to generate a new token for each customer ID. You may use a single token at any given time for your application and specify a distinct customer ID for each set of requests. 
 
 Using a customer impersonation token does not automatically sign a customer in. For that, use the [customer login mutation](#signing-customers-in) or the [Customer Login API](/docs/rest-authentication/customer-login).
 

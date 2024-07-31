@@ -1,0 +1,352 @@
+# GraphQL Storefront API: Orders (beta)
+
+<Callout type="info">
+    This feature is currently in beta and the following operation is only available to participants. 
+</Callout>
+
+## Overview
+
+The GraphQL Storefront `orders` object schema can power requests to your [headless](/docs/storefront/headless) storefront or [Stencil](/docs/storefront/stencil/start) theme supplying you with instant access to your Orders storefront data. To learn more about how the BigCommerce Storefront graph works, see [GraphQL Storefront API overview](/docs/storefront/graphql).
+
+In this document, you can learn how to use queries and operation types to fetch order data using the BigCommerce Storefront graph. Create arguments for fields like filtering `orders` by `entity_Id`. You're encouraged to read on and put these example queries into practice by using the [BigCommerce GraphQL Playground](/graphql-storefront/playground).
+
+### Fetch `orders` detail
+
+Use the `orders` object type to fetch data in order to display the orders and details on the storefront graph.
+
+Use the `GetAllOrders` query field to fetch all orders for a specific customer. You can get a customer's order history, and get details like:
+
+- Billing address, including the customer's details
+- Order status
+- Consignment orders information
+- Specific discounts, and coupons (when applied)
+- Pricing
+
+<Callout type="info">
+    **The following features are coming soon**
+    - Payment/Payments information 
+    - Order specific messages
+</Callout>
+
+### Fetch `order` details
+
+Use the `order` object type to get detailed information on the storefront graph.
+
+Use the `GetOrderDetails` field query to fetch order details like:
+
+- Specific customer orders
+- Specific order data filtered by date, or status
+
+Note: Don't forget to include cursor [pagination](/docs/storefront/graphql#pagination) to refine the fetched information.
+
+## Authorization
+
+Use your bearer token to perform the example queries on your storefront instance in the next section. 
+
+To learn more about authenticating requests to the GraphQL Storefront API, see [Authenticating requests to the GraphQL Storefront API](/docs/start/authentication/graphql-storefront).
+
+## Example queries
+
+### Get all orders and details
+
+#### Filter by order status
+In this example, the query is set up to return a filtered list of all orders with a `COMPLETED` status. 
+
+<Tabs items={[`Request`, `Response`]}>
+    <Tab>
+    ```graphql filename="Example query: Get all orders and details" showLineNumbers copy
+    query GetAllOrders {
+      site {
+        orders(filters: {status: COMPLETED}) {
+          edges {
+            node {
+              consignments {
+                shipping {
+                  edges {
+                    node {
+                      lineItems {
+                        edges {
+                          node {
+                            brand
+                            entityId
+                            imageUrl
+                            name
+                            productOptions {
+                              name
+                              value
+                            }
+                            quantity
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+              subTotal {
+                currencyCode
+                value
+              }
+            }
+          }
+        }
+      }
+    }
+    ```
+    </Tab>
+    <Tab>
+    ```graphql filename="Example response: Get all orders and details" showLineNumbers copy
+    {
+      "data": {
+        "site": {
+          "orders": {
+            "edges": [
+              {
+                "node": {
+                  "consignments": {
+                    "shipping": {
+                      "edges":  [
+                        {
+                        "node": {
+                          "lineItems":  {
+                            "edges":  [
+                                {
+                                "node": {
+                                  "brand": "default",
+                                  "entityId": "1",
+                                  "imageUrl": "https://cdn11.bigcommerce.com/s-xyzfeyee1r/products/111/images/371/smithjournal1.1721236910.386.513.jpg?c=1null",
+                                  "name": "[Sample] Smith Journal 13",
+                                  "productOptions": [
+                                    {
+                                      "name": "Color",
+                                      "value": "Yellow"
+                                    }
+                                  ],
+                                  "quantity": "3"
+                                }
+                              }
+                            ]
+                          }
+                        }
+                        }
+                      ]
+                    }
+                  },
+                "subTotal": {
+                  "currencyCode": "USD",
+                  "value": 25.0
+                  }
+                } 
+              }
+            ]
+          }
+        }
+      } 
+    }
+    ```
+    </Tab>
+</Tabs>
+
+### Get order details
+In this example, the query is set up to get details for order #106. Use `entityId` to query by customer. 
+
+<Tabs items={[`Request`, `Response`]}>
+  <Tab>
+    ```graphql filename="Example query: Get order details" showLineNumbers copy
+    query GetOrderDetails {
+      site {
+        order(filter: { entityId: 106 }) {
+          billingAddress {
+            address1
+            city
+            company
+            country
+            countryCode
+            email
+            firstName
+            lastName
+            phone
+            postalCode
+            stateOrProvince
+          }
+          consignments {
+            shipping {
+              edges {
+                  cursor
+                  node {
+                  lineItems {
+                    edges {
+                      node {
+                        brand
+                        entityId
+                        imageUrl
+                        name
+                        subTotalListPrice {
+                          currencyCode
+                          value
+                        }
+                      }
+                    }
+                  }
+                  shipments {
+                    edges {
+                      node {
+                        shippingProviderName
+                        tracking {
+                          ... on OrderShipmentUrlOnlyTracking {
+                              __typename
+                          }
+                        }
+                      }
+                    }
+                  }
+                  shippingAddress {
+                    address1
+                    city
+                    firstName
+                    lastName
+                    postalCode
+                    stateOrProvince
+                  }
+                  shippingCost {
+                    currencyCode
+                      value
+                  }
+                }
+              }
+            }
+          }
+          subTotal {
+            currencyCode
+            value
+          }
+          taxTotal {
+            currencyCode
+            value
+          }
+          totalIncTax {
+            currencyCode
+            value
+          }
+          updatedAt {
+            utc
+          }
+        }
+      }
+    }
+    ```
+    </Tab>
+    <Tab>
+    ``` graphQL filename="Example response: Get order details"
+    {
+      "data": {
+        "site": {
+          "order": {
+            "billingAddress": {
+              "address1": "1800 Amphibious Blvd.",
+              "city": "Mountain View",
+              "company": "ExampleOrganization",
+              "country": "United States",
+              "countryCode": "US",
+              "email": "jane.doe@example.com",
+              "firstName": "Jane",
+              "lastName": "Doe",
+              "phone": "(800) 555-0100",
+              "postalCode": "94045",
+              "stateOrProvince": "California"
+            },
+            "consignments": {
+              "shipping": {
+                "edges": [
+                  {
+                  "cursor": "ABcYXgjb25uZWN0aW9uOjA=",
+                  "node": {
+                    "lineItems": {
+                      "edges": [
+                        {
+                          "node": {
+                            "brand": "default",
+                            "entityId": 1,
+                            "imageUrl": "https://cdn11.bigcommerce.com/s-xyzfeyee1r/products/111/images/371/smithjournal1.1721236910.386.513.jpg?c=1null",
+                            "name": "[Sample] Smith Journal 13",
+                            "subTotalListPrice": {
+                                "currencyCode": "USD",
+                                "value": 25.0
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    "shipments": {
+                      "edges": []
+                    },
+                    "shippingAddress": {
+                      "address1": "Avenida da Pastelaria, 1903",
+                      "city": "Lisbon",
+                      "firstName": "Kai",
+                      "lastName": "N.",
+                      "postalCode": "1229-076",
+                      "stateOrProvince": "Rio del chocolate"
+                    },
+                    "shippingCost": {
+                      "currencyCode": "USD",
+                        "value": 0.0
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "subTotal": {
+              "currencyCode": "USD",
+              "value": 25.0
+          },
+          "taxTotal": {
+              "currencyCode": "USD",
+              "value": 0.0
+          },
+          "totalIncTax": {
+              "currencyCode": "USD",
+              "value": 0.0
+          },
+          "updatedAt": {
+              "utc": "2024-04-02T15:04:08Z"
+          }
+        }
+      }
+    }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+Join our [Developer community](/community) to share your feedback with us in the BigCommerceDevs Slack or on our Discord server.
+
+## Resources
+
+### Documentation
+
+* [GraphQL storefront API overview](/docs/storefront/graphql)
+* [Guide to API Accounts: Store-level API accounts](/docs/start/authentication/api-accounts#store-level-api-accounts)
+* [Guide to API accounts: OAuth token creation scopes](/docs/start/authentication/api-accounts#token-creation-scopes)
+* [Authentication and example requests: BigCommerce-generated JWTs](/docs/start/authentication#bigcommerce-generated-jwts)
+
+### API reference
+
+#### Storefront tokens
+
+* [Create a storefront token](/docs/rest-authentication/tokens#create-a-token)
+* [Create a customer impersonation token](/docs/rest-authentication/tokens/customer-impersonation-token#create-a-token)
+
+#### GraphQL Storefront API: orders
+
+* [Storefront Orders](/docs/rest-storefront/orders)
+
+#### REST Management API: orders
+
+* [Orders V2](/docs/rest-management/orders/)
+* [Orders V3](/docs/rest-management/transactions)
+
+### Community
+
+* [Developer community](/community)

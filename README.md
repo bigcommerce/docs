@@ -3,16 +3,16 @@
   <h1 align="center">BigCommerce Developer Documentation</h1>
 </p>
 
-You've found the BigCommerce documentation GitHub repository, which contains the content for the [BigCommerce Developer Documentation](https://developer.bigcommerce.com/docs).
+You've found the BigCommerce documentation GitHub repository, which contains the public content for the [BigCommerce Developer Center](https://developer.bigcommerce.com/docs).
 
-This repo is the source of truth for the public, open source BigCommerce Developer Documentation and API reference at [developer.bigcommerce.com](https://developer.bigcommerce.com). It consists of **Markdown React (.mdx)**, **OpenAPI Specification (.yml)**, and **JSON Schema (.json and .yml)** files.
+This repo is the source of truth for our public, open source documentation and API reference at [developer.bigcommerce.com](https://developer.bigcommerce.com). It consists of **Markdown React (.mdx)**, **OpenAPI Specification (.yml)**, and **JSON Schema (.json and .yml)** files.
 
 The BigCommerce DX team maintains these open source docs; we welcome your [issues](https://github.com/bigcommerce/docs/issues), [discussions](https://github.com/bigcommerce/docs/discussions), and [pull requests](https://github.com/bigcommerce/docs/pulls)!
 
 ---
 
 ## Contributing
-Thank you for your interest in contributing to our Developer Documentation! Below are a few quick ways to get started: 
+Thank you for your interest in contributing to our documentation! Below are a few quick ways to get started: 
 
 ### 👉 To make a change: 
 Here are some quick links to our [Contribution](/CONTRIBUTING.md) guide: 
@@ -24,13 +24,14 @@ Here are some quick links to our [Contribution](/CONTRIBUTING.md) guide:
 - [Contributing to Other Projects](/CONTRIBUTING.md#contributing-to-other-projects)
 
 ### 👉 To discuss something: 
-- Please [start a Discussion here](https://github.com/bigcommerce/docs/discussions). Our Documentation team monitors GitHub Discussions regularly.
+- Please [start a Discussion here](https://github.com/bigcommerce/docs/discussions). Our DevDocs team monitors GitHub Discussions regularly.
 
 ### 👉 To report a bug or an issue you've encountered
-- Please [open a new Issue here](https://github.com/bigcommerce/docs/issues). Our Documentation team monitors GitHub Issues regularly.
+- Please [open a new Issue here](https://github.com/bigcommerce/docs/issues). Our DevDocs team monitors GitHub Issues regularly.
 
 <br/>
-*For more information, please see our [Contribution guide](CONTRIBUTING.md) and [Code of conduct](CODE_OF_CONDUCT.md).*
+
+*For more information, please see our [Contribution Guidelines](./CONTRIBUTING.md) and [Code of conduct](./CODE_OF_CONDUCT.md).*
 
 ---
 

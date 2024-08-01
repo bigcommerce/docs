@@ -1,20 +1,24 @@
-# BigCommerce public developer documentation
+# BigCommerce Developer Documentation
 
-This repo is the source of truth for the public, open source BigCommerce DevDocs and API reference at [developer.bigcommerce.com](https://developer.bigcommerce.com). It consists of **Markdown React (.mdx)**, **OpenAPI Specification (.yml)**, and **JSON Schema (.json and .yml)** files.
+This repo is the source of truth for the public, open source BigCommerce Developer Documentation and API reference at [developer.bigcommerce.com](https://developer.bigcommerce.com). It consists of **Markdown React (.mdx)**, **OpenAPI Specification (.yml)**, and **JSON Schema (.json and .yml)** files.
 
 The BigCommerce DX team maintains these open source docs; we welcome your [issues](https://github.com/bigcommerce/docs/issues), [discussions](https://github.com/bigcommerce/docs/discussions), and [pull requests](https://github.com/bigcommerce/docs/pulls)!
 
 ## Contributing
+<!-- 
+if you want to make a change --> here's how
+if you want to discuss something --> discussions 
+if you want to bring up an issue you've seen --> issues  -->
 
-If you're interested in contributing, see our [Contribution guide](CONTRIBUTING.md) and [Code of conduct](CODE_OF_CONDUCT.md).
+Thank you for your interest in contributing to our Developer Documentation! Below are a few quick ways to get started: 
 
-## History
+- [Making a Quick Edit](#making-a-quick-edit)
+- [Editing Locally](#editing-locally)
+- [Commit Messages](#commit-messages)
+- [Style Guides](#style-guides)
+- [Contributing to Other Projects](#contributing-to-other-projects)
 
-On December 27, 2023, the following public documentation repositories were deprecated, and all documentation moved into this repository. We retained the `git` history of each document using the `--allow-unrelated-histories` flag. The following repositories are now read-only:
-
-* `https://github.com/bigcommerce/api-specs`
-* `https://github.com/bigcommerce/dev-docs`
-* `https://github.com/bigcommerce/theme-context-object-schemas`
+For more information, please see our [Contribution guide](CONTRIBUTING.md) and [Code of conduct](CODE_OF_CONDUCT.md).
 
 ### API specifications
 
@@ -29,7 +33,7 @@ Significant dates include the following:
 * In May 2023, we subdivided both the Catalog and Payments API specifications into multiple files.
 * On December 27, 2023, all public docs moved into the [bigcommerce/docs](https://github.com/bigcommerce/docs) repo.
 
-<!--
+
 ## Directory structure
 
 ```shell

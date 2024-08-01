@@ -1,37 +1,51 @@
-# BigCommerce Developer Documentation
+<p align="center">
+  <img alt="bcdevs logo" src="./assets/images/bcdevs-logo.png" width="100px" />
+  <h1 align="center">BigCommerce Developer Documentation</h1>
+</p>
+
+You've found the BigCommerce documentation GitHub repository, which contains the content for the [BigCommerce Developer Documentation](https://developer.bigcommerce.com/docs).
 
 This repo is the source of truth for the public, open source BigCommerce Developer Documentation and API reference at [developer.bigcommerce.com](https://developer.bigcommerce.com). It consists of **Markdown React (.mdx)**, **OpenAPI Specification (.yml)**, and **JSON Schema (.json and .yml)** files.
 
 The BigCommerce DX team maintains these open source docs; we welcome your [issues](https://github.com/bigcommerce/docs/issues), [discussions](https://github.com/bigcommerce/docs/discussions), and [pull requests](https://github.com/bigcommerce/docs/pulls)!
 
-## Contributing
-<!-- 
-if you want to make a change --> here's how
-if you want to discuss something --> discussions 
-if you want to bring up an issue you've seen --> issues  -->
+---
 
+## Contributing
 Thank you for your interest in contributing to our Developer Documentation! Below are a few quick ways to get started: 
 
-- [Making a Quick Edit](#making-a-quick-edit)
-- [Editing Locally](#editing-locally)
-- [Commit Messages](#commit-messages)
-- [Style Guides](#style-guides)
-- [Contributing to Other Projects](#contributing-to-other-projects)
+### 👉 To make a change: 
+Here are some quick links to our [Contribution](/CONTRIBUTING.md) guide: 
 
-For more information, please see our [Contribution guide](CONTRIBUTING.md) and [Code of conduct](CODE_OF_CONDUCT.md).
+- [Making a Quick Edit](/CONTRIBUTING.md#making-a-quick-edit)
+- [Editing Locally](/CONTRIBUTING.md#editing-locally)
+- [Commit Messages](/CONTRIBUTING.md/cod#commit-messages)
+- [Style Guides](/CONTRIBUTING.md#style-guides)
+- [Contributing to Other Projects](/CONTRIBUTING.md#contributing-to-other-projects)
 
-### API specifications
+### 👉 To discuss something: 
+- Please [start a Discussion here](https://github.com/bigcommerce/docs/discussions). Our Documentation team monitors GitHub Discussions regularly.
+
+### 👉 To report a bug or an issue you've encountered
+- Please [open a new Issue here](https://github.com/bigcommerce/docs/issues). Our Documentation team monitors GitHub Issues regularly.
+
+<br/>
+*For more information, please see our [Contribution guide](CONTRIBUTING.md) and [Code of conduct](CODE_OF_CONDUCT.md).*
+
+---
+
+## API specifications
 
 If you maintain API clients, this repository is your source for the most up-to-date public API specifications.
 
 Please keep your fork up to date to ensure you're working with the newest source files.
 
-Significant dates include the following:
+<!-- Significant dates include the following:
 
 * As of August 22, 2022, all API specification files are in OAS 3+ format.
 * In March 2023, we made significant changes to support a new OAS parser at [developer.bigcommerce.com](https://developer.bigcommerce.com).
 * In May 2023, we subdivided both the Catalog and Payments API specifications into multiple files.
-* On December 27, 2023, all public docs moved into the [bigcommerce/docs](https://github.com/bigcommerce/docs) repo.
+* On December 27, 2023, all public docs moved into the [bigcommerce/docs](https://github.com/bigcommerce/docs) repo. -->
 
 
 ## Directory structure

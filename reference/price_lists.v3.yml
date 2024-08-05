@@ -80,12 +80,6 @@ paths:
       description: Returns a list of *Price Lists*. Optional parameters can be passed in.
       operationId: getPriceLists
       parameters:
-        - name: id
-          in: query
-          description: |
-            Filter items by ID.
-          schema:
-            type: integer
         - name: name
           in: query
           description: |
@@ -777,7 +771,9 @@ paths:
         content: 
           application/json:
             schema:
-              $ref: '#/components/schemas/PriceRecordBatchItem'
+              type: array
+              items:
+                $ref: '#/components/schemas/PriceRecordBatchItem'
         required: true
       responses:
         '200':
@@ -1088,12 +1084,13 @@ paths:
                                   quantity_min:
                                     type: integer
                                     description: |
-                                      The minimum quantity of associated variant in the cart needed to qualify for this tiers pricing.
+                                      The minimum quantity of associated variant in the cart needed to qualify for this tier's pricing.
                                     example: 1
                                   quantity_max:
                                     type: integer
+                                    nullable: true
                                     description: |
-                                      The maximum allowed quantity of associated variant in the cart to qualify for this tiers pricing.
+                                      The maximum allowed quantity of associated variant in the cart to qualify for this tier's pricing. `null` indicates that there is no maximum allowed quantity for this tier.
                                     example: 10
                                   type:
                                     type: string
@@ -1638,15 +1635,29 @@ paths:
           required: true
           schema:
             type: integer
+        - name: 'currency'
+          in: query
+          description: The 3-letter currency code with which this set of prices is associated.
+          schema:
+            type: string
         - name: 'variant_id:in'
           in: query
-          description: A comma-separated list of IDs for one or more variants for which prices were requested.
+          description: A comma-separated list of IDs for one or more variants for which prices exist.
           style: form
           explode: false
           schema:
             type: array
             items:
               type: integer
+        - name: 'sku:in'
+          in: query
+          description: A comma-separated list of SKUs for one or more variants for which prices exist.
+          style: form
+          explode: false
+          schema:
+            type: array
+            items:
+              type: string
       responses:
         '204':
           description: ''
@@ -2787,27 +2798,27 @@ components:
         meta:
           $ref: '#/components/schemas/Meta'
     PriceRecordBatchItem:
-      type: object
-      properties:
-        price_list_id:
-          type: integer
-          description: The price list ID the price record is associated with.
-          example: 1
-        variant_id:
-          type: integer
-          description: The price list with which the price record is associated. Either `variant_id` or `sku` is required.
-          example: 5
-        sku:
-          type: string
-          description: The SKU for the variant with which this price record is associated. Either `sku` or `variant_id` is required.
-          example: SKU-001
-        currency:
-          type: string
-          description: The 3-letter country code with which this price record is associated.
-          format: ISO:4217
-          example: usd
-        items:
-          $ref: '#/components/schemas/PriceRecordBase'
+      allOf:
+        - type: object
+          properties:
+            price_list_id:
+              type: integer
+              description: The price list ID the price record is associated with.
+              example: 1
+            variant_id:
+              type: integer
+              description: The price list with which the price record is associated. Either `variant_id` or `sku` is required.
+              example: 5
+            sku:
+              type: string
+              description: The SKU for the variant with which this price record is associated. Either `sku` or `variant_id` is required.
+              example: SKU-001
+            currency:
+              type: string
+              description: The 3-letter country code with which this price record is associated.
+              format: ISO:4217
+              example: usd
+        -  $ref: '#/components/schemas/PriceRecordBase'
     PriceRecordBase:
       type: object
       properties: 

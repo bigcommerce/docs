@@ -114,7 +114,6 @@ paths:
         - $ref: '#/components/parameters/CategoriesParam'
         - $ref: '#/components/parameters/KeywordParam'
         - $ref: '#/components/parameters/KeywordContextParam'
-        - $ref: '#/components/parameters/StatusParam'
         - $ref: '#/components/parameters/AvailabilityParam'
         - $ref: '#/components/parameters/SkuParam'
         - $ref: '#/components/parameters/SkuInParam'
@@ -5318,6 +5317,9 @@ components:
           description: 'This variant’s retail price on the storefront. If a Price List ID is used, the Price List value will be used. If a Price List ID is not used, and this value is null, the product’s retail price (set in the Product resource’s `price` field) will be used as the retail price.'
           format: double
           nullable: true
+        map_price:
+              type: number
+              description: Minimum Advertised Price.
         weight:
           minimum: 0
           type: number
@@ -5364,6 +5366,11 @@ components:
           minLength: 0
           type: string
           description: 'If `purchasing_disabled` is `true`, this message should show on the storefront when the variant is selected.'
+        image_url:
+          type: string
+          description: |
+            The URL for an image displayed on the storefront when the conditions are applied. Limit of 8MB per file.
+          example: 'https://cdn8.bigcommerce.com/s-123456/product_images/d/fakeimage.png'
         upc:
           type: string
           description: The UPC code used in feeds for shopping comparison sites and external channel integrations.
@@ -5439,6 +5446,9 @@ components:
               description: Variant ID
             sku:
               type: string
+            sku_id:
+              type: integer
+              example: 70
             option_values:
               type: array
               description: Array of option and option values IDs that make up this variant. Will be empty if the variant is the productʼs base variant.
@@ -5612,6 +5622,21 @@ components:
       allOf:
         - type: object
           properties:
+            id:
+              type: integer
+              description: The option_value ID.
+            label:
+              maxLength: 255
+              minLength: 1
+              type: string
+              description: |
+                The label of the option value.
+              example: Beige
+              x-required:
+            option_id:
+              type: integer
+              description: The option ID.
+              example: 151
             option_display_name:
               maxLength: 255
               minLength: 1
@@ -5621,14 +5646,7 @@ components:
               example: Color
               x-required:
                 - post
-            label:
-              maxLength: 255
-              minLength: 1
-              type: string
-              description: |
-                The label of the option value.
-              example: Beige
-              x-required:
+            
                 - post
       required:
           - option_display_name
@@ -6502,6 +6520,68 @@ components:
                 The date on which the product image was modified.
               format: date-time
           description: Common ProductImage properties.
+      x-internal: false
+    primaryImage_Full:
+      title: primaryImage_Full
+      description: Common PrimaryImage properties.
+      allOf:
+        - title: productImage
+          type: object
+          properties:
+            id:
+              type: integer
+              description: |
+                The unique numeric ID of the image; increments sequentially.
+            product_id:
+              type: integer
+              description: |
+                The unique numeric identifier for the product with which the image is associated.
+            is_thumbnail:
+              type: boolean
+              description: |
+                Flag for identifying whether the image is used as the productʼs thumbnail.
+            sort_order:
+              maximum: 2147483647
+              minimum: -2147483648
+              type: integer
+              description: |
+                The order in which the image will be displayed on the product page. Higher integers give the image a lower priority. When updating, if the image is given a lower priority, all images with a `sort_order` the same as or greater than the imageʼs new `sort_order` value will have their `sort_order`s reordered.
+            description:
+              type: string
+              description: |
+                The description for the image.
+            image_file:
+              type: string
+              description: |
+                The local path to the original image file uploaded to BigCommerce. Use image_url when creating a product.
+
+                Must be sent as a `multipart/form-data` field in the request body. Limit of 8 MB per file.
+            url_zoom:
+              readOnly: true
+              type: string
+              description: |
+                The zoom URL for this image. By default, this is used as the zoom image on product pages when zoom images are enabled. You should provide an image smaller than 1280x1280; otherwise, the API returns a resized image.
+            url_standard:
+              readOnly: true
+              type: string
+              description: |
+                The standard URL for this image. By default, this is used for product-page images.
+            url_thumbnail:
+              readOnly: true
+              type: string
+              description: |
+                The thumbnail URL for this image. By default, this is the image size used on the category page and in side panels.
+            url_tiny:
+              readOnly: true
+              type: string
+              description: |
+                The tiny URL for this image. By default, this is the image size used for thumbnails beneath the product image on a product page.
+            date_modified:
+              type: string
+              description: |
+                The date on which the product image was modified.
+              format: date-time
+          description: Common PrimaryImage properties.
       x-internal: false
     product_Put_Collection:
       title: product_Put_Collection
@@ -7773,6 +7853,8 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/productImage_Full'
+        primary_image:
+            $ref: '#/components/schemas/primaryImage_Full'
         videos:
           type: array
           description: |
@@ -8985,6 +9067,8 @@ components:
             - modifiers
             - options
             - videos
+            - reviews
+            - parent_relations
     IdMinParam:
       name: 'id:min'
       in: query
@@ -9061,10 +9145,11 @@ components:
     DateModifiedParam:
       name: date_modified
       in: query
+      example: 2024-07-18
       description: 'Filter items by `date_modified`.'
       schema:
         type: string
-        format: date-time
+        format: date
     DateModifiedMaxParam:
       name: 'date_modified:max'
       in: query
@@ -9083,31 +9168,39 @@ components:
       description: Filter items by date_last_imported.
       schema:
         type: string
-        format: date-time
+        format: date
+      example: 2020-07-18
     DateLastImportedNotParam:
       name: 'date_last_imported:not'
       in: query
       description: 'Filter products by specifying a date they were NOT last imported. For example, `date_last_imported:not=2015-08-21T22%3A53%3A23%2B00%3A00`.'
       schema:
         type: string
+        format: date
+      example: 2020-07-18
     DateLastImportedMaxParam:
       name: 'date_last_imported:max'
       in: query
       description: 'Filter items by date_last_imported. For example, `date_last_imported:max=2015-08-21T22%3A53%3A23%2B00%3A00`.'
       schema:
         type: string
+        format: date
+      example: 2020-07-18
     DateLastImportedMinParam:
       name: 'date_last_imported:min'
       in: query
       description: 'Filter items by date_last_imported. For example, `date_last_imported:min=2015-08-21T22%3A53%3A23%2B00%3A00`.'
       schema:
         type: string
+        format: date 
+      example: 2020-07-18
     IsVisibleParam:
       name: is_visible
       in: query
       description: Filter items based on whether the product is currently visible on the storefront.
       schema:
         type: boolean
+      example: true
     IsFeaturedParam:
       name: is_featured
       in: query
@@ -9223,13 +9316,6 @@ components:
         enum:
           - shopper
           - merchant
-    StatusParam:
-      name: status
-      in: query
-      description: |
-        Filter items by status.
-      schema:
-        type: integer
     AvailabilityParam:
       name: availability
       in: query

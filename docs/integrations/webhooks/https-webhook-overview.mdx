@@ -1,0 +1,280 @@
+# HTTPS Webhooks Overview
+
+HTTPS webhooks are push APIs delivered over HTTPS, triggered by an event on the BigCommerce platform, and sent to a destination system.
+
+## Creating a webhook
+
+<Tabs items={['HTTPS example', 'GraphQL example']}>
+<Tab>
+To create a webhook, send a `POST` request to the [Create a webhook](/docs/webhooks/webhooks/manage-webhooks-bulk#create-a-webhooks) endpoint. Set the `scope` property value equal to the **Name / Scope** of the webhook you want to create. If a hook fires twice for the same event, both request bodies rely on the same hash. 
+
+
+```http filename="Example request: Create a webhook" showLineNumbers copy
+POST https://api.bigcommerce.com/stores/{{STORE_HASH}}/v3/hooks
+X-Auth-Token: {{ACCESS_TOKEN}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "scope": "store/order/updated",
+  "destination": "https://yourapp.example.com/webhooks", // custom ports are not supported
+  "is_active": true,
+  "headers": {
+	"username": "My-Custom-Header"
+	"value": "My custom header value"
+  }
+}
+```
+
+{/* <!-- Consult the Webhooks API reference for more about the differences. --> */}
+
+```json filename="Example response: Create a webhook" showLineNumbers copy
+{
+  "created_at": 1580329317,
+  "destination": "https://yourapp.example.com/webhooks", // custom ports are not supported
+  "headers": {
+	"username": "My-Custom-Header",
+	"value": "My custom header value"
+  },
+  "id": 20172984,
+  "is_active": true,
+  "scope": "store/order/updated",
+  "store_hash": "{{STORE_HASH}}",
+  "updated_at": 1580329317
+}
+```
+
+<Callout type="info">
+  * The `destination` URL must be served on port **443**; custom ports are not currently supported.
+  * It can take up to one minute for a newly created webhook to work.
+</Callout>
+</Tab>
+
+<Tab>
+```graphql filename="Example mutation: Create a GraphQL webhook" showLineNumbers copy
+
+mutation CreateHTTPWebhook($input:CreateHttpsWebhookInput!) {
+  webhook {
+    createHttpsWebhook(input: $input) {
+      webhook {
+        id
+        scope
+        destination
+        status
+	isActive
+        createdAt
+      }
+    }
+  }
+}
+```
+```graphql filename="Example GraphQL variables: Create a GraphQL webhook" showLineNumbers copy
+
+{
+  "input": {
+    
+	"scope": "store/order/updated",
+ 	"destination": "https://6676-8-29-231-139.ngrok-free.app/"
+  }
+}
+```
+
+```json filename="Example response: Create a GraphQL webhook" showLineNumbers copy
+
+{
+    "data": {
+        "webhook": {
+            "createHttpsWebhook": {
+                "webhook": {
+                    "id": "bc/store/webhook/26713462",
+                    "scope": "store/order/updated",
+                    "destination": "https://yourapp.example.com/",
+                    "status": ACTIVE,
+		    "isActive": true,
+                    "createdAt": "2023-07-05T20:14:05Z"
+                }
+            }
+        }
+    }
+}
+```
+</Tab>
+</Tabs>
+
+## Callback payload
+
+<Tabs items={['HTTPS example', 'GraphQL example']}>
+<Tab>
+
+When a webhook is triggered, BigCommerce will `POST` a light payload containing event details to the destination server. For example, the `data` object for `store/order/statusUpdated` contains only the order `id`.
+
+```json filename="HTTPS example: store/order/statusUpdated payload object" showLineNumbers copy
+{
+ "store_id":"11111",
+ "producer":"stores/abcde",
+ "scope":"store/order/statusUpdated",
+ "data":{
+    "type":"order",
+    "id":173331
+  },
+ "hash":"3f9ea420af83450d7ef9f78b08c8af25b2213637"
+ }
+```
+
+You can then make a request to the [Get an order](/docs/rest-management/orders#get-an-order) endpoint to obtain full order details.
+
+For more information on specific webhook events and their payloads, see [Webhook Events](/docs/integrations/webhooks/events).
+</Tab>
+
+<Tab>
+```json filename="GraphQL example: store/order/updated payload object" showLineNumbers copy
+
+{
+    "producer": "stores/abcde",
+    "hash": "0f1b5800def7b505369b08b4a3503a1db2c4b1a6",
+    "created_at": 1688588419,
+    "store_id": "1001197568",
+    "scope": "store/order/updated",
+    "data": {
+        "type": "order",
+        "id": 272
+    }
+}
+```
+</Tab>
+</Tabs>
+
+## Handling callbacks
+
+To acknowledge a callback has been received without issue, the destination server must return an `HTTP 200` response — no response, or any response outside the `200` range indicates the callback was not received. If this happens, the webhook service will use the [retry mechanism](#callback-retry-mechanism) described below.
+
+Need to set up a quick webhook destination URL for testing? See [Tools for Debugging and Testing Webhooks](#tools).
+
+## Callback retry mechanism
+
+The webhooks service will do its best to deliver events to the destination callback URI. It is best practice for the application to respond to the callback before taking any other action that would slow its response. Doing otherwise triggers BigCommerce's callback retry mechanism.
+
+The webhook service may send many payloads to a single URI in quick succession. Because of this, we use a sliding scale across a ** two-minute window** to calculate a callback response success rate for each remote destination. When the webhook service receives a `2xx` response, the destination's success count is increased. If there's no response or the remote server times out, the destination's failure count is increased. Based on these two numbers, a success ratio is calculated.
+
+
+The following process will determine whether the destination URI gets blocklisted:
+
+1. Once a webhook is triggered, the service checks if your callback URI is on the blocklist.
+2. If not, we calculate a success ratio for the remote server based on its success/failure count in a **two-minute window**.
+3. If at any point in the two-minute window, the success/failure ratio dips below **90%**, the destination URI's domain will be blocklisted for **three minutes**.
+4. Webhook events triggered during this time are sent to our retry queues to be executed later when the domain is no longer blocklisted and once the retry queue time has elapsed.
+
+Once a domain is no longer blocklisted, all new webhook requests will be sent as they occur. Event requests sent to the retry queue during a blocklisting period will be delivered according to the retry queue schedule.
+
+The webhook dispatcher will then attempt several retries (at increasing intervals) until the maximum retry limit is reached.
+
+| Intervals |
+|:---|
+| Retries after 60 seconds |
+| Retries after 180 seconds |
+| Retries after 300 seconds |
+| Retries after 600 seconds |
+| Retries after 900 seconds |
+| Retries after 1800 seconds |
+| Retries after 3600 seconds |
+| Retries after 7200 seconds |
+| Retries after 21600 seconds |
+| Retries after 50400 seconds |
+| Retries after 86400 seconds |
+
+After the final retry attempt (cumulatively **48 hours** after the first delivery attempt), the webhook will be deactivated, and an email will be sent to the email address registered for the subscribing app. You can reactivate the webhook by setting it to active using the [Update a webhook](/docs/webhooks/webhooks/manage-webhooks-single#update-a-webhook) endpoint.
+
+<Callout type="info">
+  * A domain's success rate for a given sliding window is not calculated until `100` webhook requests are sent - this means the domain will not be blocklisted for the first `100` webhooks sent within the time window (regardless of response), as all webhooks are sent until the minimum threshold has been reached for the current time window.
+  * The webhook dispatcher determines whether retries are needed based on responses from the subscribed domain as a whole, not by specific hooks. For example, `domain.com/webhook-1` and `domain.com/webhook-2` will affect each other for failures and retries, as both URLs belong to the same domain.
+</Callout>
+
+## Security
+
+To ensure webhook callback requests are secure, BigCommerce takes the following precautions:
+
+* Create webhook requests to accept an optional header object in every HTTP webhook, which you can use to authenticate callback requests. 
+* A timestamp is used to protect against replay attacks.
+* We recommend validating the signature and timestamp before processing any webhook event.
+
+### Webhook signature
+
+You can verify the signature is legitimate by using the [Webhook Verifer](https://www.standardwebhooks.com/verify) provided by Standard Webhook or the code samples provided below.
+
+The code samples below show how to validate the webhook signature in different programming languages.
+
+<Tabs items={['Python', 'Node.js']}>
+ 
+<Tab>
+Use the following command to run the calculation: 
+
+```py filename="Python" showLineNumbers copy
+import functions_framework
+from standardwebhooks.webhooks import Webhook
+from os import getenv
+import base64
+
+# Fetch the client secret from environment variables
+client_secret = getenv('CLIENT_SECRET')
+
+# Encode the client secret in base64
+encoded_client_secret = base64.b64encode(client_secret.encode()).decode()
+
+@functions_framework.http
+def hello_http(request):
+    webhook_payload = request.get_data()
+    webhook_headers = request.headers
+    print(str(webhook_payload))
+    print(str(webhook_headers))
+
+    result = 'no_result'
+    
+    # Use the encoded client secret
+    wh = Webhook(encoded_client_secret)
+    try:
+        result = str(wh.verify(webhook_payload, webhook_headers))
+        print('verified')
+    except Exception as e:
+        result = f"Could not verify: {e}"
+
+    print(result)
+    return result
+```
+</Tab>
+
+<Tab>
+Use the following command to run the calculation: 
+
+```js filename="Node.js" showLineNumbers copy
+const functions = require('@google-cloud/functions-framework');
+const { Webhook } = require('standardwebhooks');
+
+// Fetch the client secret from environment variables and encode it in base64
+const client_secret = process.env.CLIENT_SECRET;
+const encoded_client_secret = Buffer.from(client_secret).toString('base64');
+
+functions.http('helloHttp', (req, res) => {
+
+    try {
+        const webhook_headers = req.headers;
+        console.log(webhook_headers);
+
+        const webhook_payload = req.rawBody;
+        console.log(webhook_payload);
+        console.log(typeof(webhook_payload));
+
+        // Use the encoded client secret
+        const wh = new Webhook(encoded_client_secret);
+        console.log(JSON.stringify(wh.verify(webhook_payload, webhook_headers)));
+    } catch (error) {
+        console.error(error);
+    }
+
+    res.send(`Success`);
+});
+```
+</Tab>
+</Tabs>
+
+## Resources
+* [Verify Standard Webhooks](https://www.standardwebhooks.com/verify)

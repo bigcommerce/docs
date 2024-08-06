@@ -1,0 +1,1435 @@
+openapi: 3.0.0
+info:
+  title: Quote
+  version: '1.0'
+  description: Quote for sale. There are some old editions API endpoints used by earlier stores. Please use new RFQ's API endpoints for new stores.
+servers:
+  - url: 'https://api-b2b.bigcommerce.com/api/v2'
+paths:
+  /emails/quotes:
+    post:
+      deprecated: false
+      description: Send a quote emails.
+      operationId: sentemail
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            encoding: {}
+            schema:
+              type: object
+              properties:
+                email:
+                  example: '@email'
+                  type: string
+                quoteId:
+                  example: 1
+                  format: int32
+                  type: integer
+                quoteUrl:
+                  description: Quote detail url
+                  example: '@url'
+                  type: string
+              required:
+                - email
+                - quoteId
+                - quoteUrl
+        required: false
+        description: ''
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                description: ''
+                type: object
+                properties:
+                  code:
+                    type: number
+                  message:
+                    type: string
+                    minLength: 1
+                  data:
+                    type: object
+                    properties: {}
+                required:
+                  - code
+                  - message
+                  - data
+                x-examples:
+                  example-1:
+                    code: 200
+                    message: SUCCESS
+                    data: {}
+              examples: {}
+          description: ''
+          headers: {}
+      summary: Send Email
+      tags:
+        - Quote
+      x-internal: true
+  /quotes:
+    get:
+      deprecated: false
+      description: Get quote list.
+      operationId: getquoteList
+      parameters:
+        - description: 'Pagination offset default: 0'
+          explode: true
+          in: query
+          name: offset
+          required: true
+          schema:
+            example: 0
+            format: int32
+            type: integer
+          style: form
+        - description: 'Pagination limit default: 10'
+          explode: true
+          in: query
+          name: limit
+          required: true
+          schema:
+            example: 10
+            format: int32
+            type: integer
+          style: form
+        - description: 'sorted fields choices is ["createdAt", "grandTotal"]'
+          explode: true
+          in: query
+          name: sortBy
+          required: true
+          schema:
+            example: createdAt
+            type: string
+          style: form
+        - description: Order fields can be 'DESC' or 'ASC'
+          explode: true
+          in: query
+          name: orderBy
+          required: true
+          schema:
+            example: DESC
+            type: string
+          style: form
+        - description: 'quote ID field, default null'
+          explode: true
+          in: query
+          name: referenceNumber
+          schema:
+            example: 1
+            format: int32
+            type: integer
+          style: form
+        - description: 'Company name field, default null'
+          explode: true
+          in: query
+          name: company
+          schema:
+            example: ABC
+            type: string
+          style: form
+        - description: 'sales repʼs name, default null'
+          explode: true
+          in: query
+          name: salesRep
+          schema:
+            example: Allen
+            type: string
+          style: form
+        - description: 'quote status choices:["0": "new", "1": "sent", "2": "ordered", "3": "expired" ,"4": "opened"] sent is a specific status of sales rep, opened is a specific status of company user'
+          explode: true
+          in: query
+          name: status
+          required: true
+          schema:
+            example:
+              - '0'
+              - '1'
+              - '2'
+              - '3'
+            items:
+              type: string
+            type: array
+          style: form
+      summary: Get Quote List
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                description: ''
+                type: object
+                properties:
+                  code:
+                    type: number
+                  message:
+                    type: string
+                    minLength: 1
+                  data:
+                    type: object
+                    properties:
+                      list:
+                        type: array
+                        uniqueItems: true
+                        minItems: 1
+                        items:
+                          required:
+                            - quoteId
+                            - quoteNumber
+                            - referenceNumber
+                            - quoteTitle
+                            - createdBy
+                            - company
+                            - salesRep
+                            - createdAt
+                            - updatedAt
+                            - expiredAt
+                            - subtotal
+                            - status
+                            - bcOrderId
+                            - orderId
+                          properties:
+                            quoteId:
+                              type: number
+                            quoteNumber:
+                              type: string
+                              minLength: 1
+                            referenceNumber:
+                              type: string
+                            quoteTitle:
+                              type: string
+                            createdBy:
+                              type: string
+                              minLength: 1
+                            company:
+                              type: string
+                              minLength: 1
+                            salesRep:
+                              type: string
+                              minLength: 1
+                            createdAt:
+                              type: number
+                            updatedAt:
+                              type: number
+                            expiredAt:
+                              type: number
+                            subtotal:
+                              type: number
+                            status:
+                              type: number
+                            currency:
+                              type: object
+                              properties:
+                                token:
+                                  type: string
+                                  minLength: 1
+                                location:
+                                  type: string
+                                  minLength: 1
+                                currencyCode:
+                                  type: string
+                                  minLength: 1
+                                decimalToken:
+                                  type: string
+                                  minLength: 1
+                                decimalPlaces:
+                                  type: number
+                                thousandsToken:
+                                  type: string
+                                  minLength: 1
+                                currencyExchangeRate:
+                                  type: number
+                              required:
+                                - token
+                                - location
+                                - currencyCode
+                                - decimalToken
+                                - decimalPlaces
+                                - thousandsToken
+                                - currencyExchangeRate
+                            bcOrderId:
+                              type: string
+                            orderId:
+                              type: string
+                      pagination:
+                        type: object
+                        properties:
+                          totalCount:
+                            type: number
+                          offset:
+                            type: number
+                          limit:
+                            type: number
+                        required:
+                          - totalCount
+                          - offset
+                          - limit
+                    required:
+                      - list
+                      - pagination
+                required:
+                  - code
+                  - message
+                  - data
+                x-examples:
+                  example-1:
+                    code: 200
+                    message: SUCCESS
+                    data:
+                      list:
+                        - quoteId: 195
+                          quoteNumber: QN000195
+                          referenceNumber: ''
+                          quoteTitle: ''
+                          createdBy: Jo Sweet
+                          company: company name
+                          salesRep: Jo Sweet
+                          createdAt: 1622618606
+                          updatedAt: 1622618606
+                          expiredAt: 1622717999
+                          subtotal: 45.95
+                          status: 1
+                          currency:
+                            token: ¥
+                            location: left
+                            currencyCode: USD
+                            decimalToken: .
+                            decimalPlaces: 2
+                            thousandsToken: ','
+                            currencyExchangeRate: 1
+                          bcOrderId: ''
+                          orderId: ''
+                      pagination:
+                        totalCount: 1
+                        offset: 0
+                        limit: 10
+      tags:
+        - Quote
+      x-internal: true
+    post:
+      deprecated: false
+      description: Create a quote.
+      operationId: createaquote
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            encoding: {}
+            schema:
+              properties:
+                additionalInfo:
+                  description: TEXT
+                  type: string
+                addressInfo:
+                  description: Address is a json field
+                  type: string
+                basePrice:
+                  description: Origin price of the product
+                  example: 120
+                  format: int32
+                  type: integer
+                color:
+                  type: string
+                companyId:
+                  description: The company ID field of this quote
+                  example: 1
+                  format: int32
+                  type: integer
+                currency_location:
+                  description: Currency location
+                  example: left
+                  type: string
+                currency_token:
+                  description: Currency token
+                  example: $
+                  type: string
+                decimal_places:
+                  description: Number of decimal places reserved
+                  example: 2
+                  format: int32
+                  type: integer
+                decimal_token:
+                  description: Decimal separator
+                  example: .
+                  type: string
+                description:
+                  description: Description of this quote
+                  example: Test desciption
+                  type: string
+                discount:
+                  description: Offer preference
+                  example: 30
+                  format: int32
+                  type: integer
+                expiredAt:
+                  description: 01/01/2020
+                  example: '@date'
+                  type: string
+                grandTotal:
+                  description: Total count
+                  example: 270
+                  format: int32
+                  type: integer
+                imageUrl:
+                  description: Product photo address
+                  example: '@url'
+                  type: string
+                money:
+                  description: 'The currency information returned by BigCommerce. Itʼs directly transferred to be an object, without humping.'
+                  type: string
+                newPrice:
+                  description: Offer
+                  example: 100
+                  format: int32
+                  type: integer
+                options:
+                  type: string
+                productId:
+                  description: ''
+                  example:
+                    - '1'
+                    - '2'
+                  items:
+                    type: string
+                  type: array
+                productList:
+                  type: string
+                productName:
+                  description: Product name
+                  example: Test Product
+                  type: string
+                quantity:
+                  description: Quantity number
+                  example: 2
+                  format: int32
+                  type: integer
+                referenceNumber:
+                  type: string
+                size:
+                  type: string
+                sku:
+                  description: SKU of this product
+                  example:
+                    - sku-001
+                    - sku-002
+                  items:
+                    type: string
+                  type: array
+                status:
+                  description: |-
+                    "0", "1", "2", "3", "4", "5"
+                    0-new
+                    1-sent
+                    2-orderd
+                    3-expired
+                    4-opend
+                    5-draft
+                    6-await approve
+                    7-reject (7 is not allowed)
+                    default is new
+                  example: 0
+                  format: int32
+                  type: integer
+                subtotal:
+                  description: subtotal
+                  example: 300
+                  format: int32
+                  type: integer
+                thousands_token:
+                  description: Thousands separator
+                  example: ','
+                  type: string
+                title:
+                  description: Title of this quote
+                  example: Test title
+                  type: string
+                variantId:
+                  description: Sent null if it is none
+                  example:
+                    - '1'
+                    - '2'
+                  items:
+                    type: string
+                  type: array
+              required:
+                - title
+                - description
+                - expiredAt
+                - subtotal
+                - discount
+                - grandTotal
+                - money
+                - productList
+                - sku
+                - basePrice
+                - newPrice
+                - quantity
+                - productId
+                - variantId
+                - imageUrl
+                - productName
+                - options
+                - size
+                - color
+                - referenceNumber
+                - companyId
+                - currency_location
+                - decimal_token
+                - decimal_places
+                - currency_token
+                - thousands_token
+                - status
+                - additionalInfo
+                - addressInfo
+              type: object
+        required: false
+        description: ''
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                description: ''
+                type: object
+                properties:
+                  code:
+                    type: number
+                  message:
+                    type: string
+                    minLength: 1
+                  data:
+                    type: object
+                    properties:
+                      quoteId:
+                        type: string
+                        minLength: 1
+                    required:
+                      - quoteId
+                required:
+                  - code
+                  - message
+                  - data
+                x-examples:
+                  example-1:
+                    code: 200
+                    message: SUCCESS
+                    data:
+                      quoteId: '1234'
+          description: ''
+          headers: {}
+      summary: Create a Quote
+      tags:
+        - Quote
+      x-internal: true
+  '/quotes/info/store-company/{companyId}':
+    get:
+      deprecated: false
+      description: Get store and company info by companyId.
+      operationId: getstoreandcompanyinfo
+      parameters: []
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                description: ''
+                type: object
+                properties:
+                  code:
+                    type: number
+                  message:
+                    type: string
+                    minLength: 1
+                  data:
+                    type: object
+                    properties:
+                      storeInfo:
+                        type: object
+                        properties:
+                          storeName:
+                            type: string
+                            minLength: 1
+                          storeAddress:
+                            type: string
+                            minLength: 1
+                          storeCountry:
+                            type: string
+                            minLength: 1
+                        required:
+                          - storeName
+                          - storeAddress
+                          - storeCountry
+                      companyInfo:
+                        type: object
+                        properties:
+                          companyId:
+                            type: string
+                            minLength: 1
+                          companyName:
+                            type: string
+                            minLength: 1
+                          companyAddress:
+                            type: string
+                            minLength: 1
+                          companyCountry:
+                            type: string
+                            minLength: 1
+                          companyCountryCode:
+                            type: string
+                            minLength: 1
+                          companyState:
+                            type: string
+                            minLength: 1
+                          companyStateCode:
+                            type: string
+                            minLength: 1
+                          companyCity:
+                            type: string
+                            minLength: 1
+                          companyZipCode:
+                            type: string
+                            minLength: 1
+                          firstName:
+                            type: string
+                            minLength: 1
+                          lastName:
+                            type: string
+                            minLength: 1
+                          phoneNumber:
+                            type: string
+                            minLength: 1
+                        required:
+                          - companyId
+                          - companyName
+                          - companyAddress
+                          - companyCountry
+                          - companyCountryCode
+                          - companyState
+                          - companyStateCode
+                          - companyCity
+                          - companyZipCode
+                          - firstName
+                          - lastName
+                          - phoneNumber
+                      salesRepInfo:
+                        type: object
+                        properties: {}
+                    required:
+                      - storeInfo
+                      - companyInfo
+                      - salesRepInfo
+                required:
+                  - code
+                  - message
+                  - data
+                x-examples:
+                  example-1:
+                    code: 200
+                    message: SUCCESS
+                    data:
+                      storeInfo:
+                        storeName: Sylvia Apptest Store
+                        storeAddress: |-
+                          47 Discovery
+                          Acmeville, AC 12345
+                          United States of America
+                        storeCountry: United States
+                      companyInfo:
+                        companyId: '5716'
+                        companyName: levi-test
+                        companyAddress: line1 line1
+                        companyCountry: Argentina
+                        companyCountryCode: AR
+                        companyState: Mendoza
+                        companyStateCode: M
+                        companyCity: AS
+                        companyZipCode: '10013'
+                        firstName: Ada
+                        lastName: Bob
+                        phoneNumber: '16732680944'
+                      salesRepInfo: {}
+          description: ''
+          headers: {}
+      summary: Get Store and Company Info
+      tags:
+        - Quote
+      x-internal: true
+    parameters:
+      - in: path
+        name: companyId
+        required: true
+        schema:
+          type: string
+  /quotes/products/upload:
+    post:
+      deprecated: false
+      description: Upload quote CSV file.
+      operationId: uploadquoteCSVfile
+      parameters: []
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            encoding: {}
+            schema:
+              properties:
+                companyId:
+                  type: string
+                quoteFile:
+                  type: string
+              required:
+                - companyId
+                - quoteFile
+              type: object
+        required: false
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                description: ''
+                type: object
+                properties:
+                  code:
+                    type: number
+                  message:
+                    type: string
+                    minLength: 1
+                  data:
+                    type: object
+                    properties:
+                      productList:
+                        type: array
+                        uniqueItems: true
+                        minItems: 1
+                        items:
+                          required:
+                            - sku
+                            - basePrice
+                            - newPrice
+                            - discount
+                            - quantity
+                            - productId
+                            - variantId
+                            - imageUrl
+                            - productName
+                            - maxQty
+                            - minQty
+                          properties:
+                            sku:
+                              type: string
+                              minLength: 1
+                            basePrice:
+                              type: number
+                            newPrice:
+                              type: number
+                            discount:
+                              type: number
+                            quantity:
+                              type: number
+                            productId:
+                              type: number
+                            variantId:
+                              type: number
+                            imageUrl:
+                              type: string
+                              minLength: 1
+                            options:
+                              type: object
+                              properties: {}
+                            productName:
+                              type: string
+                              minLength: 1
+                            maxQty:
+                              type: number
+                            minQty:
+                              type: number
+                      report:
+                        type: object
+                        properties:
+                          totalCount:
+                            type: number
+                          createCount:
+                            type: number
+                          errorCount:
+                            type: number
+                          duplicateCount:
+                            type: number
+                          errorMessage:
+                            type: array
+                            items:
+                              properties: {}
+                        required:
+                          - totalCount
+                          - createCount
+                          - errorCount
+                          - duplicateCount
+                          - errorMessage
+                    required:
+                      - productList
+                      - report
+                required:
+                  - code
+                  - message
+                  - data
+                x-examples:
+                  example-1:
+                    code: 200
+                    message: SUCCESS
+                    data:
+                      productList:
+                        - sku: SM13
+                          basePrice: 5
+                          newPrice: 5
+                          discount: 0
+                          quantity: 5
+                          productId: 111
+                          variantId: 74
+                          imageUrl: 'https://cdn11.bigcommerce.com/s-1i6zpxpe3g/products/111/images/371/smithjournal1.1435956911.386.513.jpg?c=2'
+                          options: {}
+                          productName: '[Sample] Smith Journal 13'
+                          maxQty: 0
+                          minQty: 5
+                      report:
+                        totalCount: 4
+                        createCount: 1
+                        errorCount: 3
+                        duplicateCount: 1
+                        errorMessage:
+                          - 'sku 111-111 are repetitive, and prices are different'
+                          - sku ABC does not exist
+          description: ''
+          headers: {}
+      summary: Upload Quote CSV File
+      tags:
+        - Quote
+      x-internal: true
+  '/quotes/{quoteId}':
+    delete:
+      deprecated: false
+      description: Delete a quote by quoteId
+      operationId: deleteaquote
+      parameters: []
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                description: ''
+                type: object
+                properties:
+                  code:
+                    type: number
+                  message:
+                    type: string
+                    minLength: 1
+                  data:
+                    type: object
+                    properties:
+                      quoteId:
+                        type: string
+                        minLength: 1
+                    required:
+                      - quoteId
+                required:
+                  - code
+                  - message
+                  - data
+                x-examples:
+                  example-1:
+                    code: 200
+                    message: SUCCESS
+                    data:
+                      quoteId: '1'
+          description: ''
+          headers: {}
+      summary: Delete a Quote
+      tags:
+        - Quote
+      x-internal: true
+    get:
+      deprecated: false
+      description: Get quote info by quoteId
+      operationId: getaquote
+      parameters: []
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                description: ''
+                type: object
+                properties:
+                  code:
+                    type: number
+                  data:
+                    type: object
+                    properties:
+                      storeInfo:
+                        type: object
+                        properties:
+                          storeName:
+                            type: string
+                            minLength: 1
+                          storeAddress:
+                            type: string
+                            minLength: 1
+                          storeCountry:
+                            type: string
+                            minLength: 1
+                        required:
+                          - storeName
+                          - storeAddress
+                          - storeCountry
+                      companyInfo:
+                        type: object
+                        properties:
+                          companyName:
+                            type: string
+                            minLength: 1
+                          companyAddress:
+                            type: string
+                            minLength: 1
+                          companyCountry:
+                            type: string
+                            minLength: 1
+                          companyCountryCode:
+                            type: string
+                            minLength: 1
+                          companyState:
+                            type: string
+                            minLength: 1
+                          companyStateCode:
+                            type: string
+                            minLength: 1
+                          companyCity:
+                            type: string
+                            minLength: 1
+                          companyZipCode:
+                            type: string
+                            minLength: 1
+                          companyId:
+                            type: string
+                            minLength: 1
+                        required:
+                          - companyName
+                          - companyAddress
+                          - companyCountry
+                          - companyCountryCode
+                          - companyState
+                          - companyStateCode
+                          - companyCity
+                          - companyZipCode
+                          - companyId
+                      quoteInfo:
+                        type: object
+                        properties:
+                          quoteId:
+                            type: string
+                            minLength: 1
+                          referenceNumber:
+                            type: string
+                            minLength: 1
+                          createdAt:
+                            type: string
+                            minLength: 1
+                          expiredAt:
+                            type: string
+                            minLength: 1
+                          subtotal:
+                            type: number
+                          discount:
+                            type: number
+                          grandTotal:
+                            type: number
+                          productList:
+                            type: array
+                            uniqueItems: true
+                            minItems: 1
+                            items:
+                              required:
+                                - sku
+                                - basePrice
+                                - newPrice
+                                - quantity
+                                - productId
+                                - variantId
+                                - imageUrl
+                                - productName
+                                - discount
+                                - croImageUrl
+                              properties:
+                                sku:
+                                  type: string
+                                  minLength: 1
+                                basePrice:
+                                  type: number
+                                newPrice:
+                                  type: number
+                                quantity:
+                                  type: number
+                                productId:
+                                  type: string
+                                  minLength: 1
+                                variantId:
+                                  type: string
+                                  minLength: 1
+                                imageUrl:
+                                  type: string
+                                  minLength: 1
+                                productName:
+                                  type: string
+                                  minLength: 1
+                                options:
+                                  type: object
+                                  properties:
+                                    size:
+                                      type: string
+                                      minLength: 1
+                                    color:
+                                      type: string
+                                      minLength: 1
+                                  required:
+                                    - size
+                                    - color
+                                discount:
+                                  type: number
+                                croImageUrl:
+                                  type: string
+                                  minLength: 1
+                          status:
+                            type: string
+                            minLength: 1
+                          money:
+                            type: object
+                            properties:
+                              currency_location:
+                                type: string
+                                minLength: 1
+                              decimal_token:
+                                type: string
+                                minLength: 1
+                              decimal_places:
+                                type: string
+                                minLength: 1
+                              currency_token:
+                                type: string
+                                minLength: 1
+                              thousands_token:
+                                type: string
+                                minLength: 1
+                            required:
+                              - currency_location
+                              - decimal_token
+                              - decimal_places
+                              - currency_token
+                              - thousands_token
+                          additionalInfo:
+                            type: string
+                        required:
+                          - quoteId
+                          - referenceNumber
+                          - createdAt
+                          - expiredAt
+                          - subtotal
+                          - discount
+                          - grandTotal
+                          - productList
+                          - status
+                          - money
+                          - additionalInfo
+                      salesRepInfo:
+                        type: object
+                        properties:
+                          firstName:
+                            type: string
+                          lastName:
+                            type: string
+                          phoneNumber:
+                            type: string
+                          email:
+                            type: string
+                        required:
+                          - firstName
+                          - lastName
+                          - phoneNumber
+                          - email
+                      addressInfo:
+                        type: object
+                        properties: {}
+                    required:
+                      - storeInfo
+                      - companyInfo
+                      - quoteInfo
+                      - salesRepInfo
+                      - addressInfo
+                  message:
+                    type: string
+                    minLength: 1
+                required:
+                  - code
+                  - data
+                  - message
+                x-examples:
+                  example-1:
+                    code: 200
+                    data:
+                      storeInfo:
+                        storeName: Test Store
+                        storeAddress: 123 Widget Street
+                        storeCountry: United States
+                      companyInfo:
+                        companyName: CompanyA
+                        companyAddress: 123 Widget Street
+                        companyCountry: United States
+                        companyCountryCode: US
+                        companyState: Alabama
+                        companyStateCode: AL
+                        companyCity: city
+                        companyZipCode: '1000000'
+                        companyId: '13'
+                      quoteInfo:
+                        quoteId: '1'
+                        referenceNumber: test-001
+                        createdAt: '451845645737'
+                        expiredAt: '247815830860'
+                        subtotal: 300
+                        discount: 78
+                        grandTotal: 270
+                        productList:
+                          - sku: sku-001
+                            basePrice: 120
+                            newPrice: 100
+                            quantity: 2
+                            productId: '1'
+                            variantId: '1'
+                            imageUrl: 'prospero://mmiweal.net/whtwkx'
+                            productName: Test Product
+                            options:
+                              size: big
+                              color: red
+                            discount: 20
+                            croImageUrl: 'news://tuxogud.ag/cys'
+                          - sku: sku-002
+                            basePrice: 120
+                            newPrice: 100
+                            quantity: 2
+                            productId: '2'
+                            variantId: '2'
+                            imageUrl: 'prospero://stbgcwj.ng/copi'
+                            productName: Test Product
+                            options:
+                              size: big
+                              color: red
+                            discount: 20
+                            croImageUrl: 'tn3270://eonaisdqj.kp/fsbn'
+                        status: '0'
+                        money:
+                          currency_location: left
+                          decimal_token: .
+                          decimal_places: '2'
+                          currency_token: $
+                          thousands_token: ','
+                        additionalInfo: ''
+                      salesRepInfo:
+                        firstName: ''
+                        lastName: ''
+                        phoneNumber: ''
+                        email: ''
+                      addressInfo: {}
+                    message: SUCCESS
+          description: ''
+          headers: {}
+      summary: Get a Quote
+      tags:
+        - Quote
+      x-internal: true
+    parameters:
+      - in: path
+        name: quoteId
+        required: true
+        schema:
+          type: string
+    put:
+      description: Update quote (to optimize)
+      operationId: Update quote
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                description: ''
+                type: object
+                properties:
+                  code:
+                    type: number
+                  message:
+                    type: string
+                    minLength: 1
+                  data:
+                    type: object
+                    properties:
+                      quoteId:
+                        type: string
+                        minLength: 1
+                    required:
+                      - quoteId
+                required:
+                  - code
+                  - message
+                  - data
+                x-examples:
+                  example-1:
+                    code: 200
+                    message: SUCCESS
+                    data:
+                      quoteId: '820000198412112930'
+      summary: Update Quote Info
+      tags:
+        - Quote
+      x-internal: true
+  '/quotes/{quoteId}/checkout':
+    delete:
+      deprecated: false
+      description: Delete a quote by quoteId
+      operationId: deletecheckoutinfo
+      parameters: []
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                description: ''
+                type: object
+                properties:
+                  code:
+                    type: string
+                    minLength: 1
+                  message:
+                    type: string
+                    minLength: 1
+                  data:
+                    type: object
+                    properties:
+                      quoteId:
+                        type: string
+                        minLength: 1
+                    required:
+                      - quoteId
+                required:
+                  - code
+                  - message
+                  - data
+                x-examples:
+                  example-1:
+                    code: '200'
+                    message: SUCCESS
+                    data:
+                      quoteId: '810000201503265361'
+          description: ''
+          headers: {}
+      summary: Delete Checkout Info
+      tags:
+        - Quote
+      x-internal: true
+    parameters:
+      - in: path
+        name: quoteId
+        required: true
+        schema:
+          type: string
+    post:
+      deprecated: false
+      description: Checkout a quote by quoteId
+      operationId: quotecheckout
+      parameters: []
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                description: ''
+                type: object
+                properties:
+                  code:
+                    type: number
+                  message:
+                    type: string
+                    minLength: 1
+                  data:
+                    type: object
+                    properties:
+                      quoteId:
+                        type: string
+                        minLength: 1
+                      checkoutUrl:
+                        type: string
+                        minLength: 1
+                      cartId:
+                        type: string
+                        minLength: 1
+                      cartUrl:
+                        type: string
+                        minLength: 1
+                    required:
+                      - quoteId
+                      - checkoutUrl
+                      - cartId
+                      - cartUrl
+                required:
+                  - code
+                  - message
+                  - data
+                x-examples:
+                  example-1:
+                    code: 200
+                    message: SUCCESS
+                    data:
+                      quoteId: '1'
+                      checkoutUrl: 'mid://qbxdb.za/jwgwbskj'
+                      cartId: 9A806cEF-B79c-cFAD-FC2c-1fC8C36838CC
+                      cartUrl: 'mid://qvtsd.cd/pnbf'
+          description: ''
+          headers: {}
+      summary: Quote Checkout
+      tags:
+        - Quote
+      x-internal: true
+  '/quotes/{quoteId}/ordered':
+    parameters:
+      - in: path
+        name: quoteId
+        required: true
+        schema:
+          type: string
+    put:
+      deprecated: false
+      description: Update a quote status by quoteId
+      operationId: updateaquotestatus
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            encoding: {}
+            schema:
+              properties:
+                orderId:
+                  description: Order ID
+                  example: '@id'
+                  type: string
+              required:
+                - orderId
+              type: object
+        required: false
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                description: ''
+                type: object
+                properties:
+                  code:
+                    type: number
+                  message:
+                    type: string
+                    minLength: 1
+                  data:
+                    type: object
+                    properties:
+                      quoteId:
+                        type: string
+                        minLength: 1
+                    required:
+                      - quoteId
+                required:
+                  - code
+                  - message
+                  - data
+                x-examples:
+                  example-1:
+                    code: 200
+                    message: Success
+                    data:
+                      quoteId: '1'
+          description: ''
+          headers: {}
+      summary: Update a Quote Status
+      tags:
+        - Quote
+      x-internal: true
+  '/quotes/{quoteId}/pdf-export':
+    parameters:
+      - in: path
+        name: quoteId
+        required: true
+        schema:
+          type: string
+    post:
+      deprecated: false
+      description: Export quote pdf by quoteId
+      operationId: quotesexportpdffile
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            encoding: {}
+            schema:
+              properties:
+                currency:
+                  type: string
+              required:
+                - currency
+              type: object
+        required: false
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                description: ''
+                type: object
+                properties:
+                  code:
+                    type: number
+                  message:
+                    type: string
+                    minLength: 1
+                  data:
+                    type: object
+                    properties:
+                      url:
+                        type: string
+                        minLength: 1
+                    required:
+                      - url
+                required:
+                  - code
+                  - message
+                  - data
+                x-examples:
+                  example-1:
+                    code: 200
+                    message: SUCCESS
+                    data:
+                      url: 'mid://lrqq.gl/xkbqiier'
+          description: ''
+          headers: {}
+      summary: Quotes Export PDF File
+      tags:
+        - Quote
+      x-internal: true
+components:
+  schemas: {}
+  securitySchemes:
+    authToken:
+      name: authToken
+      type: apiKey
+      in: header
+security:
+  - authToken: []
+tags:
+  - name: Quote
+x-internal: true

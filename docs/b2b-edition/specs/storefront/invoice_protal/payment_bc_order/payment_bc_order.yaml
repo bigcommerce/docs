@@ -1,0 +1,321 @@
+openapi: 3.0.1
+info:
+  title: PaymentBCOrder
+  description: BigCommerce B2B Edition PaymentMethod
+  contact: {}
+  version: v3
+servers:
+  - url: 'https://api-b2b.bigcommerce.com/api/v2/ip/storefront'
+security:
+  - authToken: []
+tags:
+  - name: PaymentBCOrder
+    description: PaymentBCOrder
+components:
+  securitySchemes:
+    authToken:
+      name: authToken
+      type: apiKey
+      in: header
+paths:
+  /payments/bigcommerce/carts:
+    post:
+      summary: Create BigCommerce Cart
+      tags:
+        - PaymentBCOrder
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                description: ''
+                type: object
+                properties:
+                  code:
+                    type: number
+                  data:
+                    type: object
+                    properties:
+                      checkoutUrl:
+                        type: string
+                        minLength: 1
+                      cartId:
+                        type: string
+                        minLength: 1
+                    required:
+                      - checkoutUrl
+                      - cartId
+                  meta:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        minLength: 1
+                    required:
+                      - message
+                required:
+                  - code
+                  - data
+                  - meta
+                x-examples:
+                  example-1:
+                    code: 200
+                    data:
+                      checkoutUrl: 'https://devteambundleb2bnet.mybigcommerce.com/cart.php?action=loadInCheckout&id=e1d055aa-b8c2-4c50-b0db-71f02e66f449&token=e77a3e00972f5edbcacf352d5d29c814bc98404fd7361cca687498ef72015e07&from=IP'
+                      cartId: e1d055aa-b8c2-4c50-b0db-71f02e66f449
+                    meta:
+                      message: SUCCESS
+              examples:
+                '200':
+                  value:
+                    code: 200
+                    data:
+                      checkoutUrl: 'https://devteambundleb2bnet.mybigcommerce.com/cart.php?action=loadInCheckout&id=e1d055aa-b8c2-4c50-b0db-71f02e66f449&token=e77a3e00972f5edbcacf352d5d29c814bc98404fd7361cca687498ef72015e07&from=IP'
+                      cartId: e1d055aa-b8c2-4c50-b0db-71f02e66f449
+                    meta:
+                      message: SUCCESS
+      operationId: create-bigcommerce-carts
+      description: Create bigcommerce cart
+      requestBody:
+        content:
+          application/json:
+            schema:
+              description: ''
+              type: object
+              properties:
+                details:
+                  type: object
+                  properties:
+                    memo:
+                      type: string
+                  required:
+                    - memo
+                currency:
+                  type: string
+                  minLength: 1
+                lineItems:
+                  type: array
+                  uniqueItems: true
+                  minItems: 1
+                  items:
+                    required:
+                      - invoiceId
+                      - amount
+                    properties:
+                      invoiceId:
+                        type: number
+                      amount:
+                        type: string
+                        minLength: 1
+                currentCartId: {}
+              required:
+                - details
+                - currency
+                - lineItems
+              x-examples:
+                example-1:
+                  details:
+                    memo: ''
+                  currency: USD
+                  lineItems:
+                    - invoiceId: 26
+                      amount: '10'
+                  currentCartId: null
+      x-internal: true
+  '/payments/bigcommerce/carts/{payment_id}':
+    parameters:
+      - schema:
+          type: string
+        name: payment_id
+        in: path
+        required: true
+    get:
+      summary: Get Payment BigCommerce Cart
+      tags:
+        - PaymentBCOrder
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                description: ''
+                type: object
+                properties:
+                  code:
+                    type: number
+                  data:
+                    type: object
+                    properties:
+                      cartId:
+                        type: string
+                        minLength: 1
+                      cartUrl:
+                        type: string
+                    required:
+                      - cartId
+                      - cartUrl
+                  meta:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        minLength: 1
+                    required:
+                      - message
+                required:
+                  - code
+                  - data
+                  - meta
+                x-examples:
+                  example-1:
+                    code: 200
+                    data:
+                      cartId: e1d055aa-b8c2-4c50-b0db-71f02e66f449
+                      cartUrl: ''
+                    meta:
+                      message: SUCCESS
+              examples:
+                '200':
+                  value:
+                    code: 200
+                    data:
+                      cartId: e1d055aa-b8c2-4c50-b0db-71f02e66f449
+                      cartUrl: url
+                    meta:
+                      message: SUCCESS
+      operationId: get-payments-bigcommerce-carts-payment_id
+      description: Get payment big commerce cart
+      x-internal: true
+  /payments/bigcommerce/allowed-methods:
+    get:
+      summary: Get BigCommerce Payment Allowed Methods
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                description: ''
+                type: object
+                x-examples:
+                  example-1:
+                    code: 200
+                    data:
+                      allowedMethods:
+                        - bigpaypay
+                        - cheque
+                    meta:
+                      message: SUCCESS
+                properties:
+                  code:
+                    type: number
+                  data:
+                    type: object
+                    required:
+                      - allowedMethods
+                    properties:
+                      allowedMethods:
+                        type: array
+                        items:
+                          type: string
+                  meta:
+                    type: object
+                    required:
+                      - message
+                    properties:
+                      message:
+                        type: string
+                        minLength: 1
+                required:
+                  - code
+                  - data
+                  - meta
+              examples:
+                '200':
+                  value:
+                    code: 200
+                    data:
+                      allowedMethods:
+                        - bigpaypay
+                    meta:
+                      message: SUCCESS
+      operationId: get-payments-bigcommerce-allowed-methods
+      description: Get bigcommerce payment allowed methods
+      tags:
+        - PaymentBCOrder
+      x-internal: true
+  /payments/bigcommerce/orders:
+    post:
+      summary: Finish BigCommerce Payment
+      tags:
+        - PaymentBCOrder
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                description: ''
+                type: object
+                properties:
+                  code:
+                    type: number
+                  data:
+                    type: object
+                    properties:
+                      paymentId:
+                        type: number
+                      receiptId:
+                        type: number
+                    required:
+                      - paymentId
+                      - receiptId
+                  meta:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        minLength: 1
+                    required:
+                      - message
+                required:
+                  - code
+                  - data
+                  - meta
+                x-examples:
+                  example-1:
+                    code: 200
+                    data:
+                      paymentId: 15
+                      receiptId: 4
+                    meta:
+                      message: SUCCESS
+              examples:
+                '200':
+                  value:
+                    code: 200
+                    data:
+                      paymentId: 15
+                      receiptId: 4
+                    meta:
+                      message: SUCCESS
+      operationId: finish-payments-bigcommerce-orders
+      requestBody:
+        content:
+          application/json:
+            schema:
+              description: ''
+              type: object
+              properties:
+                orderId:
+                  type: number
+              required:
+                - orderId
+              x-examples:
+                example-1:
+                  orderId: 142
+      description: Finish bigcommerce payment
+      x-internal: true
+x-internal: true

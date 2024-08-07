@@ -1,6 +1,6 @@
 <p align="center">
   <img alt="bcdevs logo" src="./assets/images/bcdevs-logo.png" width="100px" />
-  <h1 align="center">BigCommerce Developer Documentation</h1>
+  <h1 align="center">BigCommerce developer documentation</h1>
 </p>
 
 You've found the BigCommerce documentation GitHub repository, which contains the public content for the [BigCommerce Developer Center](https://developer.bigcommerce.com/docs).
@@ -12,9 +12,9 @@ The BigCommerce DX team maintains these open source docs; we welcome your [issue
 ---
 
 ## Contributing
-Thank you for your interest in contributing to our documentation! Below are a few quick ways to get started: 
+Thanks for your interest in contributing to our documentation! Below are a few quick ways to get started: 
 
-### 👉 To make a change: 
+### 👉 To make a change 
 Here are some quick links to our [Contribution](/CONTRIBUTING.md) guide: 
 
 - [Making a Quick Edit](/CONTRIBUTING.md#making-a-quick-edit)
@@ -23,15 +23,15 @@ Here are some quick links to our [Contribution](/CONTRIBUTING.md) guide:
 - [Style Guides](/CONTRIBUTING.md#style-guides)
 - [Contributing to Other Projects](/CONTRIBUTING.md#contributing-to-other-projects)
 
-### 👉 To discuss something: 
-- Please [start a Discussion here](https://github.com/bigcommerce/docs/discussions). Our DevDocs team monitors GitHub Discussions regularly.
+### 👉 To discuss something 
+- Start a [Discussion](https://github.com/bigcommerce/docs/discussions). Our DevDocs team monitors GitHub Discussions regularly.
 
 ### 👉 To report a bug or an issue you've encountered
-- Please [open a new Issue here](https://github.com/bigcommerce/docs/issues). Our DevDocs team monitors GitHub Issues regularly.
+- Open a new [Issue](https://github.com/bigcommerce/docs/issues). Our DevDocs team monitors GitHub Issues regularly.
 
 <br/>
 
-*For more information, please see our [Contribution Guidelines](./CONTRIBUTING.md) and [Code of conduct](./CODE_OF_CONDUCT.md).*
+*For more information, see our [Contribution Guidelines](./CONTRIBUTING.md) and [Code of conduct](./CODE_OF_CONDUCT.md).*
 
 ---
 
@@ -39,7 +39,7 @@ Here are some quick links to our [Contribution](/CONTRIBUTING.md) guide:
 
 If you maintain API clients, this repository is your source for the most up-to-date public API specifications.
 
-Please keep your fork up to date to ensure you're working with the newest source files.
+Always update your fork to ensure you're working with the newest source files.
 
 <!-- Significant dates include the following:
 

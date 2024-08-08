@@ -22,10 +22,10 @@ Steps to reproduce the behavior:
 Please link to a repo that can be used to reproduce this issue, if possible. It'll help fix the bug faster.
 
 **Expected behavior**
-A clear and concise description of what you expected to happen.
+A clear and concise description of what you expected to see.
 
 **Screenshots**
-If applicable, add screenshots to help explain your problem.
+If applicable, add screenshots to help explain the issue you've identified.
 
 **Additional context**
 Add any other context about the problem here.

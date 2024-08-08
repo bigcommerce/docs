@@ -35,6 +35,26 @@ Here are some quick links to our [Contribution](/CONTRIBUTING.md) guide:
 
 ---
 
+=======
+
+- [Making a Quick Edit](/CONTRIBUTING.md#making-a-quick-edit)
+- [Editing Locally](/CONTRIBUTING.md#editing-locally)
+- [Commit Messages](/CONTRIBUTING.md/cod#commit-messages)
+- [Style Guides](/CONTRIBUTING.md#style-guides)
+- [Contributing to Other Projects](/CONTRIBUTING.md#contributing-to-other-projects)
+
+### 👉 To discuss something 
+- Start a [Discussion](https://github.com/bigcommerce/docs/discussions). Our DevDocs team monitors GitHub Discussions regularly.
+
+### 👉 To report a bug or an issue you've encountered
+- Open a new [Issue](https://github.com/bigcommerce/docs/issues). Our DevDocs team monitors GitHub Issues regularly.
+
+<br/>
+
+*For more information, see our [Contribution Guidelines](./CONTRIBUTING.md) and [Code of conduct](./CODE_OF_CONDUCT.md).*
+
+---
+
 ## API specifications
 
 If you maintain API clients, this repository is your source for the most up-to-date public API specifications.
@@ -92,4 +112,15 @@ Always update your fork to ensure you're working with the newest source files.
 ├── package.json                       
 ├── pull_request_template.md           # template for most pull requests
 └── README.md
-``` -->
+
+```
+
+## Archived docs 
+View our archived documentation [here](/archive/). 
+
+---
+## Our developer channels: 
+* [Join our Developer Slack space](https://developer.bigcommerce.com/slack)
+* [Read or contribute to our Resource Hub](https://developer.bigcommerce.com/resource-hub)
+* [Follow us on X (Twitter) @BigCommerceDevs](https://twitter.com/BigCommerceDevs)
+* [Follow the BigCommerce Developers Linkedin](https://www.linkedin.com/showcase/bigcommercedevs/)

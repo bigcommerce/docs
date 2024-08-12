@@ -21,4 +21,3 @@ Example: `npx github:bigcommerce/dev-docs-style-guide-linter ./start/authenticat
 4. Repeat Step 2 to re-run the script.
 
 
-

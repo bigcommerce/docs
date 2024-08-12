@@ -8,7 +8,7 @@ Run the script using the CLI to get your PR submission nearly perfect in no time
 >
 > `nvm use 18`
 
-1. Open terminal and navigate to the repo containing the file's folder.
+1. Open terminal and navigate to the file's folder.
 
 2. Run `npx github:bigcommerce/dev-docs-style-guide-linter ./{{yourfilename}}.mdx.`
 

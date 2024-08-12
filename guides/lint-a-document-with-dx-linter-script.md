@@ -10,7 +10,7 @@ Run the script using the CLI to get your PR submission nearly perfect in no time
 
 1. Open terminal and navigate to the repo containing the file's folder.
 
-2. Run `npx github:bigcommerce/dev-docs-style-guide-linter ./{{yourfilename}}.mdx. `
+2. Run `npx github:bigcommerce/dev-docs-style-guide-linter ./{{yourfilename}}.mdx.`
 
 Example: `npx github:bigcommerce/dev-docs-style-guide-linter ./start/authentication/index.mdx`
 

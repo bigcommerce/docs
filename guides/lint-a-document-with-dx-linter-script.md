@@ -18,7 +18,7 @@ Example: `npx github:bigcommerce/dev-docs-style-guide-linter ./start/authenticat
 
 3. Review the flagged items and make necessary updates.
 
-4. Repeat Step 2 to re-run the linter.
+4. Repeat Step 2 to re-run the script.
 
 
 

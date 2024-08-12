@@ -1,5 +1,3 @@
-import { Callout } from 'nextra-theme-docs'
-
 # How to lint a document with the DX linter script
 
 The docs team uses a custom script, provided by the DX team, to lint your doc files before they are published. This linter covers everything our Style Guide does, saving you tons of time. 

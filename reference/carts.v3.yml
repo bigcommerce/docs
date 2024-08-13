@@ -278,7 +278,8 @@ paths:
 
         If a product has modifiers, omit the `variant_id` and instead use the `option_selections` array to describe both the **variant** and the **modifier** selections.
 
-        Please note that this API endpoint is not concurrent safe, meaning multiple simultaneous requests could result in unexpected and inconsistent results.
+        To prevent lost updates due to concurrent requests overriding changes made by others, it is recommended to enable optimistic concurrency control by including the `version` field in the request payload. If the provided version does not match the version on the server, a conflict error will be returned, which the client can handle accordingly.
+
       parameters:
         - name: include
           in: query
@@ -325,6 +326,7 @@ paths:
                         name: Jane Does
                         email: janedoe@example.com
                       message: Happy Birthday Jane!
+                  version: 1
               'Example 2: Custom Item':
                 value:
                   custom_items:
@@ -400,7 +402,7 @@ paths:
 
         Deleting all line items from the cart will invalidate the cart. 
 
-        Please note that this API endpoint is not concurrent safe, meaning multiple simultaneous requests could result in unexpected and inconsistent results.
+        To prevent lost updates due to concurrent requests overriding changes made by others, it is recommended to enable optimistic concurrency control by including the `version` field in the request payload. If the provided version does not match the version on the server, a conflict error will be returned, which the client can handle accordingly.
       parameters:
         - name: include
           in: query
@@ -432,6 +434,8 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/CartResponse'
+        '409':
+          $ref: '#/components/responses/CartConflictErrorResponse'
       summary: Update Cart Line Item
       operationId: updateCartLineItem
     delete:
@@ -441,6 +445,8 @@ paths:
         **Notes**
 
         Removing the last `line_item` in the *Cart* deletes the *Cart*.
+
+        To prevent lost updates due to concurrent requests overriding changes made by others, it is recommended to enable optimistic concurrency control by including the `version` field in the request payload. If the provided version does not match the version on the server, a conflict error will be returned, which the client can handle accordingly.
       parameters:
         - name: include
           in: query
@@ -460,6 +466,11 @@ paths:
                 - line_items.physical_items.options
                 - line_items.digital_items.options
                 - promotions.banners
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CartLineItemDelete'
       tags:
         - Items
       responses:
@@ -537,6 +548,8 @@ paths:
                       meta: {}
         '204':
           description: 'If the action’s result is an empty cart, the cart is automatically deleted.'
+        '409':
+          $ref: '#/components/responses/CartConflictErrorResponse'
       summary: Delete Cart Line Item
       operationId: deleteCartLineItem
   '/carts/{cartId}':
@@ -580,6 +593,8 @@ paths:
         **Notes**
 
         Changing the *Cart* `customer_id` will remove any promotions or shipping calculations on the *Cart*. These are tied to the customer depending on cart conditions and any customer groups. 
+
+        To prevent lost updates due to concurrent requests overriding changes made by others, it is recommended to enable optimistic concurrency control by including the `version` field in the request payload. If the provided version does not match the version on the server, a conflict error will be returned, which the client can handle accordingly.
       parameters:
         - name: include
           in: query
@@ -607,12 +622,15 @@ paths:
               $ref: '#/components/schemas/CartUpdatePutRequestData'
             example:
               customer_id: 5
+              version: 1
         required: true
       tags:
         - Carts (Single)
       responses:
         '201':
           $ref: '#/components/responses/CartResponse'
+        '409':
+          $ref: '#/components/responses/CartConflictErrorResponse'
       summary: Update Customer ID
       operationId: updateCart
     delete:
@@ -1504,6 +1522,9 @@ components:
       properties:
         customer_id:
           type: integer
+        version:
+          type: integer
+          description: The expected version of the cart.
       title: Cart Update Put Request Data
       x-internal: false
     LineItemRequestData:
@@ -1706,6 +1727,10 @@ components:
                 text:
                   description: Text of the banner.
                   type: string
+        version:
+          type: integer
+          description: The current version of the cart.
+          example: 1
     Currency:
       type: object
       description: The currency. This is the same for both the cart and its subsequent checkout.
@@ -2865,6 +2890,15 @@ components:
               - recipient
         custom_items:
           $ref: '#/components/schemas/cart_PostCustomItem'
+        version:
+          type: integer
+          description: The expected version of the cart.
+    CartLineItemDelete:
+      type: object
+      properties:
+        version:
+          type: integer
+          description: The expected version of the cart.
     Redirect_urls_Post:
       type: object
       title: Redirect_urls_Post
@@ -2944,6 +2978,9 @@ components:
               - recipient
         custom_items:
           $ref: '#/components/schemas/cart_PostCustomItem'
+        version:
+          type: integer
+          description: The expected version of the cart.
     cart_PostCustomItem:
       type: array
       title: Custom item
@@ -3679,6 +3716,16 @@ components:
           schema:
             $ref: '#/components/schemas/Cart_Full'
           examples: {}
+    CartConflictErrorResponse:
+      description: 'Cart conflict'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            status: 409
+            title: The request cannot be processed due to a possible conflict. Please review the changes and try again.
+            type: https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes
     CartRedirectResponse:
       description: ''
       content:

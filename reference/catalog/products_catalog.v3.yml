@@ -244,10 +244,6 @@ paths:
                     image_url: string
                     id: 0
                     product_id: 0
-                    url_zoom: string
-                    url_standard: string
-                    url_thumbnail: string
-                    url_tiny: string
                     date_modified: '2019-08-24T14:15:22Z'
       responses:
         '200':
@@ -262,8 +258,8 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/product_Full'
-                  meta:
-                    $ref: '#/components/schemas/metaCollection_Full'
+                  meta: {}
+                    
               example:
                 id: 0
                 name: Smith Journal 13
@@ -1281,7 +1277,7 @@ paths:
 
         **Usage Notes**
         - `image_url` - `255` character limit
-        - For file uploads, use the `multipart/form-data` media type.
+        - For file uploads, use the `multipart/form-data` media type. See [Adding product images](/docs/store-operations/catalog#adding-product-images) for more information.
         - You can create only one image at a time. A product can have up to 1000 images.
         - Supported image file types are BMP, GIF, JPEG, PNG, WBMP, XBM, and WEBP.
         - Each image file or image uploaded by URL can be up to 8 MB.
@@ -3444,6 +3440,53 @@ paths:
     parameters:
       - $ref: '#/components/parameters/ProductIdParam'
       - $ref: '#/components/parameters/CustomFieldIdParam'
+  '/catalog/products/{product_id}/bulk-pricing-rules':
+    parameters:
+      - $ref: '#/components/parameters/ProductIdParam'
+      - $ref: '#/components/parameters/Accept'
+      - $ref: '#/components/parameters/ContentType'
+    post:
+      tags:
+        - Bulk pricing rules
+      summary: Create a Bulk Pricing Rule
+      description: Creates a *Bulk Pricing Rule*.
+      operationId: createBulkPricingRule
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/bulkPricingRule_Full'
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                title: 'Create Bulk Pricing Rule Response'
+                type: object
+                properties:
+                  data:
+                    allOf:
+                      - type: object
+                        properties:
+                          id:
+                            type: integer
+                            description: Unique ID of the *Bulk Pricing Rule*. Read-Only.
+                            readOnly: true
+                        required:
+                          - id
+                      - $ref: '#/components/schemas/bulkPricingRule_Full'
+                  meta:
+                    $ref: '#/components/schemas/metaEmpty_Full'
+              example:
+                data:
+                  id: 83
+                  quantity_min: 1
+                  quantity_max: 3
+                  type: price
+                  amount: 1
+                meta: {}
   '/catalog/products/{product_id}/bulk-pricing-rules/{bulk_pricing_rule_id}':
     get:
       tags:
@@ -3545,54 +3588,16 @@ paths:
                 type: object
                 properties:
                   data:
-                    title: Bulk Pricing Rule
-                    required:
-                      - amount
-                      - quantity_max
-                      - quantity_min
-                      - type
-                    type: object
-                    properties:
-                      id:
-                        type: integer
-                        description: Unique ID of the *Bulk Pricing Rule*. Read-Only.
-                        readOnly: true
-                      quantity_min:
-                        minimum: 0
-                        type: integer
-                        description: |
-                          The minimum inclusive quantity of a product to satisfy this rule. Must be greater than or equal to zero.
-                          Required in /POST.
-                        example: 10
-                        x-required:
-                          - post
-                      quantity_max:
-                        minimum: 0
-                        type: integer
-                        description: |-
-                          The maximum inclusive quantity of a product to satisfy this rule. Must be greater than the `quantity_min` value – unless this field has a value of 0 (zero), in which case there will be no maximum bound for this rule.
-                          Required in /POST.
-                        example: 50
-                        x-required:
-                          - post
-                      type:
-                        type: string
-                        description: |-
-                          The type of adjustment that is made. Values: `price` - the adjustment amount per product; `percent` - the adjustment as a percentage of the original price; `fixed` - the adjusted absolute price of the product.
-                          Required in /POST.
-                        example: price
-                        enum:
-                          - price
-                          - percent
-                          - fixed
-                        x-required:
-                          - post
-                      amount:
-                        type: integer
-                        description: |-
-                          The discount can be a fixed dollar amount or a percentage. For a fixed dollar amount enter it as an integer and the response will return as an integer. For percentage enter the amount as the percentage divided by 100 using string format. For example 10% percent would be “.10”. The response will return as an integer.
-                          Required in /POST.
-                    description: Common BulkPricingRule properties
+                    allOf:
+                      - type: object
+                        properties:
+                          id:
+                            type: integer
+                            description: Unique ID of the *Bulk Pricing Rule*. Read-Only.
+                            readOnly: true
+                        required:
+                          - id
+                      - $ref: '#/components/schemas/bulkPricingRule_Full'
                   meta:
                     $ref: '#/components/schemas/metaEmpty_Full'
               example:
@@ -6108,8 +6113,6 @@ components:
     bulkPricingRule_Full:
       title: bulkPricingRule_Full
       type: object
-      description: Common Bulk Pricing Rule properties
-      x-internal: false
       properties:
         quantity_min:
           minimum: 0
@@ -6865,7 +6868,6 @@ components:
         Shared `Product` properties used in:
         * `POST`
         * `PUT`
-        * `GET`
       x-internal: false
       x-examples:
         example:
@@ -7449,8 +7451,6 @@ components:
           description: |
             A unique product name.
           example: Smith Journal 13
-          x-required:
-            - post
         type:
           type: string
           description: |
@@ -7459,8 +7459,6 @@ components:
           enum:
             - physical
             - digital
-          x-required:
-            - post
         sku:
           maxLength: 255
           minLength: 0
@@ -7848,11 +7846,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/productVariant_Full'
-      required:
-        - name
-        - type
-        - weight
-        - price
     metafield_Full:
       title: metafield_Full
       allOf:
@@ -8914,6 +8907,71 @@ components:
         type: array
         items:
           type: string
+          enum:
+          - name
+          - type
+          - sku
+          - description
+          - weight
+          - width
+          - depth
+          - height
+          - price
+          - cost_price
+          - retail_price
+          - sale_price
+          - map_price
+          - tax_class_id
+          - product_tax_code
+          - calculated_price
+          - categories
+          - brand_id
+          - option_set_id
+          - option_set_display
+          - inventory_level
+          - inventory_warning_level
+          - inventory_tracking
+          - reviews_rating_sum
+          - reviews_count
+          - total_sold
+          - fixed_cost_shipping_price
+          - is_free_shipping
+          - is_visible
+          - is_featured
+          - related_products
+          - warranty
+          - bin_picking_number
+          - layout_file
+          - upc
+          - mpn
+          - gtin
+          - date_last_imported
+          - search_keywords
+          - availability
+          - availability_description
+          - condition
+          - is_condition_shown
+          - order_quantity_minimum
+          - order_quantity_maximum
+          - page_title
+          - meta_keywords
+          - meta_description
+          - date_created
+          - date_modified
+          - view_count
+          - preorder_release_date
+          - preorder_message
+          - is_preorder_only
+          - is_price_hidden
+          - price_hidden_label
+          - custom_url
+          - base_variant_id
+          - open_graph_type
+          - open_graph_title
+          - open_graph_description
+          - open_graph_use_meta_description
+          - open_graph_use_product_name
+          - open_graph_use_image
     IncludeFieldsParamMetafields:
       name: include_fields
       in: query
@@ -9041,15 +9099,10 @@ components:
         items:
           type: string
           enum:
-            - variants
-            - images
-            - custom_fields
             - bulk_pricing_rules
-            - primary_image
+            - reviews
             - modifiers
             - options
-            - videos
-            - reviews
             - parent_relations
     IdMinParam:
       name: 'id:min'

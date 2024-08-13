@@ -1,0 +1,495 @@
+openapi: 3.0.1
+info:
+  title: Receipt
+  description: BigCommerce B2B Edition Invoice Receipt
+  contact: {}
+  version: v3
+servers:
+  - url: 'https://api-b2b.bigcommerce.com/api/v2/ip/storefront'
+security:
+  - authToken: []
+tags:
+  - name: Receipt
+    description: Receipt
+components:
+  securitySchemes:
+    authToken:
+      name: authToken
+      type: apiKey
+      in: header
+  parameters:
+    offset:
+      name: offset
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 0
+      description: 'Pagination offset default: 0'
+    limit:
+      name: limit
+      in: query
+      required: false
+      schema:
+        type: integer
+        default: 10
+        minimum: 1
+        maximum: 250
+      description: 'Pagination limit default: 10'
+    orderBy:
+      name: orderBy
+      in: query
+      required: false
+      schema:
+        type: string
+        default: DESC
+        enum:
+          - DESC
+          - ASC
+      description: 'Allow: ''DESC'', ''ASC'''
+    'paymentStatus[]':
+      name: 'paymentStatus[]'
+      in: query
+      required: false
+      schema:
+        type: string
+        enum:
+          - '0'
+          - '1'
+          - '2'
+          - '3'
+          - '4'
+      description: 'Payment processing status. 0 means ‘Incomplete’ status, 1 means ‘Awaiting Processing’ status, 2 means ‘Processing’ status, 3 means ‘Completed’ status, 4 means ‘Refunded'' status'
+    searchBy:
+      name: searchBy
+      in: query
+      required: false
+      schema:
+        type: string
+        enum:
+          - payerName
+          - referenceNumber
+          - customerId
+          - externalId
+      description: The response search by which field
+    sortBy:
+      name: sortBy
+      in: query
+      required: false
+      schema:
+        type: string
+        default: createdAt
+        enum:
+          - createdAt
+          - updatedAt
+      description: The response sorted by which field
+paths:
+  /receipts:
+    get:
+      summary: Get receipts
+      tags: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: number
+                    description: Response code of success request
+                  data:
+                    type: array
+                    items:
+                      $ref: https://raw.githubusercontent.com/bigcommerce/docs/main/docs/b2b-edition/models/invoice_portal/receipt.yaml
+                  meta:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        description: Response message of success request
+                      pagination:
+                        type: object
+                        properties:
+                          offset:
+                            type: integer
+                            description: 'Pagination offset default: 0'
+                          limit:
+                            type: integer
+                            description: 'Pagination limit default: 10'
+                          totalCount:
+                            type: integer
+                            description: Total count of the receipts
+              examples:
+                example-1:
+                  value:
+                    code: 200
+                    data:
+                      - id: 85
+                        createdAt: 1630658187
+                        updatedAt: 1630658187
+                        storeHash: 1i6zpxpe3g
+                        customerId: '5485'
+                        externalId: ''
+                        externalCustomerId: ''
+                        payerName: k Admin
+                        payerCustomerId: '5485'
+                        details:
+                          paymentDetails:
+                            memo: ''
+                        transactionType: Paid
+                        paymentType: Visa ending in 1111
+                        referenceNumber: '375026'
+                        paymentId: 92
+                        total:
+                          code: USD
+                          value: '122.9500'
+                      - id: 84
+                        createdAt: 1630638069
+                        updatedAt: 1630638069
+                        storeHash: 1i6zpxpe3g
+                        customerId: '5707'
+                        externalId: ''
+                        externalCustomerId: ''
+                        payerName: Cash
+                        payerCustomerId: '5707'
+                        details:
+                          paymentDetails:
+                            memo: test
+                        transactionType: Paid
+                        paymentType: Offline
+                        referenceNumber: test
+                        paymentId: 91
+                        total:
+                          code: CNY
+                          value: '0.8900'
+                    meta:
+                      pagination:
+                        totalCount: 2
+                        offset: 0
+                        limit: 10
+                      message: SUCCESS
+      operationId: get-receipts
+      description: 'Get receipts, with pagination data'
+      security:
+        - authToken: []
+      parameters:
+        - $ref: '#/components/parameters/offset'
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/orderBy'
+        - $ref: '#/components/parameters/paymentStatus[]'
+        - $ref: '#/components/parameters/sortBy'
+        - schema:
+            type: string
+          in: query
+          name: q
+          description: 'Keyword queries are performed on fields corresponding to the value of "searchBy" or, if "searchBy" is empty, on all fields supported by "searchBy"'
+        - $ref: '#/components/parameters/searchBy'
+      x-internal: true
+  '/receipts/{receiptId}':
+    parameters:
+      - schema:
+          type: string
+        name: receiptId
+        in: path
+        required: true
+        description: The unique id of receipt
+    get:
+      summary: Get a receipt
+      tags: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: number
+                    description: Response code of success request
+                  data:
+                    $ref: https://raw.githubusercontent.com/bigcommerce/docs/main/docs/b2b-edition/models/invoice_portal/receipt.yaml
+                  meta:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        description: Response message of request
+              examples:
+                example-1:
+                  value:
+                    code: 200
+                    data:
+                      id: 83
+                      createdAt: 1630570416
+                      updatedAt: 1630570416
+                      storeHash: 1i6zpxpe3g
+                      customerId: '5707'
+                      externalId: ''
+                      externalCustomerId: ''
+                      payerName: Cash
+                      payerCustomerId: '5707'
+                      details:
+                        paymentDetails:
+                          memo: test
+                      transactionType: Paid
+                      paymentType: Offline
+                      referenceNumber: test
+                      paymentId: 90
+                      total:
+                        code: CNY
+                        value: '1.2000'
+                    meta:
+                      message: SUCCESS
+      operationId: get-receipts-receiptId
+      description: Get a receipt detail
+      security:
+        - authToken: []
+      x-internal: true
+  /receipt-lines:
+    get:
+      summary: Get all receipt lines
+      tags: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: number
+                  data:
+                    type: array
+                    items:
+                      $ref: https://raw.githubusercontent.com/bigcommerce/docs/main/docs/b2b-edition/models/invoice_portal/receipt_line.yaml
+                  meta:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                      pagination:
+                        type: object
+                        properties:
+                          offset:
+                            type: integer
+                          limit:
+                            type: integer
+                          totalCount:
+                            type: integer
+              examples:
+                example-1:
+                  value:
+                    code: 200
+                    data:
+                      - id: 4
+                        createdAt: 1624258432
+                        updatedAt: 1624258432
+                        storeHash: byxn6vsd2k
+                        customerId: '1'
+                        externalId: ''
+                        externalCustomerId: ''
+                        receiptId: 4
+                        invoiceId: 26
+                        amount:
+                          code: USD
+                          value: '10.0000'
+                        paymentStatus: 3
+                        paymentType: visa ending in 1111
+                        invoiceNumber: '00000026'
+                        paymentId: 15
+                        referenceNumber: ''
+                        transactionType: Paid
+                    meta:
+                      pagination:
+                        totalCount: 1
+                        offset: 0
+                        limit: 100
+                      message: SUCCESS
+      operationId: get-receipt-lines
+      description: 'Get all receipt lines, with pagination data'
+      security:
+        - authToken: []
+      parameters:
+        - $ref: '#/components/parameters/offset'
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/orderBy'
+        - $ref: '#/components/parameters/paymentStatus[]'
+        - $ref: '#/components/parameters/sortBy'
+        - schema:
+            type: string
+          in: query
+          name: q
+          description: 'Keyword queries are performed on fields corresponding to the value of "searchBy" or, if "searchBy" is empty, on all fields supported by "searchBy"'
+        - $ref: '#/components/parameters/searchBy'
+        - schema:
+            type: integer
+          in: query
+          name: invoiceId
+          description: The unique id of invoice
+      x-internal: true
+  '/receipts/{receiptId}/lines':
+    parameters:
+      - schema:
+          type: string
+        name: receiptId
+        in: path
+        required: true
+        description: The unique id of receipt
+    get:
+      summary: Get lines of a receipt
+      tags: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: number
+                  data:
+                    type: array
+                    items:
+                      $ref: https://raw.githubusercontent.com/bigcommerce/docs/main/docs/b2b-edition/models/invoice_portal/receipt_line.yaml
+                  meta:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                      pagination:
+                        type: object
+                        properties:
+                          offset:
+                            type: integer
+                          limit:
+                            type: integer
+                          totalCount:
+                            type: integer
+              examples:
+                example-1:
+                  value:
+                    code: 200
+                    data:
+                      - id: 92
+                        createdAt: 1630570416
+                        updatedAt: 1630570416
+                        storeHash: 1i6zpxpe3g
+                        customerId: '5707'
+                        externalId: ''
+                        externalCustomerId: ''
+                        receiptId: 83
+                        invoiceId: 19
+                        amount:
+                          code: CNY
+                          value: '0.7000'
+                        paymentStatus: 3
+                        paymentType: Offline
+                        invoiceNumber: '00000019'
+                        paymentId: 90
+                        referenceNumber: test
+                        transactionType: Paid
+                      - id: 91
+                        createdAt: 1630570416
+                        updatedAt: 1630570416
+                        storeHash: 1i6zpxpe3g
+                        customerId: '5707'
+                        externalId: ''
+                        externalCustomerId: ''
+                        receiptId: 83
+                        invoiceId: 22
+                        amount:
+                          code: CNY
+                          value: '0.5000'
+                        paymentStatus: 3
+                        paymentType: Offline
+                        invoiceNumber: '00000022'
+                        paymentId: 90
+                        referenceNumber: test
+                        transactionType: Paid
+                    meta:
+                      pagination:
+                        totalCount: 2
+                        offset: 0
+                        limit: 10
+                      message: SUCCESS
+      operationId: get-receipts-receiptId-lines
+      description: 'Get lines of a receipt, with pagination data'
+      security:
+        - authToken: []
+      parameters:
+        - $ref: '#/components/parameters/offset'
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/orderBy'
+        - $ref: '#/components/parameters/paymentStatus[]'
+        - $ref: '#/components/parameters/sortBy'
+        - schema:
+            type: string
+          in: query
+          name: q
+          description: 'Keyword queries are performed on fields corresponding to the value of "searchBy" or, if "searchBy" is empty, on all fields supported by "searchBy"'
+        - $ref: '#/components/parameters/searchBy'
+      x-internal: true
+  '/receipt-lines/{receiptLineId}':
+    parameters:
+      - schema:
+          type: string
+        name: receiptLineId
+        in: path
+        required: true
+        description: The unique id of receipt line
+    get:
+      summary: Get a receipt line detail
+      tags: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: number
+                  data:
+                    $ref: https://raw.githubusercontent.com/bigcommerce/docs/main/docs/b2b-edition/models/invoice_portal/receipt_line.yaml
+                  meta:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+              examples:
+                example-1:
+                  value:
+                    code: 200
+                    data:
+                      id: 4
+                      createdAt: 1624258432
+                      updatedAt: 1624258432
+                      storeHash: byxn6vsd2k
+                      customerId: '1'
+                      externalId: ''
+                      externalCustomerId: ''
+                      receiptId: 4
+                      invoiceId: 26
+                      amount:
+                        code: USD
+                        value: '10.0000'
+                      paymentStatus: 3
+                      paymentType: visa ending in 1111
+                      invoiceNumber: '00000026'
+                      paymentId: 15
+                      referenceNumber: ''
+                      transactionType: Paid
+                    meta:
+                      message: SUCCESS
+      operationId: get-receipts-receiptId-lines-receiptLineId
+      security:
+        - authToken: []
+      description: Get a receipt line detail
+      x-internal: true
+x-internal: true

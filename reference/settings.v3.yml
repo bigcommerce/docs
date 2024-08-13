@@ -792,9 +792,10 @@ paths:
     get:
       summary: Get Locale Settings
       operationId: getSettingsLocale
-      description: Returns global locale settings.
+      description: Return locale settings for the global store or a channel. 
       parameters:
         - $ref: '#/components/parameters/Accept'
+        - $ref: '#/components/parameters/ChannelIdParam'
       responses:
         '200':
           description: ''
@@ -821,10 +822,11 @@ paths:
       summary: Update Locale Settings
       operationId: updateSettingsLocale
       description: |-
-        Updates global locale settings.
+        Update locale settings for the global store or a channel.
       parameters:
         - $ref: '#/components/parameters/Accept'
         - $ref: '#/components/parameters/ContentType'
+        - $ref: '#/components/parameters/ChannelIdParam'
       requestBody:
         content:
           application/json:
@@ -835,7 +837,7 @@ paths:
                   shopper_language_selection_method: default_shopper_language
                   store_country: United States
             schema:
-              $ref: '#/components/schemas/Locale'
+              $ref: '#/components/schemas/Locale_Req'
       responses:
         '200':
           description: ''
@@ -2037,9 +2039,39 @@ components:
           description: Describes whether out-of-stock messages are shown on product listing pages.
           default: false
           example: true
+    Locale_Req:
+      description: 'The basic locale settings for a store, used to give shopper information about languages, countries, etc.'
+      type: object
+      properties:
+        default_shopper_language:
+          type: string
+          example: 'en, en-us'
+          default: en
+          nullable: true
+        shopper_language_selection_method:
+          description: |-
+            Determines whether to display the storefront content in the shopperʼs browser language or the shopperʼs selected default language.
+
+            Available values:
+            * `browser` - language updates automatically based on the shopper browser language. Multiple languages are supported.
+            * `default_shopper_language` - content is displayed in a single language based on the set `default_shopper_language`. Only the selected language is supported.
+          type: string
+          example: default_shopper_language
+          default: default_shopper_language
+          enum:
+            - browser
+            - default_shopper_language
+          nullable: true
+        store_country:
+          type: string
+          default: United States
+          nullable: true
+      required:
+        - default_shopper_language
     Locale:
       description: 'The basic locale settings for a store, used to give shopper information about languages, countries, etc.'
       type: object
+      nullable: true
       properties:
         default_shopper_language:
           type: string
@@ -2061,8 +2093,6 @@ components:
         store_country:
           type: string
           default: United States
-      required:
-        - default_shopper_language
       x-internal: false
     LogoSettings:
       type: object

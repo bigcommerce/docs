@@ -220,24 +220,6 @@ paths:
                             description: |
                               The total number of pages in the collection.
                             example: 1
-                          links:
-                            type: object
-                            properties:
-                              previous:
-                                type: string
-                                description: |
-                                  Link to the previous page returned in the response.
-                              current:
-                                type: string
-                                description: |
-                                  Link to the current page returned in the response.
-                                example: '?page=1&limit=50'
-                              next:
-                                type: string
-                                description: |
-                                  Link to the next page returned in the response.
-                            description: |
-                              Pagination links for the previous and next parts of the whole collection.
                         description: 'Data related to the response, including pagination and collection totals.'
                     description: 'Data related to the response, including pagination and collection totals.'
                 description: Get All PriceLists.
@@ -467,38 +449,6 @@ paths:
           description: |
             The ID of the `Price List` requested.
           required: true
-          schema:
-            type: integer
-        - name: id
-          in: query
-          description: Filter items by ID.
-          schema:
-            type: integer
-        - name: name
-          in: query
-          description: Filter items by name.
-          schema:
-            type: string
-        - name: date_created
-          in: query
-          description: Filter items by date_created.
-          schema:
-            type: string
-            format: date-time
-        - name: date_modified
-          in: query
-          description: 'Filter items by date_modified. For example `v3/catalog/products?date_last_imported:min=2022-06-15`'
-          schema:
-            type: string
-            format: date-time
-        - name: page
-          in: query
-          description: Specifies the page number in a limited (paginated) list of products.
-          schema:
-            type: integer
-        - name: limit
-          in: query
-          description: Specifies the number of items per page in a limited (paginated) list of products.
           schema:
             type: integer
       responses:
@@ -771,7 +721,9 @@ paths:
         content: 
           application/json:
             schema:
-              $ref: '#/components/schemas/PriceRecordBatchItem'
+              type: array
+              items:
+                $ref: '#/components/schemas/PriceRecordBatchItem'
         required: true
       responses:
         '200':
@@ -1144,24 +1096,6 @@ paths:
                             description: |
                               The total number of pages in the collection.
                             example: 1
-                          links:
-                            type: object
-                            properties:
-                              previous:
-                                type: string
-                                description: |
-                                  Link to the previous page returned in the response.
-                              current:
-                                type: string
-                                description: |
-                                  Link to the current page returned in the response.
-                                example: '?page=1&limit=50'
-                              next:
-                                type: string
-                                description: |
-                                  Link to the next page returned in the response.
-                            description: |
-                              Pagination links for the previous and next parts of the whole collection.
                         description: 'Data about the response, including pagination and collection totals.'
                     description: 'Data about the response, including pagination and collection totals.'
                 description: |-
@@ -1633,15 +1567,29 @@ paths:
           required: true
           schema:
             type: integer
+        - name: 'currency'
+          in: query
+          description: The 3-letter currency code with which this set of prices is associated.
+          schema:
+            type: string
         - name: 'variant_id:in'
           in: query
-          description: A comma-separated list of IDs for one or more variants for which prices were requested.
+          description: A comma-separated list of IDs for one or more variants for which prices exist.
           style: form
           explode: false
           schema:
             type: array
             items:
               type: integer
+        - name: 'sku:in'
+          in: query
+          description: A comma-separated list of SKUs for one or more variants for which prices exist.
+          style: form
+          explode: false
+          schema:
+            type: array
+            items:
+              type: string
       responses:
         '204':
           description: ''
@@ -1692,6 +1640,19 @@ paths:
           required: true
           schema:
             type: integer
+        - name: include
+          in: query
+          description: |
+            Sub-resources to include on a price record, in a comma-separated list. Valid expansions currently include `bulk_pricing_tiers` and `sku`. Other values will be ignored.
+          style: form
+          explode: false
+          schema:
+            type: array
+            items:
+              type: string
+              enum:
+                - bulk_pricing_tiers
+                - sku
       responses:
         '200':
           description: ''
@@ -1865,24 +1826,6 @@ paths:
                             description: |
                               The total number of pages in the collection.
                             example: 1
-                          links:
-                            type: object
-                            description: |
-                              Pagination links for the previous and next parts of the whole collection.
-                            properties:
-                              previous:
-                                type: string
-                                description: |
-                                  Link to the previous page returned in the response.
-                              current:
-                                type: string
-                                description: |
-                                  Link to the current page returned in the response.
-                                example: '?page=1&limit=50'
-                              next:
-                                type: string
-                                description: |
-                                  Link to the next page returned in the response.
         '429':
           description: |
             Allowed number of requests exceeded.
@@ -2207,11 +2150,6 @@ paths:
                               The price adjustment amount. This value along with the type will decide the price per variant for the pricing tier.
                             format: double
                             example: 3
-                    sku:
-                      type: string
-                      description: |
-                        The SKU code associated with this `Price Record` if requested and it exists.
-                      example: SMB-123
                   description: Common Price Record properties.
         required: true
       responses:
@@ -2265,10 +2203,6 @@ paths:
                                 description: |
                                   The variant with which this price set is associated. Either `variant_id` or `sku` is required.
                                 example: 325
-                              sku:
-                                type: string
-                                description: |
-                                  The variant with which this price set is associated. Either `sku` or `variant_id` is required.
                               currency:
                                 type: string
                                 format: ISO-4217
@@ -2335,11 +2269,6 @@ paths:
                                   description: |
                                     The price adjustment amount. This value along with the type will decide the price per variant for the pricing tier.
                                   example: 3
-                          sku:
-                            type: string
-                            description: |
-                              The SKU code associated with this `Price Record` if requested and it exists.
-                            example: SMB-123
                     title: Price Record
                   meta:
                     $ref: '#/components/schemas/Meta'
@@ -2594,11 +2523,7 @@ paths:
         required: true
       responses:
         '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SuccessBatchResponse'
+          description: No content
         '422':
           description: Error response. Includes the errors for each reference ID.
           content:
@@ -2782,27 +2707,27 @@ components:
         meta:
           $ref: '#/components/schemas/Meta'
     PriceRecordBatchItem:
-      type: object
-      properties:
-        price_list_id:
-          type: integer
-          description: The price list ID the price record is associated with.
-          example: 1
-        variant_id:
-          type: integer
-          description: The price list with which the price record is associated. Either `variant_id` or `sku` is required.
-          example: 5
-        sku:
-          type: string
-          description: The SKU for the variant with which this price record is associated. Either `sku` or `variant_id` is required.
-          example: SKU-001
-        currency:
-          type: string
-          description: The 3-letter country code with which this price record is associated.
-          format: ISO:4217
-          example: usd
-        items:
-          $ref: '#/components/schemas/PriceRecordBase'
+      allOf:
+        - type: object
+          properties:
+            price_list_id:
+              type: integer
+              description: The price list ID the price record is associated with.
+              example: 1
+            variant_id:
+              type: integer
+              description: The price list with which the price record is associated. Either `variant_id` or `sku` is required.
+              example: 5
+            sku:
+              type: string
+              description: The SKU for the variant with which this price record is associated. Either `sku` or `variant_id` is required.
+              example: SKU-001
+            currency:
+              type: string
+              description: The 3-letter country code with which this price record is associated.
+              format: ISO:4217
+              example: usd
+        -  $ref: '#/components/schemas/PriceRecordBase'
     PriceRecordBase:
       type: object
       properties: 
@@ -2993,24 +2918,6 @@ components:
               description: |
                 The total number of pages in the collection.
               example: 1
-            links:
-              type: object
-              description: |
-                Pagination links for the previous and next parts of the whole collection.
-              properties:
-                previous:
-                  type: string
-                  description: |
-                    Link to the previous page returned in the response.
-                current:
-                  type: string
-                  description: |
-                    Link to the current page returned in the response.
-                  example: '?page=1&limit=50'
-                next:
-                  type: string
-                  description: |
-                    Link to the next page returned in the response.
       title: Collection Meta
       x-internal: false
     Meta:

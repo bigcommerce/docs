@@ -124,11 +124,13 @@ paths:
         > #### Notes
         > * Substitute your storefront domain for `yourstore.example.com`. 
         > * The Send a Test Request feature is not currently supported for this endpoint.  
-        > * Please note that this API endpoint is not concurrent safe, meaning multiple simultaneous requests could result in unexpected and inconsistent results.
+        > * To prevent lost updates due to concurrent requests overriding changes made by others, it is recommended to enable optimistic concurrency control by including the `version` field in the request payload. If the provided version does not match the version on the server, a conflict error will be returned, which the client can handle accordingly.
       operationId: addCartLineItem
       responses:
         '200':
           $ref: '#/components/responses/postCartsItems'
+        '409':
+          $ref: '#/components/responses/CartConflictErrorResponse'
       requestBody:
         content:
           application/json:
@@ -146,6 +148,7 @@ paths:
                           optionValue: 117
                         - optionId: 11
                           optionValue: 125
+                  version: 1
               With Gift Wrapping:
                 value:
                   lineItems:
@@ -156,7 +159,8 @@ paths:
                           wrapTogether: true
                           wrapDetails:
                             - id: 1
-                              message: "Happy Birthday"                 
+                              message: "Happy Birthday"
+                  version: 1
         description: ''
   '/carts/{cartId}/items/{itemId}':
     parameters:
@@ -177,7 +181,7 @@ paths:
         > #### Notes
         > * Substitute your storefront domain for `yourstore.example.com`. 
         > * The Send a Test Request feature is not currently supported for this endpoint. 
-        > * Please note that this API endpoint is not concurrent safe, meaning multiple simultaneous requests could result in unexpected and inconsistent results.
+        > * To prevent lost updates due to concurrent requests overriding changes made by others, it is recommended to enable optimistic concurrency control by including the `version` field in the request payload. If the provided version does not match the version on the server, a conflict error will be returned, which the client can handle accordingly.
       operationId: updateCartLineItem
       parameters:
         - $ref: '#/components/parameters/ContentType'
@@ -194,6 +198,7 @@ paths:
                     variantId: 191
                     quantity: 10
                   locale: en
+                  version: 1
               Custom Item:
                 value:
                   lineItem:
@@ -204,6 +209,7 @@ paths:
                       - optionId: 125
                         optionValue: 127
                   locale: en
+                  version: 1
               With Gift Wrapping:
                 value:
                   lineItem:
@@ -215,6 +221,7 @@ paths:
                         wrapDetails:
                           - id: 1
                             message: "Happy Birthday"
+                  version: 1
               With null Gift Wrapping (will delete current gift wrapping):
                 value:
                   lineItem:
@@ -222,12 +229,20 @@ paths:
                     productId: 230
                     variantId: 124
                     giftWrapping: null
+                  version: 1
         required: true
       responses:
         '200':
           $ref: '#/components/responses/putCartsItems'
+        '409':
+          $ref: '#/components/responses/CartConflictErrorResponse'
       x-codegen-request-body-name: lineItem
     delete:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/requestLineItemDelete'
       tags:
         - Cart Items
       summary: Delete Cart Line Item
@@ -239,10 +254,13 @@ paths:
         > #### Note
         > * Substitute your storefront domain for `yourstore.example.com`. 
         > * The Send a Test Request feature is not currently supported for this endpoint.  
+        > * To prevent lost updates due to concurrent requests overriding changes made by others, it is recommended to enable optimistic concurrency control by including the `version` field in the request payload. If the provided version does not match the version on the server, a conflict error will be returned, which the client can handle accordingly.
       operationId: deleteCartLineItem
       responses:
         '200':
           $ref: '#/components/responses/deleteCartsItems'
+        '409':
+          $ref: '#/components/responses/CartConflictErrorResponse'
   '/carts/{cartId}/currency':
     parameters:
       - $ref: '#/components/parameters/CartIdPath'
@@ -377,6 +395,10 @@ components:
         locale:
           type: string
           description: Locale of the cart.
+        version:
+          type: integer
+          description: The current version of the cart.
+          example: 1
       x-internal: false
     requestCart:
       title: Create Cart Request Object
@@ -506,6 +528,10 @@ components:
               type: array
               items:
                 $ref: '#/components/schemas/requestCartPostLineItem'
+            version:
+              type: integer
+              description: The expected version of the cart.
+              example: 1
           required:
             - lineItems
         - type: object
@@ -514,6 +540,10 @@ components:
               type: array
               items:
                 $ref: '#/components/schemas/requestLineItemGiftCertificate'
+            version:
+              type: integer
+              description: The expected version of the cart.
+              example: 1
           required:
             - giftCertificates
         - type: object
@@ -524,6 +554,10 @@ components:
                 $ref: '#/components/schemas/requestCartPostLineItem'
             giftCertificates:
               $ref: '#/components/schemas/requestLineItemGiftCertificate'
+            version:
+              type: integer
+              description: The expected version of the cart.
+              example: 1
           required:
             - lineItems
             - giftCertificates
@@ -536,6 +570,10 @@ components:
           properties:
             lineItem:
               $ref: '#/components/schemas/requestCartPostLineItem'
+            version:
+              type: integer
+              description: The expected version of the cart.
+              example: 1
           required:
             - lineItem
           title: Line item
@@ -543,6 +581,10 @@ components:
           properties:
             giftCertificates:
               $ref: '#/components/schemas/requestLineItemGiftCertificate'
+            version:
+              type: integer
+              description: The expected version of the cart.
+              example: 1
           required:
             - giftCertificates
           title: Gift certificate item
@@ -552,11 +594,22 @@ components:
               $ref: '#/components/schemas/requestCartPostLineItem'
             giftCertificates:
               $ref: '#/components/schemas/requestLineItemGiftCertificate'
+            version:
+              type: integer
+              description: The expected version of the cart.
+              example: 1
           required:
             - lineItem
             - giftCertificates
           title: line & gift certificate items
       description: ''
+    requestLineItemDelete:
+      type: object
+      properties:
+        version:
+          type: integer
+          description: The expected version of the cart.
+          example: 1
     responseCartCurrency:
       title: Currency
       type: object
@@ -1339,6 +1392,7 @@ components:
                   createdTime: '2021-03-04T14:17:50+00:00'
                   updatedTime: '2021-03-04T14:17:50+00:00'
                   locale: en
+                  version: 1
     deleteCartsItems:
       description: 'NOTE: Discounted line items are re-evaluated on cart actions and may be automatically added back to your cart with a new line item ID to satisfy promotional requirements.'
       content:
@@ -1439,6 +1493,23 @@ components:
                 createdTime: string
                 updatedTime: string
                 locale: string
+    CartConflictErrorResponse:
+      description: 'Cart conflict'
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              status:
+                type: integer
+              title:
+                type: string
+              type:
+                type: string
+          example:
+            status: 409
+            title: The request cannot be processed due to a possible conflict. Please review the changes and try again.
+            type: https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes
   parameters:
     Accept:
       name: Accept

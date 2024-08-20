@@ -1523,13 +1523,7 @@ paths:
                             type: string
                             description: |
                               The date on which the product image was modified.
-                            format: date-time
-                          image_url:
-                            type: string
-                            description: |-
-                              Publically available URL.
-                              Use the image_url when creating a product.
-                            example: 'https://upload.wikimedia.org/wikipedia/commons/7/7f/Anglel_Bless_Legendary_Hills_1_m%C4%9Bs%C3%ADc_st%C3%A1%C5%99%C3%AD.jpg'
+                            format: date-time                      
                   meta:
                     $ref: '#/components/schemas/metaEmpty_Full'
                 description: |
@@ -1791,12 +1785,6 @@ paths:
                             description: |
                               The date on which the product image was modified.
                             format: date-time
-                          image_url:
-                            type: string
-                            description: |-
-                              Publically available URL.
-                              Use the image_url when creating a product.
-                            example: 'https://upload.wikimedia.org/wikipedia/commons/7/7f/Anglel_Bless_Legendary_Hills_1_m%C4%9Bs%C3%ADc_st%C3%A1%C5%99%C3%AD.jpg'
                   meta:
                     $ref: '#/components/schemas/metaEmpty_Full'
                 description: |
@@ -2508,36 +2496,7 @@ paths:
                       example: 5
                   description: Adjuster for Complex Rules.
                 conditions:
-                  type: array
-                  items:
-                    title: Complex Rule Condition
-                    required:
-                      - modifier_id
-                      - modifier_value_id
-                      - variant_id
-                    type: object
-                    properties:
-                      modifier_id:
-                        type: integer
-                        description: |-
-                          The unique numeric ID of the modifier with which the rule condition is associated.
-                          Required in /POST.
-                        nullable: true
-                        example: 55
-                      modifier_value_id:
-                        type: integer
-                        description: |-
-                          The unique numeric ID of the modifier value with which the rule condition is associated.
-                          Required in /POST.
-                        nullable: true
-                        example: 256
-                      variant_id:
-                        type: integer
-                        description: |-
-                          The unique numeric ID of the variant with which the rule condition is associated.
-                          Required in /POST.
-                        nullable: true
-                        example: 1
+                  $ref: '#/components/schemas/conditionsRequest'
               description: Common ComplexRule properties.
         required: true
       responses:
@@ -5112,6 +5071,30 @@ paths:
                 $ref: '#/components/schemas/MetaFieldCollectionResponsePartialSuccess_DELETE'
 components:
   schemas:
+    modifierCondition:
+      type: object
+      properties: 
+        modifier_id:
+          type: integer
+          example: 55
+          description: Use the [get all product modifiers](/docs/rest-catalog/product-modifiers#get-all-product-modifiers) endpoint to determine the `option_values` `id`. The `option_values` `id` is the `modifier_value_id`.
+        modifier_value_id:
+          type: integer
+          description: Use the [get all product modifiers](/docs/rest-catalog/product-modifiers#get-all-product-modifiers) endpoint to determine the `option_values` `option_id`. The `option_values` `option_id` is the same as the `modifier_id`.
+          example: 256
+    variantCondition:
+      type: object
+      properties:
+        variant_id:
+          type: integer
+          example: 1
+          description: Use the [get all product variants](/docs/rest-catalog/product-variants#get-all-product-variants) endpoint to determine the variant `id`.
+    conditionsRequest: 
+      type: array
+      items:
+        oneOf:
+          - $ref: '#/components/schemas/modifierCondition'
+          - $ref: '#/components/schemas/variantCondition'
     productModifier_Base:
       title: productModifier_Base
       required:
@@ -5736,9 +5719,6 @@ components:
           type: string
           description: |
             The description for the image.
-        image_url:
-          type: string
-          description: 'Must be a fully qualified URL path, including protocol. Limit of 8MB per file.'
       description: Common ProductImage properties.
       x-internal: false
     productImage_Put:
@@ -7976,12 +7956,16 @@ components:
             links:
               type: object
               properties:
-                next:
+                previous:
                   type: string
-                  example: '?limit=5&page=2'
+                  example: ?limit=50&page=1
                 current:
                   type: string
-                  example: '?limit=5&page=1'
+                  example: '?limit=50&page=1'
+                next:
+                  type: string
+                  example: '?limit=50&page=2'
+                
       x-tags:
         - Models
     BaseError:
@@ -8164,7 +8148,7 @@ components:
           description: Empty for 200 responses.
           example: []
         meta:
-          $ref: '#/components/schemas/CollectionMeta'
+          $ref: '#/components/schemas/WriteCollectionSuccessMeta'
     MetaFieldCollectionResponsePartialSuccess_POST_PUT:
       type: object
       description: |

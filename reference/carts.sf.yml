@@ -279,6 +279,8 @@ paths:
         > * Substitute your storefront domain for `yourstore.example.com`. 
         > * The Send a Test Request feature is not currently supported for this endpoint.  
       operationId: updateCartCurrency
+      parameters:
+        - $ref: '#/components/parameters/Include'
       responses:
         '200':
           $ref: '#/components/responses/getCarts'
@@ -330,6 +332,9 @@ components:
             type: number
             description: The discounted amount applied within a given context.
             format: float
+          displayName:
+            type: string
+            description: The coupon name displayed on the storefront.
           id:
             type: string
             description: The coupon ID.
@@ -431,7 +436,9 @@ components:
               items:
                 $ref: '#/components/schemas/requestCartPostLineItem'
             giftCertificates:
-              $ref: '#/components/schemas/requestLineItemGiftCertificate'
+              type: array
+              items:
+                $ref: '#/components/schemas/requestLineItemGiftCertificate'
             locale:
               type: string
           required:
@@ -553,7 +560,9 @@ components:
               items:
                 $ref: '#/components/schemas/requestCartPostLineItem'
             giftCertificates:
-              $ref: '#/components/schemas/requestLineItemGiftCertificate'
+              type: array
+              items:
+                $ref: '#/components/schemas/requestLineItemGiftCertificate'
             version:
               type: integer
               description: The expected version of the cart.
@@ -579,7 +588,7 @@ components:
           title: Line item
         - type: object
           properties:
-            giftCertificates:
+            giftCertificate:
               $ref: '#/components/schemas/requestLineItemGiftCertificate'
             version:
               type: integer
@@ -592,7 +601,7 @@ components:
           properties:
             lineItem:
               $ref: '#/components/schemas/requestCartPostLineItem'
-            giftCertificates:
+            giftCertificate:
               $ref: '#/components/schemas/requestLineItemGiftCertificate'
             version:
               type: integer
@@ -618,6 +627,17 @@ components:
           type: string
           description: 'ISO-4217 currency code. (See: https://www.iso.org/iso-4217-currency-codes.html.)'
           format: ISO-4217
+        decimalPlaces:
+          type: integer
+          description: The number of decimal places that prices have when you use the currency.
+        name:
+          type: string
+          description: The name for the currency that the merchant entered in the control panel.
+          example: US Dollar
+        symbol:
+          type: string
+          description: The currency symbol displayed on the storefront.
+          example: $
       description: This will always be the same between cart and checkout.
       x-go-gen-location: models
       x-internal: false
@@ -726,6 +746,9 @@ components:
           type: string
           description: 'URL of an image of this item, accessible on the internet.'
           format: uri
+        isMutable:
+          type: boolean
+          description: Whether or not you can change or remove the item from the cart. Items that are immutable include those added automatically by promotions.
         isTaxable:
           type: boolean
           description: Whether the item is taxable.
@@ -754,6 +777,11 @@ components:
         sku:
           type: string
           description: SKU of the variant.
+        type:
+          type: string
+          description: The type of line item.
+          enum:
+            - digital
         url:
           type: string
           description: The product URL.
@@ -809,7 +837,7 @@ components:
         id:
           type: string
           description: ID of this gift certificate.
-        isTaxable:
+        taxable:
           type: boolean
           description: Whether or not the gift certificate is taxable.
         message:
@@ -825,6 +853,11 @@ components:
         theme:
           type: string
           description: 'Currently supports `Birthday`, `Boy`, `Celebration`, `Christmas`, `General`, and `Girl`.'
+        type:
+          type: string
+          description: The type of line item.
+          enum:
+            - giftCertificate
       x-internal: false
     responseCartLineItemsGiftCertificatesRecipient:
       title: Contact Entity
@@ -891,6 +924,9 @@ components:
           type: string
           description: 'URL of an image of this item, accessible on the internet.'
           format: uri
+        isMutable:
+          type: boolean
+          description: Whether or not you can change or remove the item from the cart. Items that are immutable include those added automatically by promotions.
         isTaxable:
           type: boolean
           description: Whether the item is taxable.
@@ -919,6 +955,11 @@ components:
         sku:
           type: string
           description: SKU of the variant.
+        type:
+          type: string
+          description: The type of line item.
+          enum:
+            - physical
         url:
           type: string
           description: The product URL.
@@ -966,6 +1007,20 @@ components:
             productId:
               type: number
               description: ID of the product.
+            optionSelections:
+              type: array
+              items:
+                type: object
+                properties:
+                  optionId: 
+                    type: integer
+                    description: Modifier option ID.
+                    example: 2
+                  optionValue:
+                    oneOf:
+                      - type: string
+                      - type: integer
+                    description: Modifier option value.
             quantity:
               type: number
               description: Quantity of this item.
@@ -986,6 +1041,20 @@ components:
             variantId:
               type: number
               description: ID of the variant.
+            optionSelections:
+              type: array
+              items:
+                type: object
+                properties:
+                  optionId: 
+                    type: integer
+                    description: Modifier option ID.
+                    example: 2
+                  optionValue:
+                    oneOf:
+                      - type: string
+                      - type: integer
+                    description: Modifier option value.
             giftWrapping:
               $ref: '#/components/schemas/requestPostOrPutGiftWrapping'
           required:
@@ -1037,6 +1106,9 @@ components:
                 email: string
                 currency:
                   code: string
+                  decimalPlaces: 2
+                  name: US Dollar
+                  symbol: $
                 isTaxIncluded: true
                 baseAmount: 0
                 discountAmount: 0
@@ -1045,6 +1117,7 @@ components:
                   - code: string
                     couponType: 0
                     discountedAmount: 0
+                    displayName: $1.00 off total order
                     id: string
                 discounts:
                   - discountedAmount: 0
@@ -1067,6 +1140,7 @@ components:
                       extendedSalePrice: 0
                       id: '4'
                       imageUrl: 'http://example.com'
+                      isMutable: true
                       isTaxable: true
                       listPrice: 0
                       originalPrice: 0
@@ -1076,12 +1150,13 @@ components:
                       quantity: 0
                       salePrice: 0
                       sku: string
+                      type: digital
                       url: 'http://example.com'
                       variantId: 7
                   giftCertificates:
                     - amount: 0
                       id: string
-                      isTaxable: true
+                      taxable: true
                       message: string
                       name: string
                       recipient:
@@ -1091,6 +1166,7 @@ components:
                         email: user@example.com
                         name: string
                       theme: string
+                      type: giftCertificate
                   physicalItems:
                     - options:
                         - name: string
@@ -1107,6 +1183,7 @@ components:
                       extendedSalePrice: 0
                       id: '4'
                       imageUrl: 'http://example.com'
+                      isMutable: true
                       isTaxable: true
                       listPrice: 0
                       originalPrice: 0
@@ -1116,6 +1193,7 @@ components:
                       quantity: 0
                       salePrice: 0
                       sku: string
+                      type: physical
                       url: 'http://example.com'
                       variantId: 7
                       giftWrapping:
@@ -1140,6 +1218,9 @@ components:
                 email: string
                 currency:
                   code: string
+                  decimalPlaces: 2
+                  name: US Dollar
+                  symbol: $
                 isTaxIncluded: true
                 baseAmount: 0
                 discountAmount: 0
@@ -1148,6 +1229,7 @@ components:
                   - code: string
                     couponType: 0
                     discountedAmount: 0
+                    displayName: $1.00 off the order total
                     id: string
                 discounts:
                   - discountedAmount: 0
@@ -1170,6 +1252,7 @@ components:
                       extendedSalePrice: 0
                       id: '4'
                       imageUrl: 'http://example.com'
+                      isMutable: true
                       isTaxable: true
                       listPrice: 0
                       originalPrice: 0
@@ -1179,12 +1262,13 @@ components:
                       quantity: 0
                       salePrice: 0
                       sku: string
+                      type: digital
                       url: 'http://example.com'
                       variantId: 7
                   giftCertificates:
                     - amount: 0
                       id: string
-                      isTaxable: true
+                      taxable: true
                       message: string
                       name: string
                       recipient:
@@ -1194,6 +1278,7 @@ components:
                         email: user@example.com
                         name: string
                       theme: string
+                      type: giftCertificate
                   physicalItems:
                     - options:
                         - name: string
@@ -1210,6 +1295,7 @@ components:
                       extendedSalePrice: 0
                       id: '4'
                       imageUrl: 'http://example.com'
+                      isMutable: true
                       isTaxable: true
                       listPrice: 0
                       originalPrice: 0
@@ -1219,6 +1305,7 @@ components:
                       quantity: 0
                       salePrice: 0
                       sku: string
+                      type: physical
                       url: 'http://example.com'
                       variantId: 7
                       giftWrapping:
@@ -1243,6 +1330,9 @@ components:
                 email: string
                 currency:
                   code: string
+                  decimalPlaces: 2
+                  name: US Dollar
+                  symbol: $
                 isTaxIncluded: true
                 baseAmount: 0
                 discountAmount: 0
@@ -1251,6 +1341,7 @@ components:
                   - code: string
                     couponType: 0
                     discountedAmount: 0
+                    displayName: $1.00 off the order total
                     id: string
                 discounts:
                   - discountedAmount: 0
@@ -1273,6 +1364,7 @@ components:
                       extendedSalePrice: 0
                       id: '4'
                       imageUrl: 'http://example.com'
+                      isMutable: true
                       isTaxable: true
                       originalPrice: 0
                       listPrice: 0
@@ -1282,12 +1374,13 @@ components:
                       quantity: 0
                       salePrice: 0
                       sku: string
+                      type: digital
                       url: 'http://example.com'
                       variantId: 7
                   giftCertificates:
                     - amount: 0
                       id: string
-                      isTaxable: true
+                      taxable: true
                       message: string
                       name: string
                       recipient:
@@ -1297,6 +1390,7 @@ components:
                         email: user@example.com
                         name: string
                       theme: string
+                      type: giftCertificate
                   physicalItems:
                     - options:
                         - name: string
@@ -1313,6 +1407,7 @@ components:
                       extendedSalePrice: 0
                       id: '4'
                       imageUrl: 'http://example.com'
+                      isMutable: true
                       isTaxable: true
                       originalPrice: 0
                       listPrice: 0
@@ -1322,6 +1417,7 @@ components:
                       quantity: 0
                       salePrice: 0
                       sku: string
+                      type: physical
                       url: 'http://example.com'
                       variantId: 7
                       giftWrapping:
@@ -1407,6 +1503,9 @@ components:
                 email: string
                 currency:
                   code: string
+                  decimalPlaces: 2
+                  name: US Dollar
+                  symbol: $
                 isTaxIncluded: true
                 baseAmount: 0
                 discountAmount: 0
@@ -1415,6 +1514,7 @@ components:
                   - code: string
                     couponType: 0
                     discountedAmount: 0
+                    displayName: $1.00 off the order total
                     id: string
                 discounts:
                   - discountedAmount: 0
@@ -1437,6 +1537,7 @@ components:
                       extendedSalePrice: 0
                       id: '4'
                       imageUrl: 'http://example.com'
+                      isMutable: true
                       isTaxable: true
                       originalPrice: 0
                       listPrice: 0
@@ -1446,12 +1547,13 @@ components:
                       quantity: 0
                       salePrice: 0
                       sku: string
+                      type: digital
                       url: 'http://example.com'
                       variantId: 7
                   giftCertificates:
                     - amount: 0
                       id: string
-                      isTaxable: true
+                      taxable: true
                       message: string
                       name: string
                       recipient:
@@ -1461,6 +1563,7 @@ components:
                         email: user@example.com
                         name: string
                       theme: string
+                      type: giftCertificate
                   physicalItems:
                     - options:
                         - name: string
@@ -1477,6 +1580,7 @@ components:
                       extendedSalePrice: 0
                       id: '4'
                       imageUrl: 'http://example.com'
+                      isMutable: true
                       isTaxable: true
                       originalPrice: 0
                       listPrice: 0
@@ -1486,6 +1590,7 @@ components:
                       quantity: 0
                       salePrice: 0
                       sku: string
+                      type: physical
                       url: 'http://example.com'
                       variantId: 7
                       giftWrapping: null

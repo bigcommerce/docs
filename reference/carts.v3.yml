@@ -169,7 +169,7 @@ paths:
                   gift_certificates:
                     - name: Tobi Day
                       theme: birthday.html
-                      amount: 1
+                      amount: 10
                       quantity: 1
                       sender:
                         name: Brandi Tyler
@@ -647,7 +647,16 @@ paths:
       - $ref: '#/components/parameters/Accept'
     get:
       summary: Get Global Cart Settings
-      description: Returns the global cart settings of a store.
+      description: |-
+        Returns the global cart settings of a store.
+
+          *Authentication*
+          ### OAuth scopes
+
+          | UI Name | Permission | Parameter |
+          |:--------|:-----------|:----------|
+          |Information & Settings | modify | `store_v2_information`|
+          |Information & Settings | read-only| `store_v2_information`|
       operationId: getGlobalCartSettings
       tags:
         - Settings
@@ -666,7 +675,15 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
     put:
       summary: Update Global Cart Settings
-      description: Update the global cart settings of a store.
+      description: |-
+        Update the global cart settings of a store.
+          *Authentication*
+          ### OAuth scopes
+
+          | UI Name | Permission | Parameter |
+          |:--------|:-----------|:----------|
+          |Information & Settings | modify | `store_v2_information`|
+          |Information & Settings | read-only| `store_v2_information`|
       parameters:
         - $ref: '#/components/parameters/ContentType'
       tags:
@@ -725,14 +742,32 @@ paths:
     parameters:
       - $ref: '#/components/parameters/Accept'
       - name: channel_id
-        description: The channel ID of the settings overrides.
+        description: |-
+          The channel ID of the settings overrides.
+
+            *Authentication*
+          ### OAuth scopes
+
+          | UI Name | Permission | Parameter |
+          |:--------|:-----------|:----------|
+          |Information & Settings | modify | `store_v2_information`|
+          |Information & Settings | read-only| `store_v2_information`|
         in: path
         required: true
         schema:
           type: integer
     get:
       summary: Get Channel Cart Settings
-      description: Returns the per-channel overrides for the cart settings of a store.
+      description: |-
+        Returns the per-channel overrides for the cart settings of a store.
+
+          *Authentication*
+          ### OAuth scopes
+
+          | UI Name | Permission | Parameter |
+          |:--------|:-----------|:----------|
+          |Information & Settings | modify | `store_v2_information`|
+          |Information & Settings | read-only| `store_v2_information`|
       tags:
         - Settings
       responses:
@@ -751,7 +786,16 @@ paths:
       operationId: getChannelCartSettings
     put:
       summary: Update Channel Cart Settings
-      description: Update the per-channel overrides for the cart settings of a store.
+      description: |-
+        Update the per-channel overrides for the cart settings of a store.
+
+        *Authentication*
+        ### OAuth scopes
+
+        | UI Name | Permission | Parameter |
+        |:--------|:-----------|:----------|
+        |Information & Settings | modify | `store_v2_information`|
+        |Information & Settings | read-only| `store_v2_information`|
       tags:
         - Settings
       parameters:
@@ -1627,12 +1671,12 @@ components:
           description: 'Cart ID, provided after creating a cart with a POST request.'
           type: string
           format: UUID
-        parent_id:
-          type: string
-          description: Bundled items will have the ID of their parent item.
         customer_id:
           description: ID of the customer to which the cart belongs.
           type: integer
+        channel_id:
+          type: integer
+          description: 'The channel ID. If no channel is specified, defaults to 1.'
         email:
           description: The cart’s email. This is the same email that is used in the billing address.
           type: string
@@ -1654,6 +1698,9 @@ components:
         discount_amount:
           type: number
           description: Order-based discounted amount only - Excludes coupon discounts and product-based discounts.
+        manual_discount_amount:
+          type: number
+          description: The entered value represents the order level manual discount.
         cart_amount:
           type: number
           description: Sum of cart line-item amounts minus cart-level discounts and coupons. This amount includes taxes (where applicable).
@@ -1699,9 +1746,6 @@ components:
           type: string
           format: ISO-8601
           description: Time when the cart was last updated.
-        channel_id:
-          type: integer
-          description: 'The channel ID. If no channel is specified, defaults to 1.'
         locale:
           type: string
           description: 'Locale of the cart. Accepts strings of format `xx` or `xx-YY`. Uses the [ISO-639 standard](https://www.iso.org/iso-639-language-codes.html) format.'
@@ -1832,7 +1876,7 @@ components:
         amount:
           type: number
           description: 'Value must be between 1.00 and 1,000.00 in the store’s default currency.'
-        is_taxable:
+        taxable:
           type: boolean
         sender:
           title: Contact Entity
@@ -2060,6 +2104,9 @@ components:
               type: string
               description: The line-item ID.
               example: 6e193ce6-f327-4dcc-b75e-72cf6738525e
+            parent_id:
+              type: string
+              description: Bundled items will have the ID of their parent item.
             variant_id:
               type: number
               description: The ID of the variant. Required in the /PUT or /POST request if the product has variants.
@@ -2085,7 +2132,7 @@ components:
               type: number
               example: 5
               description: Quantity of this item in the cart.
-            is_taxable:
+            taxable:
               type: boolean
               example: false
               description: Boolean value that specifies whether the item is taxable.
@@ -2194,28 +2241,14 @@ components:
             extended_sale_price:
               type: number
               description: Sale price of the item multiplied by the quantity.
-            options:
-              description: The list of selected options for this product.
-              type: array
-              items:
-                type: object
-                title: Product Option
-                properties:
-                  name:
-                    type: string
-                    description: 'The product option name; for example, Color or Size.'
-                  nameId:
-                    type: number
-                    description: The product option identifier.
-                  value:
-                    type: string
-                    description: 'The product option value; for example, Red or Medium.'
-                  valueId:
-                    type: number
-                    description: The product option value identifier in number format.
-                    example: 128
-        - type: object
-          properties:
+            is_require_shipping:
+              type: boolean
+              example: false
+              description: Whether or not a physical product requires shipping.
+            is_mutable:
+              type: boolean
+              example: true
+              description: Whether or not you can change or remove the item from the cart. Items that are immutable include those added automatically by promotions.
             download_file_urls:
               description: URLs to download all product files.
               type: array
@@ -2720,6 +2753,14 @@ components:
         list_price:
           type: string
           description: 'Specifies the price of the item. This value can include or exclude tax, depending on the store setup.'
+        extended_list_price:
+          type: number
+          description: List price of the item multiplied by the quantity.
+        image_url:
+          type: string
+          format: uri
+          example: 'https://pathtoproductimage/ProductDefault.png'
+          description: Image of the product or variant.
     cart_PostVariant:
       type: object
       title: Item with variant
@@ -3106,6 +3147,9 @@ components:
               type: string
               description: The line-item ID.
               example: 6e193ce6-f327-4dcc-b75e-72cf6738525e
+            parent_id:
+              type: string
+              description: Bundled items will have the ID of their parent item.
             variant_id:
               type: number
               description: The ID of the variant. Required in the /PUT or /POST request if the product has variants.
@@ -3122,25 +3166,6 @@ components:
               type: string
               description: The item’s product name.
               example: T-Shirt
-            weight:
-              type: number
-              description: The weight is displayed here if the item has a custom dimension.
-              example: 1.2
-            dimensions:
-              type: object
-              properties:
-                height:
-                  type: number
-                  description: The height is displayed here if the item has a custom dimension.
-                  example: 2.0
-                width:
-                  type: number
-                  description: The width is displayed here if the item has a custom dimension.
-                  example: 2.1
-                depth:
-                  type: number
-                  description: The depth is displayed here if the item has a custom dimension.
-                  example: 2.2
             url:
               description: The product URL.
               type: string
@@ -3150,7 +3175,7 @@ components:
               type: number
               example: 5
               description: Quantity of this item in the cart.
-            is_taxable:
+            taxable:
               type: boolean
               example: false
               description: Boolean value that specifies whether the item is taxable.
@@ -3249,7 +3274,7 @@ components:
               description: An item’s original price is the same as the product default price in the admin panel.
             list_price:
               type: number
-              description: 'The net item price before discounts and coupons are applied. BigCommerce derives an item’s list price from the product default price or, if applicable, the sale price configured in the admin panel.'
+              description: 'The net item price before discounts and coupons are applied. BigCommerce derives an item’s list price from the product default price or, if applicable, the sale price configured in the admin panel. To enable v3 promotions at the product level, you must update the [promotion](https://support.bigcommerce.com/s/article/Store-Settings?language=en_US#promotion) settings in the control panel.'
             sale_price:
               type: number
               description: Price of the item after all discounts are applied. (The final price before tax calculation.)
@@ -3259,30 +3284,14 @@ components:
             extended_sale_price:
               type: number
               description: Sale price of the item multiplied by the quantity.
-            options:
-              description: The list of selected options for this product.
-              type: array
-              items:
-                type: object
-                title: Product Option
-                properties:
-                  name:
-                    type: string
-                    description: 'The product option name; for example, Color or Size.'
-                  nameId:
-                    type: number 
-                    example: 151
-                    description: The product option identifier.
-                  value:
-                    type: string
-                    description: 'The product option value; for example, Red or Medium.'
-                  valueId:
-                    oneOf:
-                      - type: number
-                        example: 128
-                      - type: string
-                        example: "1259"
-                    description: The product option value identifier in number format.
+            is_require_shipping:
+              type: boolean
+              example: false
+              description: Whether or not a physical product requires shipping.
+            is_mutable:
+              type: boolean
+              example: true
+              description: Whether or not you can change or remove the item from the cart. Items that are immutable include those added automatically by promotions.
             gift_wrapping:
               description: The gift wrapping details for this item.
               type: object
@@ -3330,7 +3339,7 @@ components:
           properties:
             data:
               $ref: '#/components/schemas/Metafield'
-        - $ref: '#/components/schemas/CollectionMeta'
+        - $ref: '#/components/schemas/metaCollection_open'
     Metafield:
       description: |
         Allows app partners to write custom data to various resources in the API.
@@ -3425,8 +3434,6 @@ components:
             The unique identifier for the resource with which the metafield is associated.
           example: '0'
           readOnly: true
-      required:
-        - permission_set
     MetafieldBase_Post:
       type: object
       description: |
@@ -3491,7 +3498,7 @@ components:
         data:
           $ref: '#/components/schemas/Metafield'
         meta:
-          $ref: '#/components/schemas/CollectionMeta'
+          $ref: '#/components/schemas/metaCollection_open'
       x-internal: false
     MetaFieldCollectionResponse_Batch:
       type: object
@@ -3519,7 +3526,7 @@ components:
           description: Empty for 200 responses.
           example: []
         meta:
-          $ref: '#/components/schemas/CollectionMeta'
+          $ref: '#/components/schemas/WriteCollectionPartialSuccessMeta'
     MetaFieldCollectionDeleteResponseSuccess:
       type: object
       description: |
@@ -3710,7 +3717,6 @@ components:
       title: Response meta
       type: object
       properties: {}
-      additionalProperties: true
       description: Response metadata.
   responses:
     CartResponse:
@@ -3718,7 +3724,12 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/Cart_Full'
+            type: object
+            properties: 
+              data:
+                $ref: '#/components/schemas/Cart_Full'
+              meta:
+                $ref: '#/components/schemas/metaCollection_open'
           examples: {}
     CartConflictErrorResponse:
       description: 'Cart conflict'
@@ -3947,6 +3958,8 @@ components:
         |:--------|:-----------|:----------|
         |Carts|modify|`store_cart`|
         |Carts |read-only|`store_cart_read_only`|
+        |Information & Settings | modify | `store_v2_information`|
+        |Information & Settings | read-only| `store_v2_information`|
 
         ### Authentication header
 

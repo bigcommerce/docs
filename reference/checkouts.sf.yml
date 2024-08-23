@@ -2307,10 +2307,6 @@ components:
       title: checkout_Full
       type: object
       properties:
-        id:
-          type: string
-          description: ''
-          format: uuid
         billingAddress:
           $ref: '#/components/schemas/address_Base'
         cart:
@@ -2328,11 +2324,11 @@ components:
           description: Coupons applied at the checkout level.
           items:
             $ref: '#/components/schemas/CheckoutCoupon'
-        customer: 
-            $ref: '#/components/schemas/Customer'
         createdTime:
           type: string
           description: Time when the cart was created.
+        customer: 
+            $ref: '#/components/schemas/Customer'
         customerMessage:
           type: string
           description: Shopperʼs message provided as details for the order to be created from this cart
@@ -2346,17 +2342,21 @@ components:
           description: Applied gift certificate (as a payment method).
           items:
             $ref: '#/components/schemas/checkoutGiftCertificates'
+        giftWrappingCostTotal:
+          type: number
+          description: Gift wrapping cost for all items, including or excluding tax.
         grandTotal:
           type: number
           description: The total payable amount, before applying any store credit or gift certificate.
           format: float
-        giftWrappingCostTotal:
-          type: number
-          description: Gift wrapping cost for all items, including or excluding tax.
         handlingCostTotal:
           type: number
           description: Handling cost for all consignments including or excluding tax.
           format: float
+        id:
+          type: string
+          description: ''
+          format: uuid
         isStoreCreditApplied:
           type: boolean
           description: |
@@ -2408,7 +2408,6 @@ components:
           description: The current version of the checkout.
           example: 1
       description: ''
-      x-internal: false
     CartCoupon:
       title: Cart Coupon
       required:
@@ -2542,18 +2541,6 @@ components:
         - countryCode
       type: object
       properties:
-        firstName:
-          type: string
-          description: ''
-        lastName:
-          type: string
-          description: ''
-        email:
-          type: string
-          description: ''
-        company:
-          type: string
-          description: ''
         address1:
           type: string
           description: ''
@@ -2563,10 +2550,7 @@ components:
         city:
           type: string
           description: ''
-        stateOrProvince:
-          type: string
-          description: Represents state or province.
-        stateOrProvinceCode:
+        company:
           type: string
           description: ''
         country:
@@ -2575,18 +2559,32 @@ components:
         countryCode:
           type: string
           description: 'ISO 3166-1 alpha-2 country code. (See: https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2)'
-        postalCode:
+        customFields:
+          type: array
+          items:
+            $ref: '#/components/schemas/customFields'
+        email:
+          type: string
+          description: ''
+        firstName:
+          type: string
+          description: ''
+        lastName:
+          type: string
+          description: ''
+        stateOrProvince:
+          type: string
+          description: Represents state or province.
+        stateOrProvinceCode:
           type: string
           description: ''
         phone:
           pattern: '^\+?[1-9]\d{1,14}(x\d{1-5})?$'
           type: string
           description: ''
-        customFields:
-          type: array
-          items:
-            $ref: '#/components/schemas/customFields'
-      x-internal: false
+        postalCode:
+          type: string
+          description: ''
     customFields:
       title: customFields
       type: object
@@ -2613,23 +2611,46 @@ components:
       title: consignment_Full
       type: object
       properties:
-        id:
-          type: string
-          description: ''
-        shippingAddress:
-          type: object
-          properties: {}
-          deprecated: true
-          description: Use the `address` field instead.
         address:
           $ref: '#/components/schemas/address_Full'
-        selectedPickupOption:
-          $ref: '#/components/schemas/PickupOption'
         availableShippingOptions:
           type: array
           description: 'This is available only when "include=consignments.availableShippingOptions" is present in the URL.'
           items:
             $ref: '#/components/schemas/consignmentAvailableShippingOptions'
+        couponDiscounts:
+          type: array
+          description: List of consignment discounts applied through coupons.
+          items:
+            title: Consignment Coupon Discount
+            type: object
+            properties:
+              amount:
+                type: number
+                description: ''
+                format: double
+              code:
+                type: string
+                description: Coupon code that applied this discount.
+        discounts:
+          type: array
+          description: List of consignment discounts applied through cart level discounts.
+          items:
+            title: Consignment Discount
+            type: object
+            properties:
+              id:
+                type: string
+                description: Discount rule ID that applied this discount.
+        handlingCost:
+          type: number
+          description: The handling cost of shipping for this consignment.
+          format: double
+        id:
+          type: string
+          description: ''
+        selectedPickupOption:
+          $ref: '#/components/schemas/PickupOption'
         selectedShippingOption:
           title: Selected Shipping Option
           type: object
@@ -2658,37 +2679,14 @@ components:
               type: string
               description: Read only. Field used for Shipping Provider API.
               readOnly: true
-        couponDiscounts:
-          type: array
-          description: List of consignment discounts applied through coupons.
-          items:
-            title: Consignment Coupon Discount
-            type: object
-            properties:
-              code:
-                type: string
-                description: Coupon code that applied this discount.
-              amount:
-                type: number
-                description: ''
-                format: double
-        discounts:
-          type: array
-          description: List of consignment discounts applied through cart level discounts.
-          items:
-            title: Consignment Discount
-            type: object
-            properties:
-              id:
-                type: string
-                description: Discount rule ID that applied this discount.
+        shippingAddress:
+          type: object
+          properties: {}
+          deprecated: true
+          description: Use the `address` field instead.
         shippingCost:
           type: number
           description: The shipping cost for this consignment.
-          format: double
-        handlingCost:
-          type: number
-          description: The handling cost of shipping for this consignment.
           format: double
         lineItemIds:
           type: array
@@ -2696,7 +2694,6 @@ components:
           items:
             type: string
       description: This allows us to have multiple shipping addresses. Where there is only one shipping address, this array will contain only one value, with all the items.
-      x-internal: false
     consignmentAvailableShippingOptions:
       title: consignmentAvailableShippingOptions
       allOf:
@@ -3042,55 +3039,48 @@ components:
       title: checkoutCart
       type: object
       properties:
-        id:
-          type: string
-          description: Cart ID, provided after creating a cart with a POST.
-          format: uuid
-        customerId:
-          type: integer
-          description: ID of the customer to which the cart belongs.
-          format: int32
-        email:
-          type: string
-          description: The cartʼs email. This is the same email that is used in the billing address.
-        currency:
-          title: Currency
-          type: object
-          properties:
-            name:
-              type: string
-              description: The currency name.
-            code:
-              type: string
-              description: 'ISO-4217 currency code. (See: https://www.iso.org/iso-4217-currency-codes.html.)'
-            symbol:
-              type: string
-              description: The currency symbol.
-            decimalPlaces:
-              type: number
-              description: The number of decimal places for the currency. For example, the USD currency has two decimal places.
-              format: double
-          description: The currency in which prices are displayed; the store default currency.
-        isTaxIncluded:
-          type: boolean
-          description: Boolean representing whether tax information is included.
         baseAmount:
           type: number
           description: Cost of cart’s contents, before applying discounts.
-          format: double
-        discountAmount:
-          type: number
-          description: Order-based discounted amount only - Excludes coupon discounts and product-based discounts.
           format: double
         cartAmount:
           type: number
           description: Sum of line-items amounts, minus cart-level discounts and coupons. This amount includes taxes, where applicable.
           format: double
+        createdTime:
+          type: string
+          description: Time when the cart was created.
         coupons:
           type: array
           description: ''
           items:
             $ref: '#/components/schemas/CartCoupon'
+        currency:
+          title: Currency
+          type: object
+          properties:
+            code:
+              type: string
+              description: 'ISO-4217 currency code. (See: https://www.iso.org/iso-4217-currency-codes.html.)'
+            decimalPlaces:
+              type: number
+              description: The number of decimal places for the currency. For example, the USD currency has two decimal places.
+              format: double
+            name:
+              type: string
+              description: The currency name.
+            symbol:
+              type: string
+              description: The currency symbol.
+          description: The currency in which prices are displayed; the store default currency.
+        customerId:
+          type: integer
+          description: ID of the customer to which the cart belongs.
+          format: int32
+        discountAmount:
+          type: number
+          description: Order-based discounted amount only - Excludes coupon discounts and product-based discounts.
+          format: double
         discounts:
           type: array
           description: ''
@@ -3105,6 +3095,16 @@ components:
                 type: number
                 description: The discounted amount applied within a given context.
                 format: double
+        email:
+          type: string
+          description: The cartʼs email. This is the same email that is used in the billing address.
+        id:
+          type: string
+          description: Cart ID, provided after creating a cart with a POST.
+          format: uuid
+        isTaxIncluded:
+          type: boolean
+          description: Boolean representing whether tax information is included.
         lineItems:
           type: object
           description: ''
@@ -3113,11 +3113,30 @@ components:
             - digitalItems
             - physicalItems
           properties:
-            physicalItems:
-              type: array
-              description: ''
-              items:
-                $ref: '#/components/schemas/lineItemPhysicalDigital'
+            customItems:
+                type: array
+                items:
+                  title: Item Custom
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      description: ID of the custom item.
+                    listPrice:
+                      type: string
+                      description: Price of the item. With or without tax depending on your store setup.
+                    name:
+                      type: string
+                      description: Item name.
+                    quantity:
+                      type: string
+                    sku:
+                      type: string
+                      description: Custom item SKU.
+                  description: |-
+                    Add a custom item to the shoppers cart.
+                    * Custom items are not added to the catalog.
+                    * The price should be set to match the store settings for taxes.
             digitalItems:
               type: array
               description: ''
@@ -3135,32 +3154,19 @@ components:
                   - theme
                 type: object
                 properties:
-                  id:
-                    type: string
-                    description: Gift certificate identifier
-                  name:
-                    type: string
-                    description: 'The name of the purchased gift certificate; for example, `$20 Gift Certificate`.'
-                  theme:
-                    type: string
-                    description: 'Currently supports `Birthday`, `Boy`, `Celebration`, `Christmas`, `General`, and `Girl`.'
                   amount:
                     type: number
                     description: 'Value must be between $1.00 and $1,000.00.'
                     format: double
-                  taxable:
-                    type: boolean
-                    description: ''
-                  sender:
-                    title: Contact Entity
-                    type: object
-                    properties:
-                      name:
-                        type: string
-                        description: ''
-                      email:
-                        type: string
-                        description: ''
+                  id:
+                    type: string
+                    description: Gift certificate identifier
+                  message:
+                    type: string
+                    description: Limited to 200 characters.
+                  name:
+                    type: string
+                    description: 'The name of the purchased gift certificate; for example, `$20 Gift Certificate`.'
                   recipient:
                     title: Contact Entity
                     type: object
@@ -3171,46 +3177,37 @@ components:
                       email:
                         type: string
                         description: ''
-                  message:
+                  sender:
+                    title: Contact Entity
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                        description: ''
+                      email:
+                        type: string
+                        description: ''
+                  taxable:
+                    type: boolean
+                    description: ''
+                  theme:
                     type: string
-                    description: Limited to 200 characters.
+                    description: 'Currently supports `Birthday`, `Boy`, `Celebration`, `Christmas`, `General`, and `Girl`.'
                   type:
                     type: string
                     description: Explicitly specifying the gift certificate type.
-            customItems:
-                type: array
-                items:
-                  title: Item Custom
-                  type: object
-                  properties:
-                    id:
-                      type: string
-                      description: ID of the custom item.
-                    sku:
-                      type: string
-                      description: Custom item SKU.
-                    name:
-                      type: string
-                      description: Item name.
-                    quantity:
-                      type: string
-                    listPrice:
-                      type: string
-                      description: Price of the item. With or without tax depending on your store setup.
-                  description: |-
-                    Add a custom item to the shoppers cart.
-                    * Custom items are not added to the catalog.
-                    * The price should be set to match the store settings for taxes.
-        createdTime:
-          type: string
-          description: Time when the cart was created.
-        updatedTime:
-          type: string
-          description: Time when the cart was last updated.
+            physicalItems:
+              type: array
+              description: ''
+              items:
+                $ref: '#/components/schemas/lineItemPhysicalDigital'
         locale:
           type: string
           description: Shopper's locale.
           example: "en"
+        updatedTime:
+          type: string
+          description: Time when the cart was last updated.
         version:
           type: integer 
           description: Cart version.
@@ -3221,41 +3218,20 @@ components:
       required:
         - quantity
       properties:
-        id:
-          type: string
-          description: The line-item ID.
+        addedByPromotion:
+          type: boolean
+          description: If the item was added automatically by a promotion, such as a coupon or buy one, get one.
         categoryNames: 
           type: array
           items: 
             type: string
-        parentId:
-          type: string
-          description: The product is part of a bundle such as a product pick list, then the parentId or the main product ID will populate.
-        variantId:
-          type: integer
-          description: ID of the variant.
-        productId:
-          type: integer
-          description: ID of the product.
-        sku:
-          type: string
-          description: SKU of the variant.
-        name:
-          type: string
-          description: The itemʼs product name.
-        url:
-          type: string
-          description: The product URL.
-        quantity:
+        comparisonPrice:
           type: number
-          description: Quantity of this item.
+          description: The itemʼs comparison price
+        couponAmount:
+          type: number
+          description: The total value of all coupons applied to this item.
           format: double
-        isTaxable:
-          type: boolean
-          description: Whether the item is taxable.
-        imageUrl:
-          type: string
-          description: A publicly-accessible URL for an image of this item.
         discounts:
           type: array
           description: A list of discounts applied to this item, as an array of AppliedDiscount objects.
@@ -3274,21 +3250,9 @@ components:
           type: number
           description: The total value of all discounts applied to this item (excluding coupon).
           format: double
-        couponAmount:
+        extendedComparisonPrice:
           type: number
-          description: The total value of all coupons applied to this item.
-          format: double
-        listPrice:
-          type: number
-          description: The item’s list price, as quoted by the manufacturer or distributor.
-          format: double
-        originalPrice:
-          type: number
-          description: The item’s original price is the same as the product’s default price.
-        salePrice:
-          type: number
-          description: The itemʼs price after all discounts are applied. The final price before tax calculation.
-          format: double
+          description: The itemʼs comparison price multiplied by the quantity.
         extendedListPrice:
           type: number
           description: The itemʼs list price multiplied by the quantity.
@@ -3297,12 +3261,42 @@ components:
           type: number
           description: The itemʼs sale price multiplied by the quantity.
           format: double
-        comparisonPrice:
+        giftWrapping:
+          title: Gift Wrapping
+          type: object
+          properties:
+            name:
+              type: string
+              description: ''
+            message:
+              type: string
+              description: ''
+            amount:
+              type: number
+              description: ''
+              format: double
+        id:
+          type: string
+          description: The line-item ID.
+        imageUrl:
+          type: string
+          description: A publicly-accessible URL for an image of this item.
+        isMutable:
+          type: boolean
+          description: ''
+        isShippingRequired:
+          type: boolean
+          description: Whether this item requires shipping to a physical address.
+        isTaxable:
+          type: boolean
+          description: Whether the item is taxable.
+        listPrice:
           type: number
-          description: The itemʼs comparison price
-        extendedComparisonPrice:
-          type: number
-          description: The itemʼs comparison price multiplied by the quantity.
+          description: The item’s list price, as quoted by the manufacturer or distributor.
+          format: double
+        name:
+          type: string
+          description: The itemʼs product name.
         options: 
           type: array
           items: 
@@ -3320,32 +3314,35 @@ components:
               valueId:
                 type: string
                 description: Option value ID.
+        originalPrice:
+          type: number
+          description: The item’s original price is the same as the product’s default price.
+        parentId:
+          type: string
+          description: The product is part of a bundle such as a product pick list, then the parentId or the main product ID will populate.
+        productId:
+          type: integer
+          description: ID of the product.
+        sku:
+          type: string
+          description: SKU of the variant.
+        quantity:
+          type: number
+          description: Quantity of this item.
+          format: double
+        salePrice:
+          type: number
+          description: The itemʼs price after all discounts are applied. The final price before tax calculation.
+          format: double
         type:
           type: string
           description: the product type - physical or digital
-        addedByPromotion:
-          type: boolean
-          description: If the item was added automatically by a promotion, such as a coupon or buy one, get one.
-        isShippingRequired:
-          type: boolean
-          description: Whether this item requires shipping to a physical address.
-        isMutable:
-          type: boolean
-          description: ''
-        giftWrapping:
-          title: Gift Wrapping
-          type: object
-          properties:
-            name:
-              type: string
-              description: ''
-            message:
-              type: string
-              description: ''
-            amount:
-              type: number
-              description: ''
-              format: double
+        url:
+          type: string
+          description: The product URL.
+        variantId:
+          type: integer
+          description: ID of the variant.
     checkoutGiftCertificates:
       title: checkoutGiftCertificates
       description: Applied gift certificate (as a payment method).
@@ -3374,6 +3371,10 @@ components:
       title: consignmentShippingOption_Base
       type: object
       properties:
+        cost:
+          type: number
+          description: ''
+          format: double
         description:
           type: string
           description: Read only.
@@ -3381,20 +3382,15 @@ components:
         id:
           type: string
           description: ''
-        type:
-          type: string
-          description: Specifies the type of shipping option; for example, flat rate, UPS, etc.
         imageUrl:
           type: string
           description: ''
-        cost:
-          type: number
-          description: ''
-          format: double
         transitTime:
           type: string
           description: An estimate of the arrival time.
-      x-internal: false
+        type:
+          type: string
+          description: Specifies the type of shipping option; for example, flat rate, UPS, etc.
     PickupOption:
       type: object
       title: Pickup Option

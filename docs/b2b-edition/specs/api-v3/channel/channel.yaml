@@ -1,0 +1,208 @@
+openapi: 3.0.0
+info:
+  title: channel
+  version: '1.0'
+  description: Related with BigCommerce store channels. Only support 'bigcommerce' paltform and 'storefront' type.
+servers:
+  - url: 'https://api-b2b.bigcommerce.com/api/v3/io'
+paths:
+  /channels:
+    get:
+      summary: Get store channels
+      tags: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: number
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Channel'
+                  meta:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+              examples:
+                example-1:
+                  value:
+                    code: 200
+                    data:
+                      - id: 1
+                        channelId: 1
+                        channelName: msf2
+                        createdAt: 1645582457
+                        updatedAt: 1645582457
+                        type: storefront
+                        platform: bigcommerce
+                        status: active
+                        site: 'https://msfbeta2.mybigcommerce.com'
+                        isVisible: true
+                        isEnabled: true
+                    meta:
+                      message: SUCCESS
+        '422':
+          description: Unprocessable Entity (WebDAV)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: number
+                  data:
+                    type: object
+                    properties:
+                      errMsg:
+                        type: string
+                  meta:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+              examples:
+                example-1:
+                  value:
+                    code: 422
+                    data:
+                      errMsg: Multi storefront is not enabled
+                    meta:
+                      message: Multi storefront is not enabled
+      operationId: get-channels
+      description: get store chennels
+      security:
+        - authToken: []
+  '/channels/{channelId}':
+    parameters:
+      - schema:
+          type: number
+        name: channelId
+        in: path
+        required: true
+        description: BigCommerce channel id
+    get:
+      summary: Get a store channel
+      tags: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: number
+                  data:
+                    $ref: '#/components/schemas/Channel'
+                  meta:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+              examples:
+                example-1:
+                  value:
+                    code: 200
+                    data:
+                      id: 1
+                      channelId: 1
+                      channelName: msf2
+                      createdAt: 1645582457
+                      updatedAt: 1645582457
+                      type: storefront
+                      platform: bigcommerce
+                      status: active
+                      site: 'https://msfbeta2.mybigcommerce.com'
+                      isVisible: true
+                      isEnabled: true
+                    meta:
+                      message: SUCCESS
+      operationId: get-channels-channelId
+      description: Get a store chennel
+components:
+  schemas:
+    Channel:
+      type: object
+      x-examples:
+        example-1:
+          id: 1
+          channelId: 1
+          channelName: msf2
+          createdAt: 1645582457
+          updatedAt: 1645582457
+          type: storefront
+          platform: bigcommerce
+          status: active
+          site: 'https://msfbeta2.mybigcommerce.com'
+          isVisible: true
+          isEnabled: true
+      properties:
+        id:
+          type: number
+          description: B2B Edition channel id
+        channelId:
+          type: number
+          description: BigCommerce channel id
+        channelName:
+          type: string
+          minLength: 1
+          description: Channel name
+        createdAt:
+          type: number
+          description: The time stamp channel was created
+        updatedAt:
+          type: number
+          description: The time stamp channel was updated
+        type:
+          type: string
+          minLength: 1
+          description: 'The channel type, only support "storefront" now.'
+        platform:
+          type: string
+          minLength: 1
+          description: 'The channel platform, only support "bigcommerce" now'
+        status:
+          type: string
+          minLength: 1
+          description: Channel status
+          enum:
+            - prelaunch
+            - active
+            - inactive
+            - archived
+            - deleted
+        site:
+          type: string
+          minLength: 1
+          description: ' The domain associated with a channel'
+        isVisible:
+          type: boolean
+        isEnabled:
+          type: boolean
+      required:
+        - id
+        - channelId
+        - channelName
+        - createdAt
+        - updatedAt
+        - type
+        - platform
+        - status
+        - site
+        - isVisible
+        - isEnabled
+      x-internal: false
+  securitySchemes:
+    authToken:
+      name: authToken
+      type: apiKey
+      in: header
+tags:
+  - name: channel

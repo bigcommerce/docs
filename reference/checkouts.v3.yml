@@ -790,6 +790,7 @@ paths:
                             - homepage
                             - cartpage
                           text: Some text
+                  version: 1
         '404':
           description: Error code that is displayed when a given checkout ID is not found.
           content:
@@ -980,6 +981,7 @@ paths:
                   created_time: '2019-08-05T15:38:14+00:00'
                   updated_time: '2019-08-05T15:41:28+00:00'
                   customer_message: ''
+                  version: 1
                 meta: {}
             Selected Shipping Options:
               example:
@@ -1093,6 +1095,7 @@ paths:
                   created_time: '2019-08-05T15:38:14+00:00'
                   updated_time: '2019-08-05T15:41:28+00:00'
                   customer_message: ''
+                  version: 1
                 meta: {}
             Coupon Applied:
               example:
@@ -1206,6 +1209,7 @@ paths:
                   created_time: '2021-11-08T22:46:23+00:00'
                   updated_time: '2021-11-09T16:08:01+00:00'
                   customer_message: ''
+                  version: 1
                 meta: {}
             No Coupon Applied:
               example:
@@ -1292,6 +1296,7 @@ paths:
                   created_time: '2021-11-08T22:46:23+00:00'
                   updated_time: '2021-11-09T16:06:56+00:00'
                   customer_message: ''
+                  version: 1
                 meta: {}
             Include promotions:
               example:
@@ -1386,6 +1391,7 @@ paths:
                             - homepage
                             - cartpage
                           text: Some text
+                  version: 1
                 meta: {}
             example-1:
               example:
@@ -1579,6 +1585,9 @@ paths:
                             - homepage
                             - cartpage
                           text: Some text
+                  version: 1
+        '409':
+          $ref: '#/components/responses/CartConflictErrorResponse'
       x-unitTests: []
       x-operation-settings:
         CollectParameters: false
@@ -1604,6 +1613,8 @@ paths:
 
         Required Fields:
         * `discounted_amount` at the cart-level or at the item-level
+
+        To prevent lost updates due to concurrent requests overriding changes made by others, it is recommended to enable optimistic concurrency control by including the `version` field in the request payload. If the provided version does not match the version on the server, a conflict error will be returned, which the client can handle accordingly.
       operationId: addCheckoutDiscount
       parameters:
         - $ref: '#/components/parameters/checkoutId'
@@ -1642,11 +1653,16 @@ paths:
                               discounted_amount:
                                 type: number
                                 example: 15
+                    version:
+                      type: integer
+                      description: The expected version of the checkout.
+                      example: 1
             example:
-              carts:
+              cart:
                 discounts: 
                   - discounted_amount: 10
                     name: "manual-discount"
+              version: 1
         required: false
       responses:
         '200':
@@ -1707,6 +1723,8 @@ paths:
                           sale_price: 33.23
                           extended_list_price: 31.95
                           extended_sale_price: 33.23
+                          comparison_price: 33.23
+                          extended_comparison_price: 33.23
                           is_require_shipping: true
                           gift_wrapping: {}
                           is_mutable: true
@@ -2466,6 +2484,9 @@ paths:
                             - homepage
                             - cartpage
                           text: Some text
+                  version: 1
+        '409':
+          $ref: '#/components/responses/CartConflictErrorResponse'
   '/checkouts/{checkoutId}/billing-address':
     post:
       tags:
@@ -2477,6 +2498,8 @@ paths:
         **Required Fields**
         * email
         * country_code
+
+        To prevent lost updates due to concurrent requests overriding changes made by others, it is recommended to enable optimistic concurrency control by including the `version` field in the request payload. If the provided version does not match the version on the server, a conflict error will be returned, which the client can handle accordingly.
       operationId: addCheckoutBillingAddress
       parameters:
         - $ref: '#/components/parameters/checkoutId'
@@ -2631,6 +2654,7 @@ paths:
                   created_time: '2019-08-05T15:38:14+00:00'
                   updated_time: '2019-08-05T15:41:28+00:00'
                   customer_message: ''
+                  version: 1
                 meta: {}
             Selected Shipping Options:
               example:
@@ -2744,6 +2768,7 @@ paths:
                   created_time: '2019-08-05T15:38:14+00:00'
                   updated_time: '2019-08-05T15:41:28+00:00'
                   customer_message: ''
+                  version: 1
                 meta: {}
             Coupon Applied:
               example:
@@ -2857,6 +2882,7 @@ paths:
                   created_time: '2021-11-08T22:46:23+00:00'
                   updated_time: '2021-11-09T16:08:01+00:00'
                   customer_message: ''
+                  version: 1
                 meta: {}
             No Coupon Applied:
               example:
@@ -2943,6 +2969,7 @@ paths:
                   created_time: '2021-11-08T22:46:23+00:00'
                   updated_time: '2021-11-09T16:06:56+00:00'
                   customer_message: ''
+                  version: 1
                 meta: {}
             Include promotions:
               example:
@@ -3037,6 +3064,7 @@ paths:
                             - homepage
                             - cartpage
                           text: Some text
+                  version: 1
                 meta: {}
             example-1:
               example:
@@ -3230,6 +3258,9 @@ paths:
                             - homepage
                             - cartpage
                           text: Some text
+                  version: 1
+        '409':
+          $ref: '#/components/responses/CartConflictErrorResponse'
       x-unitTests: []
       x-operation-settings:
         CollectParameters: false
@@ -3241,7 +3272,10 @@ paths:
       tags:
         - Checkout Billing Address
       summary: Update Checkout Billing Address
-      description: Updates an existing billing address on a checkout.
+      description: |-
+        Updates an existing billing address on a checkout.
+
+        To prevent lost updates due to concurrent requests overriding changes made by others, it is recommended to enable optimistic concurrency control by including the `version` field in the request payload. If the provided version does not match the version on the server, a conflict error will be returned, which the client can handle accordingly.
       operationId: updateCheckoutBillingAddress
       parameters:
         - $ref: '#/components/parameters/checkoutId'
@@ -3401,6 +3435,7 @@ paths:
                   created_time: '2019-08-05T15:38:14+00:00'
                   updated_time: '2019-08-05T15:41:28+00:00'
                   customer_message: ''
+                  version: 1
                 meta: {}
             Selected Shipping Options:
               example:
@@ -3514,6 +3549,7 @@ paths:
                   created_time: '2019-08-05T15:38:14+00:00'
                   updated_time: '2019-08-05T15:41:28+00:00'
                   customer_message: ''
+                  version: 1
                 meta: {}
             Coupon Applied:
               example:
@@ -3627,6 +3663,7 @@ paths:
                   created_time: '2021-11-08T22:46:23+00:00'
                   updated_time: '2021-11-09T16:08:01+00:00'
                   customer_message: ''
+                  version: 1
                 meta: {}
             No Coupon Applied:
               example:
@@ -3713,6 +3750,7 @@ paths:
                   created_time: '2021-11-08T22:46:23+00:00'
                   updated_time: '2021-11-09T16:06:56+00:00'
                   customer_message: ''
+                  version: 1
                 meta: {}
             Include promotions:
               example:
@@ -3807,6 +3845,7 @@ paths:
                             - homepage
                             - cartpage
                           text: Some text
+                  version: 1
                 meta: {}
             example-1:
               example:
@@ -4000,6 +4039,9 @@ paths:
                             - homepage
                             - cartpage
                           text: Some text
+                  version: 1
+        '409':
+          $ref: '#/components/responses/CartConflictErrorResponse'
       x-unitTests: []
       x-operation-settings:
         CollectParameters: false
@@ -4015,7 +4057,7 @@ paths:
         Adds a new consignment to a checkout.
 
 
-        Please note that this API endpoint is not concurrent safe, meaning multiple simultaneous requests could result in unexpected and inconsistent results.
+        To prevent lost updates due to concurrent requests overriding changes made by others, it is recommended to enable optimistic concurrency control by including the `version` field in the request payload. If the provided version does not match the version on the server, a conflict error will be returned, which the client can handle accordingly.
 
         For more information about working with consignments, see [Checkout consignment](/docs/storefront/cart-checkout/guide/consignments).  
 
@@ -4065,14 +4107,16 @@ paths:
                           field_value: "string"
                     line_items: 
                       - item_id: "118f8774-387c-485e-a095-6ef76d5f1bbd"
-                        quantity: 1 
+                        quantity: 1
+                    version: 1
               Pickup Consignment:
                 value: 
                   - line_items:
                       - item_id: "118f8774-387c-485e-a095-6ef76d5f1bbd"
                         quantity: 1
                     pickup_option:
-                      pickup_method_id: 1                 
+                      pickup_method_id: 1
+                    version: 1
       responses:
         '200':
           description: ''
@@ -4815,6 +4859,9 @@ paths:
                             - homepage
                             - cartpage
                           text: Some text
+                  version: 1
+        '409':
+          $ref: '#/components/responses/CartConflictErrorResponse'
       x-unitTests: []
       x-operation-settings:
         CollectParameters: false
@@ -4846,7 +4893,7 @@ paths:
         
         To update an existing address and line item IDs, assign a new address and line item IDs by sending a `PUT` request.
 
-        Please note that this API endpoint is not concurrent safe, meaning multiple simultaneous requests could result in unexpected and inconsistent results.
+        To prevent lost updates due to concurrent requests overriding changes made by others, it is recommended to enable optimistic concurrency control by including the `version` field in the request payload. If the provided version does not match the version on the server, a conflict error will be returned, which the client can handle accordingly.
         
 
         2. Assign a shipping option to the new consignment by sending a `PUT` request to update the consignment's `shipping_option_id` with a returned value from `data.consignments[N].available_shipping_option[N].id` obtained in Step One. 
@@ -5602,6 +5649,9 @@ paths:
                             - homepage
                             - cartpage
                           text: Some text
+                  version: 1
+        '409':
+          $ref: '#/components/responses/CartConflictErrorResponse'
     delete:
       tags:
         - Checkout Consignments
@@ -5609,8 +5659,13 @@ paths:
       description: |-
         Removes an existing consignment from a checkout.
 
-        Removing the last consignment will remove the cart from the customer it is assigned to. Create a new redirect URL for the customer so they can access the cart again.
+        To prevent lost updates due to concurrent requests overriding changes made by others, it is recommended to enable optimistic concurrency control by including the `version` field in the request payload. If the provided version does not match the version on the server, a conflict error will be returned, which the client can handle accordingly.
       operationId: deleteCheckoutConsignment
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeleteConsignmentRequest'
       responses:
         '200':
           description: ''
@@ -6353,6 +6408,7 @@ paths:
                             - homepage
                             - cartpage
                           text: Some text
+                  version: 1
   '/checkouts/{checkoutId}/coupons':
     post:
       tags:
@@ -6367,7 +6423,9 @@ paths:
         * coupon_code
 
         **Limits**
-        * Coupon codes have a 50-character limit. 
+        * Coupon codes have a 50-character limit.
+
+        To prevent lost updates due to concurrent requests overriding changes made by others, it is recommended to enable optimistic concurrency control by including the `version` field in the request payload. If the provided version does not match the version on the server, a conflict error will be returned, which the client can handle accordingly.
       operationId: addCheckoutCoupon
       parameters:
         - $ref: '#/components/parameters/checkoutId'
@@ -7121,6 +7179,9 @@ paths:
                             - homepage
                             - cartpage
                           text: Some text
+                  version: 1
+        '409':
+          $ref: '#/components/responses/CartConflictErrorResponse'
       x-unitTests: []
       x-operation-settings:
         CollectParameters: false
@@ -7132,7 +7193,10 @@ paths:
       tags:
         - Checkout Coupons
       summary: Delete Checkout Coupon
-      description: Deletes a coupon code from a checkout.
+      description: |-
+        Deletes a coupon code from a checkout.
+
+        To prevent lost updates due to concurrent requests overriding changes made by others, it is recommended to enable optimistic concurrency control by including the `version` field in the request payload. If the provided version does not match the version on the server, a conflict error will be returned, which the client can handle accordingly.
       operationId: deleteCheckoutCoupon
       parameters:
         - $ref: '#/components/parameters/checkoutId'
@@ -7143,6 +7207,11 @@ paths:
           required: true
           schema:
             type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeleteCouponCodeRequest'
       responses:
         '200':
           description: ''
@@ -7693,6 +7762,8 @@ paths:
                             - cartpage
                           text: Some text
                 meta: {}
+        '409':
+          $ref: '#/components/responses/CartConflictErrorResponse'
   '/checkouts/{checkoutId}/orders':
     post:
       tags:
@@ -8093,6 +8164,14 @@ components:
                         type: number
                         description: Sale price of the item multiplied by the quantity.
                         format: double
+                      comparison_price:
+                        type: number
+                        description: The price of a single product used for strike-through.
+                        format: double
+                      extended_comparison_price:
+                        type: number
+                        description: The price of a line item (product * quantity) used for strike-through.
+                        format: double
                       is_require_shipping:
                         type: boolean
                         description: ''
@@ -8212,6 +8291,14 @@ components:
                       extended_sale_price:
                         type: number
                         description: Sale price of the item multiplied by the quantity.
+                        format: double
+                      comparison_price:
+                        type: number
+                        description: The price of a single product used for strike-through.
+                        format: double
+                      extended_comparison_price:
+                        type: number
+                        description: The price of a line item (product * quantity) used for strike-through.
                         format: double
                     required:
                       - quantity
@@ -8630,6 +8717,10 @@ components:
                     text:
                       type: string
                       description: Text of the banner.
+        version:
+          type: integer
+          description: The current version of the checkout.
+          example: 1
     Checkout_Put:
       title: Checkout_Put
       required:
@@ -8639,6 +8730,10 @@ components:
         customer_message:
           type: string
           description: ''
+        version:
+          type: integer
+          description: The expected version of the checkout.
+          example: 1
       x-internal: false
     AppliedCoupon:
       title: Applied Coupon
@@ -8721,6 +8816,10 @@ components:
               field_value:
                 type: string
                 description: 'This can also be an array for fields that need to support a list of values (e.g., a set of check boxes.)'
+        version:
+          type: integer
+          description: The expected version of the checkout.
+          example: 1
       x-internal: false
     CreateConsignmentRequest:
       title: Create Consignment Request
@@ -8811,7 +8910,20 @@ components:
             properties:
               pickup_method_id:
                 type: integer
-                example: 1                  
+                example: 1
+          version:
+            type: integer
+            description: The expected version of the checkout.
+            example: 1
+      x-internal: false
+    DeleteConsignmentRequest:
+      title: Delete Consignment Request
+      type: object
+      properties:
+        version:
+          type: integer
+          description: The expected version of the checkout.
+          example: 1
       x-internal: false
     UpdateConsignmentRequest:
       title: Update Consignment Request
@@ -8909,6 +9021,10 @@ components:
               description:
                 type: string
                 example: "custom shipping"
+          version:
+            type: integer
+            description: The expected version of the checkout.
+            example: 1
       description: One or more of these three fields are mandatory. `address` and `line_items` can be updated in one request. `shipping_option_id` has to be updated in a separate request because changing the address or line items can invalidate the previously available shipping options.
       x-internal: false
     CouponCodeRequest:
@@ -8918,6 +9034,19 @@ components:
         coupon_code:
           type: string
           description: Coupon codes have a 50-character limit.
+        version:
+          type: integer
+          description: The expected version of the checkout.
+          example: 1
+      x-internal: false
+    DeleteCouponCodeRequest:
+      title: Delete Coupon Request
+      type: object
+      properties:
+        version:
+          type: integer
+          description: The expected version of the checkout.
+          example: 1
       x-internal: false
     Order:
       title: Order
@@ -9709,6 +9838,24 @@ components:
                         - homepage
                         - cartpage
                       text: Some text
+              version: 1
+    CartConflictErrorResponse:
+      description: 'Cart conflict'
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              status:
+                type: integer
+              title:
+                type: string
+              type:
+                type: string
+          example:
+            status: 409
+            title: The request cannot be processed due to a possible conflict. Please review the changes and try again.
+            type: https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes
     checkout_settings_resp:
       description: ''
       content:

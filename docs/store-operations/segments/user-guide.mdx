@@ -1,0 +1,408 @@
+# Customer Segmentation API Guide
+
+<Callout type="info">
+  #### Exclusive enterprise feature
+  The Customer Segmentation API is available to enterprise customers. If you would like to become an enterprise customer, please contact your BigCommerce Customer Service Manager or our support team.
+</Callout>
+
+Get started with the Customer Segmentation API by creating *Segments* and *Shopper Profiles*. This guide provides example requests and responses to get you started customizing targeted shopper experiences.
+
+
+## Customer Segments
+
+Create customer segments to offer customers targeted promotions. See the [Customer Segmentation overview](/docs/store-operations/segments/overview#introduction) to get the big picture on targeting customers with promotions. For more granular details, see the [Targeting a segment with a promotion](#targeting-a-segment-with-a-promotion) section of this article.
+
+### Creating segments
+
+Create new segments by sending a request to the [Create segments](/docs/rest-management/segments#create-segments) endpoint. Include an array of objects, where each object represents a segment and contains `name` and `description` properties.
+
+<Callout type="info">
+  Segment names appear in the Promotions Manager view of the store control panel. To reduce confusion, give your segments unique names.
+</Callout>
+
+<Tabs items={['Request', 'Response']}>
+  <Tab>
+
+    ```http filename="Example request: Create segments" showLineNumbers copy
+    POST https://api.bigcommerce.com/stores/{{STORE_HASH}}/v3/segments
+    X-Auth Token: {{ACCESS_TOKEN}}
+    Content-Type: application/json
+    Accept: application/json
+
+    [
+      {
+        "name": "My Segment",
+        "description": "Segment description."
+      }
+    ]
+    ```
+
+  </Tab>
+  <Tab>
+
+    ```json filename="Example response: Create segments" showLineNumbers copy
+    {
+      "data": [
+        {
+          "id": "497f6eca-6276-4993-bfeb-53cbbbba6f08",
+          "name": "My Segment",
+          "description": "Segment description.",
+          "created_at": "2022-08-24T14:15:22Z",
+          "updated_at": "2022-08-24T14:15:22Z"
+        }
+      ],
+      "meta": {}
+    }
+    ```
+
+  </Tab>
+</Tabs>
+
+
+## Shopper profiles
+
+Create a shopper profile to assign registered customers to segments. You can identify which registered customer a shopper profile represents by the profile's `customer_id` property; shopper profiles have a 1:1 relationship with registered customers.
+
+### Existing customers
+
+You can create one [shopper profile](/docs/store-operations/segments/definitions#shopper-profile) for each registered customer using the [Create shopper profiles](/docs/rest-management/shopper-profiles#create-shopper-profiles) endpoint. Include an array of objects, where each object represents a shopper profile and contains the corresponding `customer_id`. 
+
+<Tabs items={['Request', 'Response']}>
+  <Tab>
+
+    ```http filename="Example request: Create shopper profiles" showLineNumbers copy
+    POST https://api.bigcommerce.com/stores/{{STORE_HASH}}/v3/shopper-profiles
+    X-Auth Token: {{ACCESS_TOKEN}}
+    Content-Type: application/json
+    Accept: application/json
+
+    [
+      {
+        "customer_id": 1
+      }
+    ]
+    ```
+
+  </Tab>
+  <Tab>
+
+    ```json filename="Example response: Create shopper profiles" showLineNumbers copy
+    {
+      "data": [
+        {
+          "id": "497f6eca-6276-4993-bfeb-53cbbbba6f08",
+          "customer_id": 1,
+          "created_at": "2022-08-24T14:15:22Z",
+          "updated_at": "2022-08-24T14:15:22Z"
+        }
+      ],
+      "meta": {}
+    }
+    ```
+
+  </Tab>
+</Tabs>
+
+### New customers
+
+To create a shopper profile for a new customer, first use the [Create customers](/docs/rest-management/customers#create-customers) endpoint to register the customer, then create a shopper profile using the new `customer_id`. 
+
+### Add shopper profiles to a segment
+
+After you create segments and shopper profiles, you can associate multiple shopper profiles with a given segment using the [Add shopper profiles to a segment](/docs/rest-management/shopper-profiles-for-a-segment#add-shopper-profiles-to-a-segment) endpoint. Include the `segmentId` as a path parameter, and pass an array of shopper profile `id`s.
+
+<Tabs items={['Request', 'Response']}>
+  <Tab>
+
+    ```http filename="Example request: Add shoppers to a segment" showLineNumbers copy
+    POST https://api.bigcommerce.com/stores/{{STORE_HASH}}/v3/segments/{{segmentId}}/shopper-profiles
+    X-Auth Token: {{ACCESS_TOKEN}}
+    Content-Type: application/json
+    Accept: application/json
+
+    [
+      "497f6eca-6276-4993-bfeb-53cbbbba6f08", // shopper profile UUID
+    ]
+    ```
+
+  </Tab>
+  <Tab>
+
+    ```json filename="Example response: Add shoppers to a segment" showLineNumbers copy
+    {
+      "data": [
+        {
+          "id": "497f6eca-6276-4993-bfeb-53cbbbba6f08",
+          "customer_id": 1,
+          "created_at": "2022-08-24T14:15:22Z",
+          "updated_at": "2022-08-26T14:08:31Z"
+        }
+      ]
+    }
+    ```
+
+  </Tab>
+</Tabs>
+
+## Updating and deleting segments
+
+Use the following guide to update or delete segments.
+
+### Update segments
+
+Update segment names and descriptions using the [Update Segments](/docs/rest-management/segments#update-segments) endpoint. Include an array of objects that each contain the `segmentId`; `name` and `description` are optional.
+
+<Tabs items={['Request', 'Response']}>
+  <Tab>
+
+    ```http filename="Example request: Update segments" showLineNumbers copy
+    PUT https://api.bigcommerce.com/stores/{{STORE_HASH}}/v3/segments
+    X-Auth Token: {{ACCESS_TOKEN}}
+    Content-Type: application/json
+    Accept: application/json
+
+    [
+      {
+        "id": "497f6eca-6276-4993-bfeb-53cbbbba6f08",
+        "name": "My Segment",
+        "description": "New and improved segment description."
+      }
+    ]
+    ```
+
+  </Tab>
+  <Tab>
+
+    ```json filename="Example response: Update a segment" showLineNumbers copy
+    {
+      "data": [
+        {
+          "id": "497f6eca-6276-4993-bfeb-53cbbbba6f08",
+          "name": "My Segment",
+          "description": "New and improved segment description.",
+          "created_at": "2022-08-24T14:15:22Z",
+          "updated_at": "2022-08-27T18:57:22Z"
+        }
+      ],
+      "meta": {}
+    }
+    ```
+
+  </Tab>
+</Tabs>
+
+#### Remove shoppers from a given segment
+
+You may want to change the segments to which a shopper's profile belongs based on the shopper's behavior on the storefront. To remove one or more specific shopper profiles, use the [Remove shopper profiles from a segment](/docs/rest-management/shopper-profiles-for-a-segment#remove-shopper-profiles-from-a-segment) endpoint. Include the `segmentId` as a path parameter, and use the `id:in` query parameter to pass the shopper profile `id`(s) you want to remove. If you exclude `id:in`, this request will empty the segment of all shopper profiles. 
+
+<Callout type="info">
+  Removing a shopper profile from a segment does not delete the shopper profile itself. The shopper profile will remain associated with any other segments.
+</Callout>
+
+<Tabs items={['Request', 'Response']}>
+  <Tab>
+
+    ```http filename="Example request: Remove shoppers from a segment" showLineNumbers copy
+    DELETE https://api.bigcommerce.com/stores/{{STORE_HASH}}/v3/segments/{{segmentId}}/shopper-profiles
+    X-Auth Token: {{ACCESS_TOKEN}}
+    Accept: application/json
+    ```
+
+  </Tab>
+  <Tab>
+
+    ```json filename="Example response: Remove shoppers from a segment" showLineNumbers copy
+    HTTP 204 No Content
+    ```
+  </Tab>
+</Tabs>
+
+### Delete segments
+
+To delete segments, use the [Delete segments](/docs/rest-management/segments#delete-segments) endpoint. Segments and shopper profiles have a many-to-many relationship. Thus, all the shopper profiles associated with a deleted segment will still exist, but be disassociated from the deleted segment. Include the `id:in` query parameter to specify which segments you want to delete.
+
+<Callout type="warning">
+  #### Make sure to specify which segments
+  If you don't pass the `id:in` query parameter, you will delete every segment in the store.
+</Callout>
+
+<Tabs items={['Request', 'Response']}>
+  <Tab>
+
+    ```http filename="Example request: Delete segments" showLineNumbers copy
+    DELETE https://api.bigcommerce.com/stores/{{STORE_HASH}}/v3/segments
+    X-Auth-Token: {{ACCESS_TOKEN}}
+    Accept: application/json
+    ```
+
+  </Tab>
+  <Tab>
+    ```json filename="Example response: Delete segments" showLineNumbers copy
+    HTTP 204 No Content
+    ```
+  </Tab>
+</Tabs>
+
+### Delete shopper profiles
+
+To delete shopper profiles, use the [Delete shopper profiles](/docs/rest-management/shopper-profiles#delete-shopper-profiles) endpoint. Include the `id:in` query parameter to specify which shopper profiles you want to delete.
+
+
+<Callout type="warning">
+  #### Make sure to specify which shopper profiles
+  If you don't pass the `id:in` query parameter, you will delete every shopper profile in the store.
+</Callout>
+
+<Tabs items={['Request', 'Response']}>
+  <Tab>
+
+    ```http filename="Example request: Delete shopper profiles" showLineNumbers copy
+    DELETE https://api.bigcommerce.com/stores/{{STORE_HASH}}/v3/shopper-profiles
+    X-Auth-Token: {{ACCESS_TOKEN}}
+    Accept: application/json
+    ```
+
+  </Tab>
+  <Tab>
+    ```json filename="Example response: Delete shopper profiles" showLineNumbers copy
+    HTTP 204 No Content
+    ```
+  </Tab>
+</Tabs>
+
+## Retrieving segment information
+
+Once you've established relationships between segments and shopper profiles, you can extend the reach of the Customer Segmentation API to target customers.
+
+### Retrieve shopper profiles for a segment
+
+To keep your segments in sync with external apps, use the [Get all shopper profiles in a segment](/docs/rest-management/shopper-profiles#get-all-shopper-profiles) endpoint. This request returns a list of all shopper profiles belonging to a specific segment.
+
+<Tabs items={['Request', 'Response']}>
+  <Tab>
+
+    ```http filename="Example request: Get all shopper profiles in a segment" showLineNumbers copy
+    GET https://api.bigcommerce.com/stores/{{STORE_HASH}}/v3/segments/{{segmentId}}/shopper-profiles
+    X-Auth-Token: {{ACCESS_TOKEN}}
+    Accept: application/json
+    ```
+
+  </Tab>
+  <Tab>
+
+    ```json filename="Example response: Get all shopper profiles in a segment" showLineNumbers copy
+    {
+      "data": [
+        {
+          "id": "497f6eca-6276-4993-bfeb-53cbbbba6f08",
+          "customer_id": 1,
+          "created_at": "2022-08-24T14:15:22Z",
+          "updated_at": "2022-08-24T14:15:22Z"
+        }
+      ],
+      "meta": {
+        "pagination": {
+          "total": 1,
+          "count": 1,
+          "per_page": 50,
+          "current_page": 1,
+          "total_pages": 1
+        }
+      }
+    }
+    ```
+
+  </Tab>
+</Tabs>
+
+### Retrieve segments for a shopper profile
+
+To find all segments associated with a given shopper profile, use the [Get all segments for a shopper profile](/docs/rest-management/segments-for-a-shopper-profile#get-all-segments-for-a-shopper-profile) endpoint. Include the `id` of the shopper profile as a path parameter.
+
+<Tabs items={['Request', 'Response']}>
+  <Tab>
+
+    ```http filename="Example request: Get a shopper's segments" showLineNumbers copy
+    GET https://api.bigcommerce.com/stores/{{STORE_HASH}}/v3/shopper-profiles/{{shopperProfileId}}/segments
+    X-Auth-Token: {{ACCESS_TOKEN}}
+    Accept: application/json
+    ```
+
+  </Tab>
+  <Tab>
+
+    ```json filename="Example response: Get a shopper's segments" showLineNumbers copy
+    {
+      "data": [
+        {
+          "id": "497f6eca-6276-4993-bfeb-53cbbbba6f08",
+          "name": "My Segment",
+          "description": "New and improved segment description.",
+          "created_at": "2022-08-24T14:15:22Z",
+          "updated_at": "2022-08-24T14:15:22Z"
+        }
+      ],
+      "meta": {
+        "pagination": {
+          "total": 1,
+          "count": 1,
+          "per_page": 50,
+          "current_page": 1,
+          "total_pages": 1
+        }
+      }
+    }
+    ```
+
+  </Tab>
+</Tabs>
+
+### Retrieve shopper profile and segments for a customer
+
+To discover whether a customer is already associated with a shopper profile and segments, use the [Get customers](/docs/rest-management/customers#get-all-customers) endpoint. Pass the `include` query parameter with `shopper_profile_id` and `segment_ids` as in its comma-separated list of values.
+
+## Targeting a segment with a promotion
+
+You can use the Promotions Advanced Editor in the store control panel to target the segments you create with the Customer Segmentation API.
+
+### Promotions Advanced Editor
+
+To create a promotion in the store control panel, go to **Marketing > Promotions > Create > With Advanced Editor**. For more detailed information on creating a promotion, visit the [Advanced Editor](https://support.bigcommerce.com/s/article/Advanced-Promotions#creating) article in our Support Center.
+
+![Promotions Advanced Editor.png](https://storage.googleapis.com/bigcommerce-production-dev-center/images/Customer_Segmentation/Beta%20Docs%20Phasea1/Promotions_Create.png)
+
+When you set up targeting rules for a promotion, the **Customer Segment** field is available as an option.
+
+![targeting.png](https://storage.googleapis.com/bigcommerce-production-dev-center/images/Customer_Segmentation/Beta%20Docs%20Phasea1/targeting.png)
+
+The Advanced Editor supports both inclusion and exclusion targeting rules, such as the following:
+
+* Using the *is* conditional, a promotion can target segments of shoppers who are in **segment A** *and/or* **segment B**.
+
+- Using the *is not* conditional, a promotion can target segments of shoppers who are in *neither* **segment A** *nor* **segment B**.
+
+To learn more about promotion targeting rules, visit the [Advanced Editor](https://support.bigcommerce.com/s/article/Advanced-Promotions#creating) article in our Support Center.
+
+
+## Resources
+
+### Articles
+* [Customer Segmentation API Overview](/docs/store-operations/segments/overview)
+* [Definitions and Logical Relationships](/docs/store-operations/segments/definitions)
+* [Promotions API](/docs/store-operations/segments/promotions)
+* [Promotions Advanced Editor](https://support.bigcommerce.com/s/article/Advanced-Promotions#creating) (Support Center)
+
+### Customer Segmentation reference
+* [Customer Segmentation V3 API Reference Overview](/docs/rest-management/segments)
+* [Create segments](/docs/rest-management/segments#create-segments)
+* [Create shopper profiles](/docs/rest-management/shopper-profiles#create-shopper-profiles)
+* [Add shopper profiles to a segment](/docs/rest-management/shopper-profiles-for-a-segment#add-shopper-profiles-to-a-segment)
+* [Update Segments](/docs/rest-management/segments#update-segments)
+* [Remove shopper profiles from a segment](/docs/rest-management/shopper-profiles-for-a-segment#remove-shopper-profiles-from-a-segment)
+* [Delete segments](/docs/rest-management/segments#delete-segments)
+* [Get all shopper profiles in a segment](/docs/rest-management/shopper-profiles-for-a-segment#get-all-shopper-profiles-in-a-segment)
+* [Get all segments for a shopper profile](/docs/rest-management/segments-for-a-shopper-profile#get-all-segments-for-a-shopper-profile)
+
+### Customers reference
+* [Create customers](/docs/rest-management/customers#create-customers)
+* [Get customers](/docs/rest-management/customers#get-all-customers)

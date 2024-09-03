@@ -3,13 +3,14 @@ info:
   version: ''
   title: Shipping V3
   description: V3 REST API shipping endpoints.
-  termsOfService: 'http://www.bigcommerce.com/terms' 
-  contact: 
-    name: BigCommerce 
-    url: 'https://www.bigcommerce.com' 
-    email: support@bigcommerce.com 
+  termsOfService: 'http://www.bigcommerce.com/terms'
+  contact:
+    name: BigCommerce
+    url: 'https://www.bigcommerce.com'
+    email: support@bigcommerce.com
 tags:
   - name: Customs Information
+  - name: Shipping Settings
 security:
   - X-Auth-Token: []
 servers:
@@ -134,14 +135,66 @@ paths:
             examples:
               Example:
                 value:
-                - product_id: 77
-                  country_of_origin: US
-                  commodity_description: Baseball caps
-                  international_shipping: true
-                  hs_codes:
-                    CA: '508313'
-                    AU: '817355'
-                    ALL: '501000'
+                  - product_id: 77
+                    country_of_origin: US
+                    commodity_description: Baseball caps
+                    international_shipping: true
+                    hs_codes:
+                      CA: '508313'
+                      AU: '817355'
+                      ALL: '501000'
+
+  '/shipping/settings':
+    parameters:
+      - $ref: '#/components/parameters/Accept'
+
+    get:
+      operationId: getShippingSettings
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/shippingSettings'
+                  meta:
+                    type: object
+                    properties: {}
+      description: |-
+        Get shipping settings.
+      tags:
+        - Shipping Settings
+      summary: Get Shipping Settings
+    post:
+      operationId: updateShippingSettings
+      parameters:
+        - $ref: '#/components/parameters/ContentType'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/shippingSettings'
+                  meta:
+                    type: object
+                    properties: {}
+      summary: Update Shipping Settings
+      description: |-
+        Updates shipping settings.
+      tags:
+        - Shipping Settings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/shippingSettings'
 components:
   parameters:
     store_hash:
@@ -281,7 +334,7 @@ components:
           schema:
             $ref: '#/components/schemas/error_Full'
     405_Method_Not_Allowed:
-      description: The resource was found, but doesnʼt support the request method. Issued when either a specific method isnʼt yet implemented on a resource, or the resource doesnʼt support the method at all. For example, a PUT request to `/orders` is invalid, but a PUT request to `/orders/{order_id}` is valid. 
+      description: The resource was found, but doesnʼt support the request method. Issued when either a specific method isnʼt yet implemented on a resource, or the resource doesnʼt support the method at all. For example, a PUT request to `/orders` is invalid, but a PUT request to `/orders/{order_id}` is valid.
       content:
         application/json:
           schema:
@@ -323,7 +376,6 @@ components:
       title: customsInformationRequest
       description: Data about the customs information object.
       type: object
-      x-internal: false
       properties:
         product_id:
           description: The product ID to which the customs information data applies.
@@ -355,11 +407,23 @@ components:
         - commodity_description
         - international_shipping
         - hs_codes
+    shippingSettings:
+      type: object
+      properties:
+        checkout:
+          type: object
+          properties:
+            country_list_strategy:
+              description: The approach for displaying the list of countries at checkout.
+              type: string
+              enum:
+                - DISPLAY_ALL_COUNTRIES
+                - DISPLAY_ONLY_SHIPPABLE_COUNTRIES
+              example: DISPLAY_ALL_COUNTRIES
     customsInformation:
       title: customsInformation
       description: Data about the customs information object.
       type: object
-      x-internal: false
       properties:
         product_id:
           description: The ID of the product which the customs information data will apply to.
@@ -415,7 +479,6 @@ components:
         CA: '508313'
         US: '641000'
         AU: '817355'
-      x-internal: false
     metaCollection:
       title: metaCollection
       description: Meta data relating to pagination.
@@ -459,11 +522,9 @@ components:
                   type: string
                   description: Query string appended to the resource to show the current page.
                   example: '?limit=1&page=2'
-      x-internal: false
     error_Full:
       title: Error
       description: ''
       type: object
       properties: {}
       additionalProperties: true
-      x-internal: false

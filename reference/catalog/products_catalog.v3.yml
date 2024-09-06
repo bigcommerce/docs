@@ -114,7 +114,6 @@ paths:
         - $ref: '#/components/parameters/CategoriesParam'
         - $ref: '#/components/parameters/KeywordParam'
         - $ref: '#/components/parameters/KeywordContextParam'
-        - $ref: '#/components/parameters/StatusParam'
         - $ref: '#/components/parameters/AvailabilityParam'
         - $ref: '#/components/parameters/SkuParam'
         - $ref: '#/components/parameters/SkuInParam'
@@ -177,6 +176,8 @@ paths:
                 product_tax_code: string
                 categories:
                   - 0
+                channels:
+                  - 1
                 brand_id: 37
                 inventory_level: 0
                 inventory_warning_level: 0
@@ -245,10 +246,6 @@ paths:
                     image_url: string
                     id: 0
                     product_id: 0
-                    url_zoom: string
-                    url_standard: string
-                    url_thumbnail: string
-                    url_tiny: string
                     date_modified: '2019-08-24T14:15:22Z'
       responses:
         '200':
@@ -263,8 +260,8 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/product_Full'
-                  meta:
-                    $ref: '#/components/schemas/metaCollection_Full'
+                  meta: {}
+                    
               example:
                 id: 0
                 name: Smith Journal 13
@@ -1282,7 +1279,7 @@ paths:
 
         **Usage Notes**
         - `image_url` - `255` character limit
-        - For file uploads, use the `multipart/form-data` media type.
+        - For file uploads, use the `multipart/form-data` media type. See [Adding product images](/docs/store-operations/catalog#adding-product-images) for more information.
         - You can create only one image at a time. A product can have up to 1000 images.
         - Supported image file types are BMP, GIF, JPEG, PNG, WBMP, XBM, and WEBP.
         - Each image file or image uploaded by URL can be up to 8 MB.
@@ -1528,13 +1525,7 @@ paths:
                             type: string
                             description: |
                               The date on which the product image was modified.
-                            format: date-time
-                          image_url:
-                            type: string
-                            description: |-
-                              Publically available URL.
-                              Use the image_url when creating a product.
-                            example: 'https://upload.wikimedia.org/wikipedia/commons/7/7f/Anglel_Bless_Legendary_Hills_1_m%C4%9Bs%C3%ADc_st%C3%A1%C5%99%C3%AD.jpg'
+                            format: date-time                      
                   meta:
                     $ref: '#/components/schemas/metaEmpty_Full'
                 description: |
@@ -1796,12 +1787,6 @@ paths:
                             description: |
                               The date on which the product image was modified.
                             format: date-time
-                          image_url:
-                            type: string
-                            description: |-
-                              Publically available URL.
-                              Use the image_url when creating a product.
-                            example: 'https://upload.wikimedia.org/wikipedia/commons/7/7f/Anglel_Bless_Legendary_Hills_1_m%C4%9Bs%C3%ADc_st%C3%A1%C5%99%C3%AD.jpg'
                   meta:
                     $ref: '#/components/schemas/metaEmpty_Full'
                 description: |
@@ -2513,36 +2498,7 @@ paths:
                       example: 5
                   description: Adjuster for Complex Rules.
                 conditions:
-                  type: array
-                  items:
-                    title: Complex Rule Condition
-                    required:
-                      - modifier_id
-                      - modifier_value_id
-                      - variant_id
-                    type: object
-                    properties:
-                      modifier_id:
-                        type: integer
-                        description: |-
-                          The unique numeric ID of the modifier with which the rule condition is associated.
-                          Required in /POST.
-                        nullable: true
-                        example: 55
-                      modifier_value_id:
-                        type: integer
-                        description: |-
-                          The unique numeric ID of the modifier value with which the rule condition is associated.
-                          Required in /POST.
-                        nullable: true
-                        example: 256
-                      variant_id:
-                        type: integer
-                        description: |-
-                          The unique numeric ID of the variant with which the rule condition is associated.
-                          Required in /POST.
-                        nullable: true
-                        example: 1
+                  $ref: '#/components/schemas/conditionsRequest'
               description: Common ComplexRule properties.
         required: true
       responses:
@@ -3445,6 +3401,53 @@ paths:
     parameters:
       - $ref: '#/components/parameters/ProductIdParam'
       - $ref: '#/components/parameters/CustomFieldIdParam'
+  '/catalog/products/{product_id}/bulk-pricing-rules':
+    parameters:
+      - $ref: '#/components/parameters/ProductIdParam'
+      - $ref: '#/components/parameters/Accept'
+      - $ref: '#/components/parameters/ContentType'
+    post:
+      tags:
+        - Bulk pricing rules
+      summary: Create a Bulk Pricing Rule
+      description: Creates a *Bulk Pricing Rule*.
+      operationId: createBulkPricingRule
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/bulkPricingRule_Full'
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                title: 'Create Bulk Pricing Rule Response'
+                type: object
+                properties:
+                  data:
+                    allOf:
+                      - type: object
+                        properties:
+                          id:
+                            type: integer
+                            description: Unique ID of the *Bulk Pricing Rule*. Read-Only.
+                            readOnly: true
+                        required:
+                          - id
+                      - $ref: '#/components/schemas/bulkPricingRule_Full'
+                  meta:
+                    $ref: '#/components/schemas/metaEmpty_Full'
+              example:
+                data:
+                  id: 83
+                  quantity_min: 1
+                  quantity_max: 3
+                  type: price
+                  amount: 1
+                meta: {}
   '/catalog/products/{product_id}/bulk-pricing-rules/{bulk_pricing_rule_id}':
     get:
       tags:
@@ -3546,54 +3549,16 @@ paths:
                 type: object
                 properties:
                   data:
-                    title: Bulk Pricing Rule
-                    required:
-                      - amount
-                      - quantity_max
-                      - quantity_min
-                      - type
-                    type: object
-                    properties:
-                      id:
-                        type: integer
-                        description: Unique ID of the *Bulk Pricing Rule*. Read-Only.
-                        readOnly: true
-                      quantity_min:
-                        minimum: 0
-                        type: integer
-                        description: |
-                          The minimum inclusive quantity of a product to satisfy this rule. Must be greater than or equal to zero.
-                          Required in /POST.
-                        example: 10
-                        x-required:
-                          - post
-                      quantity_max:
-                        minimum: 0
-                        type: integer
-                        description: |-
-                          The maximum inclusive quantity of a product to satisfy this rule. Must be greater than the `quantity_min` value – unless this field has a value of 0 (zero), in which case there will be no maximum bound for this rule.
-                          Required in /POST.
-                        example: 50
-                        x-required:
-                          - post
-                      type:
-                        type: string
-                        description: |-
-                          The type of adjustment that is made. Values: `price` - the adjustment amount per product; `percent` - the adjustment as a percentage of the original price; `fixed` - the adjusted absolute price of the product.
-                          Required in /POST.
-                        example: price
-                        enum:
-                          - price
-                          - percent
-                          - fixed
-                        x-required:
-                          - post
-                      amount:
-                        type: integer
-                        description: |-
-                          The discount can be a fixed dollar amount or a percentage. For a fixed dollar amount enter it as an integer and the response will return as an integer. For percentage enter the amount as the percentage divided by 100 using string format. For example 10% percent would be “.10”. The response will return as an integer.
-                          Required in /POST.
-                    description: Common BulkPricingRule properties
+                    allOf:
+                      - type: object
+                        properties:
+                          id:
+                            type: integer
+                            description: Unique ID of the *Bulk Pricing Rule*. Read-Only.
+                            readOnly: true
+                        required:
+                          - id
+                      - $ref: '#/components/schemas/bulkPricingRule_Full'
                   meta:
                     $ref: '#/components/schemas/metaEmpty_Full'
               example:
@@ -4158,10 +4123,6 @@ paths:
                               type: integer
                               description: |
                                 The unique numeric ID of the product review; increments sequentially.
-                            product_id:
-                              type: integer
-                              description: |
-                                The unique numeric identifier for the product with which the review is associated.
                             date_created:
                               type: string
                               description: |
@@ -4236,6 +4197,7 @@ paths:
                       description: |-
                         The title for the product review.
                         Required in /POST.
+                      example: Great Product
                     text:
                       type: string
                       description: |
@@ -4244,17 +4206,21 @@ paths:
                       type: string
                       description: |
                         The status of the product review. Must be one of `approved`, `disapproved` or `pending`.
+                      example: approved
                     rating:
                       type: integer
                       description: 'The rating of the product review. Must be one of 0, 1, 2, 3, 4, 5.'
+                      example: 5
                     email:
                       type: string
                       description: 'The email of the reviewer. Must be a valid email, or an empty string.'
+                      example: bob@email.com
                     name:
                       maxLength: 255
                       minLength: 0
                       type: string
                       description: The name of the reviewer.
+                      example: Bob S.
                     date_reviewed:
                       type: string
                       description: |
@@ -4318,10 +4284,6 @@ paths:
                             type: integer
                             description: |
                               The unique numeric ID of the product review; increments sequentially.
-                          product_id:
-                            type: integer
-                            description: |
-                              The unique numeric identifier for the product with which the review is associated.
                           date_created:
                             type: string
                             description: |
@@ -4611,10 +4573,6 @@ paths:
                             type: integer
                             description: |
                               The unique numeric ID of the product review; increments sequentially.
-                          product_id:
-                            type: integer
-                            description: |
-                              The unique numeric identifier for the product with which the review is associated.
                           date_created:
                             type: string
                             description: |
@@ -5115,6 +5073,30 @@ paths:
                 $ref: '#/components/schemas/MetaFieldCollectionResponsePartialSuccess_DELETE'
 components:
   schemas:
+    modifierCondition:
+      type: object
+      properties: 
+        modifier_id:
+          type: integer
+          example: 55
+          description: Use the [get all product modifiers](/docs/rest-catalog/product-modifiers#get-all-product-modifiers) endpoint to determine the `option_values` `id`. The `option_values` `id` is the `modifier_value_id`.
+        modifier_value_id:
+          type: integer
+          description: Use the [get all product modifiers](/docs/rest-catalog/product-modifiers#get-all-product-modifiers) endpoint to determine the `option_values` `option_id`. The `option_values` `option_id` is the same as the `modifier_id`.
+          example: 256
+    variantCondition:
+      type: object
+      properties:
+        variant_id:
+          type: integer
+          example: 1
+          description: Use the [get all product variants](/docs/rest-catalog/product-variants#get-all-product-variants) endpoint to determine the variant `id`.
+    conditionsRequest: 
+      type: array
+      items:
+        oneOf:
+          - $ref: '#/components/schemas/modifierCondition'
+          - $ref: '#/components/schemas/variantCondition'
     productModifier_Base:
       title: productModifier_Base
       required:
@@ -5318,6 +5300,9 @@ components:
           description: 'This variant’s retail price on the storefront. If a Price List ID is used, the Price List value will be used. If a Price List ID is not used, and this value is null, the product’s retail price (set in the Product resource’s `price` field) will be used as the retail price.'
           format: double
           nullable: true
+        map_price:
+              type: number
+              description: Minimum Advertised Price.
         weight:
           minimum: 0
           type: number
@@ -5364,10 +5349,17 @@ components:
           minLength: 0
           type: string
           description: 'If `purchasing_disabled` is `true`, this message should show on the storefront when the variant is selected.'
+        image_url:
+          type: string
+          description: |
+            The URL for an image displayed on the storefront when the conditions are applied. Limit of 8MB per file.
+          example: 'https://cdn8.bigcommerce.com/s-123456/product_images/d/fakeimage.png'
         upc:
           type: string
           description: The UPC code used in feeds for shopping comparison sites and external channel integrations.
-          nullable: true
+          nullable: false
+          maxLength: 14
+          minLength: 0
         inventory_level:
           type: integer
           description: |- 
@@ -5394,9 +5386,13 @@ components:
         mpn:
           type: string
           description: The Manufacturer Part Number (MPN) for the variant.
+          nullable: false
         gtin:
           type: string
           example: '012345678905'
+          nullable: false
+          maxLength: 14
+          minLength: 0
       description: Common Variant properties.
       x-internal: false
       x-examples:
@@ -5433,6 +5429,9 @@ components:
               description: Variant ID
             sku:
               type: string
+            sku_id:
+              type: integer
+              example: 70
             option_values:
               type: array
               description: Array of option and option values IDs that make up this variant. Will be empty if the variant is the productʼs base variant.
@@ -5559,7 +5558,9 @@ components:
         upc:
           type: string
           description: The UPC code used in feeds for shopping comparison sites and external channel integrations.
-          nullable: true
+          nullable: false
+          maxLength: 14
+          minLength: 0
         inventory_level:
           type: integer
           description: |- 
@@ -5604,6 +5605,21 @@ components:
       allOf:
         - type: object
           properties:
+            id:
+              type: integer
+              description: The option_value ID.
+            label:
+              maxLength: 255
+              minLength: 1
+              type: string
+              description: |
+                The label of the option value.
+              example: Beige
+              x-required:
+            option_id:
+              type: integer
+              description: The option ID.
+              example: 151
             option_display_name:
               maxLength: 255
               minLength: 1
@@ -5613,14 +5629,7 @@ components:
               example: Color
               x-required:
                 - post
-            label:
-              maxLength: 255
-              minLength: 1
-              type: string
-              description: |
-                The label of the option value.
-              example: Beige
-              x-required:
+            
                 - post
       required:
           - option_display_name
@@ -5712,9 +5721,6 @@ components:
           type: string
           description: |
             The description for the image.
-        image_url:
-          type: string
-          description: 'Must be a fully qualified URL path, including protocol. Limit of 8MB per file.'
       description: Common ProductImage properties.
       x-internal: false
     productImage_Put:
@@ -6090,8 +6096,6 @@ components:
     bulkPricingRule_Full:
       title: bulkPricingRule_Full
       type: object
-      description: Common Bulk Pricing Rule properties
-      x-internal: false
       properties:
         quantity_min:
           minimum: 0
@@ -6495,6 +6499,68 @@ components:
               format: date-time
           description: Common ProductImage properties.
       x-internal: false
+    primaryImage_Full:
+      title: primaryImage_Full
+      description: Common PrimaryImage properties.
+      allOf:
+        - title: productImage
+          type: object
+          properties:
+            id:
+              type: integer
+              description: |
+                The unique numeric ID of the image; increments sequentially.
+            product_id:
+              type: integer
+              description: |
+                The unique numeric identifier for the product with which the image is associated.
+            is_thumbnail:
+              type: boolean
+              description: |
+                Flag for identifying whether the image is used as the productʼs thumbnail.
+            sort_order:
+              maximum: 2147483647
+              minimum: -2147483648
+              type: integer
+              description: |
+                The order in which the image will be displayed on the product page. Higher integers give the image a lower priority. When updating, if the image is given a lower priority, all images with a `sort_order` the same as or greater than the imageʼs new `sort_order` value will have their `sort_order`s reordered.
+            description:
+              type: string
+              description: |
+                The description for the image.
+            image_file:
+              type: string
+              description: |
+                The local path to the original image file uploaded to BigCommerce. Use image_url when creating a product.
+
+                Must be sent as a `multipart/form-data` field in the request body. Limit of 8 MB per file.
+            url_zoom:
+              readOnly: true
+              type: string
+              description: |
+                The zoom URL for this image. By default, this is used as the zoom image on product pages when zoom images are enabled. You should provide an image smaller than 1280x1280; otherwise, the API returns a resized image.
+            url_standard:
+              readOnly: true
+              type: string
+              description: |
+                The standard URL for this image. By default, this is used for product-page images.
+            url_thumbnail:
+              readOnly: true
+              type: string
+              description: |
+                The thumbnail URL for this image. By default, this is the image size used on the category page and in side panels.
+            url_tiny:
+              readOnly: true
+              type: string
+              description: |
+                The tiny URL for this image. By default, this is the image size used for thumbnails beneath the product image on a product page.
+            date_modified:
+              type: string
+              description: |
+                The date on which the product image was modified.
+              format: date-time
+          description: Common PrimaryImage properties.
+      x-internal: false
     product_Put_Collection:
       title: product_Put_Collection
       description: The model for batch updating products.
@@ -6530,6 +6596,8 @@ components:
             product_tax_code: string
             categories:
               - 0
+            channels:
+              - 1
             brand_id: 0
             brand_name: "New Brand"
             inventory_level: 0
@@ -6785,7 +6853,6 @@ components:
         Shared `Product` properties used in:
         * `POST`
         * `PUT`
-        * `GET`
       x-internal: false
       x-examples:
         example:
@@ -6809,6 +6876,8 @@ components:
               calculated_price: 50
               categories:
                 - 24
+              channels:
+                - 1
               brand_id: 37
               brand_name: "New Brand"
               option_set_id: 21
@@ -6974,6 +7043,12 @@ components:
             type: number
           maximum: 1000
           minimum: 0
+        channels:
+          type: array
+          description: | 
+            An array of channel IDs to which this product is assigned.
+          items:
+            type: number
         brand_id:
           maximum: 1000000000
           minimum: 0
@@ -7052,8 +7127,9 @@ components:
             The layout template file used to render this product category. This field is writable only for stores with a Blueprint theme applied. For stores with a Stencil theme applied, see [Custom Template Associations](/docs/rest-content/custom-template-associations).
         upc:
           type: string
-          maxLength: 32
+          maxLength: 14
           minLength: 0
+          nullable: false
           description: |
             The product UPC code, which is used in feeds for shopping comparison sites and external channel integrations.
         search_keywords:
@@ -7218,9 +7294,13 @@ components:
         gtin:
           type: string
           description: Global Trade Item Number
+          nullable: false
+          maxLength: 14
+          minLength: 0
         mpn:
           type: string
           description: Manufacturer Part Number
+          nullable: false
         date_last_imported:
           type: string
           description: the date when the Product had been imported
@@ -7306,6 +7386,8 @@ components:
               calculated_price: 50
               categories:
                 - 24
+              channels:
+                - 1
               brand_id: 37
               option_set_id: 21
               option_set_display: "right"
@@ -7369,8 +7451,6 @@ components:
           description: |
             A unique product name.
           example: Smith Journal 13
-          x-required:
-            - post
         type:
           type: string
           description: |
@@ -7379,8 +7459,6 @@ components:
           enum:
             - physical
             - digital
-          x-required:
-            - post
         sku:
           maxLength: 255
           minLength: 0
@@ -7470,6 +7548,12 @@ components:
             type: number
           maximum: 1000
           minimum: 0
+        channels:
+          type: array
+          description: | 
+            An array of channel IDs to which this product is assigned.
+          items:
+            type: number
         brand_id:
           maximum: 1000000000
           minimum: 0
@@ -7544,8 +7628,9 @@ components:
             The layout template file used to render this product category. This field is writable only for stores with a Blueprint theme applied. For stores with a Stencil theme applied, see [Custom Template Associations](/docs/rest-content/custom-template-associations).
         upc:
           type: string
-          maxLength: 32
+          maxLength: 14
           minLength: 0
+          nullable: false
           description: |
             The product UPC code, which is used in feeds for shopping comparison sites and external channel integrations.
         search_keywords:
@@ -7710,9 +7795,13 @@ components:
         gtin:
           type: string
           description: Global Trade Item Number
+          nullable: false
+          maxLength: 14
+          minLength: 0
         mpn:
           type: string
           description: Manufacturer Part Number
+          nullable: false
         date_last_imported:
           type: string
           description: the date when the Product had been imported
@@ -7755,6 +7844,8 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/productImage_Full'
+        primary_image:
+            $ref: '#/components/schemas/primaryImage_Full'
         videos:
           type: array
           description: |
@@ -7766,11 +7857,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/productVariant_Full'
-      required:
-        - name
-        - type
-        - weight
-        - price
     metafield_Full:
       title: metafield_Full
       allOf:
@@ -7819,6 +7905,9 @@ components:
               readOnly: true
               format: date-time
               example: '2018-05-07T20:14:17+00:00'
+            owner_client_id: 
+              type: string
+              description: ID of metafield's creator
       x-internal: false
     errorResponse_409:
       title: errorResponse_409
@@ -7887,12 +7976,16 @@ components:
             links:
               type: object
               properties:
-                next:
+                previous:
                   type: string
-                  example: '?limit=5&page=2'
+                  example: ?limit=50&page=1
                 current:
                   type: string
-                  example: '?limit=5&page=1'
+                  example: '?limit=50&page=1'
+                next:
+                  type: string
+                  example: '?limit=50&page=2'
+                
       x-tags:
         - Models
     BaseError:
@@ -8075,7 +8168,7 @@ components:
           description: Empty for 200 responses.
           example: []
         meta:
-          $ref: '#/components/schemas/CollectionMeta'
+          $ref: '#/components/schemas/WriteCollectionSuccessMeta'
     MetaFieldCollectionResponsePartialSuccess_POST_PUT:
       type: object
       description: |
@@ -8832,6 +8925,71 @@ components:
         type: array
         items:
           type: string
+          enum:
+          - name
+          - type
+          - sku
+          - description
+          - weight
+          - width
+          - depth
+          - height
+          - price
+          - cost_price
+          - retail_price
+          - sale_price
+          - map_price
+          - tax_class_id
+          - product_tax_code
+          - calculated_price
+          - categories
+          - brand_id
+          - option_set_id
+          - option_set_display
+          - inventory_level
+          - inventory_warning_level
+          - inventory_tracking
+          - reviews_rating_sum
+          - reviews_count
+          - total_sold
+          - fixed_cost_shipping_price
+          - is_free_shipping
+          - is_visible
+          - is_featured
+          - related_products
+          - warranty
+          - bin_picking_number
+          - layout_file
+          - upc
+          - mpn
+          - gtin
+          - date_last_imported
+          - search_keywords
+          - availability
+          - availability_description
+          - condition
+          - is_condition_shown
+          - order_quantity_minimum
+          - order_quantity_maximum
+          - page_title
+          - meta_keywords
+          - meta_description
+          - date_created
+          - date_modified
+          - view_count
+          - preorder_release_date
+          - preorder_message
+          - is_preorder_only
+          - is_price_hidden
+          - price_hidden_label
+          - custom_url
+          - base_variant_id
+          - open_graph_type
+          - open_graph_title
+          - open_graph_description
+          - open_graph_use_meta_description
+          - open_graph_use_product_name
+          - open_graph_use_image
     IncludeFieldsParamMetafields:
       name: include_fields
       in: query
@@ -8844,6 +9002,7 @@ components:
           type: string
           enum:
             - resource_id
+            - resource_id:in
             - key
             - value
             - namespace
@@ -8959,14 +9118,13 @@ components:
         items:
           type: string
           enum:
-            - variants
-            - images
-            - custom_fields
             - bulk_pricing_rules
-            - primary_image
+            - reviews
             - modifiers
             - options
-            - videos
+            - parent_relations
+            - custom_fields
+            - channels
     IdMinParam:
       name: 'id:min'
       in: query
@@ -9043,10 +9201,11 @@ components:
     DateModifiedParam:
       name: date_modified
       in: query
+      example: 2024-07-18
       description: 'Filter items by `date_modified`.'
       schema:
         type: string
-        format: date-time
+        format: date
     DateModifiedMaxParam:
       name: 'date_modified:max'
       in: query
@@ -9065,31 +9224,39 @@ components:
       description: Filter items by date_last_imported.
       schema:
         type: string
-        format: date-time
+        format: date
+      example: 2020-07-18
     DateLastImportedNotParam:
       name: 'date_last_imported:not'
       in: query
       description: 'Filter products by specifying a date they were NOT last imported. For example, `date_last_imported:not=2015-08-21T22%3A53%3A23%2B00%3A00`.'
       schema:
         type: string
+        format: date
+      example: 2020-07-18
     DateLastImportedMaxParam:
       name: 'date_last_imported:max'
       in: query
       description: 'Filter items by date_last_imported. For example, `date_last_imported:max=2015-08-21T22%3A53%3A23%2B00%3A00`.'
       schema:
         type: string
+        format: date
+      example: 2020-07-18
     DateLastImportedMinParam:
       name: 'date_last_imported:min'
       in: query
       description: 'Filter items by date_last_imported. For example, `date_last_imported:min=2015-08-21T22%3A53%3A23%2B00%3A00`.'
       schema:
         type: string
+        format: date 
+      example: 2020-07-18
     IsVisibleParam:
       name: is_visible
       in: query
       description: Filter items based on whether the product is currently visible on the storefront.
       schema:
         type: boolean
+      example: true
     IsFeaturedParam:
       name: is_featured
       in: query
@@ -9205,13 +9372,6 @@ components:
         enum:
           - shopper
           - merchant
-    StatusParam:
-      name: status
-      in: query
-      description: |
-        Filter items by status.
-      schema:
-        type: integer
     AvailabilityParam:
       name: availability
       in: query

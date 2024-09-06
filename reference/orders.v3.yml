@@ -165,7 +165,7 @@ paths:
       
         **Notes:**
         * Create a refund quote before performing a refund request to best avoid a `422` error. Check the refund quote's response body for the `refund_methods` array. The `amount` given in the array must match the `amount` used in the refund request body.
-        * Order refunds are processed consecutively. Processing synchronous refunds on an order is not yet supported.
+        * Order refunds should be processed sequentially. Processing multiple concurrent refunds on the same order is not yet supported.
       operationId: createOrderRefundQuotes
       parameters:
         - $ref: '#/components/parameters/ContentType'
@@ -228,7 +228,7 @@ paths:
         * `store_v2_transactions`
 
         **Note:**
-        Order refunds are processed consecutively. Processing synchronous refunds on an order are not yet supported.
+        Order refunds should be processed sequentially. Processing multiple concurrent refunds on the same order are not yet supported.
         
       operationId: createOrderRefund
       parameters:
@@ -840,6 +840,8 @@ paths:
         - $ref: '#/components/parameters/MetafieldNamespaceInParam'
         - $ref: '#/components/parameters/DirectionParam'
         - $ref: '#/components/parameters/IncludeFieldsParamMetafields'
+        - $ref: '#/components/parameters/date_created'
+        - $ref: '#/components/parameters/date_modified'
         - $ref: '#/components/parameters/date_created_min'
         - $ref: '#/components/parameters/date_created_max'
         - $ref: '#/components/parameters/date_modified_min'
@@ -1781,11 +1783,6 @@ components:
               description: |
                 The transaction ID returned by the payment gateway for this transaction item.
               type: string
-            date_created:
-              description: |
-                The date/time of the transaction.
-              type: string
-              format: date-time
             test:
               type: boolean
               description: |
@@ -1808,6 +1805,7 @@ components:
             offline:
               type: object
               description: 'Offline payment (e.g., check or purchase order).'
+              nullable: true
               title: Offline
               properties:
                 display_name:
@@ -1817,6 +1815,7 @@ components:
             custom:
               type: object
               description: Custom payment from manual order.
+              nullable: true
               title: Custom
               properties:
                 payment_method:
@@ -1845,12 +1844,13 @@ components:
                 Identifier for the BigCommerce Order with which this transaction is associated.
             date_created:
               description: |
-                The date/time of the transaction.
+                The date/time of the transaction in ISO-8601 format.
               type: string
               format: date-time
             payment_instrument_token:
               type: string
               description: This field contains internal BigPay token for stored card that is then mapped to the actual third-party token. We currently do not offer a way to get third party tokens.These tokens are read-only and do not return any information about the payment.
+              nullable: true
             avs_result:
               description: Address Verification Service (AVS) result from the payment gateway.
               type: object
@@ -1885,6 +1885,7 @@ components:
               type: object
               description: A gift-certificate model.
               title: Gift Certificate
+              nullable: true
               properties:
                 code:
                   description: |
@@ -1924,6 +1925,7 @@ components:
               type: object
               description: |
                 A store credit model.
+              nullable: true
               properties:
                 remaining_balance:
                   description: |
@@ -1931,6 +1933,33 @@ components:
                   type: number
                   format: float
                   example: 35.42
+            custom_provider_field_result:
+              type: object
+              description: Fields for custom payment providers.
+              title: Custom Payment Provider Field
+              nullable: true
+              properties:
+                receipt_number:
+                  type: string
+                  description: |
+                    The receipt number associated with the transaction.
+                  nullable: true
+                authorization_code:
+                  type: string
+                  description: |
+                    Authorization code for the transaction.
+                  nullable: true
+                fraud_response:
+                  type: string
+                  description: |
+                    The fraud response associated with the transaction.
+                  nullable: true
+                amount_received:
+                  type: number
+                  format: float
+                  description: |
+                    The amount received for the transaction, divided by 100 to convert to the correct currency format.
+                  nullable: true
       title: ''
       x-examples:
         Example 1:
@@ -1975,6 +2004,7 @@ components:
             status: active
           store_credit:
             remaining_balance: 35.42
+          custom_provider_field_result: null
       description: ''
     CreditCard:
       type: object
@@ -2571,6 +2601,11 @@ components:
           type: integer
           example: 1
           description: Order Product ID.
+        adjustments:
+          type: array
+          description: 'Array of product refund deductions'
+          items:
+            $ref: '#/components/schemas/RefundItemAdjustment'
         quantity:
           type: integer
           example: 3
@@ -2581,6 +2616,25 @@ components:
           minLength: 0
           maxLength: 1000
       x-internal: false
+    RefundItemAdjustment:
+      type: object
+      title: Refund Item Adjustment
+      description: Use to reduce the amount refunded for an item.
+      properties:
+        amount:
+          type: number
+          format: float
+          description: 'A negative 2 decimal place rounded value to deduct from the amount refunded.'
+          example: -10.2
+          title: Refund Item Adjustment Amount
+          exclusiveMaximum: True
+          maximum: 0
+        description:
+          type: string
+          description: Description of reason for the adjustment.
+          minLength: 0
+          maxLength: 255
+          example: 'Service fee'
     TaxExemptItem:
       type: object
       title: Tax Exempt (Order Level)
@@ -2732,6 +2786,11 @@ components:
         quantity:
           type: integer
           description: 'Quantity of item refunded. Note: this will only be populated for item_type PRODUCT'
+        adjustments:
+          type: array
+          description: Adjustments to apply to the refunded amount for an item. Only supported for item_type PRODUCT
+          items:
+            $ref: '#/components/schemas/RefundItemAdjustment'
         requested_amount:
           $ref: '#/components/schemas/Amount'
       title: Refund Item
@@ -2858,18 +2917,18 @@ components:
           description: Empty for 200 responses.
           example: []
         meta:
-          $ref: '#/components/schemas/CollectionMeta'
+          $ref: '#/components/schemas/BatchOperationMeta'
       x-internal: false
     MetafieldResponse:
       description: |
         Response payload for the BigCommerce API.
       x-internal: false
-      allOf:
-        - type: object
-          properties:
-            data:
-              $ref: '#/components/schemas/Metafield'
-        - $ref: '#/components/schemas/Meta'
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/Metafield'
+        meta: 
+          $ref: '#/components/schemas/metaEmpty_Full'
     MetafieldBase:
       type: object
       description: |
@@ -3733,6 +3792,13 @@ components:
       required: false
       schema:
         type: string
+    date_created:
+      name: 'date_created'
+      description: 'Filter items by date created. For example, `date_created=2019-09-04T00:00:00`. Returns metafields created on this date.'
+      in: query
+      required: false
+      schema:
+        type: string
     date_modified_min:
       name: 'date_modified:min'
       description: 'Filter items by minimum date modified. For example, `date_modified:min=2019-09-04T00:00:00` or `date_modified:min=2019-09-04`. Returns metafields modified after this date.'
@@ -3743,6 +3809,13 @@ components:
     date_modified_max:
       name: 'date_modified:max'
       description: 'Filter items by maximum date modified. For example, `date_modified:max=2019-09-04T00:00:00` or `date_modified:max=2019-09-04`. Returns metafields modified before this date.'
+      in: query
+      required: false
+      schema:
+        type: string
+    date_modified:
+      name: 'date_modified'
+      description: 'Filter items by date modified. For example, `date_modified=2019-09-04T00:00:00`. Returns metafields modified on this date.'
       in: query
       required: false
       schema:

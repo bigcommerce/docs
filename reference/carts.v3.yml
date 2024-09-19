@@ -169,7 +169,7 @@ paths:
                   gift_certificates:
                     - name: Tobi Day
                       theme: birthday.html
-                      amount: 1
+                      amount: 10
                       quantity: 1
                       sender:
                         name: Brandi Tyler
@@ -278,7 +278,8 @@ paths:
 
         If a product has modifiers, omit the `variant_id` and instead use the `option_selections` array to describe both the **variant** and the **modifier** selections.
 
-        Please note that this API endpoint is not concurrent safe, meaning multiple simultaneous requests could result in unexpected and inconsistent results.
+        To prevent lost updates due to concurrent requests overriding changes made by others, it is recommended to enable optimistic concurrency control by including the `version` field in the request payload. If the provided version does not match the version on the server, a conflict error will be returned, which the client can handle accordingly.
+
       parameters:
         - name: include
           in: query
@@ -325,6 +326,7 @@ paths:
                         name: Jane Does
                         email: janedoe@example.com
                       message: Happy Birthday Jane!
+                  version: 1
               'Example 2: Custom Item':
                 value:
                   custom_items:
@@ -352,7 +354,7 @@ paths:
         **Usage Notes**
 
         * Redirect URLs can also be created with **Create a Cart** requests by appending `include=redirect_urls`.
-        * A **Carts** redirect URL may only be used once.
+        * A **Carts** redirect URL is valid for 30 days and may only be used once.
         * Redirect URLs point to either a shared checkout domain or a channel-specific domain, depending on the storefront configuration.
         * Once a redirect URL has been visited, it will be invalidated and cannot be used again. 
         * If your application requires URLs to be visited more than once, consider generating a fresh one each time you need to restore a cart, and redirecting to the URL from your own application.
@@ -360,12 +362,15 @@ paths:
         * When redirecting the shopper, you can add a set of `query_params` to the URL. The `query_params` feature allows passing additional information to the redirect URL.
       tags:
         - Redirects
-        - Cart Redirect URLs
       requestBody:
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/Redirect_urls_Post'
+            example:
+              query_params:
+                key_1: value_1
+                key_2: value_2
       responses:
         '201':
           $ref: '#/components/responses/CartRedirectResponse'
@@ -397,7 +402,7 @@ paths:
 
         Deleting all line items from the cart will invalidate the cart. 
 
-        Please note that this API endpoint is not concurrent safe, meaning multiple simultaneous requests could result in unexpected and inconsistent results.
+        To prevent lost updates due to concurrent requests overriding changes made by others, it is recommended to enable optimistic concurrency control by including the `version` field in the request payload. If the provided version does not match the version on the server, a conflict error will be returned, which the client can handle accordingly.
       parameters:
         - name: include
           in: query
@@ -429,6 +434,8 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/CartResponse'
+        '409':
+          $ref: '#/components/responses/CartConflictErrorResponse'
       summary: Update Cart Line Item
       operationId: updateCartLineItem
     delete:
@@ -438,6 +445,8 @@ paths:
         **Notes**
 
         Removing the last `line_item` in the *Cart* deletes the *Cart*.
+
+        To prevent lost updates due to concurrent requests overriding changes made by others, it is recommended to enable optimistic concurrency control by including the `version` field in the request payload. If the provided version does not match the version on the server, a conflict error will be returned, which the client can handle accordingly.
       parameters:
         - name: include
           in: query
@@ -457,6 +466,11 @@ paths:
                 - line_items.physical_items.options
                 - line_items.digital_items.options
                 - promotions.banners
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CartLineItemDelete'
       tags:
         - Items
       responses:
@@ -534,6 +548,8 @@ paths:
                       meta: {}
         '204':
           description: 'If the action’s result is an empty cart, the cart is automatically deleted.'
+        '409':
+          $ref: '#/components/responses/CartConflictErrorResponse'
       summary: Delete Cart Line Item
       operationId: deleteCartLineItem
   '/carts/{cartId}':
@@ -577,6 +593,8 @@ paths:
         **Notes**
 
         Changing the *Cart* `customer_id` will remove any promotions or shipping calculations on the *Cart*. These are tied to the customer depending on cart conditions and any customer groups. 
+
+        To prevent lost updates due to concurrent requests overriding changes made by others, it is recommended to enable optimistic concurrency control by including the `version` field in the request payload. If the provided version does not match the version on the server, a conflict error will be returned, which the client can handle accordingly.
       parameters:
         - name: include
           in: query
@@ -604,12 +622,15 @@ paths:
               $ref: '#/components/schemas/CartUpdatePutRequestData'
             example:
               customer_id: 5
+              version: 1
         required: true
       tags:
         - Carts (Single)
       responses:
         '201':
           $ref: '#/components/responses/CartResponse'
+        '409':
+          $ref: '#/components/responses/CartConflictErrorResponse'
       summary: Update Customer ID
       operationId: updateCart
     delete:
@@ -626,7 +647,15 @@ paths:
       - $ref: '#/components/parameters/Accept'
     get:
       summary: Get Global Cart Settings
-      description: Returns the global cart settings of a store.
+      description: |-
+        Returns the global cart settings of a store.
+
+          ### OAuth scopes
+
+          | UI Name | Permission | Parameter |
+          |:--------|:-----------|:----------|
+          |Information & Settings | modify | `store_v2_information`|
+          |Information & Settings | read-only| `store_v2_information`|
       operationId: getGlobalCartSettings
       tags:
         - Settings
@@ -645,7 +674,15 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
     put:
       summary: Update Global Cart Settings
-      description: Update the global cart settings of a store.
+      description: |-
+        Update the global cart settings of a store.
+          *Authentication*
+          ### OAuth scopes
+
+          | UI Name | Permission | Parameter |
+          |:--------|:-----------|:----------|
+          |Information & Settings | modify | `store_v2_information`|
+          |Information & Settings | read-only| `store_v2_information`|
       parameters:
         - $ref: '#/components/parameters/ContentType'
       tags:
@@ -704,14 +741,30 @@ paths:
     parameters:
       - $ref: '#/components/parameters/Accept'
       - name: channel_id
-        description: The channel ID of the settings overrides.
+        description: |-
+          The channel ID of the settings overrides.
+
+          ### OAuth scopes
+
+          | UI Name | Permission | Parameter |
+          |:--------|:-----------|:----------|
+          |Information & Settings | modify | `store_v2_information`|
+          |Information & Settings | read-only| `store_v2_information`|
         in: path
         required: true
         schema:
           type: integer
     get:
       summary: Get Channel Cart Settings
-      description: Returns the per-channel overrides for the cart settings of a store.
+      description: |-
+        Returns the per-channel overrides for the cart settings of a store.
+
+          ### OAuth scopes
+
+          | UI Name | Permission | Parameter |
+          |:--------|:-----------|:----------|
+          |Information & Settings | modify | `store_v2_information`|
+          |Information & Settings | read-only| `store_v2_information`|
       tags:
         - Settings
       responses:
@@ -730,7 +783,15 @@ paths:
       operationId: getChannelCartSettings
     put:
       summary: Update Channel Cart Settings
-      description: Update the per-channel overrides for the cart settings of a store.
+      description: |-
+        Update the per-channel overrides for the cart settings of a store.
+
+        ### OAuth scopes
+
+        | UI Name | Permission | Parameter |
+        |:--------|:-----------|:----------|
+        |Information & Settings | modify | `store_v2_information`|
+        |Information & Settings | read-only| `store_v2_information`|
       tags:
         - Settings
       parameters:
@@ -809,20 +870,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MetafieldResponse'
-        '409':
-          description: |
-            The `Metafield` conflicts with another `Metafield`. This can result from duplicate unique key combinations of the appʼs client id, namespace, key, resource_type, and resource_id.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '422':
-          description: |
-            The `Metafield` is not valid. This is the result of missing required fields or of invalid data. See the response for more details.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
     post:
       summary: Create a Cart Metafield
       tags:
@@ -868,19 +915,43 @@ paths:
                   "date_created": 2023-11-15T15:16:35+00:00
                   "date_modified": 2023-11-15T15:16:35+00:00
                 meta: {}
-        '404':
-          description: |
-            The resource was not found.
+        '400':
+          description: Bad Request. Input is invalid.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/NotFound'
-              examples:
-                example-1:
-                  value:
-                    status: 404
-                    title: There was no order found with ID 1010
-                    type: 'https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes'
+                description: ''
+                type: object
+                properties:
+                  status:
+                    type: number
+                  title:
+                    type: string
+                    minLength: 1
+                  type:
+                    type: string
+                    minLength: 1
+                  detail:
+                    type: string
+                    minLength: 1
+              example:
+                status: 400
+                title: Input is invalid
+                type: 'https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes'
+                detail: Syntax error
+        '409':
+          description: |
+            The `Metafield` conflicts with another `Metafield`. This can result from duplicate unique key combinations of the appʼs client id, namespace, key, resource_type, and resource_id.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: The `Metafield` was not valid. This is the result of missing required fields, or of invalid data. See the response for more details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   '/carts/{cart_id}/metafields/{metafield_id}':
     get:
       summary: Get a Cart Metafield
@@ -896,22 +967,19 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MetafieldResponse'
-        '409':
+        '404':
           description: |
-            The `Metafield` conflicts with another `Metafield`. This can result from duplicate unique key combinations of the appʼs client id, namespace, key, resource_type, and resource_id.
+            Not found (A metafield was not found with this query).
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '422':
-          description: |
-            The `Metafield` is not valid. This is the result of missing required fields or of invalid data. See the response for more details.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '500':
-          description: Internal Server Error
+                $ref: '#/components/schemas/NotFound'
+              examples:
+                example-1:
+                  value:
+                    status: 404
+                    title: The resource at that URL is not found.
+                    type: 'https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes' 
       parameters:
         - $ref: '#/components/parameters/PageParam'
         - $ref: '#/components/parameters/LimitParam'
@@ -939,15 +1007,39 @@ paths:
       responses:
         '200':
           description: |
-            A metafield and metadata.
+            A `Metafield` and metadata.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/MetaFieldCollectionResponse'
               examples: {}
+        '400':
+          description: Bad Request. Metafield is invalid.
+          content:
+            application/json:
+              schema:
+                description: ''
+                type: object
+                properties:
+                  status:
+                    type: number
+                  title:
+                    type: string
+                    minLength: 1
+                  type:
+                    type: string
+                    minLength: 1
+                  detail:
+                    type: string
+                    minLength: 1
+              example:
+                status: 400
+                title: Input is invalid
+                type: 'https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes'
+                detail: Syntax error
         '404':
           description: |
-            The resource was not found.
+            The `Metafield` was not found.
           content:
             application/json:
               schema:
@@ -956,8 +1048,15 @@ paths:
                 example-1:
                   value:
                     status: 404
-                    title: There was no order found with ID 1010
+                    title: The resource at that URL was not found.
                     type: 'https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes'
+        '422':
+          description: |
+            Response object for metafields creation with partial success.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetaFieldCollectionResponsePartialSuccess_POST_PUT'
     delete:
       summary: Delete a Metafield
       tags:
@@ -968,7 +1067,20 @@ paths:
       responses:
         '204':
           description: |
-            An empty response.        
+            An empty response. 
+        '404':
+          description: |
+            Not found (A metafield was not found with this query)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFound'
+              examples:
+                example-1:
+                  value:
+                    status: 404
+                    title: The resource at that URL is not found.
+                    type: 'https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes'
     parameters:
       - $ref: '#/components/parameters/Accept'
       - $ref: '#/components/parameters/cart_id'
@@ -993,8 +1105,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MetaFieldCollectionResponse_Batch'
-        '500':
-          description: Internal Server Error
       parameters:
         - $ref: '#/components/parameters/PageParam'
         - $ref: '#/components/parameters/LimitParam'
@@ -1004,6 +1114,10 @@ paths:
         - $ref: '#/components/parameters/MetafieldNamespaceInParam'
         - $ref: '#/components/parameters/DirectionParam'
         - $ref: '#/components/parameters/IncludeFieldsParamMetafields'
+        - $ref: '#/components/parameters/date_modified_min'
+        - $ref: '#/components/parameters/date_modified_max'
+        - $ref: '#/components/parameters/date_created_min'
+        - $ref: '#/components/parameters/date_created_max'
     post:
       summary: Create multiple Metafields
       tags:
@@ -1036,6 +1150,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MetaFieldCollectionResponse_Batch_POST_PUT'
+        '400':
+          description: Bad Request. Input is invalid.
+          content:
+            application/json:
+              schema:
+                description: ''
+                type: object
+                properties:
+                  status:
+                    type: number
+                  title:
+                    type: string
+                    minLength: 1
+                  type:
+                    type: string
+                    minLength: 1
+                  detail:
+                    type: string
+                    minLength: 1
+              example:
+                status: 400
+                title: Input is invalid
+                type: 'https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes'
+                detail: Syntax error
         '422':
           description: |
             Response object for metafields creation with partial success.
@@ -1043,8 +1181,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MetaFieldCollectionResponsePartialSuccess_POST_PUT'
-        '500':
-          description: Internal Server Error
     put:
       summary: Update multiple Metafields
       tags:
@@ -1077,6 +1213,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MetaFieldCollectionResponse_Batch_POST_PUT'
+        '400':
+          description: Bad Request. Input is invalid.
+          content:
+            application/json:
+              schema:
+                description: ''
+                type: object
+                properties:
+                  status:
+                    type: number
+                  title:
+                    type: string
+                    minLength: 1
+                  type:
+                    type: string
+                    minLength: 1
+                  detail:
+                    type: string
+                    minLength: 1
+              example:
+                status: 400
+                title: Input is invalid
+                type: 'https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes'
+                detail: Syntax error
         '422':
           description: |
             Response object for metafields creation with partial success.
@@ -1084,10 +1244,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MetaFieldCollectionResponsePartialSuccess_POST_PUT'
-        '500':
-          description: Internal Server Error
     delete:
-      summary: Delete All Metafields
+      summary: Delete multiple Metafields
       tags:
         - Batch metafields
       description: Delete all cart metafields.
@@ -1108,6 +1266,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MetaFieldCollectionDeleteResponseSuccess'
+        '400':
+          description: Bad Request. Input is invalid.
+          content:
+            application/json:
+              schema:
+                description: ''
+                type: object
+                properties:
+                  status:
+                    type: number
+                  title:
+                    type: string
+                    minLength: 1
+                  type:
+                    type: string
+                    minLength: 1
+                  detail:
+                    type: string
+                    minLength: 1
+              example:
+                status: 400
+                title: Input is invalid
+                type: 'https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes'
+                detail: Syntax error
         '422':
           description: |
             Response object for metafields deletion with partial success.
@@ -1380,6 +1562,10 @@ components:
       properties:
         customer_id:
           type: integer
+        version:
+          type: integer
+          description: The cart version that you expect to apply the updates. If the provided version doesn't match the current cart version, you will receive a conflict error. This field is optional; if not provided, optimistic concurrency control will not apply.
+          example: 1
       title: Cart Update Put Request Data
       x-internal: false
     LineItemRequestData:
@@ -1481,12 +1667,12 @@ components:
           description: 'Cart ID, provided after creating a cart with a POST request.'
           type: string
           format: UUID
-        parent_id:
-          type: string
-          description: Bundled items will have the ID of their parent item.
         customer_id:
           description: ID of the customer to which the cart belongs.
           type: integer
+        channel_id:
+          type: integer
+          description: 'The channel ID. If no channel is specified, defaults to 1.'
         email:
           description: The cart’s email. This is the same email that is used in the billing address.
           type: string
@@ -1508,6 +1694,9 @@ components:
         discount_amount:
           type: number
           description: Order-based discounted amount only - Excludes coupon discounts and product-based discounts.
+        manual_discount_amount:
+          type: number
+          description: The entered value represents the order level manual discount.
         cart_amount:
           type: number
           description: Sum of cart line-item amounts minus cart-level discounts and coupons. This amount includes taxes (where applicable).
@@ -1553,9 +1742,6 @@ components:
           type: string
           format: ISO-8601
           description: Time when the cart was last updated.
-        channel_id:
-          type: integer
-          description: 'The channel ID. If no channel is specified, defaults to 1.'
         locale:
           type: string
           description: 'Locale of the cart. Accepts strings of format `xx` or `xx-YY`. Uses the [ISO-639 standard](https://www.iso.org/iso-639-language-codes.html) format.'
@@ -1582,6 +1768,10 @@ components:
                 text:
                   description: Text of the banner.
                   type: string
+        version:
+          type: integer
+          description: The current version of the cart increments with each successful update. You can use it to enable optimistic concurrency control for subsequent updates.
+          example: 1
     Currency:
       type: object
       description: The currency. This is the same for both the cart and its subsequent checkout.
@@ -1589,7 +1779,7 @@ components:
         code:
           type: string
           format: ISO-4217
-          description: 'ISO-4217 currency code. (See: http://en.wikipedia.org/wiki/ISO_4217.)'
+          description: 'ISO-4217 currency code. (See: https://www.iso.org/iso-4217-currency-codes.html.)'
       title: Currency
       x-internal: false
     LineItems:
@@ -1682,7 +1872,7 @@ components:
         amount:
           type: number
           description: 'Value must be between 1.00 and 1,000.00 in the store’s default currency.'
-        is_taxable:
+        taxable:
           type: boolean
         sender:
           title: Contact Entity
@@ -1715,6 +1905,7 @@ components:
     ItemDigital:
       allOf:
         - title: Base Item
+          type: object
           properties:
             id:
               type: string
@@ -1884,7 +2075,8 @@ components:
             - variant_id
             - product_id
             - quantity
-        - properties:
+        - type: object
+          properties:
             download_file_urls:
               description: URLs to download all product files.
               type: array
@@ -1898,16 +2090,19 @@ components:
             download_size:
               description: 'Specifies the combined download size of all files in human-readable style; for example, `30MB`.'
               type: string
-      type: object
-      title: ''
+      title: 'Digital Item'
     ItemDigitalGet:
       allOf:
         - title: Base Item
+          type: object
           properties:
             id:
               type: string
               description: The line-item ID.
               example: 6e193ce6-f327-4dcc-b75e-72cf6738525e
+            parent_id:
+              type: string
+              description: Bundled items will have the ID of their parent item.
             variant_id:
               type: number
               description: The ID of the variant. Required in the /PUT or /POST request if the product has variants.
@@ -1933,7 +2128,7 @@ components:
               type: number
               example: 5
               description: Quantity of this item in the cart.
-            is_taxable:
+            taxable:
               type: boolean
               example: false
               description: Boolean value that specifies whether the item is taxable.
@@ -2042,27 +2237,18 @@ components:
             extended_sale_price:
               type: number
               description: Sale price of the item multiplied by the quantity.
-            options:
-              description: The list of selected options for this product.
-              type: array
-              items:
-                type: object
-                title: Product Option
-                properties:
-                  name:
-                    type: string
-                    description: 'The product option name; for example, Color or Size.'
-                  nameId:
-                    type: number
-                    description: The product option identifier.
-                  value:
-                    type: string
-                    description: 'The product option value; for example, Red or Medium.'
-                  valueId:
-                    type: number
-                    description: The product option value identifier in number format.
-                    example: 128
-        - properties:
+            is_require_shipping:
+              type: boolean
+              example: false
+              description: Whether or not a physical product requires shipping.
+            is_mutable:
+              type: boolean
+              example: true
+              description: Whether or not you can change or remove the item from the cart. Items that are immutable include those added automatically by promotions.
+            added_by_promotion:
+              type: boolean
+              example: false
+              description: Whether or not a promotion added an additional item.
             download_file_urls:
               description: URLs to download all product files.
               type: array
@@ -2076,8 +2262,7 @@ components:
             download_size:
               description: 'Specifies the combined download size of all files in human-readable style; for example, `30MB`.'
               type: string
-      type: object
-      title: ''
+      title: 'Digital Item Response'
       description: ''
     ItemPhysical:
       allOf:
@@ -2509,6 +2694,7 @@ components:
           description: The discounted amount.
       x-internal: false
     GiftWrapping:
+      type: object
       properties:
         name:
           type: string
@@ -2567,6 +2753,14 @@ components:
         list_price:
           type: string
           description: 'Specifies the price of the item. This value can include or exclude tax, depending on the store setup.'
+        extended_list_price:
+          type: number
+          description: List price of the item multiplied by the quantity.
+        image_url:
+          type: string
+          format: uri
+          example: 'https://pathtoproductimage/ProductDefault.png'
+          description: Image of the product or variant.
     cart_PostVariant:
       type: object
       title: Item with variant
@@ -2738,15 +2932,24 @@ components:
               - recipient
         custom_items:
           $ref: '#/components/schemas/cart_PostCustomItem'
+        version:
+          type: integer
+          description: The cart version that you expect to apply the updates. If the provided version doesn't match the current cart version, you will receive a conflict error. This field is optional; if not provided, optimistic concurrency control will not apply.
+          example: 1
+    CartLineItemDelete:
+      type: object
+      properties:
+        version:
+          type: integer
+          description: The cart version that you expect to apply the updates. If the provided version doesn't match the current cart version, you will receive a conflict error. This field is optional; if not provided, optimistic concurrency control will not apply.
+          example: 1
     Redirect_urls_Post:
       type: object
       title: Redirect_urls_Post
       properties:
         query_params:
-          type: array
-          items:
-            type: object
-            properties:
+          type: object
+          properties:
               key:
                 type: string
               value:
@@ -2758,11 +2961,12 @@ components:
       properties:
         line_items:
           oneOf:
-            - items:
+            - type: array
+              items:
                 $ref: '#/components/schemas/cart_PostVariant'
-            - items:
+            - type: array
+              items:
                 $ref: '#/components/schemas/cart_PostModifier'
-          type: array
         gift_certificates:
           type: array
           items:
@@ -2818,6 +3022,10 @@ components:
               - recipient
         custom_items:
           $ref: '#/components/schemas/cart_PostCustomItem'
+        version:
+          type: integer
+          description: The cart version that you expect to apply the updates. If the provided version doesn't match the current cart version, you will receive a conflict error. This field is optional; if not provided, optimistic concurrency control will not apply.
+          example: 1
     cart_PostCustomItem:
       type: array
       title: Custom item
@@ -2905,6 +3113,8 @@ components:
           type: string
         errors:
           type: object
+          properties: {}
+          additionalProperties: true
       x-tags:
         - Models
     LineItemsGet:
@@ -2937,6 +3147,9 @@ components:
               type: string
               description: The line-item ID.
               example: 6e193ce6-f327-4dcc-b75e-72cf6738525e
+            parent_id:
+              type: string
+              description: Bundled items will have the ID of their parent item.
             variant_id:
               type: number
               description: The ID of the variant. Required in the /PUT or /POST request if the product has variants.
@@ -2953,25 +3166,6 @@ components:
               type: string
               description: The item’s product name.
               example: T-Shirt
-            weight:
-              type: number
-              description: The weight is displayed here if the item has a custom dimension.
-              example: 1.2
-            dimensions:
-              type: object
-              properties:
-                height:
-                  type: number
-                  description: The height is displayed here if the item has a custom dimension.
-                  example: 2.0
-                width:
-                  type: number
-                  description: The width is displayed here if the item has a custom dimension.
-                  example: 2.1
-                depth:
-                  type: number
-                  description: The depth is displayed here if the item has a custom dimension.
-                  example: 2.2
             url:
               description: The product URL.
               type: string
@@ -2981,7 +3175,7 @@ components:
               type: number
               example: 5
               description: Quantity of this item in the cart.
-            is_taxable:
+            taxable:
               type: boolean
               example: false
               description: Boolean value that specifies whether the item is taxable.
@@ -3080,7 +3274,7 @@ components:
               description: An item’s original price is the same as the product default price in the admin panel.
             list_price:
               type: number
-              description: 'The net item price before discounts and coupons are applied. BigCommerce derives an item’s list price from the product default price or, if applicable, the sale price configured in the admin panel.'
+              description: 'The net item price before discounts and coupons are applied. BigCommerce derives an item’s list price from the product default price or, if applicable, the sale price configured in the admin panel. To enable v3 promotions at the product level, you must update the [promotion](https://support.bigcommerce.com/s/article/Store-Settings?language=en_US#promotion) settings in the control panel.'
             sale_price:
               type: number
               description: Price of the item after all discounts are applied. (The final price before tax calculation.)
@@ -3090,30 +3284,18 @@ components:
             extended_sale_price:
               type: number
               description: Sale price of the item multiplied by the quantity.
-            options:
-              description: The list of selected options for this product.
-              type: array
-              items:
-                type: object
-                title: Product Option
-                properties:
-                  name:
-                    type: string
-                    description: 'The product option name; for example, Color or Size.'
-                  nameId:
-                    type: number 
-                    example: 151
-                    description: The product option identifier.
-                  value:
-                    type: string
-                    description: 'The product option value; for example, Red or Medium.'
-                  valueId:
-                    oneOf:
-                      - type: number
-                        example: 128
-                      - type: string
-                        example: "1259"
-                    description: The product option value identifier in number format.
+            is_require_shipping:
+              type: boolean
+              example: false
+              description: Whether or not a physical product requires shipping.
+            is_mutable:
+              type: boolean
+              example: true
+              description: Whether or not you can change or remove the item from the cart. Items that are immutable include those added automatically by promotions.
+            added_by_promotion:
+              type: boolean
+              example: false
+              description: Whether or not a promotion added an additional item.
             gift_wrapping:
               description: The gift wrapping details for this item.
               type: object
@@ -3161,7 +3343,7 @@ components:
           properties:
             data:
               $ref: '#/components/schemas/Metafield'
-        - $ref: '#/components/schemas/CollectionMeta'
+        - $ref: '#/components/schemas/metaCollection_open'
     Metafield:
       description: |
         Allows app partners to write custom data to various resources in the API.
@@ -3256,8 +3438,6 @@ components:
             The unique identifier for the resource with which the metafield is associated.
           example: '0'
           readOnly: true
-      required:
-        - permission_set
     MetafieldBase_Post:
       type: object
       description: |
@@ -3322,7 +3502,7 @@ components:
         data:
           $ref: '#/components/schemas/Metafield'
         meta:
-          $ref: '#/components/schemas/CollectionMeta'
+          $ref: '#/components/schemas/metaCollection_open'
       x-internal: false
     MetaFieldCollectionResponse_Batch:
       type: object
@@ -3346,10 +3526,11 @@ components:
             $ref: '#/components/schemas/Metafield'
         errors:
           type: array
+          items: {}
           description: Empty for 200 responses.
           example: []
         meta:
-          $ref: '#/components/schemas/CollectionMeta'
+          $ref: '#/components/schemas/WriteCollectionPartialSuccessMeta'
     MetaFieldCollectionDeleteResponseSuccess:
       type: object
       description: |
@@ -3367,6 +3548,7 @@ components:
             - 125
         errors:
           type: array
+          items: {}
           description: Empty for 200 responses.
           example: []
         meta:
@@ -3431,6 +3613,8 @@ components:
           $ref: '#/components/schemas/ErrorDetail'
     ErrorDetail:
       type: object
+      properties: {}
+      additionalProperties: true
       description: |
         Error detail response payload for the BigCommerce API.
       example:
@@ -3537,7 +3721,6 @@ components:
       title: Response meta
       type: object
       properties: {}
-      additionalProperties: true
       description: Response metadata.
   responses:
     CartResponse:
@@ -3545,8 +3728,23 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/Cart_Full'
+            type: object
+            properties: 
+              data:
+                $ref: '#/components/schemas/Cart_Full'
+              meta:
+                $ref: '#/components/schemas/metaCollection_open'
           examples: {}
+    CartConflictErrorResponse:
+      description: 'Cart conflict'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            status: 409
+            title: The request cannot be processed due to a possible conflict. Please review the changes and try again.
+            type: https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes
     CartRedirectResponse:
       description: ''
       content:
@@ -3690,6 +3888,38 @@ components:
       in: query
       schema:
         type: integer
+    date_created_min:
+      name: 'date_created:min'
+      description: |
+        'Query parameter that lets you filter by the minimum date created, for example, `2024-05-14T09:34:00` or `2024-05-14`. Returns metafields created after this date.'
+      required: false
+      in: query
+      schema:
+        type: string
+    date_created_max:
+      name: 'date_created:max'
+      description: |
+        'Query parameter that lets you filter by the maximum date created, for example, `2024-05-14T09:34:00` or `2024-05-14`. Returns metafields created before this date.'
+      required: false
+      in: query
+      schema:
+        type: string
+    date_modified_max:
+      name: 'date_modified:max'
+      description: |
+        'Query parameter that lets you filter by the maximum date modified created, for example, `2024-05-14T09:34:00` or `2024-05-14`. Returns metafields modified before this date.' 
+      required: false
+      in: query
+      schema:
+        type: string
+    date_modified_min:
+      name: 'date_modified:min'
+      description: |
+        'Query parameter that lets you filter by the minimum date modified created, for example, `2024-05-14T09:34:00` or `2024-05-14`. Returns metafields modified after this date.' 
+      required: false
+      in: query
+      schema:
+        type: string
     DirectionParam:
       name: direction
       description: |
@@ -3732,6 +3962,8 @@ components:
         |:--------|:-----------|:----------|
         |Carts|modify|`store_cart`|
         |Carts |read-only|`store_cart_read_only`|
+        |Information & Settings | modify | `store_v2_information`|
+        |Information & Settings | read-only| `store_v2_information`|
 
         ### Authentication header
 

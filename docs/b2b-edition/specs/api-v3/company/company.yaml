@@ -1,0 +1,3062 @@
+openapi: 3.0.1
+info:
+  title: Company
+  description: |-
+    A company in B2B Edition corresponds one-to-one with a customer group in BigCommerce. You can do the mapping through the `bc_group_id` field. Once established, you cannot change this corresponding relationship. You can only delete it. Note that you cannot merge BigCommerce customer groups or B2B Edition companies.
+
+    This diagram details the relation between customer groups and companies:
+
+    ![Company entity diagram](https://user-images.githubusercontent.com/81215728/124566045-424fd480-de75-11eb-8268-a15ae40fb579.jpg)
+
+    The best practice for using these Company APIs is to maintain unidirectional data flow, with B2B Edition endpoints as the primary touchpoint. By default B2B Edition's company operations handle modifying linked BigCommerce customer group data (add, update, and delete).
+  contact: {}
+  version: v3
+servers:
+  - url: "https://api-b2b.bigcommerce.com/api/v3/io"
+security:
+  - authToken: []
+tags:
+  - name: Company
+  - name: Company Roles and Permissions
+paths:
+  /companies:
+    get:
+      tags:
+        - Company
+      summary: Get All Companies
+      description: Get a list of all companies.
+      operationId: get-companies
+      parameters:
+        - name: limit
+          in: query
+          description: Pagination limit
+          schema:
+            type: integer
+            default: 10
+        - name: offset
+          in: query
+          description: Pagination offset
+          schema:
+            type: integer
+            default: 0
+        - name: minModified
+          in: query
+          description: Minimum modified timestamp
+          allowEmptyValue: true
+          schema:
+            type: number
+            format: time
+        - name: maxModified
+          in: query
+          description: Maximum modified timestamp
+          allowEmptyValue: true
+          schema:
+            type: number
+        - name: minCreated
+          in: query
+          description: Minimum created timestamp
+          allowEmptyValue: true
+          schema:
+            type: number
+        - name: maxCreated
+          in: query
+          description: Maximum created timestamp
+          allowEmptyValue: true
+          schema:
+            type: number
+        - name: sortBy
+          in: query
+          description: Sort the result by a specific company field.
+          schema:
+            type: string
+            default: updatedAt
+            enum:
+              - companyName
+              - updatedAt
+            example: updatedAt
+        - name: orderBy
+          in: query
+          description: "Allow: 'DESC', 'ASC'"
+          schema:
+            type: string
+            default: DESC
+            enum:
+              - ASC
+              - DESC
+            example: DESC
+        - name: isIncludeExtraFields
+          in: query
+          description: Whether the response will include extra fields.
+          schema:
+            type: string
+            default: "0"
+            enum:
+              - "0"
+              - "1"
+        - name: companyStatus
+          in: query
+          description: "0: PENDING 1: APPROVED 2: REJECTED 3: INACTIVE"
+          schema:
+            type: integer
+            enum:
+              - 0
+              - 1
+              - 2
+              - 3
+        - name: q
+          in: query
+          description: Company query string
+          schema:
+            type: string
+        - name: extraFields
+          in: query
+          description: |-
+            Filter the company list on extra fields. (include extraInt1 ~ extraInt5, extraStr1 ~ extraStr5 and other customizable)
+
+            When you create the company, you can pass a value into the custom extra field configured by the B3 team.
+
+            If you know the correspondence between the custom extra field and the default extra field, you can use the default extra field filter to obtain data.
+
+            You can also filter by key-value pairs passed into custom fields:
+            https://api-b2b.bigcommerce.com/api/v2/io/companies/?extraFields=extraInt1:1&extraFields=companyTax:un42
+          style: form
+          explode: false
+          schema:
+            type: array
+        - schema:
+            type: integer
+            example: 2
+          in: query
+          name: bcOrderId
+          description: "A company purchases a BigCommerce order ID, which allows you to find the company by BigCommerce order ID."
+        - schema:
+            type: string
+          in: query
+          name: orderId
+          description: Company purchase order id
+        - schema:
+            type: string
+          in: query
+          name: bcGroupId
+          description: BigCommerce customer group id
+        - schema:
+            type: integer
+          in: query
+          name: customerId
+          description: "BigCommerce customer ID. This customer should be a B2B company user."
+        - schema:
+            type: string
+            enum:
+              - search
+              - exact-match
+            default: search
+          in: query
+          name: extraFieldFilterType
+          description: "Extra field filter type. The search filter type allows for partial matches, while the exact-match filter type only returns results that exactly match the specified criteria."
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: number
+                  data:
+                    minItems: 0
+                    uniqueItems: true
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        companyId:
+                          minLength: 1
+                          type: string
+                        companyName:
+                          minLength: 1
+                          type: string
+                        bcGroupName:
+                          minLength: 1
+                          type: string
+                        companyStatus:
+                          minLength: 1
+                          type: string
+                          enum:
+                            - "0"
+                            - "1"
+                            - "2"
+                            - "3"
+                          description: Status of a company
+                        companyEmail:
+                          type: string
+                          description: The email of the company
+                          format: email
+                        companyPhone:
+                          type: string
+                          description: The phone number of the company
+                          format: phone
+                        uuid:
+                          type: string
+                        catalogId:
+                          type: string
+                          description: The company catalog ID
+                        catalogName:
+                          type: string
+                          description: The company catalog name
+                        updatedAt:
+                          minLength: 1
+                          type: string
+                        createdAt:
+                          minLength: 1
+                          type: string
+                        extraFields:
+                          type: array
+                          description: Controlled by isIncludeExtraFields params
+                          items:
+                            type: object
+                            properties:
+                              fieldName:
+                                type: string
+                              fieldValue:
+                                type: string
+                              labelName:
+                                type: string
+                                description: Field label name
+                              isRequired:
+                                type: string
+                                description: "Is field required or not, 0=not required, 1=required"
+                                enum:
+                                  - "0"
+                                  - "1"
+                              dataType:
+                                type: string
+                                description: "Field data type, 0=text, 1=number, 2=textarea, 3=dropdown"
+                                enum:
+                                  - "0"
+                                  - "1"
+                                  - "2"
+                                  - "3"
+                              fieldType:
+                                type: number
+                                description: "Field data type, 0=text, 1=number, 2=textarea, 3=dropdown"
+                                enum:
+                                  - 0
+                                  - 1
+                                  - 2
+                                  - 3
+                            required:
+                              - fieldName
+                              - fieldValue
+                              - labelName
+                              - isRequired
+                              - dataType
+                              - fieldType
+                        extraInt1:
+                          type: integer
+                          description: Extra field of this order
+                          example: 42
+                        extraInt2:
+                          type: integer
+                          description: Extra field of this order
+                          example: 42
+                        extraInt3:
+                          type: integer
+                          description: Extra field of this order
+                          example: 42
+                        extraInt4:
+                          type: integer
+                          description: Extra field of this order
+                          example: 42
+                        extraInt5:
+                          type: integer
+                          description: Extra field of this order
+                          example: 42
+                        extraStr1:
+                          type: string
+                          description: Extra string field of this order
+                          example: customize additional information
+                        extraStr2:
+                          type: string
+                          description: Extra string field of this order
+                          example: customize additional information
+                        extraStr3:
+                          type: string
+                          description: Extra string field of this order
+                          example: customize additional information
+                        extraStr4:
+                          type: string
+                          description: Extra string field of this order
+                          example: customize additional information
+                        extraStr5:
+                          type: string
+                          description: Extra string field of this order
+                          example: customize additional information
+                        bcGroupId:
+                          type: integer
+                        priceListAssign:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              channelId:
+                                type: integer
+                                description: BigCommerce channel id
+                              priceListId:
+                                type: integer
+                                description: BC price list ID
+                              priceListName:
+                                type: string
+                                description: BC price list name
+                              channelName:
+                                type: string
+                                description: Store Channel name
+                      required:
+                        - companyId
+                        - companyName
+                        - bcGroupName
+                        - companyStatus
+                        - companyEmail
+                        - companyPhone
+                        - uuid
+                        - catalogId
+                        - catalogName
+                        - updatedAt
+                        - createdAt
+                        - bcGroupId
+                  meta:
+                    allOf:
+                      - type: object
+                        properties:
+                          message:
+                            minLength: 1
+                            type: string
+                        required:
+                          - message
+                      - $ref: https://raw.githubusercontent.com/bigcommerce/docs/main/docs/b2b-edition/models/utils/pagination.yaml
+                required:
+                  - code
+                  - data
+                  - meta
+              examples:
+                include extra fields:
+                  value:
+                    code: 200
+                    data:
+                      - companyId: "147340"
+                        companyName: Glam Squad Hair and Makeup Artistry
+                        bcGroupName: Glam Squad Hair and Makeup Artistry
+                        companyEmail: support@bundleb2b.net
+                        companyPhone: "123456789"
+                        companyStatus: "1"
+                        uuid: ""
+                        catalogId: ""
+                        catalogName: ""
+                        updatedAt: "1618794615"
+                        createdAt: "1618787774"
+                        extraFields:
+                          - dataType: "2"
+                            fieldType: 2
+                            fieldName: extraStr1
+                            fieldValue: extra_text
+                            isRequired: "0"
+                            labelName: Enter your license
+                        extraInt1: 42
+                        extraInt2: 42
+                        extraInt3: 42
+                        extraInt4: 42
+                        extraInt5: 42
+                        extraStr1: customize additional information
+                        extraStr2: customize additional information
+                        extraStr3: customize additional information
+                        extraStr4: customize additional information
+                        extraStr5: customize additional information
+                        bcGroupId: 0
+                    meta:
+                      message: SUCCESS
+                      pagination:
+                        limit: 4
+                        offset: 1
+                        totalCount: 989
+                standard response:
+                  value:
+                    code: 200
+                    data:
+                      - companyId: "147340"
+                        companyName: Glam Squad Hair and Makeup Artistry
+                        bcGroupName: Glam Squad Hair and Makeup Artistry
+                        companyEmail: support@bundleb2b.net
+                        companyPhone: "123456789"
+                        companyStatus: "1"
+                        uuid: ""
+                        catalogId: ""
+                        catalogName: ""
+                        updatedAt: "1618794615"
+                        createdAt: "1618787774"
+                        bcGroupId: 0
+                    meta:
+                      message: SUCCESS
+                      pagination:
+                        limit: 10
+                        offset: 1
+                        totalCount: 989
+            200-Response-IncludeExtraFields:
+              example:
+                code: 200
+                data:
+                  - companyId: "147340"
+                    companyName: Glam Squad Hair and Makeup Artistry
+                    companyStatus: "1"
+                    uuid: ""
+                    catalogId: ""
+                    catalogName: ""
+                    updatedAt: "1618794615"
+                    createdAt: "1618787774"
+                    extraFields:
+                      - dataType: "2"
+                        fieldName: extraStr1
+                        fieldValue: extra_text
+                        isRequired: "0"
+                        labelName: Enter your license
+                meta:
+                  message: SUCCESS
+                  pagination:
+                    limit: 1
+                    offset: 1
+                    totalCount: 989
+            200-Standard Response:
+              example:
+                code: 200
+                data:
+                  - companyId: "147340"
+                    companyName: Glam Squad Hair and Makeup Artistry
+                    companyStatus: "1"
+                    uuid: ""
+                    catalogId: ""
+                    catalogName: ""
+                    updatedAt: "1618794615"
+                    createdAt: "1618787774"
+                meta:
+                  message: SUCCESS
+                  pagination:
+                    limit: 1
+                    offset: 1
+                    totalCount: 989
+      security:
+        - authToken: []
+    post:
+      tags:
+        - Company
+      summary: Create a Company
+      description: Create a company
+      operationId: post-companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: https://raw.githubusercontent.com/bigcommerce/docs/main/docs/b2b-edition/models/extra_fields/extra_field_values.yaml
+                - $ref: https://raw.githubusercontent.com/bigcommerce/docs/main/docs/b2b-edition/models/extra_fields/user_extra_field_values.yaml
+                - type: object
+                  required:
+                    - companyName
+                    - companyPhone
+                    - companyEmail
+                    - country
+                    - adminFirstName
+                    - adminLastName
+                    - adminEmail
+                  properties:
+                    companyName:
+                      minLength: 1
+                      type: string
+                      description: The company name you want to specify
+                    companyPhone:
+                      type: string
+                    companyEmail:
+                      type: string
+                      minLength: 1
+                      format: email
+                    addressLine1:
+                      type: string
+                    addressLine2:
+                      type: string
+                    city:
+                      minLength: 1
+                      type: string
+                    state:
+                      minLength: 1
+                      type: string
+                    country:
+                      minLength: 1
+                      type: string
+                      description: |-
+                        Country full name or ISO2 country code. For Example:
+
+                        A Country full name: Afghanistan
+
+                        ISO2 Country code: AF
+                    zipCode:
+                      type: string
+                    adminFirstName:
+                      minLength: 1
+                      type: string
+                      description: The company first admin user fist name
+                    adminLastName:
+                      minLength: 1
+                      type: string
+                      description: The company first admin user's last name
+                    adminEmail:
+                      type: string
+                      minLength: 1
+                      description: The company first admin user email
+                      format: email
+                    adminPhoneNumber:
+                      minLength: 1
+                      type: string
+                      description: The company first admin user phone number
+                    catalogId:
+                      minLength: 1
+                      type: integer
+                      description: BC price list Id that company related
+                    acceptCreationEmail:
+                      type: boolean
+                      description: "True: Sends an email notification about the company creation to the admin user; False: Does not send the notification."
+                      default: false
+                    channelIds:
+                      type: array
+                      description: BigCommerce channel id list
+                      items:
+                        type: integer
+                    originChannelId:
+                      type: integer
+                      description: "BigCommerce channel ID, used for BigCommerce customer origin channel ID. This field takes effect only when you do not configure the store default B2B channel."
+            examples:
+              example-1:
+                value:
+                  companyName: string
+                  companyPhone: string
+                  companyEmail: user@example.com
+                  addressLine1: string
+                  addressLine2: string
+                  city: string
+                  state: string
+                  country: string
+                  zipCode: string
+                  adminFirstName: string
+                  adminLastName: string
+                  adminEmail: user@example.com
+                  adminPhoneNumber: string
+                  catalogId: 0
+                  acceptCreationEmail: false
+                  extraFields:
+                    - fieldName: string
+                      fieldValue: string
+                  uuid: string
+                  channelIds:
+                    - 1
+                    - 2
+                  originChannelId: 1
+      responses:
+        "200":
+          description: Created
+          content:
+            application/json:
+              schema:
+                description: ""
+                type: object
+                properties:
+                  code:
+                    type: integer
+                  data:
+                    type: object
+                    required:
+                      - companyId
+                      - customerId
+                      - customerGroupId
+                    properties:
+                      companyId:
+                        type: integer
+                      customerId:
+                        type: integer
+                      customerGroupId:
+                        type: integer
+                  meta:
+                    type: object
+                    required:
+                      - message
+                    properties:
+                      message:
+                        type: string
+                        minLength: 1
+                required:
+                  - code
+                  - data
+                  - meta
+              examples:
+                example-1:
+                  value:
+                    code: 200
+                    data:
+                      companyId: 1
+                      customerId: 1
+                      customerGroupId: 1
+                    meta:
+                      message: SUCCESS
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                description: ""
+                type: object
+                properties:
+                  code:
+                    type: number
+                  data:
+                    type: object
+                  meta:
+                    type: object
+                    required:
+                      - message
+                    properties:
+                      message:
+                        type: string
+                        minLength: 1
+                required:
+                  - code
+                  - data
+                  - meta
+              examples:
+                example-1:
+                  value:
+                    code: 400
+                    data: {}
+                    meta:
+                      message: Create BC customer group failed
+        "422":
+          description: "Company was not valid. This is the result of missing required fields, or of invalid data. See the response for more details."
+          content:
+            application/json:
+              schema:
+                description: ""
+                type: object
+                properties:
+                  code:
+                    type: integer
+                  data:
+                    type: object
+                  meta:
+                    type: object
+                    required:
+                      - message
+                    properties:
+                      message:
+                        type: string
+                        minLength: 1
+                required:
+                  - code
+                  - data
+                  - meta
+              examples:
+                example-1:
+                  value:
+                    code: 422
+                    data: {}
+                    meta:
+                      message: The company name is requird
+      security:
+        - authToken: []
+      x-codegen-request-body-name: body
+  "/companies/{companyId}":
+    get:
+      tags:
+        - Company
+      summary: Get a Company
+      description: Get details about a specific company.
+      operationId: get-companies-companyId
+      parameters:
+        - name: companyId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: number
+                  data:
+                    type: object
+                    required:
+                      - companyId
+                      - companyName
+                      - bcGroupName
+                      - companyStatus
+                      - companyEmail
+                      - companyPhone
+                      - uuid
+                      - catalogId
+                      - catalogName
+                      - updatedAt
+                      - createdAt
+                      - extraFields
+                    properties:
+                      companyId:
+                        type: string
+                        minLength: 1
+                      companyName:
+                        type: string
+                        minLength: 1
+                      bcGroupName:
+                        type: string
+                        minLength: 1
+                      companyStatus:
+                        type: string
+                        minLength: 1
+                      companyEmail:
+                        type: string
+                        minLength: 1
+                      companyPhone:
+                        type: string
+                        minLength: 1
+                      uuid:
+                        type: string
+                      catalogId:
+                        type: string
+                      catalogName:
+                        type: string
+                      updatedAt:
+                        type: string
+                        minLength: 1
+                      createdAt:
+                        type: string
+                        minLength: 1
+                      extraFields:
+                        type: array
+                        uniqueItems: true
+                        minItems: 1
+                        items:
+                          type: object
+                          properties:
+                            dataType:
+                              type: string
+                              minLength: 1
+                            fieldName:
+                              type: string
+                              minLength: 1
+                            fieldValue:
+                              type: string
+                              minLength: 1
+                            isRequired:
+                              type: string
+                              minLength: 1
+                            labelName:
+                              type: string
+                              minLength: 1
+                          required:
+                            - dataType
+                            - fieldName
+                            - fieldValue
+                            - isRequired
+                            - labelName
+                      priceListAssign:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            channelId:
+                              type: integer
+                              description: BigCommerce channel id
+                            priceListId:
+                              type: integer
+                              description: BC price list ID
+                            priceListName:
+                              type: string
+                              description: BC price list name
+                            channelName:
+                              type: string
+                              description: Store Channel name
+                      bcGroupId:
+                        type: string
+                        description: BigCommerce customer group id
+                  meta:
+                    type: object
+                    required:
+                      - message
+                    properties:
+                      message:
+                        type: string
+                        minLength: 1
+                required:
+                  - code
+                  - data
+                  - meta
+              examples:
+                example-1:
+                  value:
+                    code: 200
+                    data:
+                      companyId: "147340"
+                      companyName: Glam Squad Hair and Makeup Artistry
+                      companyEmail: support@bundleb2b.net
+                      companyPhone: "123456789"
+                      companyStatus: "1"
+                      uuid: ""
+                      catalogId: ""
+                      catalogName: ""
+                      updatedAt: "1618794615"
+                      createdAt: "1618787774"
+                      extraFields:
+                        - dataType: "2"
+                          fieldName: extraStr1
+                          fieldValue: extra_text
+                          isRequired: "0"
+                          labelName: Enter your license
+                      bcGroupId: "1"
+                      bcGroupName: salons
+                    meta:
+                      message: SUCCESS
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                required:
+                  - code
+                  - data
+                  - meta
+                type: object
+                properties:
+                  code:
+                    type: number
+                  data:
+                    type: object
+                    properties: {}
+                  meta:
+                    required:
+                      - message
+                    type: object
+                    properties:
+                      message:
+                        minLength: 1
+                        type: string
+                description: ""
+              examples:
+                example-1:
+                  value:
+                    code: 0
+                    data: {}
+                    meta:
+                      message: string
+            example-1:
+              example:
+                code: 404
+                data: {}
+                meta:
+                  message: This resource is not found
+      security:
+        - authToken: []
+    put:
+      tags:
+        - Company
+      summary: Update a Company
+      description: Update a company's attributes
+      operationId: put-companies-companyId
+      parameters:
+        - name: companyId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                companyName:
+                  minLength: 1
+                  type: string
+                companyPhone:
+                  type: string
+                companyEmail:
+                  minLength: 1
+                  type: string
+                addressLine1:
+                  type: string
+                addressLine2:
+                  type: string
+                city:
+                  minLength: 1
+                  type: string
+                state:
+                  minLength: 1
+                  type: string
+                country:
+                  minLength: 1
+                  type: string
+                  description: |-
+                    Country full name or ISO2 country code. For Example:
+
+                    A Country full name: Afghanistan
+
+                    ISO2 Country code: AF
+                zipCode:
+                  type: string
+                extraFields:
+                  minItems: 1
+                  uniqueItems: true
+                  type: array
+                  description: |-
+                    To use customized extra fields with field names you need to first add company extra fields in Settings > Extra fields inside B2B edition.
+
+                    eg. If you want to create a new company with an extra integer field named licenseNO, you can use this structure [{'fieldName': 'LicenseNO', 'fieldValue': 10342340323}] in the request body.
+                  items:
+                    type: object
+                    properties:
+                      fieldName:
+                        minLength: 1
+                        type: string
+                        description: Field name that config in you store by the B3 team
+                      fieldValue:
+                        minLength: 1
+                        type: string
+                        description: Field value that you want to add
+                uuid:
+                  type: string
+                  description: Company UUID indicates external ID
+                priceListAssign:
+                  type: array
+                  description: This field is only enable for MSF store
+                  items:
+                    type: object
+                    properties:
+                      channelId:
+                        type: integer
+                        description: BigCommerce channel id
+                      priceListId:
+                        type: integer
+                        description: BC price list ID
+        required: false
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                description: ""
+                type: object
+                properties:
+                  code:
+                    type: number
+                  meta:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: Success
+                  data:
+                    description: Return company ID.
+                    type: object
+                    properties:
+                      companyId:
+                        type: integer
+                        example: 1
+                required:
+                  - code
+                  - meta
+                  - data
+              examples:
+                example-1:
+                  value:
+                    code: 200
+                    data:
+                      companyId: 12
+                    meta:
+                      message: SUCCESS
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                required:
+                  - code
+                  - data
+                  - meta
+                type: object
+                properties:
+                  code:
+                    type: number
+                  data:
+                    type: object
+                    properties: {}
+                  meta:
+                    required:
+                      - message
+                    type: object
+                    properties:
+                      message:
+                        minLength: 1
+                        type: string
+                description: ""
+              examples:
+                example-1:
+                  value:
+                    code: 0
+                    data: {}
+                    meta:
+                      message: string
+            example-1:
+              example:
+                code: 404
+                data: {}
+                meta:
+                  message: This resource is not found
+            application/xml:
+              schema:
+                type: object
+                properties: {}
+      security:
+        - authToken: []
+      x-codegen-request-body-name: body
+    delete:
+      tags:
+        - Company
+      summary: Delete a Company
+      description: Delete A Company
+      operationId: delete-companies-companyId
+      parameters:
+        - name: companyId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                description: ""
+                type: object
+                properties:
+                  code:
+                    type: integer
+                  data:
+                    type: object
+                    properties: {}
+                  meta:
+                    required:
+                      - message
+                    type: object
+                    properties:
+                      message:
+                        minLength: 1
+                        type: string
+              examples:
+                example-1:
+                  value:
+                    code: 200
+                    data: {}
+                    meta:
+                      message: SUCCESS
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                type: object
+                description: ""
+                properties:
+                  code:
+                    type: integer
+                  data:
+                    type: object
+                  meta:
+                    type: object
+                    required:
+                      - message
+                    properties:
+                      message:
+                        minLength: 1
+                        type: string
+                required:
+                  - code
+                  - data
+                  - meta
+              examples:
+                example-1:
+                  value:
+                    code: 404
+                    data: {}
+                    meta:
+                      message: string
+            example-1:
+              example:
+                code: 404
+                data: {}
+                meta:
+                  message: This resource is not found
+      security:
+        - authToken: []
+    parameters:
+      - $ref: "#/components/parameters/companyId"
+  "/customer-groups/{customerGroupId}/companies":
+    post:
+      tags:
+        - Company
+      summary: Convert from BigCommerce CustomerGroup into Company
+      description: Create company from bigCommerce customer group. This API is disabled for MSF store
+      operationId: post-companies-conversion-customerGroups
+      parameters:
+        - name: customerGroupId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              allOf:
+                - type: object
+                  properties:
+                    companyName:
+                      type: string
+                      minLength: 1
+                      description: Company name
+                    companyPhone:
+                      type: string
+                      minLength: 1
+                      description: Company phone number
+                    companyEmail:
+                      type: string
+                      minLength: 1
+                      description: Company email
+                    addressLine1:
+                      type: string
+                      minLength: 1
+                    addressLine2:
+                      type: string
+                      minLength: 1
+                    city:
+                      type: string
+                      minLength: 1
+                    state:
+                      type: string
+                      minLength: 1
+                    country:
+                      type: string
+                      minLength: 1
+                    zipCode:
+                      type: string
+                      minLength: 1
+                    adminFirstName:
+                      type: string
+                      minLength: 1
+                    adminLastName:
+                      type: string
+                      minLength: 1
+                    adminEmail:
+                      type: string
+                      minLength: 1
+                    adminPhoneNumber:
+                      type: string
+                      minLength: 1
+                    catalogId:
+                      type: integer
+                      description: The company catalog ID
+                    acceptCreationEmail:
+                      type: boolean
+                      description: If the company creation can accept email
+                      default: false
+                  required:
+                    - companyName
+                    - companyPhone
+                    - companyEmail
+                    - country
+                    - adminEmail
+                    - adminPhoneNumber
+                - $ref: https://raw.githubusercontent.com/bigcommerce/docs/main/docs/b2b-edition/models/extra_fields/extra_field_values.yaml
+                - $ref: https://raw.githubusercontent.com/bigcommerce/docs/main/docs/b2b-edition/models/extra_fields/user_extra_field_values.yaml
+            examples:
+              example-1:
+                value:
+                  companyName: string
+                  companyPhone: string
+                  companyEmail: string
+                  addressLine1: string
+                  addressLine2: string
+                  city: string
+                  state: string
+                  country: string
+                  zipCode: string
+                  adminFirstName: string
+                  adminLastName: string
+                  adminEmail: string
+                  adminPhoneNumber: string
+                  catalogId: 0
+                  acceptCreationEmail: false
+                  description: String
+                  extraFields:
+                    - fieldName: string
+                      fieldValue: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                required:
+                  - code
+                  - data
+                  - meta
+                type: object
+                properties:
+                  code:
+                    type: integer
+                  data:
+                    required:
+                      - companyId
+                    type: object
+                    properties:
+                      companyId:
+                        minLength: 1
+                        type: string
+                  meta:
+                    required:
+                      - message
+                    type: object
+                    properties:
+                      message:
+                        minLength: 1
+                        type: string
+                description: ""
+              examples:
+                example-1:
+                  value:
+                    code: 200
+                    data:
+                      companyId: "12"
+                    meta:
+                      message: SUCCESS
+            example-1:
+              example:
+                code: 200
+                data:
+                  companyId: "147340"
+                meta:
+                  message: SUCCESS
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                required:
+                  - code
+                  - data
+                  - meta
+                type: object
+                properties:
+                  code:
+                    type: number
+                  data:
+                    required:
+                      - companyId
+                    type: object
+                    properties:
+                      companyId:
+                        minLength: 1
+                        type: string
+                  meta:
+                    required:
+                      - message
+                    type: object
+                    properties:
+                      message:
+                        minLength: 1
+                        type: string
+                description: ""
+              examples:
+                example-1:
+                  value:
+                    code: 200
+                    data:
+                      companyId: "12"
+                    meta:
+                      message: SUCCESS
+            example-1:
+              example:
+                code: 400
+                data: {}
+                meta:
+                  message: Convert failed for the API call.
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                required:
+                  - code
+                  - data
+                  - meta
+                type: object
+                properties:
+                  code:
+                    type: number
+                  data:
+                    type: object
+                    properties: {}
+                  meta:
+                    required:
+                      - message
+                    type: object
+                    properties:
+                      message:
+                        minLength: 1
+                        type: string
+                description: ""
+              examples:
+                example-1:
+                  value:
+                    code: 0
+                    data: {}
+                    meta:
+                      message: string
+            example-1:
+              example:
+                code: 404
+                data: {}
+                meta:
+                  message: This resource is not found
+      security:
+        - authToken: []
+  /companies/bulk:
+    parameters: []
+    post:
+      summary: Bulk Create Companies
+      operationId: post-companies-bulk
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                description: ""
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 200
+                  meta:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        companyId:
+                          type: integer
+                          example: 1
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        description: Unique numeric ID of this Address.
+                    required:
+                      - id
+                required:
+                  - code
+                  - meta
+              examples:
+                example-1:
+                  value:
+                    code: 200
+                    meta:
+                      - companyId: 1
+                    data:
+                      id: string
+        "400":
+          description: "Bad Request, some companies created failed."
+          content:
+            application/json:
+              schema:
+                description: ""
+                type: object
+                x-examples:
+                  example-1:
+                    code: 0
+                    data: {}
+                    meta:
+                      message: string
+                properties:
+                  code:
+                    type: number
+                  data:
+                    type: object
+                    required:
+                      - errors
+                    properties:
+                      errors:
+                        minItems: 1
+                        uniqueItems: true
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              minLength: 1
+                              type: string
+                            _detail:
+                              type: string
+                          required:
+                            - id
+                            - _detail
+                  meta:
+                    type: object
+                    required:
+                      - message
+                    properties:
+                      message:
+                        type: string
+                        minLength: 1
+                        example: Success
+                required:
+                  - code
+                  - meta
+              examples:
+                example-1:
+                  value:
+                    code: 0
+                    data:
+                      errors:
+                        - id: string
+                          _detail: string
+                    meta:
+                      message: string
+            example-1:
+              example:
+                code: 400
+                data:
+                  errors:
+                    - id: "42"
+                      detail: ""
+                meta:
+                  message: "Some companies updated failed, you can see these in errors."
+        "409":
+          description: "Company was in conflict with another company. This is the result of duplicate unique values; A missing or invalid `companyEmail`, `phoneNumber` or other extraFields."
+          content:
+            application/json:
+              schema:
+                type: object
+                description: ""
+                properties:
+                  code:
+                    type: number
+                  data:
+                    type: object
+                    required:
+                      - errors
+                    properties:
+                      errors:
+                        minItems: 1
+                        uniqueItems: true
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              minLength: 1
+                              type: string
+                            _detail:
+                              type: string
+                          required:
+                            - id
+                            - _detail
+                  meta:
+                    type: object
+                    required:
+                      - message
+                    properties:
+                      message:
+                        minLength: 1
+                        type: string
+                required:
+                  - code
+                  - data
+                  - meta
+              examples:
+                example-1:
+                  value:
+                    code: 0
+                    data:
+                      errors:
+                        - id: string
+                          _detail: string
+                    meta:
+                      message: string
+            example-1:
+              example:
+                code: 409
+                data:
+                  errors:
+                    - id: "42"
+                      detail: ""
+                meta:
+                  message: Company was in conflict with another company
+        "413":
+          description: "Request Entity Too Large. In normal conditions, bulk create or update method support 10 entity in once request. Another case, some fields of entity over limit."
+          content:
+            application/json:
+              schema:
+                $ref: https://raw.githubusercontent.com/bigcommerce/docs/main/docs/b2b-edition/models/utils/response-413.yaml
+              examples:
+                example-1:
+                  value:
+                    code: 413
+                    meta:
+                      message: Request Entity Too Large
+                    data: {}
+        "422":
+          description: Company was not valid. This is the result of missing required fields or invalid data. See the response for more details.
+          content:
+            application/json:
+              schema:
+                description: ""
+                type: object
+                properties:
+                  code:
+                    type: number
+                  data:
+                    type: object
+                    required:
+                      - errors
+                    properties:
+                      errors:
+                        type: array
+                        uniqueItems: true
+                        minItems: 1
+                        items:
+                          allOf:
+                            - type: object
+                              properties:
+                                id:
+                                  type: string
+                                  minLength: 1
+                                _detail:
+                                  type: string
+                                  minLength: 1
+                              required:
+                                - id
+                                - _detail
+                            - $ref: https://raw.githubusercontent.com/bigcommerce/docs/main/docs/b2b-edition/models/company/company_base.yaml
+                  meta:
+                    type: object
+                    required:
+                      - message
+                    properties:
+                      message:
+                        type: string
+                        minLength: 1
+                required:
+                  - code
+                  - data
+                  - meta
+              examples:
+                example-1:
+                  value:
+                    code: 0
+                    data:
+                      errors:
+                        - id: string
+                          _detail: string
+                    meta:
+                      message: string
+      description: Bulk create companies
+      security:
+        - authToken: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                allOf:
+                  - $ref: https://raw.githubusercontent.com/bigcommerce/docs/main/docs/b2b-edition/models/company/company_base.yaml
+                  - type: object
+                    properties:
+                      acceptWelcomeEmail:
+                        type: boolean
+                        description: is send email to company user when company created
+                        example: false
+                      extraFields:
+                        type: object
+                        description: extra fieds you want to add to the company fields
+                        properties:
+                          fieldName:
+                            type: string
+                          fieldValue:
+                            type: string
+                      channelIds:
+                        type: array
+                        description: BigCommerce channel id list
+                        items:
+                          type: integer
+                      originChannelId:
+                        type: integer
+                        description: "BigCommerce channel ID, used for BigCommerce customer origin channel ID. This field takes effect only when you do not configure the store default b2b channel."
+                  - $ref: https://raw.githubusercontent.com/bigcommerce/docs/main/docs/b2b-edition/models/extra_fields/user_extra_field_values.yaml
+            examples:
+              example-1:
+                value:
+                  - companyName: string
+                    companyPhone: string
+                    companyEmail: string@gmail.com
+                    addressLine1: string
+                    addressLine2: string
+                    city: string
+                    state: string
+                    country: string
+                    zipCode: string
+                    adminFirstName: string
+                    adminLastName: string
+                    adminEmail: string
+                    adminPhoneNumber: string
+                    catalogId: string
+                    uuid: string
+                    acceptWelcomeEmail: false
+                    channelIds:
+                      - 1
+                      - 2
+                    originChannelId: 1
+        description: Bulk create companies request body
+      tags:
+        - Company
+    put:
+      tags:
+        - Company
+      summary: Update Companies (Batch)
+      description: Batch update companies
+      operationId: put-companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              minItems: 1
+              type: array
+              description: The bulk update companies list
+              items:
+                type: object
+                properties:
+                  companyId:
+                    minLength: 1
+                    type: string
+                  companyName:
+                    minLength: 1
+                    type: string
+                  companyPhone:
+                    type: string
+                  companyEmail:
+                    minLength: 1
+                    type: string
+                  addressLine1:
+                    type: string
+                  addressLine2:
+                    type: string
+                  city:
+                    minLength: 1
+                    type: string
+                  state:
+                    minLength: 1
+                    type: string
+                  country:
+                    minLength: 1
+                    type: string
+                  zipCode:
+                    type: string
+                  extraFields:
+                    minItems: 1
+                    uniqueItems: true
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        fieldName:
+                          minLength: 1
+                          type: string
+                        fieldValue:
+                          minLength: 1
+                          type: string
+                  priceListAssign:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        channelId:
+                          type: integer
+                          description: BigCommerce channel id
+                        priceListId:
+                          type: integer
+                          description: BC price list ID
+                required:
+                  - companyId
+            examples:
+              example-1:
+                value:
+                  - companyId: string
+                    companyName: string
+                    companyPhone: string
+                    companyEmail: string
+                    addressLine1: string
+                    addressLine2: string
+                    city: string
+                    state: string
+                    country: string
+                    zipCode: string
+                    extraFields:
+                      - fieldName: string
+                        fieldValue: string
+        required: false
+      responses:
+        "200":
+          description: Company Update Success
+          content:
+            application/json:
+              schema:
+                required:
+                  - code
+                  - data
+                  - meta
+                type: object
+                properties:
+                  code:
+                    type: number
+                  data:
+                    required:
+                      - companyId
+                    type: object
+                    properties:
+                      companyId:
+                        minLength: 1
+                        type: string
+                  meta:
+                    required:
+                      - message
+                    type: object
+                    properties:
+                      message:
+                        minLength: 1
+                        type: string
+                description: ""
+              examples:
+                example-1:
+                  value:
+                    code: 0
+                    data:
+                      companyId: string
+                    meta:
+                      message: string
+            example-1:
+              example:
+                code: 200
+                data:
+                  companyId: "147340"
+                meta:
+                  message: SUCCESS
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                required:
+                  - code
+                  - data
+                  - meta
+                type: object
+                properties:
+                  code:
+                    type: number
+                  data:
+                    type: object
+                    properties: {}
+                  meta:
+                    required:
+                      - message
+                    type: object
+                    properties:
+                      message:
+                        minLength: 1
+                        type: string
+                description: ""
+              examples:
+                example-1:
+                  value:
+                    code: 0
+                    data: {}
+                    meta:
+                      message: string
+            example-1:
+              example:
+                code: 400
+                data: {}
+                meta:
+                  message: Convert failed for the API call.
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                required:
+                  - code
+                  - data
+                  - meta
+                type: object
+                properties:
+                  code:
+                    type: number
+                  data:
+                    type: object
+                    properties: {}
+                  meta:
+                    required:
+                      - message
+                    type: object
+                    properties:
+                      message:
+                        minLength: 1
+                        type: string
+                description: ""
+              examples:
+                example-1:
+                  value:
+                    code: 0
+                    data: {}
+                    meta:
+                      message: string
+            example-1:
+              example:
+                code: 404
+                data: {}
+                meta:
+                  message: This resource is not found
+        "413":
+          description: Request Entity Too Large
+          content:
+            application/json:
+              schema:
+                $ref: https://raw.githubusercontent.com/bigcommerce/docs/main/docs/b2b-edition/models/utils/response-413.yaml
+      security:
+        - authToken: []
+      x-codegen-request-body-name: body
+  "/companies/{companyId}/catalogs":
+    parameters:
+      - $ref: "#/components/parameters/companyId"
+    put:
+      summary: Update a Company's Catalog
+      operationId: put-companies-companyId-catalog
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                description: ""
+                type: object
+                properties:
+                  code:
+                    type: number
+                  data:
+                    type: object
+                    properties:
+                      companyId:
+                        type: string
+                        minLength: 1
+                    required:
+                      - companyId
+                  meta:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        minLength: 1
+                    required:
+                      - message
+                required:
+                  - code
+                  - data
+                  - meta
+              examples:
+                example-1:
+                  value:
+                    code: 200
+                    data:
+                      companyId: "147340"
+                    meta:
+                      message: SUCCESS
+      security:
+        - authToken: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              description: ""
+              type: object
+              properties:
+                catalogId:
+                  type: string
+                  minLength: 1
+                  description: The catalog ID you want to update
+              required:
+                - catalogId
+            examples:
+              example-1:
+                value:
+                  catalogId: string
+        description: ""
+      description: Update a company's catalog.
+      tags:
+        - Company
+  "/companies/{companyId}/status":
+    parameters:
+      - $ref: "#/components/parameters/companyId"
+    put:
+      summary: Update a Company's Status
+      operationId: put-companies-companyId-status
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                description: ""
+                type: object
+                properties:
+                  code:
+                    type: number
+                  data:
+                    type: object
+                    properties:
+                      companyId:
+                        type: string
+                        minLength: 1
+                    required:
+                      - companyId
+                  meta:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        minLength: 1
+                    required:
+                      - message
+                required:
+                  - code
+                  - data
+                  - meta
+              examples:
+                example-1:
+                  value:
+                    code: 200
+                    data:
+                      companyId: "147340"
+                    meta:
+                      message: SUCCESS
+      security:
+        - authToken: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              description: ""
+              type: object
+              properties:
+                companyStatus:
+                  type: number
+                  description: |-
+                    Company status you want to set
+                    0: PENDING 1: APPROVED 2: REJECTED 3: INACTIVE 4: DELETED
+              required:
+                - companyStatus
+            examples:
+              example-1:
+                value:
+                  companyStatus: 1
+      description: Update a company's status
+      tags:
+        - Company
+  /companies/extra-fields:
+    get:
+      summary: Get company extra field configs
+      tags:
+        - Company
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - title: response-object
+                    description: Response for successful request
+                    type: object
+                    properties:
+                      code:
+                        type: integer
+                        description: Response code of success request.
+                        example: 200
+                      meta:
+                        type: object
+                        properties:
+                          message:
+                            type: string
+                            example: SUCCESS
+                    x-internal: false
+                  - type: object
+                    properties:
+                      meta:
+                        title: Pagination
+                        type: object
+                        description: Used to response pagination information
+                        properties:
+                          pagination:
+                            type: object
+                            properties:
+                              limit:
+                                type: integer
+                                maximum: 250
+                                exclusiveMaximum: true
+                                minimum: 1
+                                exclusiveMinimum: true
+                                description: "Pagination limit default: 10"
+                                example: 10
+                              offset:
+                                type: integer
+                                minimum: 0
+                                description: "Pagination offset default: 0"
+                                example: 0
+                              totalCount:
+                                type: integer
+                                example: 998
+                                description: The total number of the all data
+                        example:
+                          pagination:
+                            limit: 10
+                            offset: 0
+                            totalCount: 1
+                        x-internal: false
+                      data:
+                        type: array
+                        items:
+                          title: extra_fields
+                          type: object
+                          description: Extra Fields
+                          properties:
+                            id:
+                              type: number
+                              description: Unique id
+                            uuid:
+                              type: string
+                              description: UUID of the extra field
+                            fieldName:
+                              type: string
+                              description: Field name that config in you store
+                            fieldType:
+                              type: number
+                              description: >-
+                                Field type of the extra field.0 means text type. 1 means
+                                textarea type. 2 means number type. 3 means dropdown
+                                type.
+                              enum:
+                                - 0
+                                - 1
+                                - 2
+                                - 3
+                            isRequired:
+                              type: boolean
+                              description: Is this field is required
+                            isUnique:
+                              type: boolean
+                              description: Is the value of this field is unique
+                            visibleToEnduser:
+                              type: boolean
+                              description: Is this field visible to end-user
+                            configType:
+                              type: number
+                              description: >-
+                                Extra field config type.1 means built in. 2 means user
+                                defined.
+                              enum:
+                                - 1
+                                - 2
+                            defaultValue:
+                              type: string
+                              description: Default value of this field.
+                            maximumLength:
+                              type: string
+                              description: >-
+                                The maximum length of the value of this field. fieldType
+                                == 0
+                            numberOfRows:
+                              type: string
+                              description: >-
+                                The maximum number of rows of the value of this field.
+                                fieldType == 1
+                            maximumValue:
+                              type: string
+                              description: Maximum value of the field value. fieldType == 2
+                            listOfValue:
+                              type: array
+                              description: >-
+                                List of all optional values for the field value.
+                                fieldType == 3
+                              items:
+                                type: string
+                          x-internal: false
+      operationId: get-companies-extra-fields
+      description: Get company extra field configs
+      parameters:
+        - schema:
+            type: number
+          in: query
+          name: offset
+          description: "Pagination offset default: 0"
+        - schema:
+            type: string
+          in: query
+          description: "Pagination limit default: 10"
+          name: limit
+      security:
+        - authToken: []
+  /companies/permissions:
+    get:
+      tags:
+        - Company Roles and Permissions
+      summary: Get All Company Permissions
+      description: Get all company permissions
+      operationId: get-stores-companies-permissions
+      parameters:
+        - name: q
+          in: query
+          schema:
+            type: string
+          description: search by permission name
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    default: 200
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                        name:
+                          type: string
+                          description: The permission name
+                        description:
+                          type: string
+                          description: The permission description
+                        code:
+                          type: string
+                          description: The permission code
+                        isCustom:
+                          type: boolean
+                          description: Whether the permission is custom
+                        moduleName:
+                          type: string
+                          description: The name of the module to which the permission belongs
+                  meta:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        default: SUCCESS
+              examples:
+                Example 1:
+                  value:
+                    code: 200
+                    data:
+                      - id: 1
+                        name: Get addresses
+                        description: Get addresses
+                        code: get_addresses
+                        isCustom: false
+                        moduleName: address
+                    meta:
+                      message: SUCCESS
+      security:
+        - authToken: []
+      x-internal: false
+    parameters: []
+    post:
+      summary: Create Company Permission
+      operationId: post-stores-companies-permissions
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    default: 200
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                      name:
+                        type: string
+                        description: The permission name
+                      code:
+                        type: string
+                        description: The permission code
+                      description:
+                        type: string
+                        description: The permission description
+                      isCustom:
+                        type: boolean
+                        description: Whether the permission is custom
+                      moduleName:
+                        type: string
+                        description: The name of the module to which the permission belongs
+                  meta:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        default: SUCCESS
+              examples:
+                Example 1:
+                  value:
+                    code: 200
+                    data:
+                      id: 1
+                      name: Get addresses
+                      description: Get addresses
+                      code: get_addresses
+                      isCustom: false
+                      moduleName: address
+                    meta:
+                      message: SUCCESS
+      description: Create company permission
+      security:
+        - authToken: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  maxLength: 200
+                  description: The permission name
+                code:
+                  type: string
+                  maxLength: 50
+                  description: The permission code
+                description:
+                  type: string
+                  maxLength: 512
+                  description: The permission description
+                moduleName:
+                  type: string
+                  maxLength: 50
+                  description: The permission module name
+              required:
+                - name
+                - code
+                - description
+            examples:
+              Example 1:
+                value:
+                  name: Get addresses
+                  description: Get addresses
+                  code: get_addresses
+                  moduleName: address
+        description: "name, code is unique in the same store."
+      parameters: []
+      tags:
+        - Company Roles and Permissions
+      x-internal: false
+  "/companies/permissions/{permissionId}":
+    parameters:
+      - schema:
+          type: integer
+        name: permissionId
+        in: path
+        required: true
+    put:
+      summary: Update Company Permission
+      operationId: put-stores-companies-permissions-permissionId
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    default: 200
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                      name:
+                        type: string
+                        description: The permission name
+                      code:
+                        type: string
+                        description: The permission code
+                      description:
+                        type: string
+                        description: The permission description
+                      isCustom:
+                        type: boolean
+                        description: Whether the permission is custom
+                      moduleName:
+                        type: string
+                        description: The name of the module to which the permission belongs
+                  meta:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        default: SUCCESS
+              examples:
+                Example 1:
+                  value:
+                    code: 200
+                    data:
+                      id: 1
+                      name: Get addresses
+                      description: Get addresses
+                      code: get_addresses
+                      isCustom: false
+                      moduleName: address
+                    meta:
+                      message: SUCCESS
+      description: |-
+        Update company permission
+
+        - Predefined permissions cannot be updated.
+      security:
+        - authToken: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  maxLength: 200
+                  description: The permission name
+                code:
+                  type: string
+                  maxLength: 50
+                  description: The permission code
+                description:
+                  type: string
+                  maxLength: 512
+                  description: The permission description
+                moduleName:
+                  type: string
+                  maxLength: 50
+              required:
+                - name
+                - code
+                - description
+            examples:
+              Example 1:
+                value:
+                  name: Get addresses
+                  description: Get addresses
+                  code: get_addresses
+                  moduleName: address
+        description: "The name and code are unique within the same store."
+      tags:
+        - Company Roles and Permissions
+      x-internal: false
+    delete:
+      summary: Delete Company Permission
+      operationId: delete-stores-companies-permissions-permissionId
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                  code:
+                    type: integer
+                  meta:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+              examples:
+                Example 1:
+                  value:
+                    code: 200
+                    data: {}
+                    meta:
+                      message: SUCCESS
+      description: |-
+        Delete company permission
+
+        - Predefined permissions cannot be deleted.
+      security:
+        - authToken: []
+      tags:
+        - Company Roles and Permissions
+      x-internal: false
+  /companies/roles:
+    get:
+      summary: Get Company Roles
+      tags:
+        - Company Roles and Permissions
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                          description: The role id
+                        name:
+                          type: string
+                          description: The role name
+                        roleType:
+                          type: integer
+                          enum:
+                            - 1 - predefined
+                            - 2 - custom
+                          description: The role type
+                        roleLevel:
+                          type: integer
+                          enum:
+                            - 1 - store level
+                          description: The role level
+                      required:
+                        - id
+                        - name
+                        - roleType
+                        - roleLevel
+                  meta:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                      pagination:
+                        type: object
+                        properties:
+                          totalCount:
+                            type: integer
+                          limit:
+                            type: integer
+                          offset:
+                            type: integer
+              examples:
+                Example 1:
+                  value:
+                    code: 200
+                    data:
+                      - id: 1
+                        name: io test
+                        roleType: 2
+                        roleLevel: 1
+                    meta:
+                      message: success
+                      pagination:
+                        totalCount: 1
+                        limit: 10
+                        offset: 0
+      operationId: get-stores-companies-roles
+      description: Get company roles
+      security:
+        - authToken: []
+      parameters:
+        - schema:
+            type: string
+          in: query
+          name: q
+          description: Search by company role name
+        - schema:
+            type: integer
+            default: 0
+          in: query
+          name: offset
+          description: Pagination offset
+        - schema:
+            type: integer
+            default: 10
+          in: query
+          name: limit
+          description: Pagination limit
+      x-internal: false
+    post:
+      summary: Create Company Role
+      operationId: post-stores-companies-roles
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        description: The role id
+                      name:
+                        type: string
+                        description: The role name
+                      roleType:
+                        type: integer
+                        enum:
+                          - 1 - predefined
+                          - 2 - custom
+                        description: The role type
+                      roleLevel:
+                        type: integer
+                        description: The role level
+                        enum:
+                          - 1 - store level
+                      permissions:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: integer
+                              description: The permission id
+                            code:
+                              type: string
+                              description: The permission code
+                            permissionLevel:
+                              type: integer
+                              description: The permission level
+                              enum:
+                                - 1 - user level
+                                - 2 - company level
+                  meta:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+              examples:
+                Example 1:
+                  value:
+                    code: 200
+                    data:
+                      id: 1
+                      name: io test
+                      roleType: 2
+                      roleLevel: 1
+                      permissions:
+                        - id: 1
+                          code: get_addresses
+                          permissionLevel: 2
+                    meta:
+                      message: SUCCESS
+      description: |
+        Create company role
+      security:
+        - authToken: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: The role name
+                  maxLength: 200
+                permissions:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                        description: The permission code
+                      permissionLevel:
+                        type: integer
+                        description: The permission level
+                        enum:
+                          - 1 - user level
+                          - 2 - company level
+                    required:
+                      - code
+                      - permissionLevel
+              required:
+                - name
+                - permissions
+            examples:
+              Example 1:
+                value:
+                  name: io test
+                  permissions:
+                    - code: get_addresses
+                      permissionLevel: 2
+      tags:
+        - Company Roles and Permissions
+      x-internal: false
+    parameters: []
+  "/companies/roles/{roleId}":
+    parameters:
+      - schema:
+          type: integer
+        name: roleId
+        in: path
+        required: true
+    get:
+      summary: Get Company Role Detail
+      tags:
+        - Company Roles and Permissions
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        description: The role id
+                      name:
+                        type: string
+                        description: The role name
+                      roleType:
+                        type: integer
+                        description: The role type
+                        enum:
+                          - 1 - predefined
+                          - 2 - custom
+                      roleLevel:
+                        type: integer
+                        enum:
+                          - 1 - store level
+                        description: The role level
+                      permissions:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: integer
+                              description: The permission id
+                            code:
+                              type: string
+                              description: The permission code
+                            permissionLevel:
+                              type: integer
+                              description: The permission level
+                              enum:
+                                - 1 - user level
+                                - 2 - company level
+                  meta:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+              examples:
+                Example 1:
+                  value:
+                    code: 200
+                    data:
+                      id: 1
+                      name: io test
+                      roleType: 2
+                      roleLevel: 1
+                      permissions:
+                        - id: 1
+                          code: get_addresses
+                          permissionLevel: 2
+                    meta:
+                      message: SUCCESS
+      operationId: "get-stores-companies-roles-int:roleId"
+      description: Get company role detail
+      security:
+        - authToken: []
+      parameters: []
+      x-internal: false
+    put:
+      summary: Update Company Role
+      operationId: put-stores-companies-roles-roleId
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        description: The role id
+                      name:
+                        type: string
+                        description: The role name
+                      roleType:
+                        type: integer
+                        description: The role type
+                        enum:
+                          - 1 - predefined
+                          - 2 - custom
+                      roleLevel:
+                        type: integer
+                        enum:
+                          - 1 - store level
+                        description: The role level
+                      permissions:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: integer
+                              description: The permission id
+                            code:
+                              type: string
+                              description: The permission code
+                            permissionLevel:
+                              type: integer
+                              description: The permission level
+                              enum:
+                                - 1 - user level
+                                - 2 - company level
+                  meta:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+              examples:
+                Example 1:
+                  value:
+                    code: 200
+                    data:
+                      id: 1
+                      name: io test
+                      roleType: 2
+                      roleLevel: 1
+                      permissions:
+                        - id: 1
+                          code: get_addresses
+                          permissionLevel: 2
+                    meta:
+                      message: SUCCESS
+      description: |-
+        Update company role
+
+        - Predefined roles cannot be updated.
+        - Permissions only support full updates. Please provide all the permission codes required for the role.
+      security:
+        - authToken: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  maxLength: 200
+                permissions:
+                  type: array
+                  description: permission only support full update
+                  items:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                        description: The permission code
+                      permissionLevel:
+                        type: integer
+                        description: The ermission level
+                        enum:
+                          - 1 - user level
+                          - 2 - company level
+                    required:
+                      - code
+                      - permissionLevel
+              required:
+                - name
+                - permissions
+            examples:
+              Example 1:
+                value:
+                  name: io test
+                  permissions:
+                    - code: get_addresses
+                      permissionLevel: 2
+      tags:
+        - Company Roles and Permissions
+      x-internal: false
+    delete:
+      summary: Delete Company Role
+      operationId: delete-stores-companies-roles-roleId
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                  data:
+                    type: object
+                  meta:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+              examples:
+                Example 1:
+                  value:
+                    code: 200
+                    data: {}
+                    meta:
+                      message: SUCCESS
+      description: |-
+        Delete company role
+
+        - Predefined roles cannot be deleted.
+        - Roles associated with users cannot be deleted.
+      security:
+        - authToken: []
+      parameters: []
+      tags:
+        - Company Roles and Permissions
+      x-internal: false
+  "/companies/{companyId}/attachments":
+    parameters:
+      - schema:
+          type: number
+        name: companyId
+        in: path
+        required: true
+        description: company Id
+    get:
+      summary: Get Company Attachments
+      tags:
+        - Company
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: number
+                    example: 200
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                        attachmentUrl:
+                          type: string
+                  meta:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        default: SUCCESS
+              examples:
+                Example 1:
+                  value:
+                    code: 200
+                    data:
+                      - id: f593d7c8-078e-4bb6-af6b-688ef8df1ijn
+                        attachmentUrl: "https://xxx.com/xxx.csv"
+                    meta:
+                      message: SUCCESS
+      operationId: get-companies-companyId-attachments
+      description: Get company attachments
+      security:
+        - authToken: []
+    post:
+      summary: Add Company Attachment
+      operationId: post-companies-companyId-attachments
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: number
+                    default: 200
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                      attachmentFile:
+                        type: string
+                  meta:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        default: SUCCESS
+              examples:
+                Example 1:
+                  value:
+                    code: 200
+                    data:
+                      id: 497f6eca-6276-4993-bfeb-53cbbbba6f08
+                      attachmentFile: "https://xxx.com/xxx.csv"
+                    meta:
+                      message: SUCCESS
+      description: |-
+        Each company can upload a maximum of 10 attachments.
+
+        The API rate limit is 15/min per store.
+
+        The attachments support the following file types:
+        - Images, including bmp, gif, ico, jpeg, jpg, png, svg, tif, tiff, webp, wbmp, xbm.
+        - PDF
+        - DOC, DOCX
+        - XLS, XLSX
+        - CSV
+      security:
+        - authToken: []
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                attachmentFile:
+                  type: string
+                  format: binary
+                  description: The size of each attachment must not exceed 10MB.
+              required:
+                - attachmentFile
+        description: ""
+      tags:
+        - Company
+  "/companies/{companyId}/attachments/{attachmentId}":
+    parameters:
+      - schema:
+          type: number
+        name: companyId
+        in: path
+        required: true
+        description: company Id
+      - schema:
+          type: string
+          format: uuid
+        name: attachmentId
+        in: path
+        required: true
+        description: attachment Id
+    delete:
+      summary: Delete Company Attachment
+      operationId: delete-companies-companyId-attachments-attachmentId
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: number
+                    default: 200
+                  data:
+                    type: object
+                  meta:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        default: SUCCESS
+              examples:
+                Example 1:
+                  value:
+                    code: 200
+                    data: {}
+                    meta:
+                      message: SUCCESS
+      security:
+        - authToken: []
+      tags:
+        - Company
+components:
+  securitySchemes:
+    authToken:
+      type: apiKey
+      name: authToken
+      in: header
+  parameters:
+    companyId:
+      name: companyId
+      in: path
+      required: true
+      schema:
+        type: integer
+      description: Unique ID of company entity

@@ -223,7 +223,7 @@ paths:
         * 600 SKUs per product limit.
         * 255 characters SKU length limit.
 
-        Variants need to be created one at a time using this endpoint. To use a variant array, create products, and variants in the same call use the [Create Products](/docs/rest-catalog/products#create-a-product) endpoint during the initial product creation.
+        Variants need to be created one at a time using this endpoint. To use a variant array, create products, and variants in the same call use the [Create Products](/docs/rest-catalog/products#create-a-product) endpoint during the initial product creation. To obtain the `option_values` to include in this request, use the [Create a product variant option](/docs/rest-catalog/product-variant-options#create-a-product-variant-option) endpoint.
       operationId: createProductVariant
       parameters:
         - $ref: '#/components/parameters/ContentType'
@@ -262,6 +262,7 @@ paths:
                       fixed_cost_shipping_price: 0
                       purchasing_disabled: true
                       purchasing_disabled_message: string
+                      image_url: string
                       upc: string
                       inventory_level: 0
                       inventory_warning_level: 0
@@ -557,27 +558,6 @@ paths:
                       $ref: '#/components/schemas/metafield_Full'
                   meta:
                     $ref: '#/components/schemas/categoriesTree_Resp'
-        '404':
-          description: |
-            The resource was not found.
-          content:
-            application/json:
-              schema:
-                title: Not Found
-                type: object
-                properties:
-                  status:
-                    type: integer
-                    description: |
-                      404 HTTP status code.
-                  title:
-                    type: string
-                    description: The error title describing the particular error.
-                  type:
-                    type: string
-                  instance:
-                    type: string
-                description: Error payload for the BigCommerce API.
     post:
       tags:
         - Metafields
@@ -630,6 +610,30 @@ paths:
                   date_created: '2021-08-06T19:15:35+00:00'
                   date_modified: '2021-08-06T19:15:35+00:00'
                 meta: {}
+        '400':
+          description: Bad Request. Input is invalid.
+          content:
+            application/json:
+              schema:
+                description: ''
+                type: object
+                properties:
+                  status:
+                    type: number
+                  title:
+                    type: string
+                    minLength: 1
+                  type:
+                    type: string
+                    minLength: 1
+                  detail:
+                    type: string
+                    minLength: 1
+              example:
+                status: 400
+                title: Input is invalid
+                type: 'https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes'
+                detail: Syntax error
         '409':
           description: |
             The `Metafield` was in conflict with another `Metafield`. This can be the result of duplicate unique-key combinations of the appʼs client id, namespace, key, resource_type, and resource_id.
@@ -784,6 +788,30 @@ paths:
                   date_created: '2018-09-13T16:42:37+00:00'
                   date_modified: '2018-09-13T16:42:37+00:00'
                 meta: {}
+        '400':
+          description: Bad Request. Input is invalid.
+          content:
+            application/json:
+              schema:
+                description: ''
+                type: object
+                properties:
+                  status:
+                    type: number
+                  title:
+                    type: string
+                    minLength: 1
+                  type:
+                    type: string
+                    minLength: 1
+                  detail:
+                    type: string
+                    minLength: 1
+              example:
+                status: 400
+                title: Input is invalid
+                type: 'https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes'
+                detail: Syntax error
         '404':
           description: |
             The resource was not found.
@@ -816,6 +844,27 @@ paths:
         '204':
           description: ''
           content: {}
+        '404':
+          description: |
+            The resource was not found.
+          content:
+            application/json:
+              schema:
+                title: Not Found
+                type: object
+                properties:
+                  status:
+                    type: integer
+                    description: |
+                      404 HTTP status code.
+                  title:
+                    type: string
+                    description: The error title describing the particular error.
+                  type:
+                    type: string
+                  instance:
+                    type: string
+                description: Error payload for the BigCommerce API.
     parameters:
       - $ref: '#/components/parameters/Accept'
       - $ref: '#/components/parameters/ProductIdPathParam'
@@ -837,8 +886,6 @@ paths:
         - image_file: Form posts. Files larger than 1 MB are not accepted
         - image_url: Any publicly available URL
       operationId: createProductVariantImage
-      parameters:
-        - $ref: '#/components/parameters/ContentType'
       requestBody:
         content:
           application/json:
@@ -1006,7 +1053,6 @@ paths:
                   data:
                     type: array
                     items:
-                      type: object
                       allOf:
                         - title: Variant Base
                           type: object
@@ -1084,7 +1130,9 @@ paths:
                             upc:
                               type: string
                               description: The UPC code used in feeds for shopping comparison sites and external channel integrations.
-                              x-nullable: true
+                              nullable: true
+                              maxLength: 14
+                              minLength: 0
                             inventory_level:
                               type: integer
                               description: |- 
@@ -1126,7 +1174,6 @@ paths:
                               description: Array of option and option values IDs that make up this variant. Will be empty if the variant is the productʼs base variant.
                               items:
                                 title: Option Value Variant
-                                type: object
                                 allOf:
                                   - title: Option Value Product Base
                                     type: object
@@ -1213,7 +1260,6 @@ paths:
               type: array
               items:
                 title: Variant Put
-                type: object
                 description: |
                   The model for a PUT to update variants on a product.
                 allOf:
@@ -1301,7 +1347,9 @@ paths:
                       upc:
                         type: string
                         description: The UPC code used in feeds for shopping comparison sites and external channel integrations.
-                        x-nullable: true
+                        nullable: true
+                        maxLength: 14
+                        minLength: 0
                         example: "1234"
                       inventory_level:
                         type: integer
@@ -1349,7 +1397,6 @@ paths:
                   data:
                     type: array
                     items:
-                      type: object
                       allOf:
                         - title: Variant Base
                           type: object
@@ -1427,7 +1474,9 @@ paths:
                             upc:
                               type: string
                               description: The UPC code used in feeds for shopping comparison sites and external channel integrations.
-                              x-nullable: true
+                              nullable: true
+                              maxLength: 14
+                              minLength: 0
                             inventory_level:
                               type: integer
                               description: |- 
@@ -1469,7 +1518,6 @@ paths:
                               description: Array of option and option values IDs that make up this variant. Will be empty if the variant is the productʼs base variant.
                               items:
                                 title: Option Value Variant
-                                type: object
                                 allOf:
                                   - title: Option Value Product Base
                                     type: object
@@ -1579,7 +1627,6 @@ paths:
                     type: array
                     items:
                       title: Error Response
-                      type: object
                       allOf:
                         - title: Base Error
                           type: object
@@ -1612,7 +1659,7 @@ paths:
       - $ref: '#/components/parameters/Accept'
   '/catalog/variants/metafields':
     get:
-      summary: Get All Product Variant Metafields
+      summary: Get all product variant metafields
       tags:
         - Batch metafields
       description: Get all variant metafields.
@@ -1625,8 +1672,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MetaFieldCollectionResponse'
-        '500':
-          description: Internal Server Error
       parameters:
         - $ref: '#/components/parameters/PageParam'
         - $ref: '#/components/parameters/LimitParam'
@@ -1636,6 +1681,10 @@ paths:
         - $ref: '#/components/parameters/MetafieldNamespaceInParam'
         - $ref: '#/components/parameters/DirectionParam'
         - $ref: '#/components/parameters/IncludeFieldsParamMetafields'
+        - $ref: '#/components/parameters/date_created_min'
+        - $ref: '#/components/parameters/date_created_max'
+        - $ref: '#/components/parameters/date_modified_min'
+        - $ref: '#/components/parameters/date_modified_max'
     post:
       summary: Create multiple Metafields
       tags:
@@ -1670,6 +1719,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MetaFieldCollectionResponse_POST_PUT'
+        '400':
+          description: Bad Request. Input is invalid.
+          content:
+            application/json:
+              schema:
+                description: ''
+                type: object
+                properties:
+                  status:
+                    type: number
+                  title:
+                    type: string
+                    minLength: 1
+                  type:
+                    type: string
+                    minLength: 1
+                  detail:
+                    type: string
+                    minLength: 1
+              example:
+                status: 400
+                title: Input is invalid
+                type: 'https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes'
+                detail: Syntax error
         '422':
           description: |
             Response object for metafields creation with partial success.
@@ -1677,8 +1750,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MetaFieldCollectionResponsePartialSuccess_POST_PUT'
-        '500':
-          description: Internal Server Error
     put:
       summary: Update multiple Metafields
       tags:
@@ -1713,7 +1784,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MetaFieldCollectionResponse_POST_PUT'
-
+        '400':
+          description: Bad Request. Input is invalid.
+          content:
+            application/json:
+              schema:
+                description: ''
+                type: object
+                properties:
+                  status:
+                    type: number
+                  title:
+                    type: string
+                    minLength: 1
+                  type:
+                    type: string
+                    minLength: 1
+                  detail:
+                    type: string
+                    minLength: 1
+              example:
+                status: 400
+                title: Input is invalid
+                type: 'https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes'
+                detail: Syntax error
         '422':
           description: |
             Response object for metafields creation with partial success.
@@ -1721,10 +1815,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MetaFieldCollectionResponsePartialSuccess_POST_PUT'
-        '500':
-          description: Internal Server Error
     delete:
-      summary: Delete all metafields
+      summary: Delete multiple Metafields
       tags:
         - Batch metafields
       description: Delete all variant metafields.
@@ -1745,6 +1837,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MetaFieldCollectionDeleteResponseSuccess'
+        '400':
+          description: Bad Request. Input is invalid.
+          content:
+            application/json:
+              schema:
+                description: ''
+                type: object
+                properties:
+                  status:
+                    type: number
+                  title:
+                    type: string
+                    minLength: 1
+                  type:
+                    type: string
+                    minLength: 1
+                  detail:
+                    type: string
+                    minLength: 1
+              example:
+                status: 400
+                title: Input is invalid
+                type: 'https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes'
+                detail: Syntax error
         '422':
           description: |
             Response object for metafields deletion with partial success.
@@ -1878,6 +1994,11 @@ components:
           type: string
           description: The UPC code used in feeds for shopping comparison sites and external channel integrations.
           nullable: true
+          maxLength: 14
+          minLength: 0
+        image_url:
+          type: string
+          description: Publicly available image url
         inventory_level:
           type: integer
           description: |- 
@@ -1904,9 +2025,13 @@ components:
         mpn:
           type: string
           description: The Manufacturer Part Number (MPN) for the variant.
+          nullable: true
         gtin:
           type: string
           example: '012345678905'
+          nullable: true
+          maxLength: 14
+          minLength: 0
       description: Common Variant properties.
       x-internal: false
       x-examples:
@@ -2072,6 +2197,8 @@ components:
               type: string
               description: The UPC code used in feeds for shopping comparison sites and external channel integrations.
               nullable: true
+              maxLength: 14
+              minLength: 0
             inventory_level:
               type: integer
               description: |- 
@@ -2102,10 +2229,14 @@ components:
               type: string
               description: Global Trade Item Number
               example: '012345678905'
+              nullable: true
+              maxLength: 14
+              minLength: 0
             mpn:
               type: string
               description: Manufacturer Part Number
               example: HV-HM02
+              nullable: true
           description: Common Variant properties.
         - type: object
           properties:
@@ -2395,9 +2526,33 @@ components:
     Metafield:
       type: object
       description: |
-        Common Metafield properties.
+        Common metafield properties.
       x-internal: false
       properties:
+        id:
+          type: integer
+          description: The unique identifier for the metafield.
+        key:
+          type: string
+          description: |
+            The name of the field, for example: `location_id`, `color`.
+          minLength: 1
+          maxLength: 64
+          example: Staff Name
+        value:
+          type: string
+          description: |
+            The value of the field, for example: `1`, `blue`.
+          minLength: 1
+          maxLength: 65535
+          example: Ronaldo
+        namespace:
+          type: string
+          description: |
+            Namespace for the metafield, for organizational purposes.
+          example: Sales Department
+          minLength: 1
+          maxLength: 64
         permission_set:
           type: string
           description: |
@@ -2415,34 +2570,6 @@ components:
             - write
             - read_and_sf_access
             - write_and_sf_access
-        namespace:
-          type: string
-          description: |
-            Namespace for the metafield, for organizational purposes.
-          example: Sales Department
-          minLength: 1
-          maxLength: 64
-        key:
-          type: string
-          description: |
-            The name of the field, for example: `location_id`, `color`.
-          minLength: 1
-          maxLength: 64
-          example: Staff Name
-        value:
-          type: string
-          description: |
-            The value of the field, for example: `1`, `blue`.
-          minLength: 1
-          maxLength: 65535
-          example: Ronaldo
-        description:
-          type: string
-          description: |
-            Description for the metafields.
-          example: order
-          minLength: 0
-          maxLength: 255
         resource_type:
           type: string
           description: |
@@ -2463,10 +2590,13 @@ components:
           description: |
             The unique identifier for the resource with which the metafield is associated.
           example: 424242
-          readOnly: true
-        id:
-          type: integer
-          description: The unique identifier for the metafield.
+        description:
+          type: string
+          description: |
+            Description for the metafields.
+          example: order
+          minLength: 0
+          maxLength: 255
         date_created:
           type: string
           format: date-time
@@ -2481,18 +2611,6 @@ components:
           type: string
           description: Client ID for the metafieldʼs creator.
           example: asdfasdfasdfasdfasdfasdfasdf
-          readOnly: true
-      required:
-        - namespace
-        - key
-        - value
-        - permission_set
-        - resource_type
-        - resource_id
-        - description
-        - id
-        - date_created
-        - date_modified
     MetaFieldCollectionResponse:
       type: object
       description: |
@@ -2516,6 +2634,7 @@ components:
             $ref: '#/components/schemas/Metafield'
         errors:
           type: array
+          items: {}
           description: Empty for 200 responses.
           example: []
         meta:
@@ -2573,6 +2692,7 @@ components:
             - 125
         errors:
           type: array
+          items: {}
           description: Empty for 200 responses.
           example: []
         meta:
@@ -2659,6 +2779,8 @@ components:
           $ref: '#/components/schemas/ErrorDetail'
     ErrorDetail:
       type: object
+      properties: {}
+      additionalProperties: true
       description: |
         Error detail response payload for the BigCommerce API.
       example:
@@ -2722,9 +2844,30 @@ components:
     MetafieldBase_Post:
       type: object
       description: |
-        Common Metafield properties.
+        Common metafield properties.
       x-internal: false
       properties:
+        key:
+          type: string
+          description: |
+            The name of the field, for example: `location_id`, `color`.
+          minLength: 1
+          maxLength: 64
+          example: Staff Name
+        value:
+          type: string
+          description: |
+            The value of the field, for example: `1`, `blue`.
+          minLength: 1
+          maxLength: 65535
+          example: Ronaldo
+        namespace:
+          type: string
+          description: |
+            Namespace for the metafield, for organizational purposes.
+          example: Sales Department
+          minLength: 1
+          maxLength: 64
         permission_set:
           type: string
           description: |
@@ -2742,27 +2885,6 @@ components:
             - write
             - read_and_sf_access
             - write_and_sf_access
-        namespace:
-          type: string
-          description: |
-            Namespace for the metafield, for organizational purposes.
-          example: Sales Department
-          minLength: 1
-          maxLength: 64
-        key:
-          type: string
-          description: |
-            The name of the field, for example: `location_id`, `color`.
-          minLength: 1
-          maxLength: 64
-          example: Staff Name
-        value:
-          type: string
-          description: |
-            The value of the field, for example: `1`, `blue`.
-          minLength: 1
-          maxLength: 65535
-          example: Ronaldo
         description:
           type: string
           description: |
@@ -2771,16 +2893,37 @@ components:
           maxLength: 255
           example: Name of Staff Member
       required:
-        - permission_set
-        - namespace
         - key
         - value
+        - namespace
+        - permission_set
     MetafieldBase_Put:
       type: object
       description: |
         Common Metafield properties.
       x-internal: false
       properties:
+        key:
+          type: string
+          description: |
+            The name of the field, for example: `location_id`, `color`.
+          minLength: 1
+          maxLength: 64
+          example: Staff Name
+        value:
+          type: string
+          description: |
+            The value of the field, for example: `1`, `blue`.
+          minLength: 1
+          maxLength: 65535
+          example: Ronaldo
+        namespace:
+          type: string
+          description: |
+            Namespace for the metafield, for organizational purposes.
+          example: Sales Department
+          minLength: 1
+          maxLength: 64
         permission_set:
           type: string
           description: |
@@ -2798,27 +2941,6 @@ components:
             - write
             - read_and_sf_access
             - write_and_sf_access
-        namespace:
-          type: string
-          description: |
-            Namespace for the metafield, for organizational purposes.
-          example: Sales Department
-          minLength: 1
-          maxLength: 64
-        key:
-          type: string
-          description: |
-            The name of the field, for example: `location_id`, `color`.
-          minLength: 1
-          maxLength: 64
-          example: Staff Name
-        value:
-          type: string
-          description: |
-            The value of the field, for example: `1`, `blue`.
-          minLength: 1
-          maxLength: 65535
-          example: Ronaldo
         description:
           type: string
           description: |
@@ -2930,6 +3052,38 @@ components:
         enum:
           - asc
           - desc
+    date_created_min:
+      name: 'date_created:min'
+      description: |
+        'Query parameter that lets you filter by the minimum date created, for example, `2024-05-14T09:34:00` or `2024-05-14`. Returns metafields created after this date.'
+      required: false
+      in: query
+      schema:
+        type: string
+    date_created_max:
+      name: 'date_created:max'
+      description: |
+        'Query parameter that lets you filter by the maximum date created, for example, `2024-05-14T09:34:00` or `2024-05-14`. Returns metafields created before this date.'
+      required: false
+      in: query
+      schema:
+        type: string
+    date_modified_max:
+      name: 'date_modified:max'
+      description: |
+        'Query parameter that lets you filter by the maximum date modified, for example, `2024-05-14T09:34:00` or `2024-05-14`. Returns metafields modified before this date.'
+      required: false
+      in: query
+      schema:
+        type: string
+    date_modified_min:
+      name: 'date_modified:min'
+      description: |
+        'Query parameter that lets you filter by the minimum date modified, for example, `2024-05-14T09:34:00` or `2024-05-14`. Returns metafields modified after this date.'
+      required: false
+      in: query
+      schema:
+        type: string
     IncludeFieldsParam:
       name: include_fields
       in: query

@@ -1,0 +1,79 @@
+# Adding Buy Online, Pick up in Store Features to the Storefront
+
+You can enhance the storefront browsing experience by letting shoppers see and select a Pickup fulfillment method.
+
+The biggest benefit is that shoppers can see product inventory availability by location. This helps inform their shopping decisions.
+
+![storefront browsing.png](https://storage.googleapis.com/bigcommerce-production-dev-center/images/BOPIS%20storefront%20product%202.png)
+
+Adding inventory data experiences can be achieved by customizing a store's theme to query the [GraphQL Storefront API](/docs/storefront/graphql) and display the appropriate components for availability. 
+
+The [Query Locations with the GraphQL Storefront API](/docs/storefront/graphql/locations/queries) and [Query Inventory with the GraphQL Storefront API](/docs/storefront/graphql/inventory/queries) pages contain info about what has been added to the API to support _Buy Online, Pick up in Store_ features. 
+
+The following example shows how you can show inventory for the base product and its variants using [Stencil](/docs/storefront/stencil):
+
+1. Add the following [GraphQL attribute](/docs/storefront/stencil/themes/context/frontmatter-reference#graphql-attributes) to the [Stencil Front Matter](/docs/storefront/stencil/themes/context/frontmatter) of the `product.html` page:
+
+```graphql showLineNumbers copy
+gql: "query($productId: Int!) {
+  site {
+    product(entityId: $productId) {
+      name
+      inventory {
+        aggregated {
+          availableToSell
+        }
+      }
+      variants {
+        edges {
+          node {
+            sku
+            inventory {
+              aggregated {
+                availableToSell
+              }
+              byLocation {
+                edges {
+                  node {
+                    locationEntityCode
+                    availableToSell
+                    isInStock
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}"
+```
+
+2. Add the following handlebars to the `product-view.html` page:
+
+```handlebars showLineNumbers copy
+{{#if gql.data.site.product}}
+
+<b>Available to Sell:</b> {{gql.data.site.product.inventory.aggregated.availableToSell}} <br></br>
+
+{{#each gql.data.site.product.variants.edges}}
+    {{#with node}}
+
+        <b>Variant SKU: </b> {{sku}} <br></br>
+        Total Available to Sell: {{inventory.aggregated.availableToSell}} <br></br>                     
+
+        {{#each inventory.byLocation.edges}}
+        {{#with node}}
+
+        {{#if isInStock}}
+        {{locationEntityCode}} has {{availableToSell}} in stock <br></br>
+        {{/if}}   
+            
+        {{/with}}
+        {{/each}}
+    {{/with}}
+{{/each}}
+
+{{/if}}
+```

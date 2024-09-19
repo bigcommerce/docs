@@ -1,0 +1,79 @@
+# Authentication for hosted storefronts
+
+B2B Edition has four APIs that let you manage data, log in customers, make client-side queries for company information, and more. Each requires a different authentication method.
+
+## REST Management API
+
+B2B Edition's REST Management APIs require you to create and pass a token along with the request using the `authToken` header.
+
+For the REST Management V3 API, create an auth token using the [Create a server-to-server token](https://bundleb2b.stoplight.io/docs/openapi/rest-management/auth/operations/create-a-auth-backend) endpoint.
+
+For the REST Management V2 API, request an auth token by contacting support.
+
+## REST Storefront API
+
+To create a storefront auth token, use the following steps:
+
+First, make a request to the [BigCommerce Current Customer API](/docs/storefront-auth/current-customer), passing B2B Edition's client ID as the value of the `app_client_id` query parameter. Our client ID is `dl7c39mdpul6hyc489yk0vzxl6jesyx`.
+
+```http filename="Example request to BigCommerce Current Customer API" copy
+https://{yourstore.example.com}/customer/current.jwt?app_client_id=dl7c39mdpul6hyc489yk0vzxl6jesyx
+```
+
+If your request is successful, BigCommerce returns a current customer [JSON web token (JWT)](https://jwt.io/). Retain the token.
+
+After you receive the current customer JWT, make a request to the B2B Edition [Get a storefront OpenAPI authtoken](https://bundleb2b.stoplight.io/docs/openapi/rest-management/auth/operations/get-a-auth-storefront) endpoint. Use the current customer JWT as the value of the `jwtToken` query parameter.
+
+A successful request to the [Get a storefront OpenAPI authtoken](https://bundleb2b.stoplight.io/docs/openapi/rest-management/auth/operations/get-a-auth-storefront) endpoint returns a B2B Edition REST Storefront API token, which you can pass as a value of the `authToken` header in requests to the B2B Edition REST Storefront API.
+
+```curl filename="Example token request (CURL)" copy
+curl https://api-b2b.bigcommerce.com/api/io/auth/storefront?jwtToken=bigCommerce.currentCustomerResponse.jwtString
+```
+
+```js filename="Example token request (Fetch)" copy
+async function() {
+  try {
+    let authToken = await fetch({
+      method: "get",
+      url: "https://api-b2b.bigcommerce.com/api/io/auth/storefront",
+      query:{
+        jwtToken: "bigCommerce.currentCustomerResponse.jwtString"
+      }
+    });
+    return authToken;
+  } catch(error) {
+    console.log(error);
+    throw error;
+  }
+}
+```
+
+## REST Management V3 API
+
+To get a REST Management API auth token, use the [Get server to server OpenAPI tokens](https://bundleb2b.stoplight.io/docs/openapi/rest-management/auth/operations/create-a-auth-backend) endpoint. Send the store's `storeHash` and the email and password you use to sign in to the B2B Edition app in the store control panel. The response returns tokens you can use as the value of the authToken header in requests to the B2B Edition REST Management V3 API.
+
+For details, see the [Get server to server OpenAPI tokens](https://bundleb2b.stoplight.io/docs/openapi/rest-management/auth/operations/create-a-auth-backend) endpoint reference.
+
+```js http
+async function() {
+  try {
+    let authToken = await fetch({
+      method: "post",
+      url: "https://api-b2b.bigcommerce.com/api/io/auth/backend",
+      body:{
+        storeHash: "theStoreHash",
+        email: "b2bEditionControlPanelUserLoginEmail",
+        password: "b2bEditionControlPanelUserPassword",
+        channelId: 1,
+        name: "optionalTokenName",
+        beginAt: 1000,
+        endAt: 17219304,
+      }
+    });
+    return authToken;
+  } catch(error) {
+    console.log(error);
+    throw error;
+  }
+}
+```

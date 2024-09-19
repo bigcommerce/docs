@@ -61,7 +61,7 @@ info:
 
     Allowed values for a channelʼs `status` vary by channel `type`.
 
-    | Type | Writeable Statuses |
+    | Type | Writable Statuses |
     |:-----|:-------------------|
     | `storefront` | `prelaunch`, `active`, `inactive`, `archived`, `deleted` |
     | `marketing`, `marketplace`, `pos`| `connected`, `disconnected`, `archived`, `deleted` |
@@ -369,7 +369,7 @@ paths:
         - Listings
       summary: Get Channel Listings
       operationId: getChannelListings
-      description: 'Returns a list of all *Channel Listings* for a specific channel. Note that if the *Channel* is not found or there is no listing associated to the *Channel*, it will return a 200 response with empty data.'
+      description: 'Returns a list of all *Channel Listings* for a specific channel. We recommend using this endpoint for non-storefront channels like marketplaces, marketing channels, and point of sale (POS) channels. Note that if the *Channel* is not found or there is no listing associated with the *Channel*, it will return a 200 response with empty data.'
       parameters:
         - $ref: '#/components/parameters/limit'
         - $ref: '#/components/parameters/after'
@@ -394,7 +394,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/ContentType'
       operationId: createChannelListings
-      description: Creates one or more *Channel Listings* for a specific channel.
+      description: Creates one or more *Channel Listings* for a specific channel. We recommend using this endpoint for non-storefront channels like marketplaces, marketing channels, and point of sale (POS) channels. 
       requestBody:
         content:
           application/json:
@@ -419,7 +419,7 @@ paths:
         - $ref: '#/components/parameters/ContentType'
       operationId: updateChannelListings
       description: |-
-        Updates one or more *Channel Listings* for a specific channel.
+        Updates one or more *Channel Listings* for a specific channel. We recommend using this endpoint for non-storefront channels like marketplaces, marketing channels, and point of sale (POS) channels. 
 
         > #### Note
         > * Partial updates are supported. In most cases, if a field that *cannot* be updated is passed in, the API **will not** respond with an error. It returns a 200 response with the object, in which you will see the field(s) were not updated.
@@ -454,7 +454,7 @@ paths:
         - Listings
       summary: Get a Channel Listing
       operationId: getChannelListing
-      description: Returns a *Channel Listing* for a specific channel.
+      description: Returns a *Channel Listing* for a specific channel. We recommend using this endpoint for non-storefront channels like marketplaces, marketing channels, and point of sale (POS) channels. 
       responses:
         '200':
           $ref: '#/components/responses/single_listing_resp'
@@ -532,6 +532,8 @@ paths:
                     default: 'https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes'
                   errors:
                     type: object
+                    properties: {}
+                    additionalProperties: true
     delete:
       summary: Delete a Siteʼs Checkout URL
       operationId: deleteCheckoutUrl
@@ -601,7 +603,7 @@ paths:
               $ref: '#/components/schemas/site_Post'
         x-examples:
           application/json:
-            url: 'http://kittens.mybigcommerce.com/'
+            url: 'https://kittens.mybigcommerce.com/'
             channel_id: 123
       tags:
         - Site
@@ -700,6 +702,44 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/metafield_200'
+        '400':
+          description: Bad Request. Input is invalid.
+          content:
+            application/json:
+              schema:
+                description: ''
+                type: object
+                properties:
+                  status:
+                    type: number
+                  title:
+                    type: string
+                    minLength: 1
+                  type:
+                    type: string
+                    minLength: 1
+                  detail:
+                    type: string
+                    minLength: 1
+              example:
+                status: 400
+                title: Input is invalid
+                type: 'https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes'
+                detail: Syntax error
+        '409':
+          description: |
+            The `Metafield` conflicts with another `Metafield`. This can result from duplicate unique key combinations of the appʼs client id, namespace, key, resource_type, and resource_id.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse' 
+        '422':
+          description: |
+            The `Metafield` was not valid. This is the result of missing required fields, or of invalid data. See the response for more details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
       requestBody:
         content:
           application/json:
@@ -728,6 +768,19 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/metafield_200'
+        '404':
+          description: |
+            Not found (A metafield was not found with this query).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFound'
+              examples:
+                example-1:
+                  value:
+                    status: 404
+                    title: The resource at that URL is not found.
+                    type: 'https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes'
       operationId: getChannelMetafield
       description: Returns a single channel metafield.
     put:
@@ -738,6 +791,43 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/metafield_200'
+        '400':
+          description: Bad Request. Input is invalid.
+          content:
+            application/json:
+              schema:
+                description: ''
+                type: object
+                properties:
+                  status:
+                    type: number
+                  title:
+                    type: string
+                    minLength: 1
+                  type:
+                    type: string
+                    minLength: 1
+                  detail:
+                    type: string
+                    minLength: 1
+              example:
+                status: 400
+                title: Input is invalid
+                type: 'https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes'
+                detail: Syntax error
+        '404':
+          description: |
+            Not found (A metafield was not found with this query).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFound'
+              examples:
+                example-1:
+                  value:
+                    status: 404
+                    title: The resource at that URL is not found.
+                    type: 'https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes'
       requestBody:
         content:
           application/json:
@@ -756,6 +846,19 @@ paths:
       responses:
         '204':
           description: No Content
+        '404':
+          description: |
+            Not found (A metafield was not found with this query).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFound'
+              examples:
+                example-1:
+                  value:
+                    status: 404
+                    title: The resource at that URL is not found.
+                    type: 'https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes'
       tags:
         - Metafields
       description: Deletes a single channel metafield.
@@ -774,8 +877,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MetaFieldCollectionResponse'
-        '500':
-          description: Internal Server Error
       parameters:
         - $ref: '#/components/parameters/PageParam'
         - $ref: '#/components/parameters/LimitParam'
@@ -785,6 +886,10 @@ paths:
         - $ref: '#/components/parameters/MetafieldNamespaceInParam'
         - $ref: '#/components/parameters/DirectionParam'
         - $ref: '#/components/parameters/IncludeFieldsParamMetafields'
+        - $ref: '#/components/parameters/date_modified_min'
+        - $ref: '#/components/parameters/date_modified_max'
+        - $ref: '#/components/parameters/date_created_min'
+        - $ref: '#/components/parameters/date_created_max'
     post:
       summary: Create multiple Metafields
       tags:
@@ -807,15 +912,36 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MetaFieldCollectionResponse_POST_PUT'
-        '422':
-          description: |
-            Response object for metafields creation with partial success.
+        '400':
+          description: Bad Request. Input is invalid.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/MetaFieldCollectionResponsePartialSuccess_POST_PUT'
-        '500':
-          description: Internal Server Error
+                description: ''
+                type: object
+                properties:
+                  status:
+                    type: number
+                  title:
+                    type: string
+                    minLength: 1
+                  type:
+                    type: string
+                    minLength: 1
+                  detail:
+                    type: string
+                    minLength: 1
+              example:
+                status: 400
+                title: Input is invalid
+                type: 'https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes'
+                detail: Syntax error
+        '422':
+          description: Unprocessable entity (The following fields are invalid.)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
     put:
       summary: Update multiple Metafields
       tags:
@@ -838,6 +964,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MetaFieldCollectionResponse_POST_PUT'
+        '400':
+          description: Bad Request. Input is invalid.
+          content:
+            application/json:
+              schema:
+                description: ''
+                type: object
+                properties:
+                  status:
+                    type: number
+                  title:
+                    type: string
+                    minLength: 1
+                  type:
+                    type: string
+                    minLength: 1
+                  detail:
+                    type: string
+                    minLength: 1
+              example:
+                status: 400
+                title: Input is invalid
+                type: 'https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes'
+                detail: Syntax error
         '422':
           description: |
             Response object for metafields creation with partial success.
@@ -845,10 +995,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MetaFieldCollectionResponsePartialSuccess_POST_PUT'
-        '500':
-          description: Internal Server Error
     delete:
-      summary: Delete All Metafields
+      summary: Delete Multiple Metafields
       tags:
         - Batch metafields
       description: Delete all channel metafields.
@@ -869,6 +1017,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MetaFieldCollectionDeleteResponseSuccess'
+        '400':
+          description: Bad Request. Input is invalid.
+          content:
+            application/json:
+              schema:
+                description: ''
+                type: object
+                properties:
+                  status:
+                    type: number
+                  title:
+                    type: string
+                    minLength: 1
+                  type:
+                    type: string
+                    minLength: 1
+                  detail:
+                    type: string
+                    minLength: 1
+              example:
+                status: 400
+                title: Input is invalid
+                type: 'https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes'
+                detail: Syntax error
         '422':
           description: |
             Response object for metafields deletion with partial success.
@@ -1054,42 +1226,42 @@ components:
           - 'facebook by meta,amazon'
     date_created:
       name: date_created
-      description: 'Filter items by date_created. For example, `date_created=2019-09-04T00:00:00`, `date_created=2019-09-04`, or `date_created=1567573200`'
+      description: 'Filter items by date created. For example, `date_created=2024-05-14T09:34:00` or `date_created=2024-05-14`.'
       in: query
       required: false
       schema:
         type: string
     date_created_min:
       name: 'date_created:min'
-      description: 'Filter items by minimum date_created. For example, `date_created:min=2019-09-04T00:00:00`, `date_created:min=2019-09-04`, or `date_created:min=1567573200`'
+      description: 'Filter items by minimum date created. For example, `date_created=2024-05-14T09:34:00` or `date_created=2024-05-14`. Returns metafields created after this date.'
       in: query
       required: false
       schema:
         type: string
     date_created_max:
       name: 'date_created:max'
-      description: 'Filter items by maximum date_created. For example, `date_created:max=2019-09-04T00:00:00`, `date_created:max=2019-09-04`, or `date_created:max=1567573200`'
+      description: 'Filter items by maximum date created. For example, `date_created=2024-05-14T09:34:00` or `date_created=2024-05-14`. Returns metafields created before this date.'
       in: query
       required: false
       schema:
         type: string
     date_modified:
       name: date_modified
-      description: 'Filter items by date_modified. For example, `date_modified=2019-09-04T00:00:00`, `date_modified=2019-09-04`, or `date_modified=1567573200`'
+      description: 'Filter items by date modified. For example, `date_created=2024-05-14T09:34:00` or `date_created=2024-05-14`.'
       in: query
       required: false
       schema:
         type: string
     date_modified_min:
       name: 'date_modified:min'
-      description: 'Filter items by minimum date_modified. For example, `date_modified:min=2019-09-04T00:00:00`, `date_modified:min=2019-09-04`, or `date_modified:min=1567573200`'
+      description: 'Filter items by minimum date modified. For example, `date_created=2024-05-14T09:34:00` or `date_created=2024-05-14`. Returns metafields modified after this date.'
       in: query
       required: false
       schema:
         type: string
     date_modified_max:
       name: 'date_modified:max'
-      description: 'Filter items by maximum date_modified. For example, `date_modified:max=2019-09-04T00:00:00`, `date_modified:max=2019-09-04`, or `date_modified:max=1567573200`'
+      description: 'Filter items by maximum date modified. For example, `date_created=2024-05-14T09:34:00` or `date_created=2024-05-14`. Returns metafields modified before this date.'
       in: query
       required: false
       schema:
@@ -1603,15 +1775,16 @@ components:
                     links:
                       current: '?page=1&limit=50'
             allOf:
-              - properties:
+              - type: object
+                properties:
                   data:
                     type: array
                     items:
                       $ref: '#/components/schemas/metafield_Base'
-              - properties:
+              - type: object
+                properties:
                   meta:
                     $ref: '#/components/schemas/MetaWithFullPagination'
-            type: object
           examples: {}
   examples:
     create_channel_req_example:
@@ -2429,6 +2602,7 @@ components:
             $ref: '#/components/schemas/Metafield'
         errors:
           type: array
+          items: {}
           description: Empty for 200 responses.
           example: []
         meta:
@@ -2485,6 +2659,7 @@ components:
             - 125
         errors:
           type: array
+          items: {}
           description: Empty for 200 responses.
           example: []
         meta:
@@ -2572,11 +2747,28 @@ components:
           $ref: '#/components/schemas/ErrorDetail'
     ErrorDetail:
       type: object
+      properties: {}
+      additionalProperties: true
       description: |
         Error detail response payload for the BigCommerce API.
       example:
         "1": "Unauthorized to delete"
         "2": "Metafield does not exist"
+    ErrorResponse:
+      type: object
+      properties:
+        status:
+          type: integer
+        title:
+          type: string
+        type:
+          type: string
+        instance:
+          type: string
+        errors:
+          type: object
+          properties: {}
+          additionalProperties: true
     CollectionMeta:
       type: object
       description: Data about the response, including pagination and collection totals.
@@ -2769,12 +2961,30 @@ components:
           required:
             - id
       x-internal: false
+    NotFound:
+      description: Error payload for the BigCommerce API.
+      type: object
+      properties:
+        status:
+          description: |
+            404 HTTP status code.
+          type: integer
+        title:
+          description: The error title describing the particular error.
+          type: string
+        type:
+          type: string
+        instance:
+          type: string
+      title: Not Found
+      x-internal: false
     PutCheckoutUrl:
       type: object
       properties:
         url:
           type: string
-          description: Unique site checkout URL. Must be valid and a sub-domain of primary channel URL.
+          description: |- 
+            Unique site checkout URL. It must be valid and a sub-domain of the primary channel URL. Note: The API will change all URLs using the HTTP protocol to HTTPS.
           format: uri
           example: 'https://checkout.kittens.mybigcommerce.com'
       title: ''
@@ -2815,7 +3025,7 @@ components:
       x-internal: false
     ChannelStatus:
       type: string
-      description: 'The status of the channel; channel `type`, `platform`, and `status` must be a [valid combination](/docs/rest-management/channels#status). `terminated` is not valid for `PUT` or `POST` requests. `deleted` is not valid for `POST` requests.'
+      description: 'The status of the channel; channel `type`, `platform`, and `status` must be a [valid combination](/docs/rest-management/channels#status). `terminated` is not valid for `PUT` or `POST` requests. `deleted` is not valid for `POST` requests. `prelaunch` is not valid for `PUT` requests.'
       enum:
         - active
         - prelaunch
@@ -2865,13 +3075,13 @@ components:
       x-internal: false
     EnabledCurrencies:
       type: array
-      description: 'Currencies that are enabled for the specified channel in [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217) three character alphabetic format.'
+      description: 'Currencies that are enabled for the specified channel in [ISO 4217](https://www.iso.org/iso-4217-currency-codes.html) three character alphabetic format.'
       items:
         type: string
       x-internal: false
     DefaultCurrency:
       type: string
-      description: 'Default currency for the channel in [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217) three character alphabetic format. Will be used on storefront when other currencies cannot.'
+      description: 'Default currency for the channel in [ISO 4217](https://www.iso.org/iso-4217-currency-codes.html) three character alphabetic format. Will be used on storefront when other currencies cannot.'
       x-internal: false
     ChannelProductName:
       type: string
@@ -3288,12 +3498,19 @@ components:
       items:
         type: string
         enum:
+          - overview
           - storefront_settings
-          - social
+          - localization
           - carousel
-          - domains
+          - script_manager
           - currencies
-          - notifications
+          - payments
+          - checkout
+          - domains
+          - notifications 
+          - social       
+          - pages
+          - data_solutions
     channel_menus_Post:
       type: object
       properties:
@@ -3419,7 +3636,7 @@ components:
         url:
           type: string
           description: The fully qualified URL (including host and scheme) where this site is hosted. All URLs generated for this site will be appended to this.
-          example: 'http://kittens.mybigcommerce.com/'
+          example: 'https://kittens.mybigcommerce.com/'
         channel_id:
           type: integer
           description: 'The channel to which this site is attached. Each site belongs to a single channel, and each channel can have either zero or more sites.'
@@ -3453,13 +3670,14 @@ components:
         url:
           type: string
           description: URL of site
+          example: 'https://kittens.mybigcommerce.com/' 
         type:
           type: string
           description: URL type
           enum:
+            - checkout
             - primary
             - canonical
-            - checkout
         created_at:
           type: string
           example: '2018-01-04T04:15:50.000Z'
@@ -3484,7 +3702,7 @@ components:
         url:
           type: string
           description: The Fully Qualified URL (including host and scheme) where this site is hosted. All URLs generated for this site will be appended to this.
-          example: 'http://kittens.mybigcommerce.com/'
+          example: 'https://kittens.mybigcommerce.com/'
         channel_id:
           type: integer
           description: 'The channel this site is attached to. Each site belongs to a single channel, and each channel can have either zero or one sites.'

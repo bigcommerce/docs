@@ -1,0 +1,157 @@
+
+
+## 5.0 Manage order as a merchant
+
+When building a _Buy Online, Pick up in Store_ solution, you can allow merchants to manage orders that have pickup consignments. They can view and update the pickup consignment for an order.
+
+### 5.1 View the newly-created order’s pickup consignment
+
+To view the pickup consignment for the newly-created order, send a request to the [Get consignments](/docs/rest-management/orders/order-consignments#get-consignments) endpoint.
+
+<Tabs items={['Request', 'Response']}>
+  <Tab>
+
+    ```http filename="Example request: Get consignments" showLineNumbers copy
+    GET https://api.bigcommerce.com/stores/{{store_hash}}/v2/orders/{{order_id}}/consignments
+    X-Auth-Token: {{access_token}}
+    Accept: application/json
+    ```
+
+  </Tab>
+  <Tab>
+
+    ```json filename="Example response: Get consignments" showLineNumbers copy
+    {
+      "pickups": [
+        {
+          "id": 13,
+          "pickup_method_id": 2,
+          "pickup_method_display_name": "Pickup Method 2",
+          "collection_instructions": "Pickup Method 2 instructions",
+          "collection_time_description": "Pickup Method 2 time",
+          "location": {
+            "id": 2,
+            "name": "location2",
+            "code": "LOCATION-2",
+            "address_line_1": "2802 Skyway Cir",
+            "address_line_2": "",
+            "city": "Austin",
+            "state": "Texas",
+            "postal_code": "78704",
+            "country_alpha2": "US",
+            "email": "location2@example.com",
+            "phone": "410123002"
+          },
+          "line_items": [
+            {
+              "url": "https://api.bigcommerce.com/stores/{{store_hash}}/v2/orders/126/products/22",
+              "resource": "/orders/126/products/22"
+            }
+          ]
+        }
+      ]
+    }
+    ```
+
+  </Tab>
+</Tabs>
+
+The order's pickup consignment is 13.
+
+### 5.2 View the newly-created order's products  
+
+To view the products for a newly-created order, send a request to the [Get order products](/docs/rest-management/orders/order-products#list-order-products) endpoint. The response returns products that were assigned to a pickup consignment.
+
+<Tabs items={['Request', 'Response']}>
+  <Tab>
+
+    ```http filename="Example request: Get order products" showLineNumbers copy
+    GET https://api.bigcommerce.com/stores/{{store_hash}}/v2/orders/{{order_id}}/products
+    X-Auth-Token: {{access_token}}
+    Accept: application/json
+    ```
+
+  </Tab>
+  <Tab>
+
+    ```json filename="Example response: Get order products" showLineNumbers copy
+    [
+      {
+        "id": 22,
+        "order_id": 126,
+        "product_id": 97,
+        "variant_id": 69,
+        "order_pickup_method_id": 13,
+        …
+      }
+    ]
+    ```
+
+  </Tab>
+</Tabs>
+
+The `order_pickup_method_id` field is 13 (same value as the pickup consignment ID).
+
+### 5.3 Update pickup consignment
+
+If you need to update the original pickup consignment details, you have the ability to do so using the Orders API. You can update the:
+* `pickup_method_id`
+* `pickup_method_display_name`
+* `collection_instructions`
+* `collection_time_description`
+* location attributes (except for the `location_id`)
+
+To update a pickup consignment, send a request to the [Update an order](/docs/rest-management/orders#updates-an-order) endpoint.
+
+<Tabs items={['Request', 'Response']}>
+  <Tab>
+
+    ```http filename="Example request: Update an order" showLineNumbers copy
+    PUT https://api.bigcommerce.com/stores/{{store_hash}}/v2/orders/{{order_id}}
+    X-Auth-Token: {{access_token}}
+    Content-Type: application/json
+    Accept: application/json
+
+    {
+      "consignments": {
+        "pickups": [
+          {
+            "id": 13,
+            "pickup_method_id": 1,
+            "pickup_method_display_name": "Pickup Method 1 name - override",
+            "collection_instructions": "Pickup Method 1 instructions - override",
+            "collection_time_description": "Pickup Method 1 time - override",
+            "location": {
+              "name": "Location 1 - override",
+              "code": "LOCATION-1 - override",
+              "address_line_1": "123 Main Street - override",
+              "address_line_2": "Suite 101 - override",
+              "city": "Austin - override",
+              "state": "Texas - override",
+              "postal_code": "78726 - override",
+              "country_alpha2": "US",
+              "email": "location1_override@example.com",
+              "phone": "+1 111-111-1111 - override"
+            }
+          }
+        ]
+      }
+    }
+    ```
+
+  </Tab>
+  <Tab>
+
+    ```json filename="Example response: Update an order" showLineNumbers copy
+    {
+      "id": 126,
+      ...
+      "consignments": {
+        "url": "https://api.bigcommerce.com/stores/cc8eopdesv/v2/orders/126/consignments",
+        "resource": "/orders/126/consignments"
+      }
+    }
+    ```
+
+  </Tab>
+</Tabs>

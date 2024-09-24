@@ -1,0 +1,369 @@
+# Product Images
+
+[_International Enhancements for Multi-Storefront_](/docs/store-operations/catalog/msf-international-enhancements)
+
+<Callout type="info">
+  This feature is currently available for Enterprise stores and Partner Sandboxes. If the feature is not working as expected, please contact technical support, as the feature likely needs to be enabled for the individual store.
+  To become an enterprise customer, contact your BigCommerce Customer Service Manager or our [support team](https://support.bigcommerce.com/s/contact?language=en_US).
+</Callout>
+
+Using the Catalog features of the Admin API, you can set and query product images.
+
+First [add the image to the product](#add-image-to-product) for the global store and a channel locale. 
+
+You can then perform the following: 
+- [Set product image information](#set-product-image-information) for the catalog. You can create global values and overrides for the product's image in a channel locale.
+- [Remove overrides for the product's image in a channel locale](#remove-product-image-information-for-a-locale). A channel then inherits global values.
+- [Query product image information](#query-product-image-information), those set at the global level and the overrides.
+
+For a full schema, see the [GraphQL Admin API reference](https://developer.bigcommerce.com/graphql-admin/reference).
+
+## Input fields
+
+Setting or removing information requires that you specify ID fields in the input. For more information on how to specify ID fields, see [Input fields](/docs/store-operations/catalog/msf-international-enhancements#input-fields).
+
+## Product images
+
+### Add image to product 
+
+The following example adds images to a product for a channel locale. To add the image to a product for the global store, don't include the `context` field in the `input`.
+
+<Tabs items={['Request', 'Response']}>
+  <Tab>
+
+    ```graphql filename="Example mutation: Add image to product" showLineNumbers copy
+    POST https://api.bigcommerce.com/stores/{{STORE_HASH}}/graphql
+    X-Auth-Token: {{ACCESS_TOKEN}}
+    Content-Type: application/json
+    Accept: application/json
+
+    mutation ($input: AddImagesToProductInput!) {
+      product {
+        addImagesToProduct(input: $input) {
+          images {
+            edges {
+              node {
+                id         
+                altText   
+                isThumbnail 
+                sortOrder  
+                urlStandard  
+                urlZoom
+              }
+            }
+          }
+        }
+      }
+    }
+    ```
+
+    ```json filename="GraphQL variables" showLineNumbers copy
+    {
+      "input": {
+          "productId": "bc/store/product/111",
+          "context": {
+            "channelId": "1",
+            "locale": "en-US"
+          },
+          "ids": ["bc/store/productImage/1", "bc/store/productImage/2"]
+        }
+    }
+    ```
+
+  </Tab>
+  <Tab>
+
+  ```json filename="Example mutation: Add image to product" showLineNumbers copy
+  {
+    "data": {
+      "product": {
+        "addImagesToProduct": {
+          "images": {
+            "edges": [
+              {
+                "node": {
+                  "id": "bc/store/productImage/1",
+                  "altText": "Sample alt text for image 1",
+                  "isThumbnail": false,
+                  "sortOrder": 1,
+                  "urlStandard": "https://cdn.example.com/products/111/image1.jpg",
+                  "urlZoom": "https://cdn.example.com/products/111/image1_zoom.jpg"
+                }
+              },
+              {
+                "node": {
+                  "id": "bc/store/productImage/2",
+                  "altText": "Sample alt text for image 2",
+                  "isThumbnail": true,
+                  "sortOrder": 2,
+                  "urlStandard": "https://cdn.example.com/products/111/image2.jpg",
+                  "urlZoom": "https://cdn.example.com/products/111/image2_zoom.jpg"
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+  ```
+
+  </Tab>
+</Tabs>
+
+
+### Remove image from product
+
+The following example removes images to a product for a channel locale. To remove the image to a product for the global store, don't include the `context` field in the `input`.
+
+<Tabs items={['Request', 'Response']}>
+  <Tab>
+
+    ```graphql filename="Example mutation: Remove image from product" showLineNumbers copy
+    POST https://api.bigcommerce.com/stores/{{STORE_HASH}}/graphql
+    X-Auth-Token: {{ACCESS_TOKEN}}
+    Content-Type: application/json
+    Accept: application/json
+
+    mutation {
+      product {
+        removeImagesFromProduct($input: RemoveImagesFromProductInput!) {
+          images {
+            edges {
+              node {
+                id        
+                altText    
+                isThumbnail  
+                sortOrder  
+                urlStandard 
+                urlZoom   
+              }
+            }
+          }
+        }
+      }
+    }
+    ```
+
+    ```json filename="GraphQL variables" showLineNumbers copy
+    {
+      "input": {
+        "productId": "bc/store/product/111",
+        "context": {
+          "channelId": "1",
+          "locale": "en-US"
+        },
+        "ids": ["bc/store/productImage/1", "bc/store/productImage/2"]
+     }
+    }
+    ```
+
+  </Tab>
+  <Tab>
+
+  ```json filename="Example mutation: Remove image from product" showLineNumbers copy
+
+  ```
+
+  </Tab>
+</Tabs>
+
+## Set product image information
+
+The following example sets product image information for the channel locale. These will override global store information.
+
+To set global store information, remove the `overrides` field from the input.
+
+<Tabs items={['Request', 'Response']}>
+  <Tab>
+
+    ```graphql filename="Example mutation: Set global product image information" showLineNumbers copy
+    POST https://api.bigcommerce.com/stores/{{STORE_HASH}}/graphql
+    X-Auth-Token: {{ACCESS_TOKEN}}
+    Content-Type: application/json
+    Accept: application/json
+
+    mutation ($input: $UpdateProductImagePropertiesInput) {
+      product {
+        updateProductImageProperties(input: $input) {
+          images {
+            edges {
+              node {
+                id         
+                altText  
+                isThumbnail  
+                sortOrder  
+                urlStandard 
+                urlZoom    
+                overrides {
+                  context {
+                    channelId  
+                    locale    
+                  }
+                  altText    
+                  isDefault  
+                  sortOrder 
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    ```
+
+    ```json filename="GraphQL variables" showLineNumbers copy
+    {
+      "input": {
+      "productId": "12345",
+      "data": [
+        {
+          "imageId": "img_001",
+          "sortOrder": 2, 
+          "altText": "New updated alt text for image 1", 
+          "isDefault": true, 
+
+          // Overrides for the channel locale
+          "overrides": [
+            {
+              "channelLocaleOverrides": {
+                "context": {
+                  "channelId": "1", 
+                  "locale": "en-US"
+                },
+                "data": {
+                  "sortOrder": 1, 
+                  "altText": "Channel-specific alt text",
+                  "isDefault": true 
+                }
+              }
+            }
+          ]
+        },
+        {
+          "imageId": "img_002", 
+          "sortOrder": 1, 
+          "altText": "Updated alt text for image 2",
+          "isDefault": false
+        }
+      ]
+    }
+    }
+    ```
+
+  </Tab>
+  <Tab>
+
+  ```json filename="Example mutation: Set global product image information" showLineNumbers copy
+
+  ```
+
+  </Tab>
+</Tabs>
+
+
+## Remove product image information for a locale
+
+The following example removes product image information for the channel locale.
+
+<Tabs items={['Request', 'Response']}>
+  <Tab>
+
+    ```graphql filename="Example mutation: Remove product image information for a locale" showLineNumbers copy
+    POST https://api.bigcommerce.com/stores/{{STORE_HASH}}/graphql
+    X-Auth-Token: {{ACCESS_TOKEN}}
+    Content-Type: application/json
+    Accept: application/json
+
+    mutation removeProductImagePropertiesOverrides($input: RemoveProductImagePropertiesOverridesInput!) {
+      product {
+        removeProductImagePropertiesOverrides(input: $input) {
+          productImage {
+            id        
+            altText    
+            isThumbnail  
+            sortOrder  
+            urlStandard 
+            urlZoom 
+          }
+        }
+      }
+    }
+    ```
+    ```json filename="GraphQL variables" showLineNumbers copy
+    {
+      "input": {
+        "productId": "bc/store/product/111",
+        "context": {
+          "channelId": "1",
+          "locale": "en-US"
+        },
+        "imageIds": ["bc/store/productImage/1", "bc/store/productImage/2"]
+      }
+    }
+    ```
+
+  </Tab>
+  <Tab>
+
+    ```json filename="Example mutation: Remove product image information for a locale" showLineNumbers copy
+
+    ```
+
+  </Tab>
+</Tabs>
+
+## Query product image information
+
+The following example retrieves product image information. You can retrieve global information for the store and overrides for the channel locale.
+
+<Tabs items={['Request', 'Response']}>
+  <Tab>
+
+    ```graphql filename="Example query: Get product image information" showLineNumbers copy
+    POST https://api.bigcommerce.com/stores/{{STORE_HASH}}/graphql
+    X-Auth-Token: {{ACCESS_TOKEN}}
+    Content-Type: application/json
+    Accept: application/json
+
+    query getProductImageProperties() {
+      product(id: "bc/store/product/111") {
+        images {
+          edges {
+            node {
+              id        
+              altText    
+              isThumbnail  
+              sortOrder  
+              urlStandard 
+              urlZoom
+
+              # Global store
+              global: properties {
+                altText
+                isThumbnail
+                sortOrder
+              }
+
+              # Channel locale override
+              overrides: properties(context: { channelId: "bc/store/channel/2", locale: "uk" }) {
+                altText
+                isThumbnail
+                sortOrder
+              }
+            }
+          }
+        }
+      }
+    }
+    ```
+  </Tab>
+  <Tab>
+
+    ```json filename="Example query: Get product image information" showLineNumbers copy
+
+    ```    
+
+  </Tab>
+</Tabs>
+

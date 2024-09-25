@@ -21,11 +21,11 @@ For a full schema, see the [GraphQL Admin API reference](https://developer.bigco
 
 Setting or removing information requires that you specify ID fields in the input. For more information on how to specify ID fields, see [Input fields](/docs/store-operations/catalog/msf-international-enhancements#input-fields).
 
-## Product images
-
-### Add image to product 
+## Add image to product
 
 The following example adds images to a product for a channel locale. To add the image to a product for the global store, don't include the `context` field in the `input`.
+
+You can also remove images from a product and 
 
 <Tabs items={['Request', 'Response']}>
   <Tab>
@@ -48,6 +48,21 @@ The following example adds images to a product for a channel locale. To add the 
                 sortOrder  
                 urlStandard  
                 urlZoom
+
+                overrides (context: {channelId: "bc/store/channel/1", locale: "en"} ) {
+                  edges {
+                    node {
+                      ... on ProductImagesOverridesForChannelLocale {
+                        context {
+                          channelId
+                          locale
+                        }
+                        altText
+                        sortOrder
+                      }
+                    }
+                  }
+                }
               }
             }
           }
@@ -61,10 +76,10 @@ The following example adds images to a product for a channel locale. To add the 
       "input": {
           "productId": "bc/store/product/111",
           "context": {
-            "channelId": "1",
-            "locale": "en-US"
+            "channelId": "bc/store/channel/1",
+            "locale": "en"
           },
-          "ids": ["bc/store/productImage/1", "bc/store/productImage/2"]
+          "ids": ["bc/store/productImage/371", "bc/store/productImage/372"]
         }
     }
     ```
@@ -81,22 +96,28 @@ The following example adds images to a product for a channel locale. To add the 
             "edges": [
               {
                 "node": {
-                  "id": "bc/store/productImage/1",
-                  "altText": "Sample alt text for image 1",
-                  "isThumbnail": false,
-                  "sortOrder": 1,
-                  "urlStandard": "https://cdn.example.com/products/111/image1.jpg",
-                  "urlZoom": "https://cdn.example.com/products/111/image1_zoom.jpg"
+                  "id": "bc/store/productImage/371",
+                  "altText": "New updated alt text for image 1",
+                  "isThumbnail": true,
+                  "sortOrder": 2,
+                  "urlStandard": "https://cdn11.bigcommerce.com/s-{{store_hash}}/products/111/images/371/smithjournal1.1727291691.386.513.jpg?c=1",
+                  "urlZoom": "https://cdn11.bigcommerce.com/s-{{store_hash}}/products/111/images/371/smithjournal1.1727291691.1280.1280.jpg?c=1",
+                  "overrides": {
+                    "edges": []
+                  }
                 }
               },
               {
                 "node": {
-                  "id": "bc/store/productImage/2",
-                  "altText": "Sample alt text for image 2",
-                  "isThumbnail": true,
-                  "sortOrder": 2,
-                  "urlStandard": "https://cdn.example.com/products/111/image2.jpg",
-                  "urlZoom": "https://cdn.example.com/products/111/image2_zoom.jpg"
+                    "id": "bc/store/productImage/372",
+                    "altText": "Updated alt text for image 2",
+                    "isThumbnail": false,
+                    "sortOrder": 1,
+                    "urlStandard": "https://cdn11.bigcommerce.com/s-{{store_hash}}/products/111/images/372/smithjournal5.1727291691.386.513.jpg?c=1",
+                    "urlZoom": "https://cdn11.bigcommerce.com/s-{{store_hash}}/products/111/images/372/smithjournal5.1727291691.1280.1280.jpg?c=1",
+                    "overrides": {
+                      "edges": []
+                    }
                 }
               }
             ]
@@ -110,62 +131,6 @@ The following example adds images to a product for a channel locale. To add the 
   </Tab>
 </Tabs>
 
-
-### Remove image from product
-
-The following example removes images to a product for a channel locale. To remove the image to a product for the global store, don't include the `context` field in the `input`.
-
-<Tabs items={['Request', 'Response']}>
-  <Tab>
-
-    ```graphql filename="Example mutation: Remove image from product" showLineNumbers copy
-    POST https://api.bigcommerce.com/stores/{{STORE_HASH}}/graphql
-    X-Auth-Token: {{ACCESS_TOKEN}}
-    Content-Type: application/json
-    Accept: application/json
-
-    mutation {
-      product {
-        removeImagesFromProduct($input: RemoveImagesFromProductInput!) {
-          images {
-            edges {
-              node {
-                id        
-                altText    
-                isThumbnail  
-                sortOrder  
-                urlStandard 
-                urlZoom   
-              }
-            }
-          }
-        }
-      }
-    }
-    ```
-
-    ```json filename="GraphQL variables" showLineNumbers copy
-    {
-      "input": {
-        "productId": "bc/store/product/111",
-        "context": {
-          "channelId": "1",
-          "locale": "en-US"
-        },
-        "ids": ["bc/store/productImage/1", "bc/store/productImage/2"]
-     }
-    }
-    ```
-
-  </Tab>
-  <Tab>
-
-  ```json filename="Example mutation: Remove image from product" showLineNumbers copy
-
-  ```
-
-  </Tab>
-</Tabs>
 
 ## Set product image information
 
@@ -182,7 +147,7 @@ To set global store information, remove the `overrides` field from the input.
     Content-Type: application/json
     Accept: application/json
 
-    mutation ($input: $UpdateProductImagePropertiesInput) {
+    mutation ($input: UpdateProductImagePropertiesInput!) {
       product {
         updateProductImageProperties(input: $input) {
           images {
@@ -194,14 +159,20 @@ To set global store information, remove the `overrides` field from the input.
                 sortOrder  
                 urlStandard 
                 urlZoom    
-                overrides {
-                  context {
-                    channelId  
-                    locale    
+                overrides( context: {channelId: "bc/store/channel/1", locale: "en"}) {
+                  edges {
+                    node {
+                      ... on ProductImagesOverridesForChannelLocale {
+                        context {
+                          channelId
+                          locale
+                        }
+                        sortOrder
+                        altText
+                        isDefault
+                      }
+                    }
                   }
-                  altText    
-                  isDefault  
-                  sortOrder 
                 }
               }
             }
@@ -214,39 +185,38 @@ To set global store information, remove the `overrides` field from the input.
     ```json filename="GraphQL variables" showLineNumbers copy
     {
       "input": {
-      "productId": "12345",
-      "data": [
-        {
-          "imageId": "img_001",
-          "sortOrder": 2, 
-          "altText": "New updated alt text for image 1", 
-          "isDefault": true, 
+        "productId": "bc/store/product/111",
+        "data": [
+          {
+            "imageId": "bc/store/productImage/371",
+            "sortOrder": 2, 
+            "altText": "New updated alt text for image 1", 
+            "isDefault": true, 
 
-          // Overrides for the channel locale
-          "overrides": [
-            {
-              "channelLocaleOverrides": {
-                "context": {
-                  "channelId": "1", 
-                  "locale": "en-US"
-                },
-                "data": {
-                  "sortOrder": 1, 
-                  "altText": "Channel-specific alt text",
-                  "isDefault": true 
+            "overrides": [
+              {
+                "channelLocaleOverrides": {
+                  "context": {
+                    "channelId": "bc/store/channel/1", 
+                    "locale": "en"
+                  },
+                  "data": {
+                    "sortOrder": 1, 
+                    "altText": "Channel-specific alt text",
+                    "isDefault": true 
+                  }
                 }
               }
-            }
-          ]
-        },
-        {
-          "imageId": "img_002", 
-          "sortOrder": 1, 
-          "altText": "Updated alt text for image 2",
-          "isDefault": false
-        }
-      ]
-    }
+            ]
+          },
+          {
+            "imageId": "bc/store/productImage/372", 
+            "sortOrder": 1, 
+            "altText": "Updated alt text for image 2",
+            "isDefault": false
+          }
+        ]
+      }
     }
     ```
 
@@ -254,7 +224,56 @@ To set global store information, remove the `overrides` field from the input.
   <Tab>
 
   ```json filename="Example mutation: Set global product image information" showLineNumbers copy
-
+  {
+    "data": {
+      "product": {
+        "updateProductImageProperties": {
+          "images": {
+            "edges": [
+              {
+                "node": {
+                  "id": "bc/store/productImage/371",
+                  "altText": "New updated alt text for image 1",
+                  "isThumbnail": true,
+                  "sortOrder": 2,
+                  "urlStandard": "https://cdn11.bigcommerce.com/s-3fep8218mc/products/111/images/371/smithjournal1.1727291691.386.513.jpg?c=1",
+                  "urlZoom": "https://cdn11.bigcommerce.com/s-3fep8218mc/products/111/images/371/smithjournal1.1727291691.1280.1280.jpg?c=1",
+                  "overrides": {
+                    "edges": [
+                      {
+                        "node": {
+                          "context": {
+                            "channelId": "bc/store/channel/1",
+                            "locale": "en-US"
+                          },
+                          "sortOrder": "1",
+                          "altText": "Channel-specific alt text",
+                          "isDefault": true                          
+                        }
+                      }
+                    ]
+                  }
+                }
+              },
+              {
+                "node": {
+                  "id": "bc/store/productImage/372",
+                  "altText": "Updated alt text for image 2",
+                  "isThumbnail": false,
+                  "sortOrder": 1,
+                  "urlStandard": "https://cdn11.bigcommerce.com/s-3fep8218mc/products/111/images/372/smithjournal5.1727291691.386.513.jpg?c=1",
+                  "urlZoom": "https://cdn11.bigcommerce.com/s-3fep8218mc/products/111/images/372/smithjournal5.1727291691.1280.1280.jpg?c=1",
+                  "overrides": {
+                    "edges": []
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
   ```
 
   </Tab>
@@ -325,30 +344,31 @@ The following example retrieves product image information. You can retrieve glob
     Content-Type: application/json
     Accept: application/json
 
-    query getProductImageProperties() {
-      product(id: "bc/store/product/111") {
-        images {
-          edges {
-            node {
-              id        
-              altText    
-              isThumbnail  
-              sortOrder  
-              urlStandard 
-              urlZoom
-
-              # Global store
-              global: properties {
-                altText
-                isThumbnail
-                sortOrder
-              }
-
-              # Channel locale override
-              overrides: properties(context: { channelId: "bc/store/channel/2", locale: "uk" }) {
-                altText
-                isThumbnail
-                sortOrder
+    query {
+      store {
+        product(id: "bc/store/product/111") {
+          images {
+            edges {
+              node {
+                id        
+                altText    
+                isThumbnail  
+                sortOrder  
+                urlStandard 
+                urlZoom
+                overrides( context: {channelId: "bc/store/channel/1", locale: "en"}) {
+                  edges {
+                    node {
+                      ... on ProductImagesOverridesForChannelLocale {
+                        context {
+                          channelId
+                          locale
+                        }
+                        altText
+                      }
+                    }
+                  }
+                }
               }
             }
           }
@@ -360,7 +380,45 @@ The following example retrieves product image information. You can retrieve glob
   <Tab>
 
     ```json filename="Example query: Get product image information" showLineNumbers copy
-
+    {
+      "data": {
+        "store": {
+          "product": {
+            "images": {
+              "edges": [
+                {
+                  "node": {
+                    "id": "bc/store/productImage/371",
+    
+                    // For the global store
+                    "altText": "New updated alt text for image 1",
+                    "isThumbnail": true,
+                    "sortOrder": 2,
+                    "urlStandard": "https://cdn11.bigcommerce.com/s-{{store-hash}}/products/111/images/371/smithjournal1.1727282911.386.513.jpg?c=1",
+                    "urlZoom": "https://cdn11.bigcommerce.com/s-{{store-hash}}/products/111/images/371/smithjournal1.1727282911.1280.1280.jpg?c=1",
+    
+                    // For the channel locale
+                    "overrides": {
+                      "edges": [
+                        {
+                          "node": {
+                            "context": {
+                              "channelId": "bc/store/channel/1",
+                              "locale": "en-US"
+                            },
+                            "altText": ""
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
     ```    
 
   </Tab>

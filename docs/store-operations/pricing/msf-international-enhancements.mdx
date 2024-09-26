@@ -1,0 +1,94 @@
+# Price Lists - International Enhancements for Multi-Storefront
+
+<Callout>
+  Tax-inclusive or exclusive price lists are in beta. Features may change based on user feedback or internal testing.
+</Callout>
+
+_International Enhancements for Multi-Storefront_ allow you to deliver localized experiences to fit different shopper needs. 
+
+Shoppers expect storefront prices to include or exclude tax depending on their region when you sell internationally. 
+
+When you create separate storefront channels for each region, you may need some storefronts to display prices that include tax, while others display prices that exclude tax.
+
+To do so, specify whether a price list has prices that include or exclude tax when entered. Then assign the price list to storefront channels.
+
+## Limitations
+
+- Stores using [Catalog V2](/docs/store-operations/catalog/migration) have fixed pricing and will use global store settings. 
+- You cannot enter price changes due to product modifier rules, gift wrapping features, and fixed shipping prices into a price list. These inherit global settings and always apply on top of the price list.
+- You cannot mix inclusive and exclusive pricing within a single price list.
+- You must [set the display price](https://support.bigcommerce.com/s/article/Product-Display-Settings?language=en_US#settings) to the lowest variant price when a shopper's preselected options don't match to a price. 
+
+If your store doesn't have multiple storefronts, you can still create tax-inclusive or exclusive price lists and assign them to customer groups.
+
+## Settings
+
+Price lists will have a `prices_entered_with_tax` setting, which overrides the (default) global store setting. Use this setting to choose whether the price list is tax-inclusive or exclusive, or inherits the global settings. For details, see the [Price List endpoints](/docs/rest-management/price-lists) in the REST Management APIs.
+
+When you're using tax-inclusive price lists, tax-inclusive prices remain the same across all tax zones; the tax amount will vary based on the shopper's location. 
+
+If you're inheriting global tax settings, there is an additional option for tax-inclusive prices. The store can subtract the item's store tax rate before calculating tax using the shopper's tax zone. For information on the global settings, see the [Tax Settings](/docs/rest-management/tax-settings) endpoint of the REST Management API. 
+
+## Example
+
+The following example creates a tax-inclusive price list by sending a request to the [Create a Price List](/docs/rest-management/price-lists#create-a-price-list) endpoint. 
+
+<Tabs items={['Request', 'Response']}>
+  <Tab>
+
+  ```http filename="Example request: Create a tax-inclusive price list" showLineNumbers copy
+  POST https://api.bigcommerce.com/stores/{{store_hash}}/v3/pricelists
+  X-Auth-Token: {{ACCESS_TOKEN}}
+  Accept: application/json
+  Content-Type: application/json
+
+  {
+    "name": "Wholesale",
+    "active": true,
+    "prices_entered_with_tax": "entered_inclusive"
+  }
+  ```
+
+  </Tab>
+  <Tab>
+
+  ```json filename="Example response: Create a tax-inclusive price list" showLineNumbers copy
+  {
+    "data": {
+      "id": 4,
+      "name": "Wholesale Group - Trade Show",
+      "date_created": "2022-09-17T18:41:59Z",
+      "date_modified": "2022-09-17T18:41:59Z",
+      "active": false,
+      "prices_entered_with_tax": "entered_inclusive"
+    },
+    "meta": {}
+  }
+  ```
+
+  </Tab>
+</Tabs>
+
+
+## Fallback behavior
+
+The following fallback behavior applies if you set a product as available for purchase, but the price list doesn't have a price entered for the product.
+
+When a price list inherits global settings: 
+- Price lists will default to catalog prices if a price is missing. 
+
+When a price list overrides the global store setting:
+- Prices returned will be `null` if a price is missing in the price list. This applies for the prices returned in the [Pricing](/docs/rest-management/pricing/products) endpoint of the REST Management API and the [GraphQL Storefront API](/docs/storefront/graphql). 
+- On Stencil storefronts, the product, but not the price, will still be visible. You won't be able to purchase it, but you can still add to wishlist.
+
+<Callout type="info">
+  [Update your Stencil theme](https://support.bigcommerce.com/s/article/Marketplace-Theme-Updates) for your Stencil storefront to display these features. 
+</Callout>
+
+## Additional resources
+
+- [Introduction to Multi-Storefront](/docs/storefront/multi-storefront)
+- [Price Lists](/docs/store-operations/pricing/price-lists) overview
+- [Tax Settings](/docs/rest-management/tax-settings) endpoint reference
+- [Pricing](/docs/rest-management/pricing/products) endpoint reference
+- [Update your Stencil theme](https://support.bigcommerce.com/s/article/Marketplace-Theme-Updates) support article

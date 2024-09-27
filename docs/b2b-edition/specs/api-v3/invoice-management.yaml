@@ -647,7 +647,7 @@ paths:
                       description: PO Number
                     details:
                       type: object
-                      description: "Invoice Details, noted this fields will be overridden by updating, so please get the original details values first before updating with it with entire details data"
+                      description: "Details that will show on the invoice. When updating this field, the new value will completely replace the existing details. To preserve existing details while making updates, retrieve the current details first, and make your edits to that object before submitting the changes."
                       properties:
                         header:
                           type: object
@@ -840,7 +840,7 @@ paths:
                                   - unitPrice
                     source:
                       type: number
-                      description: "Mark the source of the invoice, 0 for B2B Edition, 1 for external"
+                      description: "Mark the source of the invoice, 0 for B2B Edition, 1 for external."
                     originalBalance:
                       type: object
                       description: Invoice original balance
@@ -871,7 +871,7 @@ paths:
                       type: integer
                     externalPdfUrl:
                       type: string
-                      description: The url of your external PDF file. The recommended file size should not exceed 5Mb. Please make sure that your file service has processed CORS. Using empty value if you want to delete it.
+                      description: The URL of an externally hosted PDF file to be associated with this invoice. The file size must not exceed 5 MB. Ensure that the file hosting service supports Cross-Origin Resource Sharing (CORS) to allow our system to access the file. To remove an existing PDF link, use an empty string.
                 - $ref: '../../models/extra_fields/extra_field_values.yaml'
             examples:
               Update body with details field:
@@ -982,7 +982,7 @@ paths:
                       description: Invoice type
                     dueDate:
                       type: integer
-                      description: "due date, if empty, it will be set to default due date which is current date + pre-configured due days"
+                      description: "The due date for this invoice, specified as a Unix timestamp. If left empty, it will be set to the current date plus a pre-configured number of days (set in your B2B Edition control panel settings)."
                     status:
                       type: integer
                       default: 0
@@ -990,10 +990,16 @@ paths:
                         - 0
                         - 1
                         - 2
-                      description: "Invoice status 0=Open, 1=Partial paid, 2=Completed, 0 as default, will be auto set to 2 when open balance is <= 0"
+                      description: |-
+                        Invoice status. Possible values:
+                        0: Open (default)
+                        1: Partially paid
+                        2: Completed
+                        
+                        The status will automatically be set to Completed (2) when the open balance becomes zero or negative.
                     orderNumber:
                       type: string
-                      description: ID in BC of the order to which the current invoice
+                      description: BigCommerce order ID associated with this invoice.
                     purchaseOrderNumber:
                       type: string
                       description: PO Number
@@ -1027,7 +1033,7 @@ paths:
                           description: Amount
                     issuedAt:
                       type: number
-                      description: The creation timestamp of the invoice   current timestamp as default
+                      description: When the invoice was created. The current timestamp is the default.
                     details:
                       type: object
                       description: Invoice details
@@ -1037,7 +1043,7 @@ paths:
                           properties:
                             costLines:
                               type: array
-                              description: "Invoice cost infomation,not required，but if exists, some of the following sub fields will be required, this will be displayed on invoice detail page"
+                              description: "Invoice cost information. This field is optional. If provided, it should contain an array of cost line items. The information in this field will be displayed on the invoice detail page."
                               items:
                                 type: object
                                 properties:
@@ -1056,13 +1062,13 @@ paths:
                                         description: amount
                                   description:
                                     type: string
-                                    description: price description   e.g. Subtotal or other types of prices or fees
+                                    description: Price description, e.g., subtotal or other types of prices or fees.
                                 required:
                                   - amount
                                   - description
                             billingAddress:
                               type: object
-                              description: "Invoice billing address, not required，but if exists, some of the following sub fields will be required"
+                              description: "Invoice billing address. This field is optional. If provided, it should contain an object with address details."
                               properties:
                                 city:
                                   type: string
@@ -1091,7 +1097,7 @@ paths:
                                 - firstName
                             shippingAddresses:
                               type: array
-                              description: "Invoice shipping addresses  not required，but if exists, some of the following sub fields will be required, but empty string is allowed"
+                              description: "Invoice shipping address. This field is optional. If provided, it should contain an object with address details."
                               items:
                                 type: object
                                 properties:
@@ -1125,7 +1131,7 @@ paths:
                           properties:
                             shipments:
                               type: array
-                              description: "Invoice shipment information, not required，but if exists, some of the following sub fields will be required, but empty string is allowed"
+                              description: "Invoice shipments. This field is optional. If provided, it should contain an array of shipments. Required fields within each shipment object can be an empty string."
                               items:
                                 type: object
                                 properties:
@@ -1150,7 +1156,7 @@ paths:
                                   - comments
                             lineItems:
                               type: array
-                              description: "Invoice products infomation   not required，but if exists, some of the following sub fields will be required"
+                              description: "Products within the invoice. This field is optional. If provided, it should contain an array of products."
                               items:
                                 type: object
                                 properties:
@@ -1183,7 +1189,7 @@ paths:
                                     description: Product description or product name. This field is required for custom product.
                                   unitDiscount:
                                     type: object
-                                    description: "product unit discount not required，but if exists, some of the following sub fields will be required"
+                                    description: "Product level discount details. This field is optional. If provided, it should contain a discount object."
                                     properties:
                                       code:
                                         type: string
@@ -1201,7 +1207,10 @@ paths:
                     source:
                       type: number
                       default: 0
-                      description: "Source of invoice  Mark the source of the invoice, 0 for B2B Edition, 1 for external"
+                      description: |-
+                       The source of the invoice. Possible values:
+                       0: B2B Edition
+                       1: External
                       enum:
                         - 0
                         - 1
@@ -1216,10 +1225,10 @@ paths:
                       description: ERP Customer ID
                     channelId:
                       type: integer
-                      description: BigCommerce channel id
+                      description: BigCommerce Channel ID
                     externalPdfUrl:
                       type: string
-                      description: The url of your external PDF file. The recommended file size should not exceed 5Mb. Please make sure that your file service has processed CORS
+                      description: The URL of an externally hosted PDF file to be associated with this invoice. The file size must not exceed 5 MB. Ensure that the file hosting service supports Cross-Origin Resource Sharing (CORS) to allow our system to access the file.
                     termsConditions:
                       type: string
                       description: Terms & Conditions. Visible on the default Invoice PDF.
@@ -1282,7 +1291,7 @@ paths:
                           unitPrice:
                             code: USD
                             value: "40.00"
-                          description: Description is required for custom product
+                          description: A custom product requires a description.
                   customerId: "12345"
                   channelId: 1
               Invoice body without details info:
@@ -1313,7 +1322,7 @@ paths:
                     properties:
                       id:
                         type: number
-                        description: invoice id
+                        description: Invoice ID
                   meta:
                     type: object
                     properties:
@@ -1334,7 +1343,7 @@ paths:
                   value:
                     code: 400
                     data:
-                      errMsg: The invoice number already exist
+                      errMsg: The invoice number already exists.
                     meta:
                       message: Bad Requests Error
       tags:
@@ -1525,7 +1534,7 @@ paths:
             type: string
           in: query
           name: q
-          description: 'Keyword queries are performed on fields corresponding to the value of "searchBy" or, if "searchBy" is empty, on all fields supported by "searchBy"'
+          description: 'You can perform keyword queries on fields corresponding to the value of "searchBy" or, if "searchBy" is empty, on all fields supported by "searchBy".'
         - schema:
             type: string
           in: query
@@ -1535,7 +1544,7 @@ paths:
             type: string
           in: query
           name: customerId
-          description: Query by invoice B2B Edition company id
+          description: Query by invoice B2B Edition company ID
         - schema:
             type: integer
             enum:
@@ -1550,12 +1559,12 @@ paths:
             type: string
           in: query
           name: beginDateAt
-          description: 'Query by the created time period, with the "endDateAt" parameter'
+          description: 'Query by the created timestamp, along with the "endDateAt" parameter'
         - schema:
             type: string
           in: query
           name: endDateAt
-          description: 'Query by the created time period, with the "beginDateAt" parameter'
+          description: 'Query by the created timestamp, along with the with the "beginDateAt" parameter'
         - schema:
             type: array
             items:
@@ -1570,14 +1579,14 @@ paths:
               - "1"
           in: query
           name: isIncludeExtraFields
-          description: Is show extra fields in the response
+          description: Determine if extra fields should show in the response
         - schema:
             type: array
             items:
               type: number
           in: query
           name: channelIds
-          description: BigCommerce channel ids
+          description: BigCommerce Channel IDs
       tags:
         - Invoice
   /invoices/export: {}
@@ -1588,7 +1597,7 @@ paths:
         name: orderId
         in: path
         required: true
-        description: B2B Edition order id
+        description: B2B Edition order ID
     post:
       summary: Create invoice from order
       tags:
@@ -1613,7 +1622,7 @@ paths:
                       invoiceNumber:
                         type: string
                         minLength: 1
-                        description: Invoice no.
+                        description: Invoice number
                       invoiceId:
                         type: number
                         description: Invoice ID
@@ -1680,7 +1689,7 @@ paths:
                         type: string
                       externalPdfUrl:
                         type: string
-                        description: The url of your external PDF file. The recommended file size should not exceed 5Mb. Please make sure that your file service has processed CORS
+                        description: The URL of an externally hosted PDF file to be associated with this invoice. The file size must not exceed 5 MB. Ensure that the file hosting service supports Cross-Origin Resource Sharing (CORS) to allow our system to access the file.
                   meta:
                     type: object
                     properties:
@@ -1950,7 +1959,7 @@ paths:
                             type: number
                         channelId:
                           type: string
-                          description: BigCommerce channel id
+                          description: BigCommerce Channel ID
                         channelName:
                           type: string
                       required:
@@ -2185,7 +2194,7 @@ paths:
             type: string
           in: query
           name: q
-          description: 'Keyword queries are performed on fields corresponding to the value of "searchBy" or, if "searchBy" is empty, on all fields supported by "searchBy"'
+          description: 'You can perform keyword queries on fields corresponding to the value of "searchBy" or, if "searchBy" is empty, on all fields supported by "searchBy".'
         - schema:
             type: string
           in: query
@@ -2195,7 +2204,7 @@ paths:
             type: number
           in: query
           name: invoiceId
-          description: Query by invoice id
+          description: Query by Invoice ID
         - schema:
             type: number
             enum:
@@ -2214,7 +2223,7 @@ paths:
               type: number
           in: query
           name: channelIds
-          description: BigCommerce channel ids. Do not use this parameter if you do not have opened multi-storefront
+          description: Query by BigCommerce Channel IDs. This parameter is not needed if you don't have multiple storefront channels.
   "/payments/{paymentId}":
     parameters:
       - schema:
@@ -2222,7 +2231,7 @@ paths:
         name: paymentId
         in: path
         required: true
-        description: Payment Id
+        description: Payment ID
     get:
       summary: Get Payment Detail
       tags:
@@ -2415,8 +2424,7 @@ paths:
                       allowedOperations:
                         type: array
                         description: |-
-                          allowed payment actions
-                          operation code map as
+                          Allowed payment actions:
                           (0, "Apply to Invoice Balances"),
                           (1, "Revert Invoice Balances"),
                           (2, "Pull Updates From Order"),
@@ -2425,8 +2433,7 @@ paths:
                       allowedStatuses:
                         type: array
                         description: |-
-                          allowed payment status
-                          status code should be following
+                          Allowed payment status:
                           (1, 'Awaiting Processing'),
                           (2, 'Processing'),
                           (3, 'Completed'),
@@ -2435,7 +2442,7 @@ paths:
                           type: number
                       channelId:
                         type: string
-                        description: BigCommerce channel id
+                        description: BigCommerce Channel ID
                       channelName:
                         type: string
                   meta:
@@ -2559,9 +2566,9 @@ paths:
         name: paymentId
         in: path
         required: true
-        description: Payment Id
+        description: Payment ID
     get:
-      summary: Get a Payment Operations
+      summary: Get a Payment Operation
       tags:
         - Payments
       responses:
@@ -2583,11 +2590,11 @@ paths:
                     properties:
                       allowedOperations:
                         type: array
-                        description: A list of allowable action codes for current payments
+                        description: A list of allowable action codes for current payments.
                         items: {}
                       allowedStatuses:
                         type: array
-                        description: The list of states that the current payment allows to modify
+                        description: The current payment method allows for the modification of the states listed.
                         items: {}
                   meta:
                     type: object
@@ -2619,7 +2626,7 @@ paths:
         "404":
           $ref: "#/components/responses/Payment404"
       operationId: get-payment-operations-operations
-      description: Get a payment all operations
+      description: Get a payment for all operations
       parameters: []
     post:
       summary: Performing Payment Operation
@@ -2679,7 +2686,7 @@ paths:
               properties:
                 operationCode:
                   type: number
-                  description: "Payment operation code, list of allowed operations of this payment"
+                  description: "Payment operation code. The list of allowed operations for this payment."
                   enum:
                     - 0
                     - 1
@@ -2700,7 +2707,7 @@ paths:
         name: paymentId
         in: path
         required: true
-        description: Payment Id
+        description: Payment ID
     put:
       summary: Update Payment Processing Status
       tags:
@@ -2768,7 +2775,7 @@ paths:
         name: paymentId
         in: path
         required: true
-        description: Payment Id
+        description: Payment ID
     get:
       summary: Get Payment Transactions
       tags:
@@ -2805,7 +2812,7 @@ paths:
                     type: array
                     uniqueItems: true
                     minItems: 1
-                    description: "contains payment transaction information, varies from different payment gateway，depends on payment gateway"
+                    description: "The array contains payment transaction information that varies and depends on the payment gateway."
                     items:
                       type: object
                       properties:
@@ -2955,7 +2962,7 @@ paths:
                   type: string
                 customerId:
                   type: string
-                  description: B2B Edition Company Id
+                  description: B2B Edition Company ID
                 externalCustomerId:
                   type: string
                 payerName:
@@ -2964,7 +2971,7 @@ paths:
                   description: Default is "Store Offline Payment " if no value is passed in.
                 payerCustomerId:
                   type: string
-                  description: The default is the same as the customerId
+                  description: The default value is the same as the customerId.
                 processingStatus:
                   type: number
                   default: 3
@@ -2977,7 +2984,7 @@ paths:
                   description: "payment status, 3 as default "
                 channelId:
                   type: integer
-                  description: BigCommerce channel id
+                  description: BigCommerce channel ID
               required:
                 - lineItems
                 - currency
@@ -3004,9 +3011,9 @@ paths:
         name: paymentId
         in: path
         required: true
-        description: Payment Id
+        description: Payment ID
     put:
-      summary: Update a Offline Payment
+      summary: Update an Offline Payment
       tags:
         - Payments
       responses:
@@ -3081,7 +3088,7 @@ paths:
                   type: string
                 customerId:
                   type: string
-                  description: B2B Edition Company Id
+                  description: B2B Edition Company ID
                 externalCustomerId:
                   type: string
                 payerName:
@@ -3090,7 +3097,7 @@ paths:
                   description: Default is "Store Offline Payment " if no value is passed in.
                 payerCustomerId:
                   type: string
-                  description: The default is the same as the customerId
+                  description: The default is the same as the customerId.
                 processingStatus:
                   type: number
                   default: 3
@@ -3390,7 +3397,7 @@ paths:
             type: string
           in: query
           name: q
-          description: 'Keyword queries are performed on fields corresponding to the value of "searchBy" or, if "searchBy" is empty, on all fields supported by "searchBy"'
+          description: 'You can perform keyword queries on fields corresponding to the value of "searchBy" or, if "searchBy" is empty, on all fields supported by "searchBy".'
         - schema:
             type: string
             enum:
@@ -3425,7 +3432,7 @@ paths:
         name: receiptId
         in: path
         required: true
-        description: The unique id of receipt
+        description: The unique ID of the receipt.
     get:
       summary: Get a receipt
       tags:
@@ -3602,13 +3609,13 @@ paths:
                 properties:
                   code:
                     type: number
-                    description: Response code of success request
+                    description: Response code of a successful request.
                   data:
                     type: object
                     properties:
                       id:
                         type: integer
-                        description: The uniqe receipt id
+                        description: The unique receipt ID.
                   meta:
                     type: object
                     properties:
@@ -3877,7 +3884,7 @@ paths:
             type: string
           in: query
           name: q
-          description: 'Keyword queries are performed on fields corresponding to the value of "searchBy" or, if "searchBy" is empty, on all fields supported by "searchBy"'
+          description: 'You can perform keyword queries on fields corresponding to the value of "searchBy" or, if "searchBy" is empty, on all fields supported by "searchBy".'
         - schema:
             type: string
             enum:
@@ -4141,7 +4148,7 @@ paths:
             type: string
           in: query
           name: q
-          description: 'Keyword queries are performed on fields corresponding to the value of "searchBy" or, if "searchBy" is empty, on all fields supported by "searchBy"'
+          description: 'You can perform keyword queries on fields corresponding to the value of "searchBy" or, if "searchBy" is empty, on all fields supported by "searchBy".'
         - schema:
             type: string
             enum:
@@ -4176,7 +4183,7 @@ paths:
         name: receiptId
         in: path
         required: true
-        description: The unique id of receipt
+        description: The unique ID of the receipt.
   "/receipts/{receiptId}/lines/{receiptLineId}":
     parameters:
       - schema:
@@ -4184,13 +4191,13 @@ paths:
         name: receiptId
         in: path
         required: true
-        description: The unique id of receipt
+        description: The unique ID of the receipt.
       - schema:
           type: string
         name: receiptLineId
         in: path
         required: true
-        description: The unique id of receipt line
+        description: The unique ID of the receipt line.
     get:
       summary: Get a receipt line detail
       tags:
@@ -4354,19 +4361,19 @@ paths:
                 properties:
                   code:
                     type: number
-                    description: Response code of success request
+                    description: Response code of a successful request.
                   data:
                     type: object
                     properties:
                       id:
                         type: integer
-                        description: The unique id of receipt line
+                        description: The unique ID of the receipt line.
                   meta:
                     type: object
                     properties:
                       message:
                         type: string
-                        description: Response message of request
+                        description: Response message of the request
               examples:
                 example-1:
                   value:

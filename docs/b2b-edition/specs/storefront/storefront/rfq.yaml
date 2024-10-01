@@ -3,6 +3,11 @@ info:
   title: RFQ
   version: '1.0'
   description: 'A new set of API endpoints for quote, which new data structure is used at the bottom. For more comprehensive and easy to use features.'
+  termsOfService: 'https://www.bigcommerce.com/terms'
+  contact:
+    name: BigCommerce
+    url: 'https://www.bigcommerce.com'
+    email: support@bigcommerce.com
 servers:
   - url: 'https://api-b2b.bigcommerce.com/api/v2'
 paths:
@@ -857,7 +862,7 @@ paths:
                       trackingHistory:
                         type: array
                         items:
-                          type: object
+                          type: string
                       productList:
                         type: array
                         uniqueItems: true
@@ -1008,6 +1013,13 @@ paths:
                             minLength: 1
                       salesRepInfo:
                         type: object
+                        properties:
+                          salesRepName:
+                            type: string
+                          salesRepEmail:
+                            type: string
+                          salesRepPhoneNumber:
+                            type: string
                       ChannelId:
                         type: integer
                         description: B2B Edition channel id
@@ -1692,66 +1704,88 @@ paths:
   /rfq/configs:
     get:
       summary: Get Quote Config
-      responses: {}
-      operationId: get-rfq-configs
-      requestBody:
-        content:
-          application/json:
-            schema:
-              description: ''
-              type: object
-              x-examples:
-                example-1:
-                  code: 200
-                  message: SUCCESS
-                  data:
-                    switchStatus:
+      responses: 
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                description: ''
+                type: object
+                x-examples:
+                  example-1:
+                    code: 200
+                    message: SUCCESS
+                    data:
+                      switchStatus:
+                      - key: quote_reminder_notification
+                        isEnabled: '1'
                       - key: quote_customer
                         isEnabled: '1'
-                      - key: quote_on_product_page
+                      - key: quote_default_pdf
                         isEnabled: '1'
-                      - key: quote_on_cart_page
-                        isEnabled: '1'
-                      - key: quote_for_guest
-                        isEnabled: '0'
-                      - key: quote_for_individual_customer
-                        isEnabled: '0'
-                      - key: quote_sales_rep_visibility
-                        isEnabled: '0'
-                      - key: quote_sales_rep_creation
-                        isEnabled: '1'
-              properties:
-                code:
-                  type: number
-                message:
-                  type: string
-                  minLength: 1
-                data:
-                  type: object
-                  required:
-                    - switchStatus
-                  properties:
-                    switchStatus:
-                      type: array
-                      uniqueItems: true
-                      minItems: 1
-                      items:
-                        type: object
-                        properties:
-                          key:
-                            type: string
-                            minLength: 1
-                          isEnabled:
-                            type: string
-                            minLength: 1
-                            description: Is enabled for a config
+                      quoteOtherConfigs:
+                      - key: defaultExpirationDate
+                        value: 5
+                      - key: defaultTermsAndConditions
+                        value: ""
+                properties:
+                  code:
+                    type: number
+                    example: 200
+                  message:
+                    type: string
+                    minLength: 1
+                    example: SUCCESS
+                  data:
+                    type: object
+                    properties:
+                      switchStatus:
+                        type: array 
+                        items:
+                          type: object
+                          properties:
+                            key:  
+                              type: string
+                            isEnabled:
+                              type: string
                         required:
                           - key
                           - isEnabled
-              required:
-                - code
-                - message
-                - data
+                      quoteOtherConfigs:
+                        type: array 
+                        items:
+                          type: object
+                          properties:
+                            key:  
+                              type: string
+                            value:
+                              type: string
+                    required:
+                      - switchStatus
+                required: 
+                  - code
+                  - message
+                  - data
+              examples:
+                example-1:
+                  value:
+                    code: 200
+                    message: SUCCESS
+                    data:
+                      switchStatus:
+                        - key: quote_reminder_notification
+                          isEnabled: "1"
+                        - key: quote_customer
+                          isEnabled: "1"
+                        - key: quote_default_pdf
+                          isEnabled: "1"
+                      quoteOtherConfiqs:
+                        - key: defaultExpirationDate
+                          value: 5
+                        - key: defaultTermsAndConditions
+                          value: ''
+      operationId: get-rfq-configs
       description: |-
         Get quote config.
         Equivalent Storefront GraphQL API Query: `quoteConfig`. For more information, see the [GraphQL Playground](https://api-b2b.bigcommerce.com/graphql/playground).

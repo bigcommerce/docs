@@ -169,7 +169,7 @@ To set global store information, remove the `overrides` field from the input.
                         }
                         sortOrder
                         altText
-                        isDefault
+                        isThumbnail
                       }
                     }
                   }
@@ -191,7 +191,7 @@ To set global store information, remove the `overrides` field from the input.
             "imageId": "bc/store/productImage/371",
             "sortOrder": 2, 
             "altText": "New updated alt text for image 1", 
-            "isDefault": true, 
+            "isThumbnail": true, 
 
             "overrides": [
               {
@@ -203,7 +203,7 @@ To set global store information, remove the `overrides` field from the input.
                   "data": {
                     "sortOrder": 1, 
                     "altText": "Channel-specific alt text",
-                    "isDefault": true 
+                    "isThumbnail": true 
                   }
                 }
               }
@@ -213,7 +213,7 @@ To set global store information, remove the `overrides` field from the input.
             "imageId": "bc/store/productImage/372", 
             "sortOrder": 1, 
             "altText": "Updated alt text for image 2",
-            "isDefault": false
+            "isThumbnail": false
           }
         ]
       }
@@ -248,7 +248,7 @@ To set global store information, remove the `overrides` field from the input.
                           },
                           "sortOrder": "1",
                           "altText": "Channel-specific alt text",
-                          "isDefault": true                          
+                          "isThumbnail": true                          
                         }
                       }
                     ]
@@ -296,13 +296,34 @@ The following example removes product image information for the channel locale.
     mutation removeProductImagePropertiesOverrides($input: RemoveProductImagePropertiesOverridesInput!) {
       product {
         removeProductImagePropertiesOverrides(input: $input) {
-          productImage {
-            id        
-            altText    
-            isThumbnail  
-            sortOrder  
-            urlStandard 
-            urlZoom 
+          images {
+            edges {
+              node {            
+                id        
+                altText    
+                isThumbnail  
+                sortOrder  
+                urlStandard 
+                urlZoom
+                overrides ( context: { channelId: "bc/store/channel/1", locale: "en"}) {
+                  edges {
+                    node {
+                      ... on ProductImagesOverridesForChannelLocale {
+                        context {
+                          channelId
+                          locale
+
+                        }
+                          altText
+                          isThumbnail
+                          sortOrder
+                          addedToProduct
+                      }
+                    }
+                  }
+                }
+              } 
+            }
           }
         }
       }
@@ -312,11 +333,19 @@ The following example removes product image information for the channel locale.
     {
       "input": {
         "productId": "bc/store/product/111",
-        "context": {
-          "channelId": "1",
-          "locale": "en-US"
-        },
-        "imageIds": ["bc/store/productImage/1", "bc/store/productImage/2"]
+        "data": [
+          {
+            "imageId": "bc/store/productImage/371",
+            "contexts": [
+              {
+                "channelLocaleContext": {
+                  "channelId": "bc/store/channel/1", 
+                  "locale": "en"
+                }
+              }
+            ]
+          }
+        ]
       }
     }
     ```
@@ -325,7 +354,31 @@ The following example removes product image information for the channel locale.
   <Tab>
 
     ```json filename="Example mutation: Remove product image information for a locale" showLineNumbers copy
-
+    {
+      "data": {
+        "product": {
+          "removeProductImagePropertiesOverrides": {
+            "images": {
+              "edges": [
+                {
+                  "node": {
+                    "id": "bc/store/productImage/371",
+                    "altText": "New updated alt text for image 1",
+                    "isThumbnail": true,
+                    "sortOrder": 2,
+                    "urlStandard": "https://cdn11.bigcommerce.com/s-3fep8218mc/products/111/images/371/smithjournal1.1728316144.386.513.jpg?c=1",
+                    "urlZoom": "https://cdn11.bigcommerce.com/s-3fep8218mc/products/111/images/371/smithjournal1.1728316144.1280.1280.jpg?c=1",
+                    "overrides": {
+                      "edges": []
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
     ```
 
   </Tab>
@@ -334,6 +387,8 @@ The following example removes product image information for the channel locale.
 ## Query product image information
 
 The following example retrieves product image information. You can retrieve global information for the store and overrides for the channel locale.
+
+You can also use the `imagesOverrides` node to retrieve overrides for a channel locale.
 
 <Tabs items={['Request', 'Response']}>
   <Tab>
@@ -365,6 +420,9 @@ The following example retrieves product image information. You can retrieve glob
                           locale
                         }
                         altText
+                        isThumbnail
+                        sortOrder
+                        addedToProduct
                       }
                     }
                   }
@@ -406,10 +464,39 @@ The following example retrieves product image information. You can retrieve glob
                               "channelId": "bc/store/channel/1",
                               "locale": "en-US"
                             },
-                            "altText": ""
+                            "altText": "Channel-specific alt text",
+                            "isThumbnail": true,
+                            "sortOrder": 1,
+                            "addedToProduct": false
                           }
                         }
                       ]
+                    }
+                  },
+                  {
+                    "node": {
+                      "id": "bc/store/productImage/372",
+                      "altText": "Updated alt text for image 2",
+                      "isThumbnail": false,
+                      "sortOrder": 1,
+                      "urlStandard": "https://cdn11.bigcommerce.com/s-3fep8218mc/products/111/images/372/smithjournal5.1728320312.386.513.jpg?c=1",
+                      "urlZoom": "https://cdn11.bigcommerce.com/s-3fep8218mc/products/111/images/372/smithjournal5.1728320312.1280.1280.jpg?c=1",
+                      "overrides": {
+                        "edges": [
+                          {
+                            "node": {
+                              "context": {
+                                "channelId": "bc/store/channel/1",
+                                "locale": "en"
+                              },
+                              "altText": "Updated alt text for image 2",
+                              "isThumbnail": false,
+                              "sortOrder": 0,
+                              "addedToProduct": true
+                            }
+                          }
+                        ]
+                      }
                     }
                   }
                 }

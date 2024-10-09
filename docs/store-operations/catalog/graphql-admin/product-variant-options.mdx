@@ -450,11 +450,7 @@ The following example removes product variant option information for the locale 
 
 You can set information about a shared variant option for a store or a locale within a storefront channel. You must first create the shared variant options through the control panel. Changing a shared variant option affects all products that you assign to the shared variant option. You cannot customize shared variant options on a product level.
 
-The following mutations let you set the name and values for existing shared variant options. 
-
-### Set shared variant options at the global level
-
-The following example sets global shared variant option information for the store, from which channels inherit by default. You can set the name and values for existing variant options.
+The following mutation sets the name and values for an existing shared variant option. 
 
 <Tabs items={['Request', 'Response']}>
   <Tab>
@@ -465,11 +461,34 @@ The following example sets global shared variant option information for the stor
     Content-Type: application/json
     Accept: application/json      
 
-    mutation ($input: SetSharedProductOptionsInformationInput!) {
+    mutation ($input: UpdateSharedProductOptionsInput!) {
       sharedProductOptions {
-        setSharedProductOptionsInformation (input: $input) {
+        updateSharedProductOptions(input: $input) {
           sharedProductOptions {
             id
+            displayName
+            values {
+              id
+              isDefault
+              label
+            }
+            overrides(context: { channelId: "bc/store/channel/1", locale: "fr" }) {
+              edges {
+                node {
+                  ... on SharedProductOptionOverridesForChannelLocale {
+                    context {
+                      channelId
+                      locale
+                    }
+                    displayName
+                    values {
+                      id
+                      label
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -478,46 +497,90 @@ The following example sets global shared variant option information for the stor
     ```json filename="GraphQL variables" showLineNumbers copy
     {
       "input": {
-        "data": {
-          "options": [
-            {
-              "optionId": "bc/store/sharedProductOption/1",
-              "data": {
-                "dropdown": {
-                  "displayName": "Fabric",
-                  "values": [
-                    {
-                      "valueId": "bc/store/sharedProductOptionValue/123",
-                      "label": "Cotton"
-                    },
-                    {
-                      "valueId": "bc/store/sharedProductOptionValue/124",
-                      "label": "Polyester"
+        "data": [
+          {
+            "optionId": "bc/store/sharedProductOption/1",
+            "optionData": {
+              "dropdown": {
+                "displayName": "Fabric",
+                "values": [
+                  {
+                    "valueId": "bc/store/sharedProductOptionValue/123",
+                    "label": "Cotton"
+                  },
+                  {
+                    "valueId": "bc/store/sharedProductOptionValue/124",
+                    "label": "Polyester"
+                  }
+                ],
+                "overrides": [
+                  {
+                    "channelLocaleOverrides": {
+                      "context": {
+                        "channelId": "bc/store/channel/1",
+                        "locale": "fr"
+                      },
+                      "data": {
+                        "displayName": "Fabric channel override",
+                        "values": [
+                          {
+                            "valueId": "bc/store/sharedProductOptionValue/123",
+                            "label": "Cotton channel override"
+                          },
+                          {
+                            "valueId": "bc/store/sharedProductOptionValue/124",
+                            "label": "Polyester channel override"
+                          }
+                        ]
+                      }
                     }
-                  ]
-                }
-              }
-            },
-            {
-              "optionId": "bc/store/sharedProductOption/4",
-              "data": {
-                "swatch": {
-                  "displayName": "Zipper color",
-                  "values": [
-                    {
-                      "valueId": "bc/store/sharedProductOptionValue/129",
-                      "label": "Orange"
-                    },
-                    {
-                      "valueId": "bc/store/sharedProductOptionValue/130",
-                      "label": "Green"
-                    }
-                  ]
-                }
+                  }
+                ]
               }
             }
-          ]
-        }
+          },
+          {
+            "optionId": "bc/store/sharedProductOption/4",
+            "optionData": {
+              "swatch": {
+                "displayName": "Zipper color",
+                "values": [
+                  {
+                    "valueId": "bc/store/sharedProductOptionValue/129",
+                    "label": "Orange"
+                  },
+                  {
+                    "valueId": "bc/store/sharedProductOptionValue/130",
+                    "label": "Green"
+                  }
+                ],
+                "overrides": [
+                  {
+                    "channelLocaleOverrides": {
+                      "context": {
+                        "channelId": "bc/store/channel/1",
+                        "locale": "fr"
+                      },
+                      "data": {
+                        "displayName": "Zipper color override",
+                        "values": [
+                          {
+                            "valueId": "bc/store/sharedProductOptionValue/129",
+                            "label": "Orange override"
+                          },
+                          {
+                            "valueId": "bc/store/sharedProductOptionValue/130",
+                            "label": "Green override"
+                          }
+                        ]
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        ]
       }
     }
     ```
@@ -529,112 +592,67 @@ The following example sets global shared variant option information for the stor
     {
       "data": {
         "sharedProductOptions": {
-          "setSharedProductOptionsInformation": {
+          "updateSharedProductOptions": {
             "sharedProductOptions": [
               {
-                "id": "bc/store/sharedProductOption/1"
-              },
-              {
-                "id": "bc/store/sharedProductOption/4"
-              }
-            ]
-          }
-        }
-      }
-    }
-    ```    
-
-  </Tab>
-</Tabs>
-
-### Set shared variant options for a locale
-
-The following example sets shared variant option information for the locale within the specified storefront channel. These override global store information. You can set the name and values for existing variant options.
-
-<Tabs items={['Request', 'Response']}>
-  <Tab>
-
-    ```graphql filename="Example mutation: Set shared variant options for a locale" showLineNumbers copy
-    POST https://api.bigcommerce.com/stores/{{STORE_HASH}}/graphql
-    X-Auth-Token: {{ACCESS_TOKEN}}
-    Content-Type: application/json
-    Accept: application/json      
-
-    mutation ($input: SetSharedProductOptionsInformationInput!) {
-      sharedProductOptions {
-        setSharedProductOptionsInformation (input: $input) {
-          sharedProductOptions {
-            id
-          }
-        }
-      }
-    }
-    ```
-    ```json filename="GraphQL variables" showLineNumbers copy
-    {
-      "input": {
-        "localeContext": {
-          "channelId": "bc/store/channel/2",
-          "locale": "uk"
-        },
-        "data": {
-          "options": [
-            {
-              "optionId": "bc/store/sharedProductOption/1",
-              "data": {
-                "dropdown": {
-                  "displayName": "Fabric material",
-                  "values": [
+                "id": "bc/store/sharedProductOption/1",
+                "displayName": "Fabric",
+                "values": [
+                  {
+                    "id": "bc/store/sharedProductOptionValue/1",
+                    "isDefault": true,
+                    "label": "Cotton"
+                  },
+                  {
+                    "id": "bc/store/sharedProductOptionValue/2",
+                    "isDefault": false,
+                    "label": "Polyester"
+                  }
+                ],
+                "overrides": {
+                  "edges": [
                     {
-                      "valueId": "bc/store/sharedProductOptionValue/123",
-                      "label": "Linen"
-                    },
-                    {
-                      "valueId": "bc/store/sharedProductOptionValue/124",
-                      "label": "Nylon"
+                      "node": {
+                        "context": {
+                          "channelId": "bc/store/channel/1",
+                          "locale": "fr"
+                        },
+                        "displayName": "Fabric channel override",
+                        "values": []
+                      }
                     }
                   ]
                 }
-              }
-            },
-            {
-              "optionId": "bc/store/sharedProductOption/4",
-              "data": {
-                "swatch": {
-                  "displayName": "Color of zipper",
-                  "values": [
+              },
+              {
+                "id": "bc/store/sharedProductOption/4",
+                "displayName": "Zipper color",
+                "values": [
+                  {
+                    "id": "bc/store/sharedProductOptionValue/7",
+                    "isDefault": false,
+                    "label": "Orange"
+                  },
+                  {
+                    "id": "bc/store/sharedProductOptionValue/8",
+                    "isDefault": true,
+                    "label": "Green"
+                  }
+                ],
+                "overrides": {
+                  "edges": [
                     {
-                      "valueId": "bc/store/sharedProductOptionValue/129",
-                      "label": "Black"
-                    },
-                    {
-                      "valueId": "bc/store/sharedProductOptionValue/130",
-                      "label": "Brown"
+                      "node": {
+                        "context": {
+                          "channelId": "bc/store/channel/1",
+                          "locale": "fr"
+                        },
+                        "displayName": "Zipper color override",
+                        "values": []
+                      }
                     }
                   ]
                 }
-              }
-            }
-          ]
-        }
-      }
-    }
-    ```
-
-  </Tab>
-  <Tab>
-
-    ```json filename="Example mutation: Set shared variant options for a locale" showLineNumbers copy
-    {
-      "data": {
-        "sharedProductOptions": {
-          "setSharedProductOptionsInformation": {
-            "sharedProductOptions": [
-              {
-                "id": "bc/store/sharedProductOption/1"
-              },
-              {
-                "id": "bc/store/sharedProductOption/4"
               }
             ]
           }

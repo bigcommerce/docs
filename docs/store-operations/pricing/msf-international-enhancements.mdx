@@ -7,15 +7,15 @@
 When you sell internationally, you may need your storefront to display prices that either include or exclude tax based on regional expectations. You may need some storefront channels to display prices that include tax, while others display prices that exclude tax.
 
 To localize your storefronts, you can do the following:
-- Specify whether a price list has prices that include or exclude tax when entered.
-- Add prices (of your desired `prices_entered_with_tax`) setting to the price list in your desired currency.
+- Specify whether a price list has prices that include or exclude tax when entered (i.e., `prices_entered_with_tax`).
+- Add prices (of your desired `prices_entered_with_tax`) setting to the price list in your desired [currency for a storefront](https://support.bigcommerce.com/s/article/Multi-Storefront?language=en_US#currencies).
 - Assign the price list to storefront channels (or customer groups).
 
 
 ## Limitations
 
 - Stores using [Catalog V2](/docs/store-operations/catalog/migration) have may have fixed pricing rules and are not eligible to use inc/ex tax price lists. 
-- You cannot enter price changes due to product modifier rules, gift wrapping features, and fixed shipping prices into a price list. These inherit global settings and always apply on top of the price list.
+- You cannot enter price changes due to product modifier rules, gift wrapping features, and fixed shipping prices into a price list. During checkout, the global prices for these features will be applied as is on top of the prices shown for the current shopper. Effectively, these features will inherit the `prices_entered_with_tax` setting from the price list.
 - You cannot mix inclusive and exclusive pricing within a single price list.
 - For the best experience, [set the display price](https://support.bigcommerce.com/s/article/Product-Display-Settings?language=en_US#settings) to the lowest variant price when a shopper's preselected options don't match to a price. 
 
@@ -31,6 +31,29 @@ To ensure that you keep prices as entered , go to **Settings > Tax > Store Tax S
 If you're inheriting global tax settings, you have an additional option for tax-inclusive prices. You can choose to subtract the item's store tax rate before calculating tax using the shopper's tax zone. For information on the global settings, see the [Tax Settings](/docs/rest-management/tax-settings) endpoint of the REST Management API. 
 
 ## Example
+
+### Usage
+
+The following describes an example usage:
+
+1. Your store has the following prices entered globally in US dollars, exclusive of tax:
+- $5 modifier rule
+- $1.99 fixed shipping
+- +$3 for gift wrapping
+
+2. You add a tax-inclusive price list and assign it to a storefront that uses Australian dollars:
+- $55.97 (AUD) for the price of the product
+
+3. The currency conversion of 2 AUD to 1 USD will apply to the prices you entered previously, so you end up with the following:
+- $10 modifier rule
+- $3.98 fixed shipping
+- $6 gift wrapping
+
+These prices will be added as is, on top of the product price from the price list, effectively inheriting the price list setting. 
+
+The cart total for the item with the modifier rule selected will be $55.97 + $10 + $6 + $3.98 = **$75.95 AUD**
+
+### Price list setting
 
 The following example creates a tax-inclusive price list by sending a request to the [Create a Price List](/docs/rest-management/price-lists#create-a-price-list) endpoint. 
 

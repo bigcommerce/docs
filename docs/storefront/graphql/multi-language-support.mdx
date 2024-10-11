@@ -1,0 +1,114 @@
+# Multi-Language Support in GraphQL Storefront API
+
+The Storefront GraphQL API supports queries for multiple language translations within a storefront channel. 
+
+You can query product information for locales in a storefront channel. For information on what product information we support in multiple languages, see the [International Enhancements for Multi-Storefront](/docs/store-operations/catalog/msf-international-enhancements) overview.
+
+## Prerequisites
+
+- **Create language translations:**
+
+  Set the product data for a locale using the GraphQL Admin API. For example queries, see the [International Enhancements for Multi-Storefront](/docs/store-operations/catalog/msf-international-enhancements) overview.
+  <br />
+- **Choose a default locale:**
+
+  You can choose a default locale for the storefront channel, default to the global locale, or override the default locale with the shopper browser language. Read more about how to [choose a default locale](https://support.bigcommerce.com/s/article/International-Enhancements-for-Multi-Storefront#localization) through the control panel. These locale settings affect which locale the API resolves.
+
+## Returned data
+
+The response includes the following:
+- **Enabled locales:** The list of the enabled locales for a channel. Includes the default locale and the shopper languages in the browser cookies.
+  <br />
+- **Resolved locale:** Indicates the locale that was selected to contain the returned data.
+
+  If you chose a default locale in the control panel, the resolved locale is the default locale.
+
+  If you chose to override the default locale with the shopper browser language, the API uses the browser's cookies to determine a shopper's language preference. To override a shopper's preference, specify a preferred locale through the `Accept-Language` header or a GraphQL directive when you send the query. The directive takes precedence over the `Accept-Language` header<br />
+  <br />
+- **Product data for the resolved locale:** If there is no product data for the resolved locale, the response defaults to global product data.
+
+## Example
+
+<Tabs items={['Request', 'Response']}>
+  <Tab>
+
+```graphql filename="Get products information for a locale" showLineNumbers copy
+POST https://your_store.example.com/graphql
+Authorization: Bearer {token}
+Accept: application/json
+Content-Type: application/json
+
+query @shopperPreferences(locale:"fr") { # specific requested locale via directive
+  shopperPreferences {
+    locale {
+      resolved # resolved locale
+    }
+  }
+  site {
+    settings {
+      locales { # list of enabled locales
+        code
+        isDefault
+      }
+    }
+    products {
+      edges {
+        node {
+          name # localized name
+        }
+      }
+    }
+  }
+}
+```
+
+</Tab>
+<Tab>
+
+```json filename="Get products information for a locale" showlineNumbers copy
+{
+    "data": {
+        "shopperPreferences": {
+            "locale": {
+                "resolved": "fr"
+            }
+        },
+        "site": {
+            "settings": {
+                "locales": [
+                    {
+                        "code": "fr",
+                        "isDefault": true
+                    },
+                    {
+                        "code": "en",
+                        "isDefault": false
+                    }
+                ]
+            },
+            "products": {
+                "edges": [
+                    {
+                        "node": {
+                            "name": "Serviette en chambray en lin brouillard"
+                        }
+                    },
+                    {
+                        "node": {
+                            "name": "Terrarium en orbite"
+                        }
+                    }
+                ]
+            }
+        }
+    }
+}
+```
+
+</Tab>
+</Tabs>
+
+## Resources 
+
+- [International Enhancements for Multi-Storefront](/docs/store-operations/catalog/msf-international-enhancements) overview
+- [International Enhancements for Multi-Storefront - Localization Settings](https://support.bigcommerce.com/s/article/International-Enhancements-for-Multi-Storefront#localization) support article

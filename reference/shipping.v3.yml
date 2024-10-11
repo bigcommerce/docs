@@ -20,6 +20,89 @@ servers:
         description: Permanent ID of the BigCommerce store.
     description: BigCommerce API Gateway
 paths:
+  '/shipping/methods':
+    parameters:
+      - $ref: '#/components/parameters/Accept'
+
+    get:
+      operationId: getShippingMethods
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/shippingMethods'
+                  meta:
+                    type: object
+                    properties:
+                      cursor_pagination:
+                        $ref: '#/components/schemas/cursorPagination'
+      description: |-
+        Get information about all shipping methods.
+
+        This list can be filtered to return shipping method objects specific to a list of requested shipping zones or channels, or filtered by method name.
+
+        ```http
+        GET /shipping/methods?shipping_zone_id:in=4,5,6&channel_id:in=1,2,3&name:like=Express
+        ```
+
+      tags:
+        - Shipping Methods
+      summary: Get Shipping Methods
+      parameters:
+        - in: query
+          name: 'shipping_zone_id:in'
+          description: 'A comma-separated list of shipping zone IDs. For more information, see [Filtering](/docs/start/about/common-query-params).'
+          style: form
+          explode: false
+          schema:
+            type: array
+            items:
+              type: integer
+        - in: query
+          name: 'channel_id:in'
+          description: 'A comma-separated list of channel IDs. For more information, see [Filtering](/docs/start/about/common-query-params).'
+          style: form
+          explode: false
+          schema:
+            type: array
+            items:
+              type: integer
+        - in: query
+          name: 'name:like'
+          description: 'A name by which to filter shipping methods. For more information, see [Filtering](/docs/start/about/common-query-params).'
+          schema:
+            type: string
+        - in: query
+          name: limit
+          description: 'The maximum number of records to return.'
+          required: false
+          schema:
+            type: integer
+        - in: query
+          name: cursor
+          description: 'A cursor pointing to the desired set of entities.'
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: include
+          description: |-
+            * `shipping_zone` - Include shipping zone information with each shipping method.
+          style: form
+          explode: false
+          schema:
+            type: array
+            items:
+              type: string
+              enum:
+                - shipping_zone
   '/shipping/products/customs-information':
     parameters:
       - $ref: '#/components/parameters/Accept'
@@ -323,7 +406,6 @@ components:
       title: customsInformationRequest
       description: Data about the customs information object.
       type: object
-      x-internal: false
       properties:
         product_id:
           description: The product ID to which the customs information data applies.
@@ -355,11 +437,44 @@ components:
         - commodity_description
         - international_shipping
         - hs_codes
+    shippingMethods:
+      title: shippingMethods
+      description: A configured method that will produce shipping quotes for the associated zone and channels.
+      type: object
+      properties:
+        id:
+          description: The unique identifier of the shipping method.
+          type: integer
+          format: int32
+          example: 2
+        name:
+          description: The human-readable name of the shipping method.
+          type: string
+          example: "Courier delivery"
+        shipping_zone:
+          description: Zone information. This is available only when "include=shipping_zone" is present in the querystring.
+          type: object
+          properties:
+            id:
+              description: The unique identifier of the shipping zone.
+              type: integer
+              format: int32
+              example: 2
+            name:
+              description: The human-readable name of the shipping zone.
+              type: string
+              example: "Thailand"
+        channel_ids:
+          description: List of channel IDs for which this method is applicable.
+          type: array
+          items:
+            type: integer
+            format: int32
+            example: 3
     customsInformation:
       title: customsInformation
       description: Data about the customs information object.
       type: object
-      x-internal: false
       properties:
         product_id:
           description: The ID of the product which the customs information data will apply to.
@@ -415,7 +530,6 @@ components:
         CA: '508313'
         US: '641000'
         AU: '817355'
-      x-internal: false
     metaCollection:
       title: metaCollection
       description: Meta data relating to pagination.
@@ -459,11 +573,29 @@ components:
                   type: string
                   description: Query string appended to the resource to show the current page.
                   example: '?limit=1&page=2'
-      x-internal: false
+    cursorPagination:
+      title: cursorPagination
+      description: Metadata relating to cursor-based pagination.
+      type: object
+      properties:
+        has_previous:
+          type: boolean
+          example: true
+        has_next:
+          type: boolean
+          example: true
+        previous:
+          type: string
+          example: "/shipping/methods?cursor=eyJsaW1pdCI6MzAsImZpbHRlciI6ImJsYWgiLCJhZnRlcl9pZCI6M30K"
+        current:
+          type: string
+          example: "/shipping/methods?cursor=eyJsaW1pdCI6MzAsImZpbHRlciI6ImJsYWgiLCJhZnRlcl9pZCI6M30K"
+        next:
+          type: string
+          example: "/shipping/methods?cursor=eyJsaW1pdCI6MzAsImZpbHRlciI6ImJsYWgiLCJhZnRlcl9pZCI6M30K"
     error_Full:
       title: Error
       description: ''
       type: object
       properties: {}
       additionalProperties: true
-      x-internal: false

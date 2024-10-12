@@ -10,11 +10,13 @@
 
 Using the Catalog features of the Admin API, you can set and query information for product images.
 
-First, add the image to the product for the global store. You can do so using the [Create a product image](/docs/rest-catalog/products/images#create-a-product-image) endpoint of the REST Management API. 
+First, add an image to the product for the global store. You can do so using the [Create a product image](/docs/rest-catalog/products/images#create-a-product-image) endpoint of the REST Management API. 
 
-You can then [add the image to the product](#add-image-to-product) for a channel locale and perform the following: 
+By default, product images are visible on all storefront channels and locales. To change product visibility, see [Image visibility](#image-visibility).
+
+You can change the details of an image that you have added to a product: 
 - [Set product image information](#set-product-image-information) for the catalog. You can set global values and overrides for the image information in a channel locale.
-- [Remove overrides for the product's image in a channel locale](#remove-product-image-overrides-for-a-locale). A channel then inherits global values.
+- [Remove overrides for the product's image in a channel locale](#remove-product-image-information-for-a-locale). A channel then inherits global values.
 - [Query product image information](#query-product-image-information), those set at the global level and the overrides.
 
 For a full schema, see the [GraphQL Admin API reference](https://developer.bigcommerce.com/graphql-admin/reference).
@@ -23,14 +25,16 @@ For a full schema, see the [GraphQL Admin API reference](https://developer.bigco
 
 Setting or removing information requires that you specify ID fields in the input. For more information on how to specify ID fields, see [Input fields](/docs/store-operations/catalog/msf-international-enhancements#input-fields).
 
-## Add image to product
+## Product image visibility
 
-The following example adds images to a product for a channel locale. You can remove the images using the `removeImagesFromProduct` node.
+### Add image visibility
+
+The following example makes a product image visible on a channel locale. To set the image visiblity for the global store, don't include the `context` field in the input.
 
 <Tabs items={['Request', 'Response']}>
   <Tab>
 
-    ```graphql filename="Example mutation: Add image to product" showLineNumbers copy
+    ```graphql filename="Example mutation: Add product image visibility to a channel locale" showLineNumbers copy
     POST https://api.bigcommerce.com/stores/{{STORE_HASH}}/graphql
     X-Auth-Token: {{ACCESS_TOKEN}}
     Content-Type: application/json
@@ -80,6 +84,8 @@ The following example adds images to a product for a channel locale. You can rem
     {
       "input": {
           "productId": "bc/store/product/111",
+
+          // For the channel locale
           "context": {
             "channelId": "bc/store/channel/1",
             "locale": "en"
@@ -92,7 +98,7 @@ The following example adds images to a product for a channel locale. You can rem
   </Tab>
   <Tab>
 
-  ```json filename="Example mutation: Add image to product" showLineNumbers copy
+  ```json filename="Example mutation: Add product image visibility to a channel locale" showLineNumbers copy
   {
     "data": {
       "product": {
@@ -138,8 +144,139 @@ The following example adds images to a product for a channel locale. You can rem
   </Tab>
 </Tabs>
 
+### Remove image visibility
 
-## Set product image information
+The following example makes a product image not visible on a channel locale. To set the image visiblity for the global store, don't include the `context` field in the input.
+
+<Tabs items={['Request', 'Response']}>
+  <Tab>
+
+    ```graphql filename="Example mutation: Remove product image visibility from a channel locale" showLineNumbers copy
+    mutation ($input: RemoveImagesFromProductInput!) {
+      product {
+        removeImagesFromProduct(input: $input) {
+          images {
+            edges {
+              node {
+                id
+                altText
+                isThumbnail
+                sortOrder
+                urlStandard
+                urlZoom
+                addedToProduct
+                overrides(context: { channelId: "bc/store/channel/1", locale: "fr" }) {
+                  edges {
+                    node {
+                      ... on ProductImagesOverridesForChannelLocale {
+                        context {
+                          channelId
+                          locale
+                        }
+                        altText
+                        sortOrder
+                        addedToProduct
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    ```
+
+    ```json filename="GraphQL variables" showLineNumbers copy
+    {
+      "input": {
+        "productId": "bc/store/product/111",
+        "context": {
+          "channelId": "bc/store/channel/1",
+          "locale": "fr"
+        },
+        "ids": ["bc/store/productImage/371", "bc/store/productImage/372"]
+      }
+    }
+    ```
+
+  </Tab>
+  <Tab>
+
+    ```json filename="Example mutation: Remove product image visibility from a channel locale" showLineNumbers copy    
+    {
+      "data": {
+        "product": {
+          "removeImagesFromProduct": {
+            "images": {
+              "edges": [
+                {
+                  "node": {
+                    "id": "bc/store/productImage/371",
+                    "altText": "New updated alt text for image 1",
+                    "isThumbnail": false,
+                    "sortOrder": 6,
+                    "urlStandard": "https://cdn11.bigcommerce.com/s-3fep8218mc/products/111/images/371/smithjournal1.1728758661.386.513.jpg?c=1",
+                    "urlZoom": "https://cdn11.bigcommerce.com/s-3fep8218mc/products/111/images/371/smithjournal1.1728758661.1280.1280.jpg?c=1",
+                    "addedToProduct": true,
+                    "overrides": {
+                      "edges": [
+                        {
+                          "node": {
+                            "context": {
+                              "channelId": "bc/store/channel/1",
+                              "locale": "fr"
+                            },
+                            "altText": "New updated alt text for image 1",
+                            "sortOrder": 2,
+                            "addedToProduct": false
+                          }
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "node": {
+                    "id": "bc/store/productImage/372",
+                    "altText": "Updated alt text for image 2",
+                    "isThumbnail": false,
+                    "sortOrder": 7,
+                    "urlStandard": "https://cdn11.bigcommerce.com/s-3fep8218mc/products/111/images/372/smithjournal5.1728758661.386.513.jpg?c=1",
+                    "urlZoom": "https://cdn11.bigcommerce.com/s-3fep8218mc/products/111/images/372/smithjournal5.1728758661.1280.1280.jpg?c=1",
+                    "addedToProduct": true,
+                    "overrides": {
+                      "edges": [
+                        {
+                          "node": {
+                            "context": {
+                              "channelId": "bc/store/channel/1",
+                              "locale": "fr"
+                            },
+                            "altText": "Updated alt text for image 2",
+                            "sortOrder": 1,
+                            "addedToProduct": false
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+    ```
+
+  </Tab>
+</Tabs>
+
+## Product image information
+
+### Set product image information
 
 The following example sets product image information for the global store and a channel locale. 
 
@@ -289,7 +426,7 @@ The following example sets product image information for the global store and a 
 </Tabs>
 
 
-## Remove product image overrides for a locale
+### Remove product image information for a locale
 
 The following example removes product image overrides for the channel locale.
 
@@ -394,7 +531,7 @@ The following example removes product image overrides for the channel locale.
   </Tab>
 </Tabs>
 
-## Query product image information
+### Query product image information
 
 The following example retrieves product image information. You can retrieve global information for the store and overrides for the channel locale.
 

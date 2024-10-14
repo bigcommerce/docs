@@ -118,8 +118,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MetaFieldCollectionResponse_Batch'
-        '500':
-          description: Internal Server Error
+              examples:
+                response:
+                  value:
+                    data:
+                    - id: 69
+                      key: key2
+                      value: value
+                      namespace: test2
+                      permission_set: write_and_sf_access
+                      resource_type: store
+                      resource_id: 1001197568
+                      description: ""
+                      date_created: 2024-08-27T18:58:43+00:00
+                      date_modified: 2024-08-27T18:58:43+00:00
+                      owner_client_id: k8l7zz0ynkd1bfbxx02p2k7pnk3n8ov
+                    meta:
+                      pagination:
+                        total: 4
+                        count: 4
+                        per_page: 50
+                        current_page: 1
+                        total_pages: 1
+                        links:
+                          current: ?limit=50&page=1
       parameters:
         - $ref: '#/components/parameters/PageParam'
         - $ref: '#/components/parameters/LimitParam'
@@ -168,78 +190,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MetaFieldCollectionResponsePartialSuccess_POST_PUT'
-        '500':
-          description: Internal Server Error
-    put:
-      summary: Update multiple Metafields
-      tags:
-        - Batch metafields
-      description: Create multiple metafields.
-      operationId: updateStoresMetafields
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: array
-              items:
-                allOf:
-                  - $ref: '#/components/schemas/MetafieldBase_Post'
-                  - type: object
-                    properties:
-                      id:
-                        type: string
-                        example: "42"
-                        description: |
-                          The ID of metafield to update.
-                    required:
-                      - id
-        description: ''
-      responses:
-        '200':
-          description: |
-            List of updated `Metafield` objects.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/MetaFieldCollectionResponse_Batch_POST_PUT'
-        '422':
-          description: |
-            Response object for metafields creation with partial success.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/MetaFieldCollectionResponsePartialSuccess_POST_PUT'
-        '500':
-          description: Internal Server Error
-    delete:
-      summary: Delete All Metafields
-      tags:
-        - Batch metafields
-      description: Delete all store metafields.
-      operationId: deleteStoresMetafields
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: array
-              items:
-                type: integer
-        description: List of metafield `id`s.
-      responses:
-        '200':
-          description: |
-            Response object for metafields deletion with success.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/MetaFieldCollectionDeleteResponseSuccess'
-        '422':
-          description: |
-            Response object for metafields deletion with partial success.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/MetaFieldCollectionResponsePartialSuccess_DELETE'
   '/store/metafields/{metafieldId}':
     get:
       summary: Get a Store Metafield
@@ -255,22 +205,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MetafieldResponse'
-        '409':
+        '404':
           description: |
-            The `Metafield` conflicts with another `Metafield`. This can result from duplicate unique key combinations of the appʼs client id, namespace, key, resource_type, and resource_id.
+             Not found (A metafield was not found with this query).
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '422':
-          description: |
-            The `Metafield` is not valid. This is the result of missing required fields or of invalid data. See the response for more details.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '500':
-          description: Internal Server Error
+                $ref: '#/components/schemas/NotFound'
       parameters:
         - $ref: '#/components/parameters/PageParam'
         - $ref: '#/components/parameters/LimitParam'
@@ -384,13 +325,14 @@ components:
           description: |
             404 HTTP status code.
           type: integer
+          example: 404
         title:
           description: The error title describing the particular error.
           type: string
+          example: The resource at that URL is not found.
         type:
           type: string
-        instance:
-          type: string
+          example: 'https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes'
       title: Not Found
       x-internal: false
     ErrorResponse:
@@ -418,6 +360,8 @@ components:
           properties:
             data:
               $ref: '#/components/schemas/Metafield'
+            meta:
+              $ref: '#/components/schemas/metaCollection_open'
     Metafield:
       description: |
         Allows app partners to write custom data to various resources in the API.
@@ -579,7 +523,7 @@ components:
         data:
           $ref: '#/components/schemas/Metafield'
         meta:
-          $ref: '#/components/schemas/CollectionMeta'
+          $ref: '#/components/schemas/metaCollection_open'
       x-internal: false
     MetaFieldCollectionResponse_Batch:
       type: object
@@ -607,7 +551,7 @@ components:
           description: Empty for 200 responses.
           example: [ ]
         meta:
-          $ref: '#/components/schemas/CollectionMeta'
+          $ref: '#/components/schemas/WriteCollectionSuccessMeta'
     MetaFieldCollectionDeleteResponseSuccess:
       type: object
       description: |
@@ -636,16 +580,16 @@ components:
       description: |
         Response payload for the BigCommerce API.
       properties:
-        data:
+        data: 
           type: array
-          items:
+          items: 
             $ref: '#/components/schemas/Metafield'
+          description: Empty for 200 responses.
+          example: []
         errors:
-          type: array
-          items:
             $ref: '#/components/schemas/Error'
         meta:
-          $ref: '#/components/schemas/WriteCollectionPartialSuccessMeta'
+            $ref: '#/components/schemas/WriteCollectionPartialSuccessMeta'
     MetaFieldCollectionResponsePartialSuccess_DELETE:
       type: object
       description: |
@@ -695,6 +639,7 @@ components:
       description: |
         Error detail response payload for the BigCommerce API.
       example:
+        "0": "Entity already exists"
         "1": "Unauthorized to delete"
         "2": "Metafield does not exist"
     WriteCollectionSuccessMeta:
@@ -798,7 +743,6 @@ components:
       title: Response meta
       type: object
       properties: { }
-      additionalProperties: true
       description: Response metadata.
     StoreInformation:
       title: Store Information

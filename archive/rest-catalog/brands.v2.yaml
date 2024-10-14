@@ -1,0 +1,515 @@
+openapi: '3.0.3'
+info:
+  title: Catalog - Brands V2 (Deprecated)
+  description: |-
+    Brand facets for identifying and categorizing products according to their manufacturer or company metonym.
+    
+    #### Deprecated 
+    
+    Avoid using this API operation if possible. It will be removed in a future version. For the most up-to-date version of this API, see [Brands](/docs/rest-catalog/brands).
+
+  termsOfService: 'https://www.bigcommerce.com/terms'
+  contact:
+    name: BigCommerce
+    url: 'https://www.bigcommerce.com'
+    email: support@bigcommerce.com
+  version: '1.0.1'
+servers:
+  - url: 'https://api.bigcommerce.com/stores/{store_hash}/v2'
+    variables:
+      store_url:
+        default: store_url
+        description: Permanent url of the BigCommerce store.
+    description: BigCommerce API Gateway
+security:
+  - basicAuth: []
+tags:
+  - name: Brands V2
+paths:
+  '/brands':
+    get:
+      tags:
+        - Brands V2
+      summary: Gets list of Brands. (Deprecated)
+      description: Gets the collection of Brands. (Default sorting is by brand id, from lowest to highest.)
+      operationId: getBrands
+      parameters:
+        - $ref: '#/components/parameters/Name'
+        - $ref: '#/components/parameters/IdMin'
+        - $ref: '#/components/parameters/IdMax'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          $ref: '#/components/responses/brands'
+        '400':
+          $ref: '#/components/responses/errors'
+        '401':
+          $ref: '#/components/responses/errorsWithDetails'
+        '403':
+          $ref: '#/components/responses/errorsWithDetails'
+    post:
+      tags:
+        - Brands V2
+      summary: Create a Brand. (Deprecated)
+      description: |-
+        Creates a *Brand*.
+
+        **Required Fields**
+        
+        The following properties of the brand are required. The request won’t be fulfilled unless these properties are valid.
+        - name
+        
+        **Read-only Fields**
+        
+        The following properties of the brand are read-only. If one or more of these properties are included in the request, it will be rejected.
+        - id
+        
+        **Limits**
+        - 30,000 brands per store limit
+        To maximize system performance, BigCommerce caps the number of brands you can add to a store at 30,000. If your POST causes the store to exceed the maximum of 30,000 brands, BigCommerce will return a 403 error.
+      operationId: createBrand
+      requestBody:
+        content:
+          'application/json':
+            schema:
+              $ref: '#/components/schemas/BrandPost'
+          'application/xml':
+            schema:
+              $ref: '#/components/schemas/BrandPost'
+        required: true
+      responses:
+        '201':
+          $ref: '#/components/responses/brand'
+        '400':
+          $ref: '#/components/responses/errors'
+        '401':
+          $ref: '#/components/responses/errorsWithDetails'
+        '403':
+          $ref: '#/components/responses/errorsWithDetails'
+        '409':
+          $ref: '#/components/responses/errorsWithDetails'
+    delete:
+      tags:
+        - Brands V2
+      summary: Deletes all existing on store brands. (Deprecated)
+      description: Deletes all existing on store brands.
+      operationId: deleteBrands
+      responses:
+        '204':
+          description: No content
+          content: { }
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/errorsWithDetails'
+  '/brands/{brand_id}':
+    get:
+      tags:
+        - Brands V2
+      summary: Gets a brand. (Deprecated)
+      description: Returns a single *Brand*.
+      operationId: getBrandById
+      responses:
+        '200':
+          $ref: '#/components/responses/brand'
+        '400':
+          $ref: '#/components/responses/errors'
+        '401':
+          $ref: '#/components/responses/errorsWithDetails'
+        '403':
+          $ref: '#/components/responses/errorsWithDetails'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    put:
+      tags:
+        - Brands V2
+      summary: Updates an existing Brand. (Deprecated)
+      operationId: updateBrand
+      description: |-
+        Updates a *Brand*.
+
+        **Required Fields**
+        - None
+
+        **Read-Only Fields**
+        - id
+
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BrandPut'
+        required: true
+      responses:
+        '200':
+          $ref: '#/components/responses/brand'
+        '400':
+          $ref: '#/components/responses/errors'
+        '401':
+          $ref: '#/components/responses/errorsWithDetails'
+        '403':
+          $ref: '#/components/responses/errorsWithDetails'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    delete:
+      tags:
+        - Brands V2
+      summary: Deletes a Brand. (Deprecated)
+      description: Deletes a *Brand*.
+      operationId: deleteBrand
+      responses:
+        '204':
+          description: No content
+          content: { }
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/errorsWithDetails'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    parameters:
+      - $ref: '#/components/parameters/BrandIdParam'
+  '/brands/count':
+    get:
+      tags:
+        - Brands V2
+      summary: Count Brands. (Deprecated)
+      description: Returns the total number of brands in the store.
+      operationId: getBrandsCount
+      responses:
+        '200':
+          $ref: '#/components/responses/brandsCount'
+        '401':
+          $ref: '#/components/responses/errors'
+        '403':
+          $ref: '#/components/responses/errors'
+components:
+  schemas:
+    id:
+      type: integer
+      minimum: 1
+      description: |-
+        Unique ID of the *Brand*. Increments sequentially.
+        Read-Only.
+      readOnly: true
+    name:
+      maxLength: 255
+      minLength: 1
+      type: string
+      description: |-
+        The name displayed for the brand. Name must be unique.
+        Required in a POST.
+      x-required:
+        - post
+        - put
+    page_title:
+      type: string
+      minLength: 0
+      maxLength: 250
+      description: The title shown in the browser while viewing the brand.
+    meta_keywords:
+      type: string
+      maxLength: 65535
+      minLength: 0
+      description: Comma-separated list of meta keywords to include in the HTML.
+    meta_description:
+      maxLength: 65535
+      minLength: 0
+      type: string
+      description: A meta description to include.
+    image_file:
+      title: image_file
+      type: string
+      description: A valid image URL. Maximum brand image file size 8MB. Supported file types are `JPEG/JPG`, `GIF`, `PNG`.
+    search_keywords:
+      maxLength: 65535
+      minLength: 0
+      type: string
+      description: A comma-separated list of keywords you can use to locate this brand.
+    brand:
+      title: Brand response
+      type: object
+      required:
+        - id
+        - name
+      xml:
+        name: brand
+      properties:
+        id:
+          $ref: '#/components/schemas/id'
+        name:
+          $ref: '#/components/schemas/name'
+        page_title:
+          $ref: '#/components/schemas/page_title'
+        meta_keywords:
+          $ref: '#/components/schemas/meta_keywords'
+        meta_description:
+          $ref: '#/components/schemas/meta_description'
+        image_file:
+          $ref: '#/components/schemas/image_file'
+        search_keywords:
+          $ref: '#/components/schemas/search_keywords'
+      description: 'Get Brand'
+    BrandPost:
+      title: Brand POST request body
+      required:
+        - name
+      type: object
+      description: Common brand properties.
+      properties:
+        name:
+          $ref: '#/components/schemas/name'
+        page_title:
+          $ref: '#/components/schemas/page_title'
+        meta_keywords:
+          $ref: '#/components/schemas/meta_keywords'
+        meta_description:
+          $ref: '#/components/schemas/meta_description'
+        image_file:
+          $ref: '#/components/schemas/image_file'
+        search_keywords:
+          $ref: '#/components/schemas/search_keywords'
+    BrandPut:
+      title: Brand PUT request body
+      required:
+        - name
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/id'
+        name:
+          $ref: '#/components/schemas/name'
+        page_title:
+          $ref: '#/components/schemas/page_title'
+        meta_keywords:
+          $ref: '#/components/schemas/meta_keywords'
+        meta_description:
+          $ref: '#/components/schemas/meta_description'
+        search_keywords:
+          $ref: '#/components/schemas/search_keywords'
+        image_file:
+          $ref: '#/components/schemas/image_file'
+      description: Common Brand properties.
+    brands:
+      title: brands
+      required:
+        - count
+      type: object
+      properties:
+        count:
+          type: integer
+          description: A count of the number of brands in the store.
+    error:
+      title: Response error
+      type: object
+      required:
+        - status
+        - message
+      xml:
+        name: error
+      properties:
+        status:
+          type: integer
+          description: The HTTP status code.
+        message:
+          type: string
+          description: Error message
+    errorWithDetails:
+      title: Response error with details
+      type: object
+      required:
+        - status
+        - title
+        - type
+        - errors
+      xml:
+        name: error
+      properties:
+        status:
+          type: integer
+          description: The HTTP status code.
+        title:
+          type: string
+          description: The error title describing the particular error.
+        type:
+          type: string
+        errors:
+          title: Detailed Errors
+          type: object
+          properties: { }
+          additionalProperties: true
+    NotFoundError:
+      required:
+        - status
+        - title
+        - type
+      title: Not Found
+      type: object
+      properties:
+        status:
+          type: integer
+          description: The HTTP status code.
+        title:
+          type: string
+          description: The error title describing the particular error.
+        type:
+          type: string
+    Conflict:
+      title: Conflict
+      type: object
+      properties:
+        status:
+          type: integer
+          description: The HTTP status code.
+        title:
+          type: string
+          description: The error title describing the particular error.
+        type:
+          type: string
+        errors:
+          title: Detailed Errors
+          type: object
+          properties: { }
+  responses:
+    brand:
+      description: Gets array of Brands response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/brand'
+        'application/xml':
+          schema:
+            $ref: '#/components/schemas/brand'
+    brands:
+      description: Gets array of Brands response
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/brand'
+        'application/xml':
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/brand'
+            xml:
+              name: brands
+              wrapped: true
+    brandsCount:
+      description: Gets a count of the total number of Brands in the store.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/brands'
+        application/xml:
+          schema:
+            $ref: '#/components/schemas/brands'
+    errors:
+      description: ''
+      content:
+        'application/json':
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/error'
+        'application/xml':
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/error'
+            xml:
+              name: errors
+              wrapped: true
+    errorsWithDetails:
+      description: ''
+      content:
+        'application/json':
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/errorWithDetails'
+        'application/xml':
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/errorWithDetails'
+            xml:
+              name: errors
+              wrapped: true
+    Conflict:
+      description: Conflict
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Conflict'
+    NotFoundError:
+      description: Not Found
+      content:
+        'application/json':
+          schema:
+            $ref: '#/components/schemas/NotFoundError'
+    UnauthorizedError:
+      description: Unauthorized
+      content:
+        plain/text:
+          schema:
+            type: string
+    BadRequestError:
+      description: Bad Request
+      content:
+        plain/text:
+          schema:
+            type: string
+  parameters:
+    Id:
+      name: id
+      in: query
+      description: Filter items by ID.
+      schema:
+        type: integer
+    Name:
+      name: name
+      in: query
+      description: Filter items by name.
+      schema:
+        type: string
+    IdMin:
+      name: 'min_id'
+      in: query
+      style: form
+      explode: false
+      schema:
+        type: integer
+    IdMax:
+      name: 'max_id'
+      in: query
+      style: form
+      explode: false
+      schema:
+        type: integer
+    Page:
+      name: page
+      in: query
+      description: 'Specifies the page number in a limited (paginated) list of products.'
+      schema:
+        type: integer
+    Limit:
+      name: limit
+      in: query
+      description: 'Controls the number of items per page in a limited (paginated) list of products.'
+      schema:
+        type: integer
+    BrandIdParam:
+      name: brand_id
+      in: path
+      description: |
+        The ID of the `Brand` to which the resource belongs.
+      required: true
+      schema:
+        type: integer
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic

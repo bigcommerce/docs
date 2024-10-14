@@ -1,0 +1,746 @@
+openapi: '3.0.3'
+info:
+  title: Inventory
+  version: '3.0'
+  description: |-
+    BigCommerce's V3 REST Inventory API endpoints expose location-aware, item-level inventory data to API consumers. These API resources allow developers to create BigCommerce apps and in-house API-driven solutions that can do the following:
+
+    * Track inventory across multiple locations
+    * Display location-level inventory to shoppers
+    * Provide multi-location fulfillment options
+    * Facilitate _Buy Online Pickup in Store_ (BOPIS)
+    * Manage order fulfillment post-checkout
+
+    ## Items
+    All product variants whose inventories are tracked by variant are inventory items. You can reference these inventory items using a variant's `variant_id` or `sku`. If a product has no variants, use `product_id`. 
+
+    * **Inventory Settings**: You can apply and get inventory settings for the inventory at a specific location or at all locations. You can update inventory settings for a specific location.   
+    * **Inventory Quantities**: You can get inventory levels at all locations or specific locations. You can update inventory levels at a specific location using relative or absolute adjustment endpoints.
+
+    ## Adjustments
+    There are two ways to adjust an item's inventory:
+    * **[Absolute](/docs/rest-management/inventory/adjustments#absolute-adjustment)**: Override existing inventory with a new count (Ex: set current inventory to `30`). Use absolute adjustments as the default method for updating inventory. Absolute adjustments are batched, making them more resource friendly than the [Catalog API](/docs/rest-catalog/products#update-products-batch). Absolute adjustments have lower complexity than relative adjustments, which synchronize with orders.
+    * **[Relative Adjustments](/docs/rest-management/inventory/adjustments#relative-adjustment)**: Change to item's inventory relative to existing inventory (Ex: add `10` current inventory). Use relative adjustments only when you do not know absolute quantities. For example, making order-related inventory changes through a third-party may require relative adjustments. Otherwise, use absolute adjustments for updating inventory.
+
+  termsOfService: 'https://www.bigcommerce.com/terms'
+  contact:
+    name: BigCommerce
+    url: 'https://www.bigcommerce.com'
+    email: support@bigcommerce.com
+servers:
+  - url: 'https://api.bigcommerce.com/stores/{store_hash}/v3'
+    variables:
+      store_hash:
+        default: store_hash
+        description: Permanent ID of the BigCommerce store.
+    description: BigCommerce API Gateway
+security:
+  - X-Auth-Token: []
+tags:
+  - name: Adjustments
+  - name: Items
+paths:
+  '/inventory/adjustments/absolute':
+    parameters:
+      - $ref: '#/components/parameters/Accept'
+    put:
+      tags:
+        - Adjustments
+      description: |
+        Override the existing inventory levels for an inventory item at a location. For maximum inventory levels, see [Inventory adjustments](/docs/store-operations/catalog/inventory-adjustments#inventory-adjustments). For payload limits, see [Optimizing performance](/docs/store-operations/catalog/inventory-adjustments#optimizing-performance).
+
+        Use absolute adjustments as the default method for updating inventory. This endpoint batches requests, making them more resource friendly than the [Catalog API](/docs/rest-catalog/products#update-products-batch). Absolute adjustments have lower complexity than [relative adjustments](/docs/rest-management/inventory/adjustments#relative-adjustment), which synchronize with orders.
+      parameters:
+        - $ref: '#/components/parameters/ContentType'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdjustmentsAbsoluteRequest'
+            examples:
+              Absolute Adjustment:
+                value:
+                  reason: Absolute adjustment reason
+                  items:
+                    - location_id: 1
+                      variant_id: 1
+                      quantity: 1
+                    - location_id: 2
+                      variant_id: 3
+                      quantity: 1
+                    - location_id: 3
+                      sku: sku-4
+                      quantity: 1
+                    - location_id: 1
+                      sku: sku-5
+                      quantity: 1
+                    - location_id: 1
+                      product_id: 111
+                      quantity: 7
+        required: true
+      responses:
+        '200':
+          description: Request has been successfully processed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleTransactionResponse'
+              examples: {}
+        '422':
+          description: Incorrect entity.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                Item has another tracking mode error:
+                  value:
+                    status: 422
+                    title: '[Item with variant_id 106 is tracked by product, please update stock by product id]'
+                    type: 'https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes'
+                    errors: {}
+      summary: Absolute Adjustment
+      operationId: put-absolute-adjustment
+  '/inventory/adjustments/relative':
+    parameters:
+      - $ref: '#/components/parameters/Accept'
+    post:
+      parameters:
+        - $ref: '#/components/parameters/ContentType'
+      tags:
+        - Adjustments
+      description: |
+        Add or subtract inventory for an inventory item at a location. For maximum inventory levels, see [Inventory adjustments](/docs/store-operations/catalog/inventory-adjustments#inventory-adjustments). For payload limits, see [Optimizing performance](/docs/store-operations/catalog/inventory-adjustments#optimizing-performance).
+
+        Use this endpoint only when you do not know absolute quantities. For example, making order-related inventory changes through a third-party may require relative adjustments. Otherwise, use the [Absolute adjustment](/docs/rest-management/inventory/adjustments#absolute-adjustment) endpoint for updating inventory.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdjustmentsRelativeRequest'
+            examples:
+              Relative Adjustment:
+                value:
+                  reason: Relative adjustment reason
+                  items:
+                    - location_id: 1
+                      variant_id: 1
+                      quantity: 1
+                    - location_id: 2
+                      variant_id: 3
+                      quantity: -1
+                    - location_id: 3
+                      sku: sku-4
+                      quantity: 1
+                    - location_id: 1
+                      sku: sku-5
+                      quantity: -1
+                    - location_id: 1
+                      product_id: 111
+                      quantity: 7
+        required: true
+      responses:
+        '200':
+          description: Request has been successfully processed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleTransactionResponse'
+        '422':
+          description: |
+            Incorrect entity. The adjustment was not valid. This is the result of missing required fields or invalid data. See the response for more details.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                Item requires absolute adjustment before relative error:
+                  value:
+                    status: 422
+                    title: 'Items with identity: [product_id 113] requires absolute adjustment before relative'
+                    type: 'https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes'
+                    errors: {}
+                Item has another tracking mode error:
+                  value:
+                    status: 422
+                    title: '[Item with variant_id 106 is tracked by product, please update stock by product id]'
+                    type: 'https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes'
+                    errors: {}
+      summary: Relative Adjustment
+      operationId: post-relative-adjustment
+  '/inventory/items':
+    parameters:
+      - $ref: '#/components/parameters/Accept'
+    get:
+      operationId: get-inventory-items
+      tags:
+        - Items
+      description: |
+        Return a list of inventory and inventory settings for all items in all locations.
+      parameters:
+        - $ref: '#/components/parameters/SkuFilterParam'
+        - $ref: '#/components/parameters/VariantIdFilterParam'
+        - $ref: '#/components/parameters/ProductIdFilterParam'
+        - $ref: '#/components/parameters/LocationIdsParam'
+        - $ref: '#/components/parameters/LocationCodeFilterParam'
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+      responses:
+        '200':
+          description: Request has been successfully processed.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ItemResponse'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+      summary: Get Inventory at Locations
+  '/inventory/locations/{location_id}/items':
+    parameters:
+      - $ref: '#/components/parameters/Accept'
+    get:
+      operationId: get-location-inventory-items
+      tags:
+        - Items
+      description: Return a list of inventory and inventory settings for all items in a location.
+      parameters:
+        - $ref: '#/components/parameters/LocationIdParam'
+        - $ref: '#/components/parameters/VariantIdFilterParam'
+        - $ref: '#/components/parameters/ProductIdFilterParam'
+        - $ref: '#/components/parameters/SkuFilterParam'
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+      responses:
+        '200':
+          description: Request has been successfully processed.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/LocationItemsResponse'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '404':
+          description: Request has been rejected due to resource not being found.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      summary: Get Inventory at a Location
+    put:
+      operationId: put-location-inventory-items
+      tags:
+        - Items
+      description: Update inventory settings for items at a location.
+      parameters:
+        - $ref: '#/components/parameters/LocationIdParam'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LocationItemsSettingsRequest'
+        required: true
+      responses:
+        '200':
+          description: Request has been successfully processed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleTransactionResponse'
+              examples: {}
+        '422':
+          description: |
+            Incorrect entity. Item was not valid due to missing required fields or invalid data. See the response for more details.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                Missed settings in payload:
+                  value:
+                    status: 422
+                    title: Payload contains invalid fields
+                    type: 'https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes'
+                    errors:
+                      setting.0.settings: 'At least one setting must be specified: warning_level, is_in_stock or safety_stock'
+      summary: Update Inventory Settings for a Location
+components:
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        status:
+          type: integer
+          description: The HTTP status code generated by the origin server for this occurrence of the problem.
+        title:
+          type: string
+          description: Human readable error message.
+        type:
+          type: string
+          description: |
+            URL identifying the error type. Dereferencing the URL leads to documentation about the error type.
+        errors:
+          type: object
+          properties: {}
+          additionalProperties: true
+          description: Detailed summary describing the particular error.
+    Meta:
+      type: object
+      properties:
+        pagination:
+          type: object
+          properties:
+            total:
+              type: integer
+              description: Total number of items in the result set.
+              example: 246
+            count:
+              type: integer
+              description: The total number of items in the collection on current page.
+              example: 5
+            per_page:
+              type: integer
+              description: 'The number of items returned in the collection per page, controlled by the limit parameter.'
+              example: 5
+            current_page:
+              type: integer
+              description: The page you are currently on within the collection.
+              example: 1
+            total_pages:
+              type: integer
+              description: The total number of pages in the collection.
+              example: 50
+            links:
+              type: object
+              description: Pagination links for the previous and next parts of the whole collection.
+              properties:
+                previous:
+                  type: string
+                  description: A link to the previous page is returned in the response.
+                  example: '?limit=5&page=2'
+                current:
+                  type: string
+                  description: A link to the current page is returned in the response.
+                  example: '?limit=5&page=3'
+                next:
+                  type: string
+                  description: Link to the next page returned in the response.
+                  example: '?limit=5&page=4'
+    AdjustmentsRelativeRequest:
+      type: object
+      description: ''
+      properties:
+        reason:
+          type: string
+          description: Reason for the adjustment operation.
+          example: Monthly arrival delivered.
+        items:
+          type: array
+          description: 'One of the `sku`, `product_id`, or `variant_id` is required to identify the item.'
+          items:
+            oneOf:
+              - type: object
+                properties:
+                  location_id:
+                    type: integer
+                    description: ID of location. This is empty in the case of the default allotment.
+                    example: 1
+                  sku:
+                    type: string
+                    example: RE-130
+                    description: '"Stock keeping unit" identifier of an item.'
+                  quantity:
+                    type: integer
+                    description: Amount of items that will be moved.
+                    example: -2
+                required:
+                  - location_id
+                  - sku
+                  - quantity
+              - type: object
+                properties:
+                  location_id:
+                    type: integer
+                    description: ID of location. This is empty in the case of the default allotment.
+                    example: 1
+                  variant_id:
+                    type: integer
+                    description: ID of variant.
+                    example: 78
+                  quantity:
+                    type: integer
+                    description: Amount of items that will be moved.
+                    example: -2
+                required:
+                  - location_id
+                  - variant_id
+                  - quantity
+              - type: object
+                properties:
+                  location_id:
+                    type: integer
+                    description: ID of location. This is empty in the case of the default allotment.
+                    example: 1
+                  product_id:
+                    type: integer
+                    description: ID of product.
+                    example: 130
+                  quantity:
+                    type: integer
+                    description: Amount of items that will be moved.
+                    example: -2
+                required:
+                  - location_id
+                  - product_id
+                  - quantity
+      required:
+        - items
+    AdjustmentsAbsoluteRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+          description: Reason for the adjustment operation.
+          example: Monthly arrival delivered.
+        items:
+          type: array
+          description: 'One of the `sku`, `product_id`, or `variant_id` is required to identify the item.'
+          items:
+            oneOf:
+              - type: object
+                properties:
+                  location_id:
+                    type: integer
+                    description: ID of location. This is empty in the case of the default allotment.
+                    example: 1
+                  sku:
+                    type: string
+                    description: '"Stock keeping unit" identifier of an item.'
+                    example: RE-130
+                  quantity:
+                    type: integer
+                    description: Amount of items that will be moved.
+                    example: 10
+                required:
+                  - location_id
+                  - sku
+                  - quantity
+              - type: object
+                properties:
+                  location_id:
+                    type: integer
+                    description: ID of location. This is empty in the case of the default allotment.
+                    example: 1
+                  variant_id:
+                    type: integer
+                    description: variant_id identifier of item.
+                    example: 78
+                  quantity:
+                    type: integer
+                    description: Amount of items that will be moved.
+                    example: 10
+                required:
+                  - location_id
+                  - variant_id
+                  - quantity
+              - type: object
+                properties:
+                  location_id:
+                    type: integer
+                    description: ID of location. This is empty in the case of the default allotment.
+                    example: 1
+                  product_id:
+                    type: integer
+                    description: product_id identifier of item.
+                    example: 120
+                  quantity:
+                    type: integer
+                    description: Amount of items that will be moved.
+                    example: 10
+                required:
+                  - location_id
+                  - product_id
+                  - quantity
+      required:
+        - items
+    LocationItemsSettingsRequest:
+      type: object
+      properties:
+        settings:
+          type: array
+          items:
+            type: object
+            properties:
+              identity:
+                oneOf:
+                  - type: object
+                    properties:
+                      sku:
+                        type: string
+                        description: '"Stock keeping unit" identifier of an item.'
+                        example: RE-130
+                  - type: object
+                    properties:
+                      variant_id:
+                        type: integer
+                        description: ID of variant.
+                        example: 79
+                  - type: object
+                    properties:
+                      product_id:
+                        type: integer
+                        description: ID of product.
+                        example: 120
+                description: 'One of the `sku`, `product_id`, or `variant_id` is required to identify the item.'
+              safety_stock:
+                type: integer
+                description: |
+                  Safety stock. Decreases the amount available for selling items at that amount. If missing, the value will remain the same.
+                example: 5
+              is_in_stock:
+                type: boolean
+                description: |
+                  Shows whether an item is available for purchase independent of quantity. If missing, the value will remain the same.
+              warning_level:
+                type: integer
+                description: |
+                  Inventory warning level for the product. The store owner will be informed when the product's inventory level drops below the warning level. If missing, the value will remain the same.
+                example: 10
+              bin_picking_number:
+                type: string
+                description: |
+                  Warehouse location identifier; bin picking number for the item.
+                example: "1"
+      required:
+        - settings
+    LocationItemsResponse:
+      type: object
+      properties:
+        identity:
+          type: object
+          properties:
+            sku:
+              type: string
+              description: '"Stock keeping unit" identifier of item.'
+              example: RE-130
+            variant_id:
+              type: integer
+              description: ID of variant.
+              example: 78
+            product_id:
+              type: integer
+              description: ID of product.
+              example: 130
+        available_to_sell:
+          type: integer
+          description: Amount of available items.
+          example: 10
+        total_inventory_onhand:
+          type: integer
+          description: Amount of available items on hand minus `safety_stock`.
+          example: 12
+        settings:
+          type: object
+          properties:
+            safety_stock:
+              type: integer
+              description: |
+                Safety stock. Decreases the amount available for selling an item. If missing, the value will remain the same.
+              example: 2
+              default: 0
+            is_in_stock:
+              type: boolean
+              description: Shows whether an item is available for purchase independent of quantity.
+              default: true
+            warning_level:
+              type: integer
+              description: |
+                Inventory warning level for the product. The store owner will be informed when the product's inventory level drops below the warning level. If missing, the value will remain the same.
+              example: 2
+              default: 0
+            bin_picking_number:
+              type: string
+              description: |
+                Warehouse location identifier; bin picking number for the item.
+              example: "1"
+    ItemResponse:
+      type: object
+      properties:
+        identity:
+          type: object
+          properties:
+            sku:
+              type: string
+              description: '"Stock keeping unit" identifier of an item.'
+              example: RE-130
+            variant_id:
+              type: integer
+              example: 79
+              description: ID of variant.
+            product_id:
+              type: integer
+              description: ID of product.
+              example: 120
+            sku_id: 
+              type: integer
+              description: Read-only reference to Catalog V2 API's SKU ID. `null` if the item is a base variant.
+        locations:
+          type: array
+          items:
+            type: object
+            properties:
+              location_id:
+                type: integer
+                example: 1
+                description: ID of location.
+              location_code:
+                type: string
+                example: BC-LOCATION-1
+                description: Code of location.
+              location_name:
+                type: string
+                description: Name of location.
+                example: Default location
+              available_to_sell:
+                type: integer
+                description: Available to sell. Total inventory on hand minus the safety stock.
+                example: 10
+              total_inventory_onhand:
+                type: integer
+                description: Total inventory on hand.
+                example: 11
+              location_enabled:
+                type: boolean
+                description: Status of the location. Indicates whether a location is enabled.
+              settings:
+                type: object
+                properties:
+                  safety_stock:
+                    type: integer
+                    description: Decreases the amount available for selling items at that amount.
+                    example: 1
+                  is_in_stock:
+                    type: boolean
+                    description: Shows whether an item is available for purchase independent of quantity.
+                  warning_level:
+                    type: integer
+                    description: 'Inventory warning level for the product. The store owner will be informed when the product inventory level drops below the warning level.'
+                    example: 1
+                  bin_picking_number:
+                    type: string
+                    description: Warehouse location identifier; bin picking number for the item.
+                    example: "1"
+    SimpleTransactionResponse:
+      type: object
+      properties:
+        transaction_id:
+          type: string
+          description: Unique identifier of performed action.
+  parameters:
+    Accept:
+      name: Accept
+      in: header
+      required: true
+      description: 'The [MIME type](https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types) of the response body.'
+      schema:
+        type: string
+        default: 'application/json'
+    ContentType:
+      name: Content-Type
+      in: header
+      required: true
+      description: 'The [MIME type](https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types) of the request body.'
+      schema:
+        type: string
+        default: 'application/json'
+    SkuFilterParam:
+      in: query
+      name: 'sku:in'
+      description: List of `sku` separated by comma.
+      required: false
+      schema:
+        type: string
+    VariantIdFilterParam:
+      in: query
+      name: 'variant_id:in'
+      description: List of `variant_id` separated by comma.
+      required: false
+      schema:
+        type: integer
+    ProductIdFilterParam:
+      in: query
+      name: 'product_id:in'
+      description: List of `product_id` separated by comma.
+      required: false
+      schema:
+        type: integer
+    PageParam:
+      in: query
+      name: page
+      description: Specifies the page number in a limited (paginated) list.
+      required: false
+      schema:
+        type: integer
+    LimitParam:
+      in: query
+      name: limit
+      description: Controls the number of items per page in a limited (paginated) list.
+      required: false
+      schema:
+        type: integer
+    LocationIdParam:
+      in: path
+      name: location_id
+      description: Unique identifier for a location.
+      required: true
+      schema:
+        type: integer
+    LocationIdsParam:
+      in: query
+      name: 'location_id:in'
+      description: Comma separated list of `location_id`.
+      required: false
+      schema:
+        type: integer
+    LocationCodeFilterParam:
+      in: query
+      name: 'location_code:in'
+      description: Comma separated list of `location_code`.
+      required: false
+      schema:
+        type: string
+  securitySchemes:
+    X-Auth-Token:
+      name: X-Auth-Token
+      description: |-
+        ### OAuth scopes
+
+        | UI Name | Permission | Parameter |
+        |:--------|:-----------|:----------|
+        |  Store Inventory | read-only | `store_inventory_read_only` |
+        |  Store Inventory | modify | `store_inventory` |
+
+        ### Authentication header
+
+        | Header | Argument | Description |
+        |:-------|:---------|:------------|
+        | `X-Auth-Token` | `access_token` | For more about API accounts that generate `access_token`s, see [API Accounts and OAuth Scopes](/docs/start/authentication/api-accounts). |
+
+        ### Further reading
+
+        For example requests and more information about authenticating BigCommerce APIs, see [Authentication and Example Requests](/docs/start/authentication).
+
+        For more about BigCommerce OAuth scopes, see [API Accounts and OAuth Scopes](/docs/start/authentication/api-accounts#oauth-scopes).
+
+        For a list of API status codes, see [API Status Codes](/docs/start/about/status-codes).
+      type: apiKey
+      in: header

@@ -1,0 +1,304 @@
+openapi: "3.0.3"
+info:
+  title: Promotion Settings API
+  version: "1.0"
+  description: |
+    A *promotion setting* determines how promotions should be applied and/or calculated.
+
+    To learn more about promotions, consult the [Promotions Overview](/docs/store-operations/promotions).
+  termsOfService: "https://www.bigcommerce.com/terms"
+  contact:
+    name: BigCommerce
+    url: "https://www.bigcommerce.com"
+    email: support@bigcommerce.com
+servers:
+  - url: "https://api.bigcommerce.com/stores/{store_hash}/v3"
+    variables:
+      store_hash:
+        default: store_hash
+        description: Permanent ID of the BigCommerce store.
+    description: BigCommerce API Gateway
+security:
+  - X-Auth-Token: []
+tags:
+  - name: Promotion Settings
+paths:
+  "/promotions/settings":
+    parameters:
+      - $ref: "#/components/parameters/Accept"
+    get:
+      summary: Get Global Promotion Settings
+      description: Returns global promotion settings.
+      operationId: getGlobalPromotionSettings
+      tags:
+        - Promotion Settings
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GlobalPromotionSettings"
+              example:
+                promotions_triggered_by_products_with_zero_product_price: true
+                promotions_apply_on_products_with_custom_product_price: false
+                number_of_coupons_allowed_at_checkout: 1
+                promotions_applied_on_original_product_price: true
+        "400":
+          description: Bad request.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse400"
+    put:
+      summary: Update Global Promotion Settings
+      description: |-
+        - Updates global promotion settings.
+        - Note: *promotions_apply_on_products_with_custom_product_price*, *number_of_coupons_allowed_at_checkout* and *promotions_triggered_by_products_with_zero_product_price* can only be modified by enterprise accounts.
+      operationId: updateGlobalPromotionSettings
+      parameters:
+        - $ref: "#/components/parameters/ContentType"
+      tags:
+        - Promotion Settings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GlobalPromotionSettings"
+            example:
+              promotions_triggered_by_products_with_zero_product_price: true
+              promotions_apply_on_products_with_custom_product_price: false
+              number_of_coupons_allowed_at_checkout: 1
+              promotions_applied_on_original_product_price: true
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/GlobalPromotionSettings"
+        "400":
+          description: Bad request.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse400"
+        "422":
+          description: "Promotion settings data is not valid. This is the result of missing required fields, or of invalid data. See the response for more details."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse422"
+
+components:
+  schemas:
+    GlobalPromotionSettings:
+      type: object
+      required:
+        - promotions_apply_on_products_with_custom_product_price
+        - promotions_triggered_by_products_with_zero_product_price
+        - number_of_coupons_allowed_at_checkout
+        - promotions_applied_on_original_product_price
+      properties:
+        promotions_apply_on_products_with_custom_product_price:
+          type: boolean
+          example: false
+          default: false
+          description: |-
+            - When the property is set to "true", promotions will apply for products with custom pricing.
+            - When the property is set to "false", promotions will not apply for products with custom pricing.
+            - Note: This field can only be edited for Enterprise Accounts.
+        promotions_triggered_by_products_with_zero_product_price:
+          type: boolean
+          example: false
+          default: false
+          description: |-
+            - When the property is set to "true", promotions will be triggered by zero price products.
+            - When the property is set to "false", promotions will not be triggered by zero price products.
+            - Note: This field can only be edited for Enterprise Accounts.
+        number_of_coupons_allowed_at_checkout:
+          minimum: 1
+          maximum: 5
+          type: integer
+          description: |-
+            Specifies the number of coupons allowed at checkout on a single order.
+            - Note: This field can only be edited for Enterprise Accounts.
+          example: 1
+          default: 1
+        promotions_applied_on_original_product_price:
+          type: boolean
+          example: true
+          default: true
+          description: |-
+            - When the property is set to "true", promotions in a cart are calculated independently, each applied to the original price of the included products.
+            - When the property is set to "false", promotions in a cart are calculated cumulatively, applied to the order sub-total based on your promotion order.
+    ErrorResponse400:
+      type: object
+      properties:
+        schema:
+          $ref: "#/components/schemas/betaErrorResponse400"
+      x-tags:
+        - Models
+    ErrorResponse403:
+      type: object
+      properties:
+        schema:
+          $ref: "#/components/schemas/betaErrorResponse403"
+      x-tags:
+        - Models
+    ErrorResponse422:
+      type: object
+      properties:
+        schema:
+          $ref: "#/components/schemas/betaErrorResponse422"
+      x-tags:
+        - Models
+    betaErrorResponse400:
+      allOf:
+        - $ref: "#/components/schemas/BaseError"
+        - type: object
+          properties:
+            error:
+              type: object
+              properties:
+                message:
+                  type: string
+                  example: "Bad request. Authentication Required."
+          example:
+            status: 400
+            title: "Bad Request"
+            error:
+              message: "Bad request. Authentication Required."
+    betaErrorResponse403:
+      allOf:
+        - $ref: "#/components/schemas/BaseError"
+        - type: object
+          properties:
+            error:
+              type: object
+              properties:
+                message:
+                  type: string
+                  example: "Forbidden. Operation cannot be performed with existing privileges."
+          example:
+            status: 403
+            title: "Forbidden"
+            error:
+              message: "Forbidden. Operation cannot be performed with existing privileges."
+    betaErrorResponse422:
+      allOf:
+        - $ref: "#/components/schemas/BaseError"
+        - type: object
+          properties:
+            errors:
+              type: array
+              items:
+                type: object
+                properties:
+                  field:
+                    type: string
+                    description: The field that caused the validation error.
+                  message:
+                    type: string
+                    description: A specific error message describing the issue.
+          example:
+            status: 422
+            title: "Unprocessable Entity"
+            errors:
+              - field: "promotions_triggered_by_products_with_zero_product_price"
+                message: "Value must be boolean (true/false)."
+              - field: "number_of_coupons_allowed_at_checkout"
+                message: "Value must be between 1 and 5."
+    BaseError:
+      type: object
+      description: |
+        Error payload for the BigCommerce API.
+      properties:
+        status:
+          description: |
+            The HTTP status code.
+          type: integer
+        title:
+          description: |
+            The error title describing the particular error.
+          type: string
+      x-tags:
+        - Models
+
+  examples:
+    EnableZeroPriceProductsToTriggerPromotions:
+      summary: Enable zero price products to trigger promotions
+      value:
+        promotions_triggered_by_products_with_zero_product_price: true
+        promotions_apply_on_products_with_custom_product_price: false
+        number_of_coupons_allowed_at_checkout: 1
+        promotions_applied_on_original_product_price: true
+    ErrorResponse400Example:
+      summary: Example of a 400 Bad Request Error Response
+      value:
+        status: 400
+        title: "Bad Request"
+        error:
+          message: "Bad request. Authentication Required."
+    ErrorResponse403Example:
+      summary: Example of a 403 Forbidden Error Response
+      value:
+        status: 403
+        title: "Forbidden"
+        error:
+          message: "Forbidden. Operation cannot be performed with existing privileges."
+    ErrorResponse422Example:
+      summary: Example of a 422 Unprocessable Entity Error Response
+      value:
+        status: 422
+        title: "Invalid promotion setting(s)."
+        errors:
+          - field: "promotions_triggered_by_products_with_zero_product_price"
+            message: "Value must be boolean."
+          - field: "number_of_coupons_allowed_at_checkout"
+            message: "Value must be an integer between 1 and 15."
+  parameters:
+    Accept:
+      name: Accept
+      in: header
+      required: true
+      description: "The [MIME type](https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types) of the response body."
+      schema:
+        type: string
+        default: "application/json"
+    ContentType:
+      name: Content-Type
+      in: header
+      required: true
+      description: "The [MIME type](https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types) of the request body."
+      schema:
+        type: string
+        default: "application/json"
+  securitySchemes:
+    X-Auth-Token:
+      name: X-Auth-Token
+      description: |-
+        ### OAuth scopes
+
+        | UI Name | Permission | Parameter |
+        |:--------|:-----------|:----------|
+        | Marketing | modify | `store_v2_marketing` |
+        | Marketing | read-only | `store_v2_marketing_read_only` |
+
+        ### Authentication header
+
+        | Header | Argument | Description |
+        |:-------|:---------|:------------|
+        | `X-Auth-Token` | `access_token` | For more about API accounts that generate `access_token`s, see [API Accounts and OAuth Scopes](/docs/start/authentication/api-accounts). |
+
+        ### Further reading
+
+        For example requests and more information about authenticating BigCommerce APIs, see [Authentication and Example Requests](/docs/start/authentication).
+
+        For more about BigCommerce OAuth scopes, see [API Accounts and OAuth Scopes](/docs/start/authentication/api-accounts).
+
+        For a list of API status codes, see [API Status Codes](/docs/start/about/status-codes).
+      type: apiKey
+      in: header

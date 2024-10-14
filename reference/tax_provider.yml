@@ -19,14 +19,14 @@ servers:
 paths:
   /estimate:
     post:
-      summary: Estimate Taxes
+      summary: Estimate taxes
       tags:
         - Tax Provider
       description: |-
         Submit the quote request to retrieve an estimate from the enabled third-party tax provider. Estimates are not expected to be persisted by the tax provider.
 
         > Server URL
-        > - For supporting tax providers, the server URL contains the tax provider's profile field; for example, `your_profile.example.com`.
+        > - For supporting tax providers, the server URL contains the tax providerʼs profile field; for example, `your_profile.example.com`.
         > - The Try it feature is not currently supported for this endpoint.
 
         The following actions can trigger tax estimate requests multiple times during a standard checkout on a BigCommerce storefront, depending on the BigCommerce merchant’s settings.
@@ -50,7 +50,7 @@ paths:
         - Test connection feature in Tax Settings.
       operationId: estimateTaxes
       parameters:
-        - $ref: '#/components/parameters/header-storehash'
+        - $ref: '#/components/parameters/StoreHashHeader'
       requestBody:
         content:
           application/json:
@@ -308,23 +308,18 @@ paths:
           description: Fallback Tax will be used for this transaction. General response that points to an error on the tax provider side. These types of errors should be promptly resolved by the tax provider.
   /void:
     post:
-      summary: Void Tax Quote
+      summary: Void tax quote
       description: |- 
         Invalidate the persisted tax quote as identified by the given unique ID. Relevant to order cancellations, full refunds, or moving an order from a paid status to an unpaid status.
 
         > Server URL
-        > - For supporting tax providers, the server URL contains the tax provider's profile field; for example, `your_profile.example.com`.
+        > - For supporting tax providers, the server URL contains the tax providerʼs profile field; for example, `your_profile.example.com`.
         > - The Try it feature is not currently supported for this endpoint.
 
       operationId: voidTaxQuote
       parameters:
-        - name: id
-          in: query
-          description: 'Unique ID identifying the existing, persisted Tax Quote that will be voided.'
-          required: true
-          schema:
-            type: string
-        - $ref: '#/components/parameters/header-storehash'
+        - $ref: '#/components/parameters/IdQueryVoid'
+        - $ref: '#/components/parameters/StoreHashHeader'
       responses:
         '200':
           description: OK
@@ -343,12 +338,12 @@ paths:
         Submit the quote request to be persisted by the enabled third-party tax provider. A commit operation is intended to be submitted once only, when the Order has been confirmed and paid.
 
         > Server URL
-        > - For supporting tax providers, the server URL contains the tax provider's profile field; for example, `your_profile.example.com`.
+        > - For supporting tax providers, the server URL contains the tax providerʼs profile field; for example, `your_profile.example.com`.
         > - The Try it feature is not currently supported for this endpoint.
 
       operationId: commitTaxQuote
       parameters:
-        - $ref: '#/components/parameters/header-storehash'
+        - $ref: '#/components/parameters/StoreHashHeader'
       requestBody:
         content:
           application/json:
@@ -849,20 +844,15 @@ paths:
         The returned **Tax Quote** response is expected to be the same to a response returned by an equivalent response to **estimate** or **commit** methods.
 
         > Server URL
-        > - For supporting tax providers, the server URL contains the tax provider's profile field; for example, `your_profile.example.com`.
+        > - For supporting tax providers, the server URL contains the tax providerʼs profile field; for example, `your_profile.example.com`.
         > - The Try it feature is not currently supported for this endpoint.
         
       operationId: adjustTaxQuote
       tags:
         - Tax Provider
       parameters:
-        - $ref: '#/components/parameters/header-storehash'
-        - in: query
-          name: id
-          required: true
-          description: 'Unique ID identifying the existing, persisted Tax Quote that will be adjusted.'
-          schema:
-            type: string
+        - $ref: '#/components/parameters/StoreHashHeader'
+        - $ref: '#/components/parameters/IdQueryAdjusted'
       requestBody:
         content:
           application/json:
@@ -870,10 +860,24 @@ paths:
               $ref: '#/components/schemas/request-adjust'
 components:
   parameters:
-    header-storehash:
-      name: X-BC-Store-Hash
+    StoreHashHeader:
+      name: X-Bc-Store-Hash
       in: header
-      description: BigCommerce will send through the Store Hash as part of all Tax Provider API operations. Each BigCommerce store on the platform has a unique Store Hash value for the store’s lifetime. This value can assist in account verification or profile matching responsibilities.
+      description: BigCommerce will send through the store hash as part of all tax provider operations. Each BigCommerce store on the platform has a unique store hash value for the store’s lifetime. This value can assist in account verification or profile matching responsibilities.
+      required: true
+      schema:
+        type: string
+    IdQueryVoid:
+      name: id
+      in: query
+      description: Unique ID identifying the existing, persisted tax quote that will be voided.
+      required: true
+      schema:
+        type: string
+    IdQueryAdjusted:
+      name: id
+      in: query
+      description: Unique ID identifying the existing, persisted tax quote that will be adjusted.
       required: true
       schema:
         type: string
@@ -962,7 +966,6 @@ components:
         origin_address:
           $ref: '#/components/schemas/Address'
         shipping:
-          type: object
           description: Shipping line item present in each document request.
           allOf:
             - $ref: '#/components/schemas/request-item'
@@ -973,7 +976,6 @@ components:
               required:
                 - type
         handling:
-          type: object
           description: Handling line item present in each document request.
           allOf:
             - $ref: '#/components/schemas/request-item'
@@ -994,15 +996,14 @@ components:
                   type:
                     $ref: '#/components/schemas/item_type'
                   wrapping:
-                    type: object
                     description: Optional gift wrapping for items in the consignment.
-                    nullable: true
                     allOf:
                       - $ref: '#/components/schemas/request-item'
                       - type: object
                         properties:
                           type:
                             $ref: '#/components/schemas/wrapping_type'
+                        nullable: true
                         required:
                           - type
                 required:
@@ -1119,7 +1120,7 @@ components:
       properties:
         code:
           type: string
-          description: 'The provider-specific tax code for this item. Items can be classified with tax codes relevant to each Tax Provider, configured by the merchant, and assigned to their products within BigCommerce. A tax code is intended to apply to multiple products. This code should match the tax codes provided by the third-party integration.'
+          description: 'The provider-specific tax code for this item. Items can be classified with tax codes relevant to each tax provider, configured by the merchant, and assigned to their products within BigCommerce. A tax code is intended to apply to multiple products. This code should match the tax codes provided by the third-party integration.'
         class_id:
           type: string
           description: The ID of the tax class defined in the merchant’s BigCommerce store. May have a UUID value.
@@ -1136,7 +1137,7 @@ components:
       properties:
         id:
           type: string
-          description: The unique identifier of the tax quote that was requested. This must match the ID of the requested quote.
+          description: The unique identifier of the tax quote that was requested. This value must either match the ID of the requested quote or be an external ID on the tax provider’s system. This value will be used for future adjust and void operations.
         documents:
           type: array
           description: 'Represents an order quote or part of an order quote of tax-relevant items fulfilled from a single origin address to a single destination address, including arrays of shipping and handling fee objects for each item. Most order quotes contain a single document; however, BigCommerce supports "multi-address orders", which may come from or go to distinct sets of addresses and thus require multiple documents per quote.'
@@ -1168,21 +1169,19 @@ components:
                   type:
                     $ref: '#/components/schemas/item_type'
                   wrapping:
-                    type: object
                     description: Optional gift wrapping for items in the consignment.
-                    nullable: true
                     allOf:
                       - $ref: '#/components/schemas/response-item'
                       - type: object
                         properties:
                           type:
                             $ref: '#/components/schemas/wrapping_type'
+                        nullable: true
                         required: 
                           - type
                 required:
                   - type
         shipping:
-          type: object
           description: Shipping line item present in each document request.
           allOf:
             - $ref: '#/components/schemas/response-item'
@@ -1193,7 +1192,6 @@ components:
               required:
                 - type
         handling:
-          type: object
           description: Handling line item present in each document request.
           allOf:
             - $ref: '#/components/schemas/response-item'
@@ -1275,11 +1273,11 @@ components:
         id:
           type: string
           description: |-
-            Optional unique identifier for this sales tax, describing the relevant tax classification rule on the Tax Provider platform.
+            Optional unique identifier for this sales tax, describing the relevant tax classification rule on the tax provider platform.
 
             Supplying an identifier allows BigCommerce to group related taxes together from all items in the order.
 
-            This identifier is persisted by BigCommerce and may be desirable for auditing purposes between BigCommerce and the Tax Provider. Currently supports persisting integer values only (the string type indicates we may support UUID values in the future).
+            This identifier is persisted by BigCommerce and may be desirable for auditing purposes between BigCommerce and the tax provider. Currently supports persisting integer values only (the string type indicates we may support UUID values in the future).
           example: '1701'
       required:
         - name
@@ -1295,6 +1293,7 @@ components:
       enum:
         - item
         - refund
+        - fee
     shipping_type:
       type: string
       description: |-
@@ -1318,7 +1317,7 @@ components:
       type: http
       scheme: basic
       description: |-
-        The [HTTP Basic Authentication](https://developer.mozilla.org/en-US/docs/Web/HTTP/Authentication) (developer.mozilla.org) credentials used to authenticate each API request to the Tax Provider from the associated store; set and update `username`, `password`, and optionally `profile`, using the [Update a Connection](/docs/rest-contracts/tax-app-connection#update-a-connection) request. `profile` is an optional field and will be used with supporting providers only.
+        The [HTTP Basic Authentication](https://developer.mozilla.org/en-US/docs/Web/HTTP/Authentication) (developer.mozilla.org) credentials used to authenticate each API request to the tax provider from the associated store; set and update `username`, `password`, and optionally `profile`, using the [Update a Connection](/docs/rest-contracts/tax-app-connection#update-a-connection) request. `profile` is an optional field and will be used with supporting providers only.
         
         For more, see [developer-configured authentication](/docs/start/authentication#developer-configured-authentication) for Provider APIs.
 

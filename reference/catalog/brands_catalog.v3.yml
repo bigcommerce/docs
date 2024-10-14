@@ -4,7 +4,7 @@ info:
   description: |-
     > The Catalog API manages products, categories, brands, bulk pricing rules, and more. To learn more about catalog resources, see the [Catalog Overview](/docs/store-operations/catalog).
 
-    Our Catalog Brands endpoints let you [create individual brands](/docs/rest-catalog/brands#create-a-brand) and [modify the brands](/docs/rest-catalog/brands#update-a-brand) associated with a storeʼs products, along with [deleting brands](/docs/rest-catalog/brands#delete-a-brand). 
+    Our Catalog brands endpoints let you [create individual brands](/docs/rest-catalog/brands#create-a-brand) and [modify the brands](/docs/rest-catalog/brands#update-a-brand) associated with a storeʼs products, along with [deleting brands](/docs/rest-catalog/brands#delete-a-brand). 
 
     Brand images have their own dedicated [create a brand image](/docs/rest-catalog/brands/images#create-a-brand-image) and [delete a brand image](/docs/rest-catalog/brands/images#delete-a-brand-image) endpoints. 
 
@@ -19,11 +19,11 @@ info:
 
     ### Additional Catalog endpoints
     * [Categories](/docs/rest-catalog/categories)
-    * [Category Trees](/docs/rest-catalog/category-trees)
+    * [Category trees](/docs/rest-catalog/category-trees)
     * [Products](/docs/rest-catalog/products)
-    * [Product Modifiers](/docs/rest-catalog/product-modifiers)
-    * [Product Variants](/docs/rest-catalog/product-variants)
-    * [Product Variant Options](/docs/rest-catalog/product-variant-options)
+    * [Product modifiers](/docs/rest-catalog/product-modifiers)
+    * [Product variants](/docs/rest-catalog/product-variants)
+    * [Product variant options](/docs/rest-catalog/product-variant-options)
 
   termsOfService: 'https://www.bigcommerce.com/terms'
   contact:
@@ -51,76 +51,24 @@ paths:
       tags:
         - Brands
       summary: Get All Brands
-      description: Returns a list of *Brands*. Optional filter parameters can be passed in.
+      description: Returns a list of brands. Optional filter parameters can be passed in.
       operationId: getBrands
       parameters:
-        - name: id
-          in: query
-          description: |
-            Filter items by ID.
-          schema:
-            type: integer
-        - name: 'id:in'
-          in: query
-          style: form
-          explode: false
-          schema:
-            type: array
-            items:
-              type: integer
-        - name: 'id:not_in'
-          in: query
-          style: form
-          explode: false
-          schema:
-            type: array
-            items:
-              type: integer
-        - name: name
-          in: query
-          description: |
-            Filter items by name.
-          schema:
-            type: string
-        - name: name:like
-          in: query
-          description: |-
-            Filter items by part of a name. For example, `name:like=new` returns brands with names that include `new`.
-          schema:
-            type: string
-        - name: page_title
-          in: query
-          description: |
-            Filter items by page_title.
-          schema:
-            type: string
-        - name: page
-          in: query
-          description: Specifies the page number in a limited (paginated) list of products.
-          schema:
-            type: integer
-        - name: limit
-          in: query
-          description: Controls the number of items per page in a limited (paginated) list of products.
-          schema:
-            type: integer
-        - name: include_fields
-          in: query
-          description: 'Fields to include, in a comma-separated list. The ID and the specified fields will be returned.'
-          schema:
-            type: string
-        - name: exclude_fields
-          in: query
-          description: 'Fields to exclude, in a comma-separated list. The specified fields will be excluded from a response. The ID cannot be excluded.'
-          schema:
-            type: string
-        - name: sort
-          in: query
-          description: 'Field name to sort by.'
-          schema:
-            type: string
-            enum:
-              - name
+        - $ref: '#/components/parameters/IdQuery'
+        - $ref: '#/components/parameters/IdInQuery'
+        - $ref: '#/components/parameters/IdNotInQuery'
+        - $ref: '#/components/parameters/IdMinQuery'
+        - $ref: '#/components/parameters/IdMaxQuery'
+        - $ref: '#/components/parameters/IdGreaterQuery'
+        - $ref: '#/components/parameters/IdLessQuery'
+        - $ref: '#/components/parameters/NameQuery'
+        - $ref: '#/components/parameters/NameLikeQuery'
+        - $ref: '#/components/parameters/PageTitleQuery'
+        - $ref: '#/components/parameters/PageQuery'
+        - $ref: '#/components/parameters/LimitQuery'
+        - $ref: '#/components/parameters/IncludeFieldsQuery'
+        - $ref: '#/components/parameters/ExcludeFieldsQuery'
+        - $ref: '#/components/parameters/SortQuery'
       responses:
         '200':
           description: ''
@@ -314,18 +262,19 @@ paths:
                     total_pages: 1
                     links:
                       current: '?page=1&limit=50'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/Error'
     post:
       tags:
         - Brands
       summary: Create a Brand
       description: |-
-        Creates a *Brand*.
+        Creates a brand.
 
         **Required Fields**
         - name
-
-        **Read-Only Fields**
-        - id
 
         **Limits**
         - 30,000 brands per store limit
@@ -391,13 +340,15 @@ paths:
                 custom_url:
                   title: Custom Url Brand
                   type: object
-                  description: The custom URL for the brand on the storefront.
+                  description: The custom URL for the brand on the storefront. If not provided, the URL will be autogenerated from the brand name.
                   properties:
                     url:
                       type: string
                       description: |
                         Brand URL on the storefront.
                       example: /shoes
+                      minLength: 1
+                      maxLength: 255
                       x-url: true
                     is_customized:
                       type: boolean
@@ -422,7 +373,7 @@ paths:
                     properties:
                       id:
                         type: integer
-                        description: Unique ID of the *Brand*. Read-Only.
+                        description: Unique ID of the brand.
                         readOnly: true
                       name:
                         maxLength: 255
@@ -432,9 +383,6 @@ paths:
                           The name of the brand. Must be unique.
                           Required in POST.
                         example: Common Good
-                        x-required:
-                          - post
-                          - put
                       page_title:
                         maxLength: 255
                         minLength: 0
@@ -512,7 +460,13 @@ paths:
                     is_customized: false
                 meta: {}
         '207':
-          $ref: '#/components/responses/General207Status'
+          $ref: '#/components/responses/MultiStatus'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
         '409':
           description: Brand was in conflict with another brand. This is the result of duplicate unique fields such as name.
           content:
@@ -526,8 +480,6 @@ paths:
                     type: object
                     properties: {}
                     additionalProperties: true
-                  instance:
-                    type: string
                   status:
                     type: integer
                     description: |
@@ -551,8 +503,6 @@ paths:
                     type: object
                     properties: {}
                     additionalProperties: true
-                  instance:
-                    type: string
                   status:
                     type: integer
                     description: |
@@ -563,37 +513,27 @@ paths:
                       The error title describing the particular error.
                   type:
                     type: string
-      x-codegen-request-body-name: Brand
     delete:
       tags:
         - Brands
       summary: Delete Brands
       description: |-
-        To delete brand objects, you must include a filter.
-
-        **Required Fields**
-         - name
+        To delete brand objects, you must include a value for the name filter.
 
       operationId: deleteBrands
       parameters:
-        - name: name
-          in: query
-          description: |
-            Filter items by name.
-          schema:
-            type: string
-          required:
-            true
-        - name: page_title
-          in: query
-          description: |
-            Filter items by page_title.
-          schema:
-            type: string
+        - $ref: '#/components/parameters/NameRequired'
+        - $ref: '#/components/parameters/PageTitleQuery'
       responses:
         '204':
           description: ''
           content: {}
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/Error'
+        '422':
+          $ref: '#/components/responses/Error'
     parameters:
       - $ref: '#/components/parameters/Accept'
   '/catalog/brands/{brand_id}':
@@ -601,19 +541,11 @@ paths:
       tags:
         - Brands
       summary: Get a Brand
-      description: Returns a single *Brand*. Optional filter parameters can be passed in.
+      description: Returns a single brand. Optional filter parameters can be passed in.
       operationId: getBrand
       parameters:
-        - name: include_fields
-          in: query
-          description: 'Fields to include, in a comma-separated list. The ID and the specified fields will be returned.'
-          schema:
-            type: string
-        - name: exclude_fields
-          in: query
-          description: 'Fields to exclude, in a comma-separated list. The specified fields will be excluded from a response. The ID cannot be excluded.'
-          schema:
-            type: string
+        - $ref: '#/components/parameters/IncludeFieldsQuery'
+        - $ref: '#/components/parameters/ExcludeFieldsQuery'
       responses:
         '200':
           description: ''
@@ -647,6 +579,12 @@ paths:
                     url: /brands/Common-Good.html
                     is_customized: false
                 meta: {}
+        '207':
+          $ref: '#/components/responses/MultiStatus'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/Error'
         '404':
           description: |
             The resource was not found.
@@ -668,20 +606,18 @@ paths:
                   instance:
                     type: string
                 description: Error payload for the BigCommerce API.
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ErrorWithDetails'
     put:
       tags:
         - Brands
       summary: Update a Brand
       description: |-
-        Updates a *Brand*.
+        Updates a brand.
 
-        **Required Fields**
-        - None
-
-        **Read-Only Fields**
-        - id
-
-        To update a *Brand Image*, send a request with an `image_url`.
+        To update a brand image, send a request with an `image_url`.
       operationId: updateBrand
       parameters:
         - $ref: '#/components/parameters/ContentType'
@@ -696,7 +632,7 @@ paths:
               properties:
                 id:
                   type: integer
-                  description: Unique ID of the *Brand*. Read-Only.
+                  description: Unique ID of the brand.
                   readOnly: true
                 name:
                   maxLength: 255
@@ -706,9 +642,6 @@ paths:
                     The name of the brand. Must be unique.
                     Required in POST.
                   example: Common Good
-                  x-required:
-                    - post
-                    - put
                 page_title:
                   maxLength: 255
                   minLength: 0
@@ -755,6 +688,8 @@ paths:
                       description: |
                         Brand URL on the storefront.
                       example: /shoes
+                      minLength: 1
+                      maxLength: 255
                       x-url: true
                     is_customized:
                       type: boolean
@@ -781,7 +716,7 @@ paths:
                     properties:
                       id:
                         type: integer
-                        description: Unique ID of the *Brand*. Read-Only.
+                        description: Unique ID of the brand.
                         readOnly: true
                       name:
                         maxLength: 255
@@ -871,7 +806,11 @@ paths:
                     is_customized: false
                 meta: {}
         '207':
-          $ref: '#/components/responses/General207Status'
+          $ref: '#/components/responses/MultiStatus'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/Error'
         '404':
           description: |
             The resource was not found.
@@ -890,8 +829,6 @@ paths:
                     description: The error title describing the particular error.
                   type:
                     type: string
-                  instance:
-                    type: string
                 description: Error payload for the BigCommerce API.
         '409':
           description: |
@@ -907,8 +844,6 @@ paths:
                     type: object
                     properties: {}
                     additionalProperties: true
-                  instance:
-                    type: string
                   status:
                     type: integer
                     description: |
@@ -933,8 +868,6 @@ paths:
                     type: object
                     properties: {}
                     additionalProperties: true
-                  instance:
-                    type: string
                   status:
                     type: integer
                     description: |
@@ -945,120 +878,53 @@ paths:
                       The error title describing the particular error.
                   type:
                     type: string
-      x-codegen-request-body-name: brand
     delete:
       tags:
         - Brands
       summary: Delete a Brand
-      description: Deletes a *Brand*.
+      description: Deletes a brand.
       operationId: deleteBrand
       responses:
         '204':
           description: ''
           content: {}
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
     parameters:
+      - $ref: '#/components/parameters/BrandIdPath'
       - $ref: '#/components/parameters/Accept'
-      - $ref: '#/components/parameters/BrandIdParam'
   '/catalog/brands/{brand_id}/metafields':
     get:
       tags:
         - Metafields
-      summary: Get Brand Metafields
-      description: 'Returns a list of *Brand Metafields*. Optional filter parameters can be passed in. '
+      summary: Get brand metafields
+      description: Returns a list of brand metafields. Optional filter parameters can be passed in.
       operationId: getBrandMetafields
       parameters:
-        - name: id
-          in: query
-          description: |
-            Filter items by ID.
-          schema:
-            type: integer
-        - name: 'id:in'
-          in: query
-          style: form
-          explode: false
-          schema:
-            type: array
-            items:
-              type: integer
-        - name: 'id:not_in'
-          in: query
-          style: form
-          explode: false
-          schema:
-            type: array
-            items:
-              type: integer
-        - name: 'id:min'
-          in: query
-          style: form
-          explode: false
-          schema:
-            type: array
-            items:
-              type: integer
-        - name: 'id:max'
-          in: query
-          style: form
-          explode: false
-          schema:
-            type: array
-            items:
-              type: integer
-        - name: 'id:greater'
-          in: query
-          style: form
-          explode: false
-          schema:
-            type: array
-            items:
-              type: integer
-        - name: 'id:less'
-          in: query
-          style: form
-          explode: false
-          schema:
-            type: array
-            items:
-              type: integer
-        - name: page
-          in: query
-          description: Specifies the page number in a limited (paginated) list of products.
-          schema:
-            type: integer
-        - name: limit
-          in: query
-          description: Controls the number of items per page in a limited (paginated) list of products.
-          schema:
-            type: integer
-        - name: key
-          in: query
-          description: |
-            Filter based on a metafieldʼs key.
-          schema:
-            type: string
-        - name: namespace
-          in: query
-          description: Filter based on a metafieldʼs namespace.
-          schema:
-            type: string
-        - name: include_fields
-          in: query
-          description: 'Fields to include, in a comma-separated list. The ID and the specified fields will be returned.'
-          schema:
-            type: string
-        - name: exclude_fields
-          in: query
-          description: 'Fields to exclude, in a comma-separated list. The specified fields will be excluded from a response. The ID cannot be excluded.'
-          schema:
-            type: string
+        - $ref: '#/components/parameters/IdQuery'
+        - $ref: '#/components/parameters/IdInQuery'
+        - $ref: '#/components/parameters/IdNotInQuery'
+        - $ref: '#/components/parameters/IdMinQuery'
+        - $ref: '#/components/parameters/IdMaxQuery'
+        - $ref: '#/components/parameters/IdGreaterQuery'
+        - $ref: '#/components/parameters/IdLessQuery'
+        - $ref: '#/components/parameters/PageQuery'
+        - $ref: '#/components/parameters/LimitQuery'
+        - $ref: '#/components/parameters/MetafieldKeyParam'
+        - $ref: '#/components/parameters/MetafieldNamespaceParam'
+        - $ref: '#/components/parameters/IncludeFieldsQuery'
+        - $ref: '#/components/parameters/ExcludeFieldsQuery'
       responses:
         '200':
           description: ''
           content:
             application/json:
               schema:
-                title: Meta Field Collection Response
+                title: Metafield Collection Response
                 type: object
                 properties:
                   data:
@@ -1079,6 +945,7 @@ paths:
                     description: Location in the warehouse
                     date_created: '1973-01-20T21:34:57.903Z'
                     date_modified: '1990-12-30T00:29:23.515Z'
+                    owner_client_id: "e8o0nm9ujew7byzu6x5dwjqe2rya2fv"
                   - id: 7
                     key: Brand location
                     value: 4HG
@@ -1089,6 +956,7 @@ paths:
                     description: Location in the warehouse
                     date_created: '1973-01-20T21:34:57.903Z'
                     date_modified: '1990-12-30T00:29:23.515Z'
+                    owner_client_id: "e8o0nm9ujew7byzu6x5dwjqe2rya2fv"
                 meta:
                   pagination:
                     total: 2
@@ -1098,44 +966,14 @@ paths:
                     total_pages: 1
                     links:
                       current: '?page=1&limit=50'
-        '404':
-          description: |
-            The resource was not found.
-          content:
-            application/json:
-              schema:
-                title: Not Found
-                type: object
-                properties:
-                  status:
-                    type: integer
-                    description: |
-                      404 HTTP status code.
-                  title:
-                    type: string
-                    description: The error title describing the particular error.
-                  type:
-                    type: string
-                  instance:
-                    type: string
-                description: Error payload for the BigCommerce API.
     post:
       tags:
         - Metafields
       summary: Create a Brand Metafield
       description: |-
-        Creates a *Brand Metafield*.
+        Creates a brand metafield.
 
-        **Required Fields**
-        - permission_set
-        - namespace
-        - key
-        - value
-
-        **Read-Only Fields**
-        - id
-
-        **Note:** The maxiumum number of metafields allowed on each order, product, category, variant, or brand is 250 per client ID. For more information, see [Platform Limits](https://support.bigcommerce.com/s/article/Platform-Limits) in the Help Center.
+        **Note:** The maximum number of metafields allowed on each order, product, category, variant, or brand is 250 per client ID. For more information, see [Platform Limits](https://support.bigcommerce.com/s/article/Platform-Limits) in the Help Center.
       operationId: createBrandMetafield
       parameters:
         - $ref: '#/components/parameters/ContentType'
@@ -1175,6 +1013,7 @@ paths:
                       description: Where products are located
                       date_created: '2021-08-06T19:15:35+00:00'
                       date_modified: '2021-08-06T19:15:35+00:00'
+                      owner_client_id: "e8o0nm9ujew7byzu6x5dwjqe2rya2fv"
                     meta: {}
                 example-2:
                   value:
@@ -1189,6 +1028,7 @@ paths:
                       description: Location in the warehouse.
                       date_created: '2018-05-07T20:14:17+00:00'
                       date_modified: '2018-05-07T20:14:17+00:00'
+                      owner_client_id: "e8o0nm9ujew7byzu6x5dwjqe2rya2fv"
                     meta: {}
                 example-3:
                   value:
@@ -1203,7 +1043,32 @@ paths:
                       description: Where products are located.
                       date_created: '2021-08-06T19:15:35+00:00'
                       date_modified: '2021-08-06T19:15:35+00:00'
+                      owner_client_id: "e8o0nm9ujew7byzu6x5dwjqe2rya2fv"
                     meta: {}
+        '400':
+          description: Bad Request. Input is invalid.
+          content:
+            application/json:
+              schema:
+                description: ''
+                type: object
+                properties:
+                  status:
+                    type: number
+                  title:
+                    type: string
+                    minLength: 1
+                  type:
+                    type: string
+                    minLength: 1
+                  detail:
+                    type: string
+                    minLength: 1
+              example:
+                status: 400
+                title: Input is invalid
+                type: 'https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes'
+                detail: Syntax error
         '409':
           description: |
             The `Metafield` was in conflict with another `Metafield`. This can be the result of duplicate unique key combination of the appʼs client id, namespace, key, resource_type, and resource_id.
@@ -1258,41 +1123,18 @@ paths:
                     type: string
       x-codegen-request-body-name: Metafield
     parameters:
+      - $ref: '#/components/parameters/BrandIdPath'
       - $ref: '#/components/parameters/Accept'
-      - $ref: '#/components/parameters/BrandIdParam'
   '/catalog/brands/{brand_id}/metafields/{metafield_id}':
     get:
       tags:
         - Metafields
       summary: Get a Brand Metafields
-      description: Returns a *Brand Metafield*. Optional filter parameters can be passed in.
+      description: Returns a brand metafield. Optional filter parameters can be passed in.
       operationId: getBrandMetafield
       parameters:
-        - name: metafield_id
-          in: path
-          description: |
-            The ID of the `Metafield`.
-          required: true
-          schema:
-            type: integer
-        - name: brand_id
-          in: path
-          description: |
-            The ID of the `Brand` to which the resource belongs.
-          required: true
-          schema:
-            type: integer
-
-        - name: include_fields
-          in: query
-          description: 'Fields to include, in a comma-separated list. The ID and the specified fields will be returned.'
-          schema:
-            type: string
-        - name: exclude_fields
-          in: query
-          description: 'Fields to exclude, in a comma-separated list. The specified fields will be excluded from a response. The ID cannot be excluded.'
-          schema:
-            type: string
+        - $ref: '#/components/parameters/IncludeFieldsQuery'
+        - $ref: '#/components/parameters/ExcludeFieldsQuery'
       responses:
         '200':
           description: ''
@@ -1318,6 +1160,7 @@ paths:
                   description: Where products are located
                   date_created: '2021-08-06T19:15:35+00:00'
                   date_modified: '2021-08-06T19:15:35+00:00'
+                  owner_client_id: "e8o0nm9ujew7byzu6x5dwjqe2rya2fv"
                 meta: {}
         '404':
           description: |
@@ -1344,23 +1187,10 @@ paths:
       tags:
         - Metafields
       summary: Update a Brand Metafield
-      description: "Updates a *Brand Metafield*.\n\n**Required Fields**  \n* none\n\n**Read-Only Fields**\n* id\n* These fields can only be modified by the app (API credentials) that created the metafield:\n\t* namespace\n\t* key\n\t* permission_set\n\n**Usage Notes**\n* Attempting to modify `namespace`, `key`, and `permission_set` fields using a client ID different from the one used to create those metafields will result in a 403 error message.\n* The maxiumum number of metafields allowed on each order, product, category, variant, or brand is 250 per client ID. For more information, see [Platform Limits](https://support.bigcommerce.com/s/article/Platform-Limits) in the Help Center."
+      description: "Updates a brand metafield.\n\n**Required Fields**  \n* none\n\n**Read-Only Fields**\n* id\n* These fields can only be modified by the app (API credentials) that created the metafield:\n\t* namespace\n\t* key\n\t* permission_set\n\n**Usage Notes**\n* Attempting to modify `namespace`, `key`, and `permission_set` fields using a client ID different from the one used to create those metafields will result in a 403 error message.\n* The maximum number of metafields allowed on each order, product, category, variant, or brand is 250 per client ID. For more information, see [Platform Limits](https://support.bigcommerce.com/s/article/Platform-Limits) in the Help Center."
       operationId: updateBrandMetafield
       parameters:
-        - name: metafield_id
-          in: path
-          description: |
-            The ID of the `Metafield`.
-          required: true
-          schema:
-            type: integer
-        - name: brand_id
-          in: path
-          description: |
-            The ID of the `Brand` to which the resource belongs.
-          required: true
-          schema:
-            type: integer
+        - $ref: '#/components/parameters/ContentType'
       requestBody:
         content:
           application/json:
@@ -1393,6 +1223,30 @@ paths:
                   date_created: '2021-08-06T19:15:35+00:00'
                   date_modified: '2021-08-06T19:15:35+00:00'
                 meta: {}
+        '400':
+          description: Bad Request. Input is invalid.
+          content:
+            application/json:
+              schema:
+                description: ''
+                type: object
+                properties:
+                  status:
+                    type: number
+                  title:
+                    type: string
+                    minLength: 1
+                  type:
+                    type: string
+                    minLength: 1
+                  detail:
+                    type: string
+                    minLength: 1
+              example:
+                status: 400
+                title: Input is invalid
+                type: 'https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes'
+                detail: Syntax error
         '404':
           description: |
             The resource was not found.
@@ -1419,49 +1273,53 @@ paths:
       tags:
         - Metafields
       summary: Delete a Brand Metafield
-      description: Deletes a *Brand Metafield*.
+      description: Deletes a brand metafield.
       operationId: deleteBrandMetafield
-      parameters:
-        - name: metafield_id
-          in: path
-          description: |
-            The ID of the `Metafield`.
-          required: true
-          schema:
-            type: integer
-        - name: brand_id
-          in: path
-          description: |
-            The ID of the `Brand` to which the resource belongs.
-          required: true
-          schema:
-            type: integer
       responses:
         '204':
           description: ''
           content: {}
+        '404':
+          description: |
+            The resource was not found.
+          content:
+            application/json:
+              schema:
+                title: Not Found
+                type: object
+                properties:
+                  status:
+                    type: integer
+                    description: |
+                      404 HTTP status code.
+                  title:
+                    type: string
+                    description: The error title describing the particular error.
+                  type:
+                    type: string
+                  instance:
+                    type: string
+                description: Error payload for the BigCommerce API.
     parameters:
+      - $ref: '#/components/parameters/BrandIdPath'
+      - $ref: '#/components/parameters/MetafieldIdPath'
       - $ref: '#/components/parameters/Accept'
-      - $ref: '#/components/parameters/BrandIdParam'
-      - $ref: '#/components/parameters/MetafieldIdParam'
   '/catalog/brands/{brand_id}/image':
     post:
       tags:
         - Images
       summary: Create a Brand Image
       description: |-
-        Creates a *Brand Image*.
+        Creates a brand image.
 
         **Required Fields**
-        - image_file: Form posts are the only accepted upload option.
+        - image_file: Form posts are the only accepted upload option. For more information on how to upload an image see [Adding product images](docs/store-operations/catalog#adding-product-images). NOTE:  Ensure you set the `Content-Type` header to `multipart/form-data; boundary=--example-boundary--` and set the correct URL for this endpoint.
 
         **Read-Only Fields**
         - id
 
-        Only one image at a time can be created. To update a *Brand Image*, use the [Update a brand](/docs/rest-catalog/brands#update-a-brand) endpoint and an `image_url`.
+        Only one image at a time can be created. To update a brand image, use the [Update a brand](/docs/rest-catalog/brands#update-a-brand) endpoint and an `image_url`.
       operationId: createBrandImage
-      parameters:
-        - $ref: '#/components/parameters/ContentType'
       requestBody:
         content:
           multipart/form-data:
@@ -1547,15 +1405,15 @@ paths:
       tags:
         - Images
       summary: Delete a Brand Image
-      description: Deletes a *Brand Image*.
+      description: Deletes a brand image.
       operationId: deleteBrandImage
       responses:
         '204':
           description: ''
           content: {}
     parameters:
+      - $ref: '#/components/parameters/BrandIdPath'
       - $ref: '#/components/parameters/Accept'
-      - $ref: '#/components/parameters/BrandIdParam'
   '/catalog/brands/metafields':
     get:
       summary: Get All Brand Metafields
@@ -1571,22 +1429,40 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MetaFieldCollectionResponse'
-        '500':
-          description: Internal Server Error
+        '400':
+          description: Bad Request. Input is invalid.
+          content:
+            application/json:
+              schema:
+                description: ''
+                type: object
+                properties:
+                  status:
+                    type: number
+                  title:
+                    type: string
+                    minLength: 1
+                  type:
+                    type: string
+                    minLength: 1
+                  errors: {}
       parameters:
-        - $ref: '#/components/parameters/PageParam'
-        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/PageQuery'
+        - $ref: '#/components/parameters/LimitQuery'
         - $ref: '#/components/parameters/MetafieldKeyParam'
         - $ref: '#/components/parameters/MetafieldKeyInParam'
         - $ref: '#/components/parameters/MetafieldNamespaceParam'
         - $ref: '#/components/parameters/MetafieldNamespaceInParam'
         - $ref: '#/components/parameters/DirectionParam'
+        - $ref: '#/components/parameters/IncludeFieldsParamMetafields'
     post:
-      summary: Create multiple Metafields
+      summary: Create multiple metafields
       tags:
         - Batch metafields
       description: Create multiple metafields.
       operationId: createBrandsMetafields
+      parameters:
+        - $ref: '#/components/parameters/ContentType'
       requestBody:
         content:
           application/json:
@@ -1613,6 +1489,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MetaFieldCollectionResponse_POST_PUT'
+        '400':
+          description: Bad Request. Input is invalid.
+          content:
+            application/json:
+              schema:
+                description: ''
+                type: object
+                properties:
+                  status:
+                    type: number
+                  title:
+                    type: string
+                    minLength: 1
+                  type:
+                    type: string
+                    minLength: 1
+                  detail:
+                    type: string
+                    minLength: 1
+              example:
+                status: 400
+                title: Input is invalid
+                type: 'https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes'
+                detail: Syntax error
         '422':
           description: |
             Response object for metafields creation with partial success.
@@ -1620,14 +1520,14 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MetaFieldCollectionResponsePartialSuccess_POST_PUT'
-        '500':
-          description: Internal Server Error
     put:
-      summary: Update multiple Metafields
+      summary: Update multiple metafields
       tags:
         - Batch metafields
       description: Create multiple metafields.
       operationId: updateBrandsMetafields
+      parameters:
+        - $ref: '#/components/parameters/ContentType'
       requestBody:
         content:
           application/json:
@@ -1654,17 +1554,52 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MetaFieldCollectionResponse_POST_PUT'
-        '422':
-          description: |
-            Response object for metafields creation with partial success.
+        '400':
+          description: Bad Request. Input is invalid.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/MetaFieldCollectionResponsePartialSuccess_POST_PUT'
-        '500':
-          description: Internal Server Error
+                description: ''
+                type: object
+                properties:
+                  status:
+                    type: number
+                  title:
+                    type: string
+                    minLength: 1
+                  type:
+                    type: string
+                    minLength: 1
+                  errors:
+                    type: object
+                    properties: {}
+              example:
+                status: 400
+                title: Input is invalid
+                type: 'https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes'
+                errors: {}
+        '422':
+          description: JSON data is missing or invalid
+          content:
+            application/json:
+              schema:
+                description: ''
+                type: object
+                properties:
+                  status:
+                    type: number
+                  title:
+                    type: string
+                    minLength: 1
+                  type:
+                    type: string
+                    minLength: 1
+                  errors:
+                    type: object
+                    properties: {}
+                    description: Empty for 200 responses.
     delete:
-      summary: Delete All Metafields
+      summary: Delete Multiple Metafields
       tags:
         - Batch metafields
       description: Delete all brand metafields.
@@ -1685,6 +1620,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MetaFieldCollectionDeleteResponseSuccess'
+        '400':
+          description: Bad Request. Input is invalid.
+          content:
+            application/json:
+              schema:
+                description: ''
+                type: object
+                properties:
+                  status:
+                    type: number
+                  title:
+                    type: string
+                    minLength: 1
+                  type:
+                    type: string
+                    minLength: 1
+                  detail:
+                    type: string
+                    minLength: 1
+              example:
+                status: 400
+                title: Input is invalid
+                type: 'https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes'
+                detail: Syntax error
         '422':
           description: |
             Response object for metafields deletion with partial success.
@@ -1692,6 +1651,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MetaFieldCollectionResponsePartialSuccess_DELETE'
+    parameters:
+      - $ref: '#/components/parameters/Accept'
 components:
   schemas:
     brand_Full:
@@ -1702,7 +1663,7 @@ components:
       properties:
         id:
           type: integer
-          description: Unique ID of the *Brand*. Read-Only.
+          description: Unique ID of the brand.
           readOnly: true
         name:
           maxLength: 255
@@ -1712,9 +1673,6 @@ components:
             The name of the brand. Must be unique.
             Required in POST.
           example: Common Good
-          x-required:
-            - post
-            - put
         page_title:
           maxLength: 255
           minLength: 0
@@ -1919,8 +1877,6 @@ components:
             The error title describing the particular error.
         type:
           type: string
-        instance:
-          type: string
       description: |
         Error payload for the BigCommerce API.
       x-internal: false
@@ -1931,7 +1887,7 @@ components:
           properties:
             id:
               type: integer
-              description: Unique ID of the *Metafield*. Read-Only.
+              description: Unique ID of the metafield.
               readOnly: true
               example: 6
         - $ref: '#/components/schemas/metafield_Base'
@@ -1947,8 +1903,6 @@ components:
                 - brand
                 - product
                 - variant
-              x-required:
-                - post
             resource_id:
               maximum: 10000000000
               minimum: 0
@@ -1956,22 +1910,25 @@ components:
               description: |
                 The ID of the resource with which the metafield is associated.
               example: 111
-              x-required:
-                - post
             date_created:
               type: string
               description: |
-                Date and time of the metafieldʼs creation. Read-Only.
+                Date and time of the metafieldʼs creation.
               readOnly: true
               format: date-time
               example: '2018-05-07T20:14:17+00:00'
             date_modified:
               type: string
               description: |
-                Date and time when the metafield was last updated. Read-Only.
+                Date and time when the metafield was last updated.
               readOnly: true
               format: date-time
               example: '2018-05-07T20:14:17+00:00'
+            owner_client_id:
+              type: string
+              description: Client ID for the metafieldʼs creator.
+              example: asdfasdfasdfasdfasdfasdfasdf
+              readOnly: true
       x-internal: false
     Metafield:
       type: object
@@ -2063,17 +2020,6 @@ components:
           description: Client ID for the metafieldʼs creator.
           example: asdfasdfasdfasdfasdfasdfasdf
           readOnly: true
-      required:
-        - namespace
-        - key
-        - value
-        - permission_set
-        - resource_type
-        - resource_id
-        - description
-        - id
-        - date_created
-        - date_modified
     MetaFieldCollectionResponse:
       type: object
       description: |
@@ -2097,6 +2043,7 @@ components:
             $ref: '#/components/schemas/Metafield'
         errors:
           type: array
+          items: {}
           description: Empty for 200 responses.
           example: []
         meta:
@@ -2153,6 +2100,7 @@ components:
             - 125
         errors:
           type: array
+          items: {}
           description: Empty for 200 responses.
           example: []
         meta:
@@ -2229,6 +2177,8 @@ components:
           $ref: '#/components/schemas/ErrorDetail'
     ErrorDetail:
       type: object
+      properties: {}
+      additionalProperties: true
       description: |
         Error detail response payload for the BigCommerce API.
       example:
@@ -2411,45 +2361,53 @@ components:
           minLength: 0
           maxLength: 255
           example: Name of Staff Member
+    NotFoundError:
+      required:
+        - status
+        - title
+        - type
+      title: Error Response
+      type: object
+      properties:
+        status:
+          type: integer
+          description: The HTTP status code.
+        title:
+          type: string
+          description: The error title describing the particular error.
+        type:
+          type: string
+    Conflict:
+      title: Error response
+      type: object
+      properties:
+        status:
+          type: integer
+          description: The HTTP status code.
+        title:
+          type: string
+          description: The error title describing the particular error.
+        type:
+          type: string
+        errors:
+          title: Detailed Errors
+          type: object
+          properties: { }
   parameters:
-    BrandIdParam:
+    BrandIdPath:
       name: brand_id
       in: path
       description: |
-        The ID of the `Brand` to which the resource belongs.
+        The ID of the brand to which the resource belongs.
       required: true
       schema:
         type: integer
-    MetafieldIdParam:
+    MetafieldIdPath:
       name: metafield_id
       in: path
       description: |
         The ID of the `Metafield`.
       required: true
-      schema:
-        type: integer
-    Accept:
-      name: Accept
-      in: header
-      required: true
-      description: 'The [MIME type](https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types) of the response body.'
-      schema:
-        type: string
-        default: 'application/json'
-    ContentType:
-      name: Content-Type
-      in: header
-      required: true
-      description: 'The [MIME type](https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types) of the request body.'
-      schema:
-        type: string
-        default: 'application/json'
-    PageParam:
-      name: page
-      description: |
-        Specifies the page number in a limited (paginated) list of products.
-      required: false
-      in: query
       schema:
         type: integer
     MetafieldKeyParam:
@@ -2488,14 +2446,38 @@ components:
         type: array
         items:
           type: string
-    LimitParam:
-      name: limit
+    date_created_min:
+      name: 'date_created:min'
       description: |
-        Controls the number of items per page in a limited (paginated) list of products.
+        'Query parameter that lets you filter by the minimum date created, for example, `2024-05-14T09:34:00` or `2024-05-14`. Returns metafields created after this date.'
       required: false
       in: query
       schema:
-        type: integer
+        type: string
+    date_created_max:
+      name: 'date_created:max'
+      description: |
+        'Query parameter that lets you filter by the maximum date created, for example, `2024-05-14T09:34:00` or `2024-05-14`. Returns metafields created before this date.'
+      required: false
+      in: query
+      schema:
+        type: string
+    date_modified_max:
+      name: 'date_modified:max'
+      description: |
+        'Query parameter that lets you filter by the maximum date modified created, for example, `2024-05-14T09:34:00` or `2024-05-14`. Returns metafields modified before this date.'
+      required: false
+      in: query
+      schema:
+        type: string
+    date_modified_min:
+      name: 'date_modified:min'
+      description: |
+        'Query parameter that lets you filter by the minimum date modified created, for example, `2024-05-14T09:34:00` or `2024-05-14`. Returns metafields modified after this date.'
+      required: false
+      in: query
+      schema:
+        type: string
     DirectionParam:
       name: direction
       description: |
@@ -2507,14 +2489,226 @@ components:
         enum:
           - asc
           - desc
+    IdQuery:
+      name: id
+      in: query
+      description: |
+        Filter items by ID.
+      schema:
+        type: integer
+    IdInQuery:
+      name: 'id:in'
+      in: query
+      style: form
+      explode: false
+      schema:
+        type: array
+        items:
+          type: integer
+    IdNotInQuery:
+      name: 'id:not_in'
+      in: query
+      style: form
+      explode: false
+      schema:
+        type: array
+        items:
+          type: integer
+    IdMinQuery:
+      name: 'id:min'
+      in: query
+      style: form
+      explode: false
+      schema:
+        type: array
+        items:
+          type: integer
+    IdMaxQuery:
+      name: 'id:max'
+      in: query
+      style: form
+      explode: false
+      schema:
+        type: array
+        items:
+          type: integer
+    IdGreaterQuery:
+      name: 'id:greater'
+      in: query
+      style: form
+      explode: false
+      schema:
+        type: array
+        items:
+          type: integer
+    IdLessQuery:
+      name: 'id:less'
+      in: query
+      style: form
+      explode: false
+      schema:
+        type: array
+        items:
+          type: integer
+    NameQuery:
+      name: name
+      in: query
+      description: |
+        Filter items by name.
+      schema:
+        type: string
+    NameRequired:
+      name: name
+      in: query
+      description: |
+        Filter items by name.
+      schema:
+        type: string
+      required: true
+    NameLikeQuery:
+      name: name:like
+      in: query
+      description: |-
+        Filter items by part of a name. For example, `name:like=new` returns brands with names that include `new`.
+      schema:
+        type: string
+    PageTitleQuery:
+      name: page_title
+      in: query
+      description: |
+        Filter items by page_title.
+      schema:
+        type: string
+    PageQuery:
+      name: page
+      in: query
+      description: Specifies the page number in a limited (paginated) list of products.
+      schema:
+        type: integer
+    LimitQuery:
+      name: limit
+      in: query
+      description: Controls the number of items per page in a limited (paginated) list of products.
+      schema:
+        type: integer
+    IncludeFieldsQuery:
+      name: include_fields
+      in: query
+      description: Fields to include, in a comma-separated list. The ID and the specified fields will be returned.
+      style: form
+      explode: false
+      schema:
+        type: array
+        items:
+          type: string
+    ExcludeFieldsQuery:
+      name: exclude_fields
+      in: query
+      description: Fields to exclude, in a comma-separated list. The specified fields will be excluded from a response. The ID cannot be excluded.
+      style: form
+      explode: false
+      schema:
+        type: array
+        items:
+          type: string
+    SortQuery:
+      name: sort
+      in: query
+      description: Field name to sort by.
+      schema:
+        type: string
+        enum:
+          - name
+    IncludeFieldsParamMetafields:
+      name: include_fields
+      in: query
+      description: Fields to include, in a comma-separated list. The ID and the specified fields will be returned.
+      style: form
+      explode: false
+      schema:
+        type: array
+        items:
+          type: string
+          enum:
+            - resource_id
+            - key
+            - value
+            - namespace
+            - permission_set
+            - resource_type
+            - description
+            - owner_client_id
+            - date_created
+            - date_modified
+    Accept:
+      name: Accept
+      in: header
+      required: true
+      description: 'The [MIME type](https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types) of the response body.'
+      schema:
+        type: string
+        default: 'application/json'
+    ContentType:
+      name: Content-Type
+      in: header
+      required: true
+      description: 'The [MIME type](https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types) of the request body.'
+      schema:
+        type: string
+        default: 'application/json'
   responses:
-    General207Status:
-      description: Multi-status. Multiple operations have taken place and the status for each operation can be viewed in the body of the response. Typically indicates that a partial failure has occurred, such as when a `POST` or `PUT` request is successful, but saving the URL or inventory data has failed.
-
+    Error:
+      description: ''
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/error_Base'
+    ErrorWithDetails:
+      description: ''
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFoundError:
+      description: Not Found
+      content:
+        'application/json':
+          schema:
+            $ref: '#/components/schemas/NotFoundError'
+    UnauthorizedError:
+      description: Unauthorized
+      content:
+        plain/text:
+          schema:
+            type: string
+    BadRequestError:
+      description: Bad Request
+      content:
+        plain/text:
+          schema:
+            type: string
+    MultiStatus:
+      description: Multi-status. Multiple operations have taken place and the status for each operation can be viewed in the body of the response. Typically indicates that a partial failure has occurred, such as when a `POST` or `PUT` request is successful, but the URL or inventory data failed to save.
+      content:
+        application/json:
+          schema:
+            title: Multi_Status
+            type: object
+            properties:
+              data:
+                type: array
+                items:
+                  $ref: '#/components/schemas/brand_Full'
+              errors:
+                $ref: '#/components/schemas/Error'
+              meta:
+                $ref: '#/components/schemas/WriteCollectionSuccessMeta'
+    Conflict:
+      description: Conflict
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Conflict'
   securitySchemes:
     X-Auth-Token:
       name: X-Auth-Token

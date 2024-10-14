@@ -1,0 +1,359 @@
+# Product custom fields
+
+[_International Enhancements for Multi-Storefront_](/docs/store-operations/catalog/msf-international-enhancements)
+
+<Callout type="info">
+  This feature is currently available for Enterprise stores and Partner Sandboxes. If the feature is not working as expected, please contact technical support, as the feature likely needs to be enabled for the individual store.
+  To become an enterprise customer, contact your BigCommerce Customer Service Manager or our [support team](https://support.bigcommerce.com/s/contact?language=en_US).
+</Callout>
+
+Using the Catalog features of the Admin API, you can localize custom fields for a product in a storefront channel. 
+
+You must first create the custom field through the control panel or [Create product custom field](/docs/rest-catalog/products/custom-fields#create-a-product-custom-field) endpoint of the REST Management API.
+
+You can perform the following:
+- [Set attributes for the custom field](#set-product-custom-fields):
+  
+  The `setProductCustomFieldsInformation` mutation lets you set global values for the store that channels inherit by default. The mutation also lets you set overrides for a channel locale, which will override global store information. 
+- [Remove overrides for a channel locale](#remove-product-custom-fields-for-a-locale). A channel then inherits global values.
+- [Query custom fields](#query-product-custom-fields), those set at the global level and the overrides.
+
+For a full schema, see the [GraphQL Admin API reference](https://developer.bigcommerce.com/graphql-admin/reference).
+
+## Input fields
+
+Setting or removing information requires that you specify ID fields in the input. For more information on how to specify ID fields, see [Input fields](/docs/store-operations/catalog/msf-international-enhancements#input-fields).
+
+## Set product custom fields
+
+The following example sets custom fields for the global store and the specified channel locale. 
+
+<Tabs items={['Request', 'Response']}>
+  <Tab>
+
+    ```graphql filename="Example mutation: Set product custom fields" showLineNumbers copy
+    POST https://api.bigcommerce.com/stores/{{STORE_HASH}}/graphql
+    X-Auth-Token: {{ACCESS_TOKEN}}
+    Content-Type: application/json
+    Accept: application/json
+
+    mutation ($input: UpdateProductCustomFieldsInput!) {
+      product {
+        updateProductCustomFields (input: $input) {
+          product {
+            customFields {
+              edges {
+                node {
+                  id
+
+                  # For the global store
+                  name
+                  value
+
+                  # For the channel locale
+                  overrides (context: { channelId: "bc/store/channel/1", locale: "en-US" }) {
+                    edges {
+                      node {
+                      ... on ProductCustomFieldOverridesForChannelLocale {
+                          name
+                          value
+                          isVisible
+                          context {
+                            channelId
+                            locale
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    ```
+    ```json filename="GraphQL variables" showLineNumbers copy
+    {
+      "input": {
+        "productId": "bc/store/product/111",
+        "data": [
+          {
+            "customFieldId": "bc/store/productCustomField/1",
+
+            // For the global store
+            "name": "Global custom field name",
+            "value": "Global custom field value",
+
+            // For the channel locale
+            "overrides": [
+              {
+                "channelLocaleOverrides": {
+                  "context": {
+                    "channelId": "bc/store/channel/1",
+                    "locale": "en-US"     
+                  },
+                  "data": {
+                    "name": "Custom field name override",
+                    "value": "Custom field value override",
+                    "isVisible": true
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    }
+    ```
+  </Tab>
+  <Tab>
+
+    ```json filename="Example mutation: Set product custom fields" showLineNumbers copy
+    {
+      "data": {
+        "product": {
+          "updateProductCustomFields": {
+            "product": {
+              "customFields": {
+                "edges": [
+                  {
+                    "node": {
+                      "id": "bc/store/productCustomField/1",
+
+                      // For the global store
+                      "name": "Global custom field name",
+                      "value": "Global custom field value",
+
+                      // For the channel locale
+                      "overrides": {
+                        "edges": [
+                          {
+                            "node": {
+                              "name": "Custom field name override",
+                              "value": "Custom field value override",
+                              "isVisible": true,
+                              "context": {
+                                "channelId": "bc/store/channel/1",
+                                "locale": "en-US"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+    ```
+
+  </Tab>
+</Tabs>
+
+## Remove product custom fields for a locale
+
+The following example removes product custom fields for the specified channel locale.
+
+Omitting the `attributes` field from the input removes _all_ overrides for the custom fields from the locale.
+
+<Tabs items={['Request', 'Response']}>
+  <Tab>
+
+    ```graphql filename="Example mutation: Remove product custom fields for a locale" showLineNumbers copy
+    POST https://api.bigcommerce.com/stores/{{STORE_HASH}}/graphql
+    X-Auth-Token: {{ACCESS_TOKEN}}
+    Content-Type: application/json
+    Accept: application/json
+
+    mutation ($input: RemoveProductCustomFieldsOverridesInput!) {
+      product {
+        removeProductCustomFieldsOverrides(input: $input) {
+          product {
+            customFields {
+              edges {
+                node {
+                  id
+
+                  # For the global store
+                  name
+                  value
+
+                  # For the channel locale
+                  overrides (context: { channelId: "bc/store/channel/1", locale: "en-US" }) {
+                    edges {
+                      node {
+                        ... on ProductCustomFieldOverridesForChannelLocale {
+                          name
+                          value
+                          isVisible
+                          context {
+                            channelId
+                            locale
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    ```
+    ```json filename="GraphQL variables" showLineNumbers copy
+    {
+      "input": {
+        "productId": "bc/store/product/111",
+        "data": [
+          {
+            "customFieldId": "bc/store/productCustomField/1",
+            "channelLocaleContextData": {
+              "context": {
+                "channelId": "bc/store/channel/1",
+                "locale": "en-US"
+              },
+              "attributes": ["NAME", "VALUE", "IS_VISIBLE"]
+            }
+          }
+        ]
+      }
+    }
+    ```
+  </Tab>
+  <Tab>
+
+    ```json filename="Example mutation: Remove product custom fields for a locale" showLineNumbers copy
+    {
+      "data": {
+        "product": {
+          "removeProductCustomFieldsOverrides": {
+            "product": {
+              "customFields": {
+                "edges": [
+                  {
+                    "node": {
+                      "id": "bc/store/productCustomField/1",
+
+                      // For the global store
+                      "name": "Custom Field Name",
+                      "value": "Custom Field Value",
+
+                      // For the channel locale
+                      "overrides": {
+                        "edges": []
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+## Query product custom fields
+
+The following example retrieves custom fields. You can retrieve global information for the store and overrides for the specified channel locale.
+
+<Tabs items={['Request', 'Response']}>
+  <Tab>
+
+    ```graphql filename="Example query: Get product custom fields" showLineNumbers copy
+    POST https://api.bigcommerce.com/stores/{{STORE_HASH}}/graphql
+    X-Auth-Token: {{ACCESS_TOKEN}}
+    Content-Type: application/json
+    Accept: application/json
+
+    query {
+      store {
+        product(id: "bc/store/product/111") {
+          customFields {
+            edges {
+              node {
+                id
+
+                # For the global store
+                name
+                value
+
+                # For the channel locale
+                overrides (context: { channelId: "bc/store/channel/1", locale: "en-US" }) {
+                  edges {
+                    node {
+                      ... on ProductCustomFieldOverridesForChannelLocale {
+                        name
+                        value
+                        isVisible
+                        context {
+                          channelId
+                          locale
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    ```
+  </Tab>
+  <Tab>
+
+    ```json filename="Example query: Get product custom fields" showLineNumbers copy
+    {
+      "data": {
+        "store": {
+          "product": {
+            "customFields": {
+              "edges": [
+                {
+                  "node": {
+                    "id": "bc/store/productCustomField/1",
+
+                    // For the global store
+                    "name": "Global Custom Field Name",
+                    "value": "Global Custom Field Value",
+
+                    // For the channel locale
+                    "overrides": {
+                      "edges": [
+                        {
+                          "node": {
+                            "name": "Custom Field Name Override",
+                            "value": "Custom Field Value Override",
+                            "isVisible": true,
+                            "context": {
+                              "channelId": "bc/store/channel/1",
+                              "locale": "en-US"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+    ```    
+
+  </Tab>
+</Tabs>

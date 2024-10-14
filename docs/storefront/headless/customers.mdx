@@ -1,0 +1,119 @@
+---
+title: Managing customers
+keywords: customers, currency, currencies, headless, graphql, storefronts,  
+---
+
+# Managing customers
+
+This section covers different ways to associate customers with headless carts.
+
+## GraphQL Storefront API
+
+You can use the GraphQL Storefront API to sign in to a customer account using hosted client-side, headless client-side, or server-side code. 
+
+### Hosted client-side sign in
+
+To sign in a customer account with an email address and a password in client-side code on a hosted storefront, use the [login mutation](/docs/start/authentication/graphql-storefront#signing-customers-in).
+
+When you sign in a customer using the login mutation, subsequent queries made to the GraphQL Storefront API will return customer-specific results, such as customer group pricing.
+
+### Headless and server-side sign in
+
+To make queries from the perspective of a particular customer in headless or server-side code, use [customer impersonation tokens](/docs/start/authentication/graphql-storefront#customer-impersonation-tokens) rather than storefront tokens. 
+
+Depending on your implementation, you can use the login mutation or a combination of the [Current Customer API](/docs/start/authentication/current-customer), the [Customer Login API](/docs/start/authentication/customer-login), or the REST Management API's [customers feature](/docs/rest-management/customers) to authenticate the customer and get their customer ID. Pass the customer ID with your GraphQL Storefront requests using the `X-Bc-Customer-Id` header to interact with the store from the customer's perspective. The responses will reflect customer-specific pricing, product availability, account information, and more.
+
+## Customer single sign-on
+
+When a customer signs in to your headless storefront and your application redirects them to a BigCommerce-hosted page, such as checkout, you can use the [Customer Login API](/docs/start/authentication/customer-login) to sign them in to the hosted session. 
+
+You can sign a customer in to an embedded checkout by setting `redirect_to` in the Customer Login JWT payload to the relative path of the `embedded_checkout_url` generated using the [REST Management API carts feature](/docs/rest-management/carts) or the GraphQL Storefront API [createCartRedirectUrls mutation](/graphql-storefront/reference#definition-CartMutations).
+
+```js filename="Example JWT payload" showLineNumbers copy
+{
+  "iss": {{CLIENT_ID}},
+  "iat": 1535393113,
+  "jti": {{UUID}},
+  "operation": "customer_login",
+  "store_hash": {{STORE_HASH}},
+  "customer_id": {{CUSTOMER_ID}},
+  "channel_id": {{CHANNEL_ID}},
+  "redirect_to": "/cart.php?embedded=1&action=loadInCheckout&id=bc218c65-7a32-4ab7-8082-68730c074d02&token=aa958e2b7922035bf3339215d95d145ebd9193deb36ae847caa780aa2e003e4b",
+  "request_ip": "111.222.333.444"
+}
+```
+
+## Identifying signed-in customers
+
+If a customer signs in to a BigCommerce-hosted cart or checkout, then navigates back to the headless storefront, you will need to confirm the customer's identity before revealing sensitive information.
+
+To address this need, BigCommerce provides the [Current Customer API](/docs/start/authentication/current-customer), which you can access using client-side JavaScript. The [Get current customer](/docs/rest-authentication/current-customer#get-current-customer) endpoint returns a BigCommerce-generated JWT signed with the client secret of the API account you used to make the request. To access customer details, such as customer ID, customer group number, and email, use a library to decode the JWT.
+
+## Surfacing customer group pricing
+
+When querying the GraphQL Storefront API, customer-specific pricing will be reflected in query results if the request is made using a [customer impersonation token](/docs/start/authentication/graphql-storefront#customer-impersonation-tokens).
+
+For server-side REST implementations, you can use the [REST Management API pricing feature](/docs/rest-management/pricing) to [Get prices](/docs/rest-management/pricing/products#get-prices-batch) for a particular customer group.
+
+<Tabs items={['Request', 'Response']}>
+<Tab>
+
+```http filename="Example request: Get Prices" showLineNumbers copy
+POST https://api.bigcommerce.com/stores/{store_hash}/v3/pricing/products
+Accept: application/json
+Content-Type: application/json
+X-Auth-Token: {{ACCESS_TOKEN}}
+
+{
+  "channel_id": 1,
+  "currency_code": "USD",
+  "customer_group_id": 0,
+  "items": [
+    {
+      "product_id": 0,
+      "variant_id": 0,
+      "options": [
+        {
+          "option_id": 0,
+          "value_id": 0
+        }
+      ]
+    }
+  ]
+}
+```
+
+</Tab>
+<Tab>
+
+```json filename="Example response: Get Prices" showLineNumbers copy
+{
+  "data": [
+    {
+      "product_id": 1,
+      "variant_id": 1,
+      "options": [...],
+      "retail_price": {
+        "as_entered": 1.5,
+        "entered_inclusive": true,
+        "tax_exclusive": 1.1,
+        "tax_inclusive": 1.5
+      },
+      "sale_price": {...},
+      "minimum_advertised_price": {...},
+      "price": {...},
+      "calculated_price": {...},
+      "price_range": {...},
+      "retail_price_range": {...},
+      "bulk_pricing": [...]
+    }
+  ],
+  "meta": {}
+}
+```
+</Tab>
+</Tabs>
+
+## Next step
+
+- [Learn how to create an order](/docs/storefront/headless/orders)

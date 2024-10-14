@@ -22,21 +22,19 @@ servers:
 security:
   - X-Auth-Token: []
 tags:
-
   - name: Customers
-  - name: Consent
-  - name: Validate Credentials
-  - name: Metafields
-  - name: Customer Metafields
-  - name: Customer Batch Metafields
   - name: Addresses
   - name: Attributes
   - name: Attribute Values
+  - name: Consent
   - name: Form Fields
   - name: Form Field Values
-  - name: Stored Instruments
-  - name: Global Settings
+  - name: Metafields
+  - name: Metafields Batch
   - name: Channel Settings
+  - name: Global Settings
+  - name: Stored Instruments
+  - name: Validate Credentials
 paths:
   '/customers':
     get:
@@ -93,43 +91,47 @@ paths:
               type: string
         - name: date_created
           in: query
-          description: 'Filter items by date_created. `date_created=2018-09-05T13:43:54`'
+          description: 'Filter items by date created, for example, `2024-05-14T09:34:00` or `2024-05-14`.'
           schema:
             type: string
             format: date-time
         - name: 'date_created:max'
           in: query
-          description: 'Filter items by maximum date_created. `date_created:max=2018-09-10`'
+          description: 'Filter items by maximum date created, for example, `2024-05-14T09:34:00` or `2024-05-14`. Returns metafields created before this date.'
           schema:
             type: string
         - name: 'date_created:min'
           in: query
-          description: 'Filter items by date_created. `date_created:min=2018-09-05`'
+          description: 'Filter items by date created for example, `2024-05-14T09:34:00` or `2024-05-14`. Returns metafields created after this date.'
           schema:
             type: string
             format: date-time
-        - name: date_modified
+        - name: 'date_modified'
           in: query
-          description: 'Filter items by date_modified. `date_modified=2018-09-05T13:45:03`'
+          description: 'Filter items by date modified, for example, `2024-05-14T09:34:00` or `2024-05-14`.'
           schema:
             type: string
             format: date-time
         - name: 'date_modified:min'
           in: query
-          description: 'Filter items by minimum date_modified. `date_modified:min=2019-09-04T:00:00:00` or `date_modified:min=2019-09-04`'
+          description: 'Filter items by minimum date modified, for example, `2024-05-14T09:34:00` or `2024-05-14`. Returns metafields modified after this date.' 
           schema:
             type: string
         - name: 'date_modified:max'
           in: query
-          description: 'Filter items by maximum date_modified. `date_modified:max=2018-09-05T13:45:03` or `date_modified:max=2019-09-04`'
+          description: 'Filter items by maximum date modified, for example, `2024-05-14T09:34:00` or `2024-05-14`. Returns metafields modified before this date.' 
           schema:
             type: string
             format: date-time
         - name: 'email:in'
           in: query
           description: 'Filter items by email. `email:in=janedoe@example.com`'
+          style: form
+          explode: false
           schema:
-            type: string
+            type: array
+            items:
+              type: string
         - name: 'name:in'
           in: query
           description: Filter items by first_name and last_name. `name=james moriarty`
@@ -143,7 +145,7 @@ paths:
           in: query
           description: |-
             Filter items by substring in first_name and last_name.
-            `name:like=moriarty, sherlock`
+            `name:like=moriarty,sherlock`
             Concatenates the first_name and last_name fields.
           style: form
           explode: false
@@ -174,6 +176,7 @@ paths:
              * `segment_ids`- segments the customer belongs to (Beta)
 
              `include=addresses,storecredit,attributes,formfields,shopper_profile_id,segment_ids`
+          style: form
           explode: false
           schema:
             type: array
@@ -272,6 +275,7 @@ paths:
                       force_password_reset: true
                       new_password: string123
                     accepts_product_review_abandoned_cart_emails: true
+                    trigger_account_created_notification: true
                     store_credit_amounts:
                       - amount: 43.15
                     origin_channel_id: 1
@@ -281,7 +285,6 @@ paths:
                       - name: "test"
                         value: "test"
         required: true
-        x-examples: {}
         description: ''
       responses:
         '200':
@@ -304,7 +307,7 @@ paths:
                       .customer_create: Error creating customers
     put:
       description: |-
-        Updates Customers. Subresource updates are not supported. Up to 10 customers can be updated in one call.
+        Updates Customers. Subresource updates are not supported. 
 
         **Required Fields**
         * id -- ID of the *Customer* This must be included in the request body
@@ -314,12 +317,16 @@ paths:
         * registration_ip_address
         * date_created
         * date_modified
+        * origin_channel_id
 
-
+        **Limits**
+        Limit of 10 customers per call.
+        
         **Notes**
 
         * Attributes Values can not be updated using Update a Customer. Use the [Update customer attribute values](/docs/rest-management/customers/customer-attribute-values#upsert-customer-attribute-values) endpoint.
         * channel_ids -- Updating the list of channels a customer can access may create some side effects in a multi-storefront situation. This list determines which customer account we will use to authenticate a shopper given a channel.
+        * origin_channel_id -- This is an immutable value set as a reference to the channel of origin when a customer is created.
       summary: Update Customers
       tags:
         - Customers
@@ -467,10 +474,14 @@ paths:
             Indicates whether to include customer address sub-resources:
             * `formfields` - address form fields
             `include=formfields`
+          style: form
+          explode: false
           schema:
-            type: string
-            enum:
-              - formfields
+            type: array
+            items:
+              type: string
+              enum:
+                - formfields
         - name: 'id:in'
           in: query
           description: |-
@@ -771,7 +782,12 @@ paths:
     get:
       tags:
         - Global Settings
-      description: Returns the global-level customer settings.
+      description: |
+        Returns the global-level customer settings.
+
+        **Notes:**
+        * Global customer settings don't apply when the `default_customer_group_id` is present.
+
       summary: Get Customer Settings
       operationId: getCustomersSettings
       responses:
@@ -780,7 +796,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CustomerSettingsObject'
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/CustomerSettingsObject'
+                  meta:
+                    type: object
+                    properties: {}
+                    additionalProperties: true
               examples:
                 data:
                   value:
@@ -817,7 +840,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CustomerSettingsObject'
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/CustomerSettingsObject'
+                  meta:
+                    type: object
+                    properties: {}
+                    additionalProperties: true
               examples:
                 data:
                   value:
@@ -835,9 +865,10 @@ paths:
       description: |-
         Returns the customer settings per channel.
 
-        **Notes**
+        **Notes:**
 
          * `null` indicates that there is no override per given channel and values are inherited from the global level.
+         * Global customer settings don't apply when the `default_customer_group_id` is present.
       summary: Get Customer Settings per Channel
       operationId: getCustomersSettingsChannel
       parameters:
@@ -852,7 +883,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CustomerChannelSettingsObject'
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/CustomerChannelSettingsObject'
+                  meta:
+                    type: object
+                    properties: {}
+                    additionalProperties: true
               examples:
                 data:
                   value:
@@ -905,7 +943,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CustomerSettingsObject'
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/CustomerSettingsObject'
+                  meta:
+                    type: object
+                    properties: {}
+                    additionalProperties: true
               examples:
                 example:
                   value:
@@ -961,42 +1006,42 @@ paths:
         - name: date_created
           in: query
           required: false
-          description: 'Filter items by `date_created`. `date_created=2021-01-07T20:28:16Z`'
+          description: 'Filter items by `date_created`, for example, `2024-05-14T09:34:00`, `2024-05-14T09:34:00` or `2024-05-14`.'
           schema:
             type: string
             format: date-time
         - name: 'date_created:max'
           in: query
           required: false
-          description: 'Filter items by maximum `date_created`. ISO 8601 full-date is required, ISO 8601 full-time is not required. UNIX timestamp also accepted. `date_created=2021-01-07` or `date_created=1610051296000`'
+          description: 'Filter items by maximum `date_created`, for example, `2024-05-14T09:34:00`, `2024-05-14T09:34:00` or `2024-05-14`. ISO 8601 full-date is required, ISO 8601 full-time is not required. UNIX timestamp also accepted. Returns metafields created before this date.'
           schema:
             type: string
             format: date-time
         - name: 'date_created:min'
           in: query
           required: false
-          description: 'Filter items by minimum `date_created`. ISO 8601 full-date is required, ISO 8601 full-time is not required. UNIX timestamp also accepted. `date_created=2021-01-07` or `date_created=1610051296000`'
+          description: 'Filter items by minimum `date_created`, for example, `2024-05-14T09:34:00`, `2024-05-14T09:34:00` or `2024-05-14`. ISO 8601 full-date is required, ISO 8601 full-time is not required. UNIX timestamp also accepted. Returns metafields created after this date.'
           schema:
             type: string
             format: date-time
-        - name: date_modified
+        - name: 'date_modified'
           in: query
           required: false
-          description: Filter items by `date_modified`.
+          description: Filter items by `date_modified`, for example, `2024-05-14T09:34:00` or `2024-05-14`.
           schema:
             type: string
             format: date-time
         - name: 'date_modified:max'
           in: query
           required: false
-          description: 'Filter items by maximum `date_modified`. ISO 8601 full-date is required, ISO 8601 full-time is not required. UNIX timestamp also accepted. `date_created=2021-01-07` or `date_created=1610051296000`'
+          description: 'Filter items by maximum `date_modified`, for example, `2024-05-14T09:34:00` or `2024-05-14`. ISO 8601 full-date is required, ISO 8601 full-time is not required. UNIX timestamp also accepted. Returns metafields modified before this date.'
           schema:
             type: string
             format: date-time
         - name: 'date_modified:min'
           in: query
           required: false
-          description: 'Filter items by minimum `date_modified`. ISO 8601 full-date is required, ISO 8601 full-time is not required. UNIX timestamp also accepted. `date_created=2021-01-07` or `date_created=1610051296000`'
+          description: 'Filter items by minimum `date_modified`, for example, `2024-05-14T09:34:00` or `2024-05-14`. ISO 8601 full-date is required, ISO 8601 full-time is not required. UNIX timestamp also accepted. Returns metafields modified after this date.'
           schema:
             type: string
             format: date-time
@@ -1209,36 +1254,36 @@ paths:
             type: string
         - name: date_created
           in: query
-          description: 'Filter items by `date_created`. `date_created=2018-09-05T13:43:54`'
+          description: 'Filter items by `date_created`, for example, `2024-05-14T09:34:00`, `2024-05-14T09:34:00` or `2024-05-14`.'
           schema:
             type: string
             format: date-time
         - name: 'date_created:max'
           in: query
-          description: 'Filter items by maximum `date_created`. ISO 8601 full-date is required, ISO 8601 full-time is not required. UNIX timestamp also accepted. `date_created=2021-01-07` or `date_created=1610051296000`'
+          description: 'Filter items by maximum `date_created`, for example, `2024-05-14T09:34:00`, `2024-05-14T09:34:00` or `2024-05-14`. ISO 8601 full-date is required, ISO 8601 full-time is not required. UNIX timestamp also accepted. Returns metafields created before this date.'
           schema:
             type: string
         - name: 'date_created:min'
           in: query
-          description: 'Filter items by minimum `date_created`. ISO 8601 full-date is required, ISO 8601 full-time is not required. UNIX timestamp also accepted. `date_created=2021-01-07` or `date_created=1610051296000`'
+          description: 'Filter items by minimum `date_created`, for example, `2024-05-14T09:34:00`, `2024-05-14T09:34:00` or `2024-05-14`. ISO 8601 full-date is required, ISO 8601 full-time is not required. UNIX timestamp also accepted. Returns metafields created after this date'
           schema:
             type: string
             format: date-time
-        - name: date_modified
+        - name: 'date_modified'
           in: query
-          description: 'Filter items by `date_modified`. `date_modified=2018-09-05T13:45:03`'
+          description: 'Filter items by `date_modified`, for example, `2024-05-14T09:34:00` or `2024-05-14`.'
           schema:
             type: string
             format: date-time
         - name: 'date_modified:max'
           in: query
-          description: 'Filter items by maximum `date_modified`. ISO 8601 full-date is required, ISO 8601 full-time is not required. UNIX timestamp also accepted. `date_created=2021-01-07` or `date_created=1610051296000`'
+          description: 'Filter items by maximum `date_modified`, for example, `2024-05-14T09:34:00` or `2024-05-14`. ISO 8601 full-date is required, ISO 8601 full-time is not required. UNIX timestamp also accepted. Returns metafields modified before this date.'
           schema:
             type: string
             format: date-time
         - name: 'date_modified:min'
           in: query
-          description: 'Filter items by minimum `date_modified`. ISO 8601 full-date is required, ISO 8601 full-time is not required. UNIX timestamp also accepted. `date_created=2021-01-07` or `date_created=1610051296000`'
+          description: 'Filter items by minimum `date_modified`, for example, `2024-05-14T09:34:00` or `2024-05-14`. ISO 8601 full-date is required, ISO 8601 full-time is not required. UNIX timestamp also accepted. Returns metafields modified after this date.'
           schema:
             type: string
       responses:
@@ -1440,11 +1485,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-      summary: Upsert Customer Form Field Values
+      summary: Upsert Customer Form Field Values (Deprecated)
       description: |-
-        Updates form field values on the Customer or Customer Address objects. Multiple form field values can be updated in one call.
-
-        Upsert checks for an existing record, if there is none it creates the record, if there is a matching record it updates that record.
+        This endpoint is deprecated. Use [Update a Customer Address](/docs/rest-management/customers/addresses#update-a-customer-address) and [Update Customers](/docs/rest-management/customers#update-customers) endpoints instead.
 
         To learn more about editing form fields, see [Adding and Editing Fields in the Account Signup Form](https://support.bigcommerce.com/s/article/Editing-Form-Fields).
 
@@ -1576,7 +1619,7 @@ paths:
                     propertyName: type
                     mapping:
                       stored_card: '#/components/schemas/CardInstrument'
-                      stored_paypal_account: '#/components/schemas/PaypalAccountInstrument'
+                      stored_paypal_account: '#/components/schemas/PayPalAccountInstrument'
                       stored_bank_account: '#/components/schemas/BankAccountInstrument'
               examples:
                 example-1:
@@ -1620,17 +1663,11 @@ paths:
               example:
                 code: 403
                 message: Missing scope
-    parameters:
-      - schema:
-          type: string
-        name: customerId
-        in: path
-        required: true
   '/customers/{customerId}/metafields':
     get:
       summary: Get Customer Metafields
       tags:
-        - Customer Metafields
+        - Metafields
       description: Gets customer metafields by passing the `customerId` in the query parameters.
       operationId: getCustomersMetafields
       parameters:
@@ -1644,12 +1681,10 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/MetafieldCollectionResponse'
-        '500':
-          description: Internal Server Error
     post:
       summary: Create Customer Metafields
       tags:
-      - Customer Metafields
+        - Metafields
       description: Creates Customer metafields by passing the `customerId` in the query parameters.
       operationId: createCustomerMetafields
       parameters:
@@ -1667,6 +1702,43 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MetaFieldCollectionPostPutResponses'
+        '400':
+          description: Bad Request. Inupt is invalid.
+          content:
+            application/json:
+              schema:
+                description: ''
+                type: object
+                properties:
+                  status:
+                    type: number
+                  title:
+                    type: string
+                    minLength: 1
+                  type:
+                    type: string
+                    minLength: 1
+                  detail:
+                    type: string
+                    minLength: 1
+              example:
+                status: 400
+                title: Input is invalid
+                type: 'https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes'
+                detail: Syntax error
+        '409':  
+          description: |
+            The `Metafield` conflicts with another `Metafield`. This can result from duplicate unique key combinations of the appʼs client id, namespace, key, resource_type, and resource_id.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: The `Metafield` was not valid. This is the result of missing required fields, or of invalid data. See the response for more details. 
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   '/customers/{customerId}/metafields/{metafieldId}':
     get:
       summary: Get Customer Metafields List
@@ -1674,7 +1746,7 @@ paths:
         Lists available metafields for a customer. To retrieve the list, use `customerId` and `metafieldId` in the query parameters.
       operationId: getMetafieldsCustomerId
       tags:
-        - Customer Metafields
+        - Metafields
       parameters: 
         - name: customerId
           in: path
@@ -1697,10 +1769,23 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/MetafieldCollectionResponse'
+        '404':
+          description: |
+            Not found (A metafield was not found with this query).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFound'
+              examples:
+                example-1:
+                  value:
+                    status: 404
+                    title: The resource at that URL is not found.
+                    type: 'https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes'
     put:
       summary: Update a Metafield
       tags:
-      - Customer Metafields
+        - Metafields
       description: Updates customer metafields. To update the customer metafields, use 'customerId' and 'metafield' in the query parameters.
       operationId: updateCustomerMetafield
       parameters: 
@@ -1736,10 +1821,47 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MetaFieldCollectionPostPutResponses'
+        '400':
+          description: Bad Request. Input is invalid.
+          content:
+            application/json:
+              schema:
+                description: ''
+                type: object
+                properties:
+                  status:
+                    type: number
+                  title:
+                    type: string
+                    minLength: 1
+                  type:
+                    type: string
+                    minLength: 1
+                  detail:
+                    type: string
+                    minLength: 1
+              example:
+                status: 400
+                title: Input is invalid
+                type: 'https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes'
+                detail: Syntax error
+        '404':
+          description: |
+            Not found (A metafield was not found with this query).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFound'
+              examples:
+                example-1:
+                  value:
+                    status: 404
+                    title: The resource at that URL is not found.
+                    type: 'https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes'
     delete:
       summary: Delete Customer Metafields
       tags:
-        - Customer Metafields
+        - Metafields
       description: |
         Deletes customer metafields. To delete customer metafields, use 'customerId' and 'metafieldId' in the query parameters.
       parameters:
@@ -1758,13 +1880,26 @@ paths:
         '204':
           description: | 
             Response object for customer metafields deletion with success.
+        '404':
+          description: |
+            Not found (A metafield was not found with this query).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFound'
+              examples:
+                example-1:
+                  value:
+                    status: 404
+                    title: The resource at that URL is not found.
+                    type: 'https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes'
   '/customers/metafields':
     get:
       summary: Get All Customer Metafields
       tags:
-        - Customer Batch Metafields
+        - Metafields Batch
       description: Get all customer metafields.
-      operationId: getallCustomersMetafields
+      operationId: getAllCustomersMetafields
       responses:
         '200':
           description: |
@@ -1773,8 +1908,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MetaFieldCollectionResponse'
-        '500':
-          description: Internal Server Error
       parameters:
         - $ref: '#/components/parameters/PageParam'
         - $ref: '#/components/parameters/LimitParam'
@@ -1783,10 +1916,15 @@ paths:
         - $ref: '#/components/parameters/MetafieldNamespaceParam'
         - $ref: '#/components/parameters/MetafieldNamespaceInParam'
         - $ref: '#/components/parameters/DirectionParam'
+        - $ref: '#/components/parameters/IncludeFieldsParamMetafields'
+        - $ref: '#/components/parameters/date_modified_min'
+        - $ref: '#/components/parameters/date_modified_max'
+        - $ref: '#/components/parameters/date_created_min'
+        - $ref: '#/components/parameters/date_created_max'
     post:
       summary: Create Multiple Metafields
       tags:
-        - Customer Batch Metafields
+        - Metafields Batch
       description: Create multiple metafields.
       operationId: createCustomersMetafields
       requestBody:
@@ -1814,6 +1952,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MetaFieldCollectionPostPutResponses'
+        '400':
+          description: Bad Request. Input is invalid.
+          content:
+            application/json:
+              schema:
+                description: ''
+                type: object
+                properties:
+                  status:
+                    type: number
+                  title:
+                    type: string
+                    minLength: 1
+                  type:
+                    type: string
+                    minLength: 1
+                  detail:
+                    type: string
+                    minLength: 1
+              example:
+                status: 400
+                title: Input is invalid
+                type: 'https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes'
+                detail: Syntax error
         '422':
           description: |
             Response object for metafields creation with partial success.
@@ -1821,12 +1983,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MetaFieldCollectionResponsePartialSuccess_POST_PUT'
-        '500':
-          description: Internal Server Error
     put:
       summary: Update Multiple Metafields
       tags:
-        - Customer Batch Metafields
+        - Metafields Batch
       description: Create multiple metafields.
       operationId: updateCustomersMetafields
       requestBody:
@@ -1854,6 +2014,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MetaFieldCollectionPostPutResponses'
+        '400':
+          description: Bad Request. Input is invalid.
+          content:
+            application/json:
+              schema:
+                description: ''
+                type: object
+                properties:
+                  status:
+                    type: number
+                  title:
+                    type: string
+                    minLength: 1
+                  type:
+                    type: string
+                    minLength: 1
+                  detail:
+                    type: string
+                    minLength: 1
+              example:
+                status: 400
+                title: Input is invalid
+                type: 'https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes'
+                detail: Syntax error
         '422':
           description: |
             Response object for metafields creation with partial success.
@@ -1861,12 +2045,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MetaFieldCollectionResponsePartialSuccess_POST_PUT'
-        '500':
-          description: Internal Server Error
     delete:
-      summary: Delete All Metafields
+      summary: Delete Multiple Metafields
       tags:
-        - Customer Batch Metafields
+        - Metafields Batch
       description: Delete all customer metafields.
       operationId: deleteCustomersMetafields
       requestBody:
@@ -1885,6 +2067,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MetaFieldCollectionDeleteResponseSuccess'
+        '400':
+          description: Bad Request. Input is invalid.
+          content:
+            application/json:
+              schema:
+                description: ''
+                type: object
+                properties:
+                  status:
+                    type: number
+                  title:
+                    type: string
+                    minLength: 1
+                  type:
+                    type: string
+                    minLength: 1
+                  detail:
+                    type: string
+                    minLength: 1
+              example:
+                status: 400
+                title: Input is invalid
+                type: 'https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes'
+                detail: Syntax error
         '422':
           description: |
             Response object for metafields deletion with partial success.
@@ -1926,7 +2132,8 @@ components:
     MetafieldKeyInParam:
       name: key:in
       in: query
-      description: Filter based on comma-separated metafieldʼs keys. Could be used with vanilla 'key' query parameter.
+      description: |-
+        Filter based on comma-separated metafieldʼs keys. Could be used with vanilla 'key' query parameter.
       required: false
       style: form
       explode: false
@@ -1960,6 +2167,34 @@ components:
       in: query
       schema:
         type: integer
+    date_created_min:
+      name: 'date_created:min'
+      description: 'Filter items by minimum date created. For example, `date_created:min=2019-09-04T00:00:00` or `date_created:min=2019-09-04`. Returns metafields created after this date.'
+      in: query
+      required: false
+      schema:
+        type: string
+    date_created_max:
+      name: 'date_created:max'
+      description: 'Filter items by maximum date created. For example, `date_created:max=`2024-05-14T09:34:00` or `date_created:max=2019-09-04`. Returns metafields created before this date.'
+      in: query
+      required: false
+      schema:
+        type: string 
+    date_modified_min:
+      name: 'date_modified:min'
+      description: 'Filter items by minimum date modified. For example, `date_modified:min=`2024-05-14T09:34:00` or `date_modified:min=2019-09-04`. Returns metafields modified after this date.'
+      in: query
+      required: false
+      schema:
+        type: string
+    date_modified_max:
+      name: 'date_modified:max'
+      description: 'Filter items by maximum date modified. For example, `date_modified:max=2019-09-04T00:00:00` or `date_modified:max=2019-09-04`. Returns metafields modified before this date.'
+      in: query
+      required: false
+      schema:
+        type: string 
     DirectionParam:
       name: direction
       description: |
@@ -1971,6 +2206,27 @@ components:
         enum:
           - asc
           - desc
+    IncludeFieldsParamMetafields:
+      name: include_fields
+      in: query
+      description: Fields to include, in a comma-separated list. The ID and the specified fields will be returned.
+      style: form
+      explode: false
+      schema:
+        type: array
+        items:
+          type: string
+          enum:
+            - resource_id
+            - key
+            - value
+            - namespace
+            - permission_set
+            - resource_type
+            - description
+            - owner_client_id
+            - date_created
+            - date_modified
   responses:
     CustomerCollectionResponse:
       description: Customer Collection Response
@@ -2179,6 +2435,7 @@ components:
                       postal_code: '78759'
                       state_or_province: Texas
                   meta: {}
+                type: object
                 properties:
                   data:
                     type: array
@@ -2259,6 +2516,8 @@ components:
                   meta:
                     $ref: '#/components/schemas/MetaOpen'
               - title: DuplicateAddressCollectionResponse
+                type: object
+                properties: {}
                 example: {}
             type: object
             properties:
@@ -2819,97 +3078,98 @@ components:
           schema:
             type: object
             properties:
-              data:
-                type: array
-              id: 
-                type: integer
-                description: Unique ID of the *Metafield*. Read-Only.
-                readOnly: true
-                example: 0
-              key:
-                type: string
-                description: The key for the metafields.
-                example: Staff Name
-              value:
-                type: string
-                description: The description for the metafield.
-                example: Ronaldo
-              namespace:
-                type: string
-                description: |
-                  Namespace for the metafield, for organizational purposes.
-                example: Sales Department
-                minLength: 1
-                maxLength: 64
-              permission_set:
-                type: string
-                description: |
-                  Determines the visibility and writeability of the field by other API consumers.
-                  | Value | Description |
-                  | :--- | :--- |
-                  | `app_only` | Private to the app that owns the field. |
-                  | `read` | Visible to other API consumers. |
-                  | `write` | Open for reading and writing by other API consumers. |
-                  | `read_and_sf_access` | Visible to other API consumers, including on storefront. |
-                  | `write_and_sf_access` | Open for reading and writing by other API consumers, including on storefront. |
-                enum:
-                  - app_only
-                  - read
-                  - write
-                  - read_and_sf_access
-                  - write_and_sf_access
-              resource_type:
-                type: string
-                description: |
-                  The type of resource with which the metafield is associated.
-                enum:
-                  - brand
-                  - product
-                  - variant
-                  - category
-                  - cart
-                  - channel
-                  - location
-                  - order
-                  - customer
-                example: cart 
-              resource_id:
-                type: integer
-                description: |
-                  The unique identifier for the resource with which the metafield is associated.
-                example: 0
-                readOnly: true
-              description: 
-                type: string
-                description: |
-                  Description for the metafields.
-                example: order
-              date_created:
-                type: string
-                format: date-time
-                description: Date and time of the metafieldʼs creation.
-                example: '2022-06-16T18:39:00+00:00'
-              date_modified:
-                type: string
-                format: date-time
-                description: Date and time when the metafield was last updated.
-                example: '2022-06-16T18:39:00+00:00'
-              owner_client_id:
-                type: string
-                description: Client ID for the metafield's creator.
-                readOnly: true
-                example: ramciw4fnoz87it3ynjfif2zrkil5p
-            required:
-              - namespace
-              - key
-              - value
-              - permission_set
-              - resource_type
-              - resource_id
-              - description
-              - id
-              - date_created
-              - date_modified       
+              items:
+                type: object
+                properties:
+                  id: 
+                    type: integer
+                    description: Unique ID of the *Metafield*. Read-Only.
+                    readOnly: true
+                    example: 0
+                  key:
+                    type: string
+                    description: The key for the metafields.
+                    example: Staff Name
+                  value:
+                    type: string
+                    description: The description for the metafield.
+                    example: Ronaldo
+                  namespace:
+                    type: string
+                    description: |
+                      Namespace for the metafield, for organizational purposes.
+                    example: Sales Department
+                    minLength: 1
+                    maxLength: 64
+                  permission_set:
+                    type: string
+                    description: |
+                      Determines the visibility and writeability of the field by other API consumers.
+                      | Value | Description |
+                      | :--- | :--- |
+                      | `app_only` | Private to the app that owns the field. |
+                      | `read` | Visible to other API consumers. |
+                      | `write` | Open for reading and writing by other API consumers. |
+                      | `read_and_sf_access` | Visible to other API consumers, including on storefront. |
+                      | `write_and_sf_access` | Open for reading and writing by other API consumers, including on storefront. |
+                    enum:
+                      - app_only
+                      - read
+                      - write
+                      - read_and_sf_access
+                      - write_and_sf_access
+                  resource_type:
+                    type: string
+                    description: |
+                      The type of resource with which the metafield is associated.
+                    enum:
+                      - brand
+                      - product
+                      - variant
+                      - category
+                      - cart
+                      - channel
+                      - location
+                      - order
+                      - customer
+                    example: cart 
+                  resource_id:
+                    type: integer
+                    description: |
+                      The unique identifier for the resource with which the metafield is associated.
+                    example: 0
+                    readOnly: true
+                  description: 
+                    type: string
+                    description: |
+                      Description for the metafields.
+                    example: order
+                  date_created:
+                    type: string
+                    format: date-time
+                    description: Date and time of the metafieldʼs creation.
+                    example: '2022-06-16T18:39:00+00:00'
+                  date_modified:
+                    type: string
+                    format: date-time
+                    description: Date and time when the metafield was last updated.
+                    example: '2022-06-16T18:39:00+00:00'
+                  owner_client_id:
+                    type: string
+                    description: Client ID for the metafield's creator.
+                    readOnly: true
+                    example: ramciw4fnoz87it3ynjfif2zrkil5p
+                required:
+                  - namespace
+                  - key
+                  - value
+                  - permission_set
+                  - resource_type
+                  - resource_id
+                  - description
+                  - id
+                  - date_created
+                  - date_modified       
     consent_Resp:
       description: ''
       content:
@@ -3005,6 +3265,7 @@ components:
           type: string
         errors:
           type: object
+          properties: {}
           additionalProperties:
             type: string
       x-internal: false
@@ -3188,6 +3449,9 @@ components:
             Array of form fields. Controlled by formfields parameter.
           items:
             $ref: "#/components/schemas/formFieldValue"    
+        trigger_account_created_notification:
+          type: boolean
+          description: Indicates whether to send a customer registered welcome email.
       required:
         - email
         - first_name
@@ -3822,16 +4086,14 @@ components:
       x-internal: false  
     customerAuthentication_PostPut:
       title: customerAuthentication_PostPut
-      allOf:
-        - properties:
-            force_password_reset:
-              description: 'If `true`, this customer will be forced to change password on next login.'
-              type: boolean
-        - properties:
-            new_password:
-              description: New password for customer. Write only field.
-              type: string
       type: object
+      properties:
+        force_password_reset:
+          description: 'If `true`, this customer will be forced to change password on next login.'
+          type: boolean
+        new_password:
+          description: New password for customer. Write only field.
+          type: string
       x-internal: false
     Links:
       title: Links
@@ -4374,7 +4636,7 @@ components:
         - id
         - date_created
         - date_modified
-      x-interal: false
+      x-internal: false
     MetaFieldCollectionResponse:
       type: object
       description: |
@@ -4395,6 +4657,7 @@ components:
             $ref: '#/components/schemas/Metafield'
         errors:
           type: array
+          items: {}
           description: Empty for 200 responses.
           example: []
         meta:
@@ -4451,6 +4714,7 @@ components:
             - 125
         errors:
           type: array
+          items: {}
           description: Empty for 200 responses.
           example: []
         meta:
@@ -4537,6 +4801,8 @@ components:
           $ref: '#/components/schemas/ErrorDetail'
     ErrorDetail:
       type: object
+      properties: {}
+      additionalProperties: true
       description: |
         Error detail response payload for the BigCommerce API.
       example:
@@ -4830,6 +5096,23 @@ components:
         pagination:
           $ref: '#/components/schemas/pagination_Full'
       description: Data about the response, including pagination and collection totals.
+      x-internal: false
+    NotFound:
+      description: Error payload for the BigCommerce API.
+      type: object
+      properties:
+        status:
+          description: |
+            404 HTTP status code.
+          type: integer
+        title:
+          description: The error title describing the particular error.
+          type: string
+        type:
+          type: string
+        instance:
+          type: string
+      title: Not Found
       x-internal: false
     pagination_Full:
       title: pagination_Full

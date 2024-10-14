@@ -1,0 +1,161 @@
+# Overview
+
+_Buy Online, Pick up in Store_ involves the following users:
+
+- The **shopper**, who interacts with the storefront, cart, and checkout
+- The **merchant**, who manages back office operations, such as locations, inventory, pickup methods, catalog, and orders
+- The **agency partner**, who implements the project integrations
+- The **technology partner**, who integrates solutions for the merchant, such as ERPs, OMSes, IMSes, listing marketplaces, etc.
+
+As a developer, there are many ways in which you interact with these users to build Buy Online, Pick Up in Store. 
+
+You can store back-office components, such as location and inventories, on partner solutions. These partner solutions then serve as the source of truth for your data. 
+
+You can expose back-office components on the storefront. This would enable partners to create _Buy Online, Pick up in Store_ experiences. For example, partners can create store locator widgets for the shopper. 
+
+The following diagram illustrates how all the different parts relate with each other.
+
+![_Buy Online, Pick up in Store_ APIs.png](https://storage.googleapis.com/bigcommerce-production-dev-center/images/BOPIS%20all%20APIs.png)
+
+The above diagram contains two colored symbols:
+
+- Purple - Existing API endpoint, updated to support _Buy Online, Pick up in Store_.
+- Aqua - New API endpoint, introduced to support _Buy Online, Pick up in Store_.
+
+For more on the tools you can use to do build _Buy Online, Pick up in Store_ experiences, see [Shopper experience](#shopper-experience) and [Merchant experience](#merchant-experience). 
+
+## Shopper experience
+
+Shoppers are the end-customers who make a purchase on the retailer, or merchant, site.
+
+The following diagram shows the API endpoints that support a _Buy Online, Pick up in Store_ solution for shoppers.
+
+![_Buy Online, Pick up in Store_ Storefront APIs.png](https://storage.googleapis.com/bigcommerce-production-dev-center/images/BOPIS%20Storefront%20APIs.png)
+
+To build custom experiences for shoppers, use the following tools:
+
+### GraphQL Storefront API
+
+You can use the GraphQL Storefront API to query locations and inventory exposed to the storefront. 
+
+For more information, see [Get Locations](/docs/storefront/graphql/locations/settings) and [Get Inventory](/docs/storefront/graphql/inventory/settings).
+
+If you want to customize a storefront theme, use Stencil Handlebars. 
+- BOPIS does not include new Stencil Handlebars. 
+- However, you can use GraphQL to define your own resources within the theme. You can add data such as inventory and locations the Stencil page context. 
+- For more, see [GraphQL attributes](/docs/storefront/stencil/themes/context/frontmatter-reference#graphql-attributes) under the [Stencil Docs](/docs/storefront/stencil).
+
+### Storefront Checkout API
+
+You can use the [Storefront Checkout API](/docs/rest-storefront/checkouts) to manage checkout operations on Stencil-powered storefronts.
+
+- The API's consignment model now includes a pickup fulfillment type in addition to the existing shipping fulfillment type.
+- The [Checkout SDK](/docs/storefront/cart-checkout/checkout-sdk) uses the Storefront Checkouts API. Any updates made to the Storefront Checkouts API will also be reflected in the SDK.
+
+### Storefront Pickup Options API 
+
+You can use the [Storefront Pickup Options API](/docs/rest-storefront/pickup-options) to allow shoppers to search for available pickup options near provided coordinates. 
+Shoppers can retrieve pickup options for items based on shopper location and the availability of items at specific locations.
+
+## Merchant experience
+
+Merchants are retailers who have BigCommerce stores and want to sell online.
+
+The following diagram shows the API endpoints that support a _Buy Online, Pick up in Store_ solution for merchants.
+
+![_Buy Online, Pick up in Store_ Management APIs.png](https://storage.googleapis.com/bigcommerce-production-dev-center/images/BOPIS%20Management%20APIs.png)
+
+The following APIs are primarily targeted towards Mid-Market and Enterprise merchants who have in-house IT teams or work with agency partners to connect BigCommerce to external partner systems (e.g. ERP, OMS, IMS). 
+
+### Inventory API
+
+The [Inventory API](/docs/rest-management/inventory) exposes location-aware, item-level inventory data. 
+You can create BigCommerce apps and custom API-driven solutions that do the following:
+  
+- Track inventory across multiple locations.
+- Display location-level inventory to shoppers.
+- Provide multi-location fulfillment options.
+- Facilitate _Buy Online, Pick up in Store_ processes.
+- Manage post-checkout order fulfillment.
+
+For more information, see [Inventory Overview](/docs/store-operations/catalog/inventory-adjustments).
+
+### Catalog API
+
+When your store starts using the new [Inventory API](#inventory-api), you may experience breaking changes. 
+The [Catalog API](/docs/rest-catalog) only supports basic inventory concepts (`inventory_level`, `inventory_warning_level`, `inventory_tracking`). 
+When you start using the Inventory API, inventory management not be handled through the Catalog API, but instead through the Inventory API.
+
+### Locations API
+
+You can create new locations for your inventory using the [Locations API](/docs/rest-management/locations)
+For more information, see [Locations Overview](/docs/store-operations/catalog/inventory-locations).
+
+### Pickup Methods API
+
+You can use the [Pickup Methods API](/docs/rest-management/pickup-methods) to create pickup methods for your shoppers. The API lets you make the methods available at certain locations. 
+These methods determine the options that are available to shoppers if they pick up their orders, i.e. fulfill their order with a pickup method.
+
+### Pickup Options V3 API 
+
+You can use the [Pickup Options V3 API](/docs/rest-management/pickup-options) to retrieve pickup options for items. 
+The retrieved options are based on the shopper's location and the availability of items at locations.
+The Pickup Options V3 API returns only options from locations in which all requested items are available.
+
+### Pickup API
+
+"Pickup in store" is a new fulfillment method that supports _Buy Online, Pick up in Store_.
+You can use the [Pickup API](/docs/rest-management/pickup) to manage pickups, including the items to be collected and the method of pickup. 
+
+### Checkouts V3
+
+You can use the [Checkout V3 API](/docs/rest-management/checkouts) to manage checkouts from server-to-server. 
+- The API's consignment model now includes a pickup fulfillment type in addition to the existing shipping fulfillment type.
+- The pickup-in-store fulfillment type functions the same way as the [Storefront Checkouts API](#storefront-checkout-api). 
+
+### Orders V2 API
+
+To support _Buy Online, Pick up in Store_, the [Orders V2 API](/docs/rest-management/orders) uses consignments, or collections of line items and a fulfillment method. 
+You can create orders that have a pickup, shipping, or digital fulfillment method for consignments.
+An order can have only one type of fulfillment method. Also, you can create only one pickup consignment per order.
+
+The updates to the existing Orders V2 API were additive changes to ensure backward Compatibility.
+
+## Out of scope
+
+### Checkout routing logic API
+
+- Such an API allows routing logic within an ERP/OMS to be exposed in the BigCommerce Checkout, to drive routing logic & thus shipping quote generation in the Checkout.
+- This is out of scope because:
+  - It complicates the checkout which can negatively impact conversion.
+  - Shipping costs can decrease conversion. It's simpler to offer flat-rate shipping or free shipping to customers and provides a cleaner shopper experience.
+  - The merchant may already use a shipping partner who handles this complexity.
+
+### Mixed consignment orders
+
+- Mixed consignment orders are made up of different types of consignments; a subset of products in a mixed consignment order may be pickup, while another subset of products in the order may be delivered.
+- You cannot create mixed consignment orders. You can only create orders that have either pickup or shipping consignments, but not both.
+
+### Multiple pickup consignment orders
+
+- A multiple pickup consignment order is one in which a subset of products in the order is picked up from one location, and another subset of products in the order is picked up from an entirely different location.
+- For each order, you can only create one consignment with a single pickup location. You cannot create partial pickups.
+- Multiple destination shipping addresses will still be supported.
+
+### Multiple shipping origins
+
+_Buy Online, Pick up in Store_ currently focuses on pick up in store capability that uses APIs. You currently cannot quote shipping rates from multiple shipping origins with partners.
+
+### Multi-channel awareness
+
+_Buy Online, Pick up in Store_ currently supports pick up on a single storefront channel. Currently, you cannot have different warehouse locations and inventory service different storefront channels.
+
+### In-stock transfers
+
+_Buy Online, Pick up in Store_ does not support in-stock transfers. Use a partner system (e.g. OMS / ERP), which is the source of truth for inventory and order management, to handle in-stock transfers.
+
+
+## Resources
+
+- [FAQ](/docs/integrations/buy-online-pick-up-in-store/frequently-asked-questions)
+- [Glossary](/docs/integrations/buy-online-pick-up-in-store/glossary)

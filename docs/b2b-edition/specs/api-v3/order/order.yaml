@@ -3,6 +3,7 @@ info:
   title: Order
   version: v3
   description: Order information manage.
+  contact: {}
 servers:
   - url: 'https://api-b2b.bigcommerce.com/api/v3/io'
 tags:
@@ -20,45 +21,30 @@ paths:
           content:
             application/json:
               schema:
-                allOf:
-                  - properties:
+                type: object
+                properties:
                       code:
                         type: integer
-                        x-stoplight:
-                          id: 76gyd4yyjty80
                       meta:
-                        type: object
-                        x-stoplight:
-                          id: 1evuk40zom0ql
+                        type: object                      
                         properties:
                           message:
                             type: string
-                            x-stoplight:
-                              id: 5yv54gqn8i67q
                           pagination:
                             type: object
-                            x-stoplight:
-                              id: p9f5we603fqdp
                             properties:
                               totalCount:
                                 type: integer
-                                x-stoplight:
-                                  id: yw154d60m18xq
                               limit:
-                                type: integer
-                                x-stoplight:
-                                  id: rpbs8dbhk2jjv
+                                type: integer  
                               offset:
                                 type: integer
-                                x-stoplight:
-                                  id: tfteb0pm5evsp
                       data:
                         type: array
                         items:
                           allOf:
                             - $ref: https://raw.githubusercontent.com/bigcommerce/docs/main/docs/b2b-edition/models/order/order.yaml
                             - $ref: https://raw.githubusercontent.com/bigcommerce/docs/main/docs/b2b-edition/models/extra_fields/extra_field_values.yaml
-                type: object
               examples:
                 without-extra-fields:
                   value:
@@ -104,10 +90,9 @@ paths:
                         money: '{"currency_location": "left", "currency_token": "$", "decimal_token": ".", "decimal_places": 2, "thousands_token": ","}'
                         channelId: 1
                         channelName: string
-                        extraFields: [{
-                          "fieldName": "test field",
-                          "fieldValue": "test"
-                        }]
+                        extraFields: 
+                          - fieldName: "test field"
+                            fieldValue: "test"
       operationId: get-orders
       security:
         - authToken: []
@@ -162,9 +147,11 @@ paths:
           description: Unique order ID in BigCommerce store
         - schema:
             type: array
+            items:
+              type: number
           in: query
           name: channelIds
-          description: BigCommerce channel ids
+          description: BigCommerce channel IDs
     post:
       tags:
         - Order
@@ -218,10 +205,10 @@ paths:
                   properties:
                     bcOrderId:
                       type: integer
-                      description: Order ID in bigcommerce
+                      description: Order ID in Bigcommerce
                     customerId:
                       type: integer
-                      description: Customer ID of order creater
+                      description: Customer ID of order creator
                     poNumber:
                       type: string
                       description: PO payment method message.
@@ -235,10 +222,9 @@ paths:
                   bcOrderId: 0
                   customerId: 0
                   poNumber: bc156
-                  extraFields: [{
-                    "fieldName": "test field",
-                    "fieldValue": "test"
-                  }]
+                  extraFields: 
+                    - fieldName: "test field"
+                      fieldValue: "test"
   '/orders/{bcOrderId}':
     parameters:
       - $ref: '#/components/parameters/bcOrderId'
@@ -298,6 +284,7 @@ paths:
         - Order
       summary: Update an Order
       operationId: put-orders-orderId
+      description: Update an order
       responses:
         '200':
           description: OK
@@ -332,46 +319,11 @@ paths:
                       customStatus: my-completed
                       money: '{"currency_location": "left", "currency_token": "$", "decimal_token": ".", "decimal_places": 2, "thousands_token": ","}'
                       id: 1
-                      extraFields: [{
-                        "fieldName": "test field",
-                        "fieldValue": "test"
-                      }]
+                      extraFields: 
+                        - fieldName: "test field"
+                          fieldValue: "test"           
         '404':
           $ref: '#/components/responses/404'
-      description: Update order's poNumnber and extraFields. you shoud send least one field.
-      requestBody:
-        content:
-          application/json:
-            schema:
-              allOf:
-                - type: object
-                  properties:
-                    poNumber:
-                      type: string
-                      example: bj256
-                      description: PO number
-                    status:
-                      type: string
-                      description: Status of this order
-                      example: Awaiting Payment
-                    statusCode:
-                      type: integer
-                      description: Status code of this order
-                      example: 1
-                    syncChannel:
-                      type: boolean
-                      x-stoplight:
-                        id: 5l2853rc7hqzc
-                      description: Sync channel info from BC. Only can be used when MSF is enabled.
-                - $ref: https://raw.githubusercontent.com/bigcommerce/docs/main/docs/b2b-edition/models/extra_fields/extra_field_values.yaml
-            examples:
-              example-1:
-                value:
-                  poNumber: bj256
-                  extraFields: [{
-                    "fieldName": "test",
-                    "fieldValue": "test"
-                  }]
   '/customers/{customerId}/orders/company':
     put:
       tags:
@@ -405,8 +357,8 @@ paths:
         '404':
           $ref: '#/components/responses/404'
       description: |-
-        Update the orders belong to a B3 company to another B3 company.
-        Convert orders from user's former BC group into user's present BC group.
+        Update the orders belonging to a B3 company to another B3 company.
+        Convert orders from the user's former BigCommerce group into the user's present BigCommerce group.
       security:
         - authToken: []
       requestBody:
@@ -417,7 +369,7 @@ paths:
               properties:
                 bcGroupId:
                   type: integer
-                  description: User's former group ID in bigcommerce.
+                  description: User's former group ID in Bigcommerce.
               required:
                 - bcGroupId
         description: ''
@@ -427,7 +379,7 @@ paths:
         name: customerId
         in: path
         required: true
-        description: BigCommerce customer id.
+        description: BigCommerce customer ID.
   '/orders/{bcOrderId}/products':
     parameters:
       - $ref: '#/components/parameters/bcOrderId'
@@ -486,11 +438,11 @@ paths:
         name: customerId
         in: path
         required: true
-        description: BigCommerce customer id.
+        description: BigCommerce customer ID.
     put:
       tags:
         - Order
-      summary: Update Customer's BC Orders
+      summary: Update Customer's BigCommerce Orders
       operationId: put-customers-customerId-orders-bc
       responses:
         '200':
@@ -621,7 +573,7 @@ components:
               data:
                 type: array
                 items:
-                  required: []
+                  type: object
                   properties: {}
               meta:
                 type: object
@@ -667,6 +619,7 @@ components:
                 example: 404
               data:
                 type: object
+                properties: {}
               meta:
                 type: object
                 properties:
@@ -688,6 +641,7 @@ components:
   securitySchemes:
     authToken:
       name: authToken
+      description: Required to authenticate requests. Include the token in a header parameter called `authToken`.
       type: apiKey
       in: header
 security:

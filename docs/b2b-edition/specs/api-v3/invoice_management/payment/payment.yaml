@@ -12,6 +12,7 @@ components:
   securitySchemes:
     authToken:
       name: authToken
+      description: Required to authenticate requests. Include the token in a header parameter called `authToken`.
       type: apiKey
       in: header
   responses:
@@ -141,12 +142,10 @@ components:
               data:
                 type: object
                 required:
-                  - '{field name}'
+                  - errMsg
                 properties:
-                  '{field name}':
-                    type: array
-                    items:
-                      type: string
+                  errMsg:
+                    type: string
             required:
               - code
               - meta
@@ -158,8 +157,7 @@ components:
                 meta:
                   message: Parameter Error
                 data:
-                  currency:
-                    - Currency is required
+                  errMsg: Invalid request data
 paths:
   /payments:
     get:
@@ -355,7 +353,7 @@ paths:
                             type: number
                         channelId:
                           type: string
-                          description: BigCommerce channel id
+                          description: BigCommerce channel ID
                         channelName:
                           type: string
                       required:
@@ -414,10 +412,14 @@ paths:
                         payerName: Store offline payment
                         payerCustomerId: '95075'
                         details:
-                          memo: ''
+                          memo: 'payment'
                         moduleName: payments_offline
                         fees: []
-                        moduleData: {}
+                        moduleData: 
+                          transactions:
+                          - memo: k
+                            type: OfflineTransaction
+                            rawTransaction: null
                         processingStatus: 3
                         appliedStatus: 1
                         fundingStatus: 2
@@ -427,6 +429,7 @@ paths:
                         lineItems:
                           - paymentId: 70
                             invoiceId: 26
+                            invoiceNumber: '00000141'
                             amount:
                               code: USD
                               value: '6.0000'
@@ -450,7 +453,11 @@ paths:
                           memo: 'Check#:12345'
                         moduleName: payments_offline
                         fees: []
-                        moduleData: {}
+                        moduleData: 
+                          transactions:
+                          - memo: k
+                            type: OfflineTransaction
+                            rawTransaction: null
                         processingStatus: 2
                         appliedStatus: 1
                         fundingStatus: 2
@@ -460,11 +467,13 @@ paths:
                         lineItems:
                           - paymentId: 66
                             invoiceId: 30
+                            invoiceNumber: '00000141' 
                             amount:
                               code: USD
                               value: '10.0000'
                           - paymentId: 66
                             invoiceId: 28
+                            invoiceNumber: '00000142'
                             amount:
                               code: USD
                               value: '20.0000'
@@ -488,7 +497,11 @@ paths:
                           memo: '123456'
                         moduleName: payments_offline
                         fees: []
-                        moduleData: {}
+                        moduleData: 
+                          transactions:
+                            - memo: k
+                              type: OfflineTransaction
+                              rawTransaction: null
                         processingStatus: 3
                         appliedStatus: 1
                         fundingStatus: 2
@@ -498,11 +511,13 @@ paths:
                         lineItems:
                           - paymentId: 65
                             invoiceId: 30
+                            invoiceNumber: '00000141'
                             amount:
                               code: USD
                               value: '10.0000'
                           - paymentId: 65
                             invoiceId: 28
+                            invoiceNumber: '00000142'
                             amount:
                               code: USD
                               value: '20.0000'
@@ -513,7 +528,7 @@ paths:
                           - 2
                           - 3
                           - 4
-                        channelId: 1
+                        channelId: '1'
                         channelName: string
                     meta:
                       pagination:
@@ -573,7 +588,7 @@ paths:
             type: string
           in: query
           name: q
-          description: 'Keyword queries are performed on fields corresponding to the value of "searchBy" or, if "searchBy" is empty, on all fields supported by "searchBy"'
+          description: 'Keyword queries are performed on fields corresponding to the value of "searchBy" or, if "searchBy" is empty, on all fields supported by "searchBy".'
         - schema:
             type: string
           in: query
@@ -583,7 +598,7 @@ paths:
             type: number
           in: query
           name: invoiceId
-          description: Query by invoice id
+          description: Query by invoice ID
         - schema:
             type: number
             enum:
@@ -598,9 +613,11 @@ paths:
           description: 'payment processing status(0="Incomplete", 1="Awaiting Processing", 2="Processing", 3="Completed", 4="Refunded")'
         - schema:
             type: array
+            items:
+              type: number
           in: query
           name: channelIds
-          description: BigCommerce channel ids. Do not use this parameter if you do not have opened multi-storefront
+          description: BigCommerce channel IDs. Do not use this parameter if you do not have an opened multi-storefront.
   '/payments/{paymentId}':
     parameters:
       - schema:
@@ -608,7 +625,7 @@ paths:
         name: paymentId
         in: path
         required: true
-        description: Payment Id
+        description: Payment ID
     get:
       summary: Get Payment Detail
       tags:
@@ -727,6 +744,13 @@ paths:
                         type: array
                         items:
                           type: object
+                          properties:
+                            type:
+                              type: string
+                            description:
+                              type: string
+                            amount:
+                              type: number
                       moduleData:
                         type: object
                         required:
@@ -821,7 +845,7 @@ paths:
                           type: number
                       channelId:
                         type: string
-                        description: BigCommerce channel id
+                        description: BigCommerce channel ID
                       channelName:
                         type: string
                   meta:
@@ -851,7 +875,7 @@ paths:
                       payerName: Hannah Admin
                       payerCustomerId: '95075'
                       details:
-                        memo: ''
+                        memo: 'payment'
                       moduleName: payments_bigcommerce_sales_order
                       fees: []
                       moduleData:
@@ -869,6 +893,7 @@ paths:
                       lineItems:
                         - paymentId: 20
                           invoiceId: 9
+                          invoiceNumber: '00000141'
                           amount:
                             code: USD
                             value: '11.0000'
@@ -879,7 +904,7 @@ paths:
                         - 2
                         - 3
                         - 4
-                      channelId: 1
+                      channelId: "1"
                       channelName: string
                     meta:
                       message: SUCCESS
@@ -944,7 +969,7 @@ paths:
         name: paymentId
         in: path
         required: true
-        description: Payment Id
+        description: Payment ID
     get:
       summary: Get a Payment Operations
       tags:
@@ -968,11 +993,11 @@ paths:
                     properties:
                       allowedOperations:
                         type: array
-                        description: A list of allowable action codes for current payments
+                        description: A list of allowable action codes for current payments.
                         items: {}
                       allowedStatuses:
                         type: array
-                        description: The list of states that the current payment allows to modify
+                        description: The list of states that the current payment allows to modify.
                         items: {}
                   meta:
                     type: object
@@ -1064,23 +1089,19 @@ paths:
               properties:
                 operationCode:
                   type: number
-                  description: 'Payment operation code, list of allowed operations of this payment'
+                  description: 'Payment operation code, list of allowed operations of this payment.'
                   enum:
                     - 0
                     - 1
                     - 2
                     - 3
-                  example: '0'
+                  example: 1
               required:
                 - operationCode
             examples:
               '200':
                 value:
-                  code: 200
-                  data:
-                    id: 3
-                  meta:
-                    message: SUCCESS
+                  operationCode: 0
         description: ''
   '/payments/{paymentId}/processing-status':
     parameters:
@@ -1089,7 +1110,7 @@ paths:
         name: paymentId
         in: path
         required: true
-        description: Payment Id
+        description: Payment ID
     put:
       summary: Update Payment Processing Status
       tags:
@@ -1194,7 +1215,7 @@ paths:
                     type: array
                     uniqueItems: true
                     minItems: 1
-                    description: 'contains payment transaction information, varies from different payment gateway，depends on payment gateway'
+                    description: 'Contains payment transaction information, depends and varies on payment gateway'
                     items:
                       type: object
                       properties:
@@ -1344,7 +1365,7 @@ paths:
                   type: string
                 customerId:
                   type: string
-                  description: B2B Edition Company Id
+                  description: B2B Edition Company ID
                 externalCustomerId:
                   type: string
                 payerName:
@@ -1363,10 +1384,10 @@ paths:
                     - 3
                     - 4
                   example: 3
-                  description: 'payment status, 3 as default '
+                  description: 'payment status, 3 is default'
                 channelId:
                   type: integer
-                  description: BigCommerce channel id
+                  description: BigCommerce channel ID
               required:
                 - lineItems
                 - currency
@@ -1384,7 +1405,7 @@ paths:
                   customerId: '113'
                   payerName: Store offline payment
                   payerCustomerId: '113'
-                  processingStatus: '3'
+                  processingStatus: 3
                   fundingStatus: '2'
   '/payments/offline/{paymentId}':
     parameters:
@@ -1393,7 +1414,7 @@ paths:
         name: paymentId
         in: path
         required: true
-        description: Payment Id
+        description: Payment ID
     put:
       summary: Update a Offline Payment
       tags:
@@ -1470,7 +1491,7 @@ paths:
                   type: string
                 customerId:
                   type: string
-                  description: B2B Edition Company Id
+                  description: B2B Edition Company ID
                 externalCustomerId:
                   type: string
                 payerName:
@@ -1479,7 +1500,7 @@ paths:
                   description: Default is "Store Offline Payment " if no value is passed in.
                 payerCustomerId:
                   type: string
-                  description: The default is the same as the customerId
+                  description: The default is the same as the customerId.
                 processingStatus:
                   type: number
                   default: 3

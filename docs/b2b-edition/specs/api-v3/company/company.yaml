@@ -3052,6 +3052,329 @@ paths:
         - authToken: []
       tags:
         - Company
+  "/companies/{companyId}/subsidiaries":
+    parameters:
+      - $ref: "#/components/parameters/companyId"
+    get:
+      summary: Get Company Subsidiary
+      operationId: get-companies-companyId-subsidiaries
+      description: 'Get all companies in the company family.'
+      security:
+        - authToken: []
+      tags:
+       - Company
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: number
+                    default: 200
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        companyStatus:
+                          type: integer
+                          description: '0: PENDING 1: APPROVED 2: REJECTED 3: INACTIVE'
+                        companyId:
+                          type: integer
+                        companyName:
+                          type: string
+                        parentCompanyId:
+                          type: integer
+                        parentCompanyName:
+                          type: string
+                        channels:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              id:
+                                type: integer
+                                description: BigCommerce Store Channel ID
+                              name:
+                                type: string
+                  meta:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        default: SUCCESS
+              examples:
+                Examples 1:
+                  value:
+                    code: 200
+                    data: 
+                      - companyStatus: 1
+                        channels:
+                          - id: 1
+                            name: store channel name
+                        companyId: 123
+                        companyName: "Company"
+                        parentCompanyId: 12
+                        parentCompanyName: "Parent company"
+                    meta:
+                      message: SUCCESS
+    delete:
+      summary: Delete Company Subsidiaries
+      operationId: delete-companies-companyId-subsidiaries
+      description: 'Delete company subsidiaries'
+      security:
+        - authToken: []
+      tags:
+        - Company
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                childCompanyId:
+                  type: integer
+                  description: The ID of the company's direct subsidiary.
+              required:
+                - childCompanyId
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: number
+                    default: 200
+                  data:
+                    type: object
+                    properties: {}
+                  meta:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        default: SUCCESS
+              examples:
+                Example 1:
+                  value:
+                    code: 200
+                    data: {}
+                    meta:
+                      message: SUCCESS
+  "/companies/potential-parents":
+    parameters: []
+    get:
+      summary: Get a list of potential parent companies
+      operationId: get-companies-potential-parents
+      description: 'Get a list of potential parent companies'
+      security:
+        - authToken: []
+      tags:
+        - Company
+      parameters:
+        - name: limit
+          in: query
+          description: Pagination limit
+          schema:
+            type: integer
+            default: 10
+        - name: offset
+          in: query
+          description: Pagination offset
+          schema:
+            type: integer
+            default: 0
+        - name: sortBy
+          in: query
+          description: Sort the result by a specific company field.
+          schema:
+            type: string
+            default: updatedAt
+            enum:
+              - companyName
+              - updatedAt
+              - companyId
+        - name: orderBy
+          in: query
+          schema:
+            type: string
+            default: DESC
+            enum:
+              - ASC
+              - DESC
+        - name: q
+          in: query
+          description: Search query by company name.
+          schema:
+            type: string
+        - name: companyId
+          in: query
+          description: Passing this parameter will exclude all subsidiaries of the company.
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: number
+                    default: 200
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        companyId:
+                          type: integer
+                        companyName:
+                          type: string
+                  meta:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        default: SUCCESS
+                      pagination:
+                        type: object
+                        properties:
+                          limit: 
+                            type: integer
+                          offset:
+                            type: integer
+                          totalCount:
+                            type: integer
+              examples:
+                Example 1:
+                  value:
+                    code: 200
+                    data:
+                      - companyId: 123
+                        companyName: "company name"
+                    meta:
+                      message: SUCCESS
+                      pagination:
+                        limit: 10
+                        offset: 100
+                        totalCount: 200
+  "/companies/{companyId}/parents":
+    parameters:
+      - $ref: "#/components/parameters/companyId"
+    post:
+      summary: Create Company Parent-Child Relationship
+      operationId: post-companies-companyId-parents
+      description: 'Create company parent-child relationship'
+      security:
+        - authToken: []
+      tags:
+        - Company
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                parentCompanyId:
+                  type: integer
+                  description: parent company ID
+              required:
+                - parentCompanyId
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: number
+                    default: 200
+                  data:
+                    type: object
+                    properties:
+                      parentCompanyId:
+                        type: integer
+                      childCompanyId:
+                        type: integer
+                  meta:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        default: SUCCESS
+              examples:
+                Examples 1:
+                  value:
+                    code: 200
+                    data:
+                      parentCompanyId: 123
+                      childCompanyId: 12
+                    meta:
+                      message: SUCCESS
+  "/companies/hierarchy-check":
+    parameters: []
+    post:
+      summary: Company Hierarchy Check
+      operationId: post-companies-hierarchy-check
+      description: 'Check whether two companies can be parent-child relationship'
+      security:
+        - authToken: []
+      tags:
+        - Company
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                companyId:
+                  type: integer
+                  description: Not required. Without companyId, only parent company will be checked.
+                parentCompanyId:
+                  type: integer
+                  description: parent company ID
+              required:
+                - parentCompanyId
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: number
+                    default: 200
+                  data:
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+                  meta:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        default: SUCCESS
+              examples:
+                Example 1:
+                  value:
+                    code: 200
+                    data:
+                      success: true
+                    meta:
+                      message: SUCCESS
 components:
   securitySchemes:
     authToken:

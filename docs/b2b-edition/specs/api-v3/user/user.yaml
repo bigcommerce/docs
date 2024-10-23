@@ -38,7 +38,6 @@ paths:
                     properties:
                       data:
                         $ref: https://raw.githubusercontent.com/bigcommerce/docs/main/docs/b2b-edition/models/user/user.yaml
-              examples: {}
             example-1:
               example:
                 code: 200
@@ -58,8 +57,6 @@ paths:
           $ref: '#/components/responses/404'
         '422':
           $ref: '#/components/responses/422'
-        '500':
-          $ref: '#/components/responses/500'
       security:
         - authToken: []
     put:
@@ -200,8 +197,6 @@ paths:
                 message: success
         '404':
           $ref: '#/components/responses/404'
-        '500':
-          $ref: '#/components/responses/500'
       security:
         - authToken: []
       x-code-samples:
@@ -276,9 +271,11 @@ paths:
             type: number
         - name: roles
           in: query
-          description: 'user roles(0=admin 1=senior_buyer 2=junior_buyer) eg., role[]=1, 2. default empty to get all.'
+          description: 'user roles(0=admin 1=senior_buyer 2=junior_buyer) e.g., role[]=1, 2. default empty to get all.'
           schema:
             type: array
+            items:
+              type: number
         - name: companyId
           in: query
           description: Company ID
@@ -327,9 +324,8 @@ paths:
                       meta:
                         allOf:
                           - $ref: https://raw.githubusercontent.com/bigcommerce/docs/main/docs/b2b-edition/models/utils/pagination.yaml
-              examples: {}
-            example-1:
-              example:
+            examples:
+              example-1:
                 code: 200
                 data:
                   - id: 1
@@ -654,7 +650,7 @@ paths:
                           bcId: 12
                           detail: email is existed
         '413':
-          description: 'Request Entity Too Large. In normal conditions, bulk create or update method supports 10 entities in one request.'
+          description: 'Request Entity Too Large. In normal conditions, the bulk create or update method supports 10 entities in one request.'
           content:
             application/json:
               schema:
@@ -667,7 +663,7 @@ paths:
                       message: Request Entity Too Large
                     data: {}
         '422':
-          description: 'Response Bad Request, some user created failed. please double check user entity.'
+          description: 'Response Bad Request. Some user creations failed; please double-check the user entity.'
           content:
             application/json:
               schema:
@@ -763,9 +759,8 @@ paths:
                     properties:
                       data:
                         $ref: https://raw.githubusercontent.com/bigcommerce/docs/main/docs/b2b-edition/models/user/user.yaml
-              examples: {}
-            example-1:
-              example:
+            examples:
+              example-1:
                 code: 200
                 data:
                   id: 1
@@ -793,6 +788,7 @@ paths:
   /users/extra-fields:
     get:
       summary: Get user extra field configs
+      description: Get user extra field configs
       tags:
         - User
       responses:
@@ -832,18 +828,26 @@ components:
               data:
                 type: object
                 description: Response data
+                properties:
+                  errMsg:
+                    type: string
+                    example: User does not exist
+                    description: Error detail
               meta:
                 type: object
+                description: Response meta
                 properties:
                   message:
                     type: string
                     example: Not Found Error
-                    description: Error message of this response
+                    description: Error message
           examples:
             example-1:
               value:
                 code: 404
-                data: {}
+                data: {
+                  errMsg: User does not exists
+                }
                 meta:
                   message: Not Found Error
     '422':
@@ -873,9 +877,10 @@ components:
                   errMsg:
                     type: object
                     required:
-                      - '{field name}'
+                      - 'fieldName'
                     properties:
-                      '{field name}':
+                      fieldName:
+                        description: The field name is a variable and depends on fields in request body.
                         type: array
                         items:
                           type: string
@@ -925,6 +930,7 @@ components:
               data:
                 type: object
                 description: Response data
+                properties: {}
               meta:
                 type: object
                 properties:

@@ -1289,65 +1289,7 @@ paths:
               title: Product Image Post
               description: The model for a POST to create an image on a product.
               allOf:
-                - title: Product Image Base
-                  type: object
-                  properties:
-                    product_id:
-                      type: integer
-                      description: |
-                        The unique numeric identifier for the product with which the image is associated.
-                    url_zoom:
-                      readOnly: true
-                      type: string
-                      description: |
-                        The zoom URL for this image. By default, this is used as the zoom image on product pages when zoom images are enabled. You should provide an image smaller than 1280x1280; otherwise, the API returns a resized image.
-                    url_standard:
-                      readOnly: true
-                      type: string
-                      description: |
-                        The standard URL for this image. By default, this is used for product-page images.
-                    url_thumbnail:
-                      readOnly: true
-                      type: string
-                      description: |
-                        The thumbnail URL for this image. By default, this is the image size used on the category page and in side panels.
-                    url_tiny:
-                      readOnly: true
-                      type: string
-                      description: |
-                        The tiny URL for this image. By default, this is the image size used for thumbnails beneath the product image on a product page.
-                    date_modified:
-                      type: string
-                      description: |
-                        The date on which the product image was modified.
-                      format: date-time
-                    is_thumbnail:
-                      type: boolean
-                      description: |
-                        Flag for identifying whether the image is used as the productʼs thumbnail.
-                    sort_order:
-                      maximum: 2147483647
-                      minimum: -2147483648
-                      type: integer
-                      description: |
-                        The order in which the image will be displayed on the product page. Higher integers give the image a lower priority. When updating, if the image is given a lower priority, all images with a `sort_order` the same as or greater than the imageʼs new `sort_order` value will have their `sort_order`s reordered.
-                    description:
-                      type: string
-                      description: |
-                        The description for the image.
-                  description: Common ProductImage properties.
-                - type: object
-                  properties:
-                    image_url:
-                      type: string
-                      description: |
-                        Must be a fully qualified URL path, including protocol. Limit of 8MB per file.
-                    image_file:
-                      type: string
-                      description: |
-                        The local path to the original image file uploaded to BigCommerce. A `multipart/form-data` media type.
-                        
-                        Must be sent as a `multipart/form-data` field in the request body. Limit of 8 MB per file.
+                - $ref: '#/components/schemas/productImage_Post_Put'
           multipart/form-data:
             schema:
               title: Product Image Post
@@ -1356,34 +1298,10 @@ paths:
                 - title: Product Image Base
                   type: object
                   properties:
-                    id:
-                      type: integer
-                      description: |
-                        The unique numeric ID of the image; increments sequentially.
                     product_id:
                       type: integer
                       description: |
                         The unique numeric identifier for the product with which the image is associated.
-                    url_zoom:
-                      readOnly: true
-                      type: string
-                      description: |
-                        The zoom URL for this image. By default, this is used as the zoom image on product pages when zoom images are enabled. You should provide an image smaller than 1280x1280; otherwise, the API returns a resized image.
-                    url_standard:
-                      readOnly: true
-                      type: string
-                      description: |
-                        The standard URL for this image. By default, this is used for product-page images.
-                    url_thumbnail:
-                      readOnly: true
-                      type: string
-                      description: |
-                        The thumbnail URL for this image. By default, this is the image size used on the category page and in side panels.
-                    url_tiny:
-                      readOnly: true
-                      type: string
-                      description: |
-                        The tiny URL for this image. By default, this is the image size used for thumbnails beneath the product image on a product page.
                     date_modified:
                       type: string
                       description: |
@@ -1403,19 +1321,13 @@ paths:
                       type: string
                       description: |
                         The description for the image.
-                  description: Common ProductImage properties.
-                - type: object
-                  properties:
-                    image_url:
-                      type: string
-                      description: |
-                        Must be a fully qualified URL path, including protocol. Limit of 8MB per file.
                     image_file:
                       type: string
                       description: |
-                        The local path to the original image file uploaded to BigCommerce. A `multipart/form-data` media type.
-                        
-                        Must be sent as a multipart/form-data field in the request body. Limit of 8 MB per file.
+                          The local path to the original image file uploaded to BigCommerce. Use image_url when creating a product.
+
+                          Must be sent as a `multipart/form-data` field in the request body. Limit of 8 MB per file. Cannot be used with `image_url`.
+                  description: Common ProductImage properties.
         required: true
       responses:
         '200':
@@ -1423,13 +1335,13 @@ paths:
           content:
             application/json:
               schema:
-                title: Product Image Response
+                title: application/json
                 type: object
                 properties:
                   data:
                     title: Product Image
-                    allOf:
-                      - title: Product Image Base
+                    oneOf:
+                      - title: application/json
                         type: object
                         properties:
                           id:
@@ -1479,8 +1391,13 @@ paths:
                             type: string
                             description: |
                               The description for the image.
+                          image_url:
+                            type: string
+                            description: |
+                                Must be a fully qualified URL path, including protocol. Limit of 8MB per file.
                         description: Common ProductImage properties.
                       - type: object
+                        title: multipart/form-data
                         properties:
                           id:
                             type: integer
@@ -1521,25 +1438,25 @@ paths:
                             type: string
                             description: |
                               The date on which the product image was modified.
-                            format: date-time                      
+                            format: date-time     
+                          is_thumbnail:
+                            type: boolean
+                            description: |
+                              Flag for identifying whether the image is used as the productʼs thumbnail.
+                          sort_order:
+                            maximum: 2147483647
+                            minimum: -2147483648
+                            type: integer
+                            description: |
+                              The order in which the image will be displayed on the product page. Higher integers give the image a lower priority. When updating, if the image is given a lower priority, all images with a `sort_order` the same as or greater than the imageʼs new `sort_order` value will have their `sort_order`s reordered.
+                          description:
+                            type: string
+                            description: |
+                              The description for the image.                 
                   meta:
                     $ref: '#/components/schemas/metaEmpty_Full'
                 description: |
                   Response payload for the BigCommerce API.
-              example:
-                data:
-                  id: 485
-                  product_id: 158
-                  is_thumbnail: false
-                  sort_order: 1
-                  description: ''
-                  image_file: o/381/product-image__98178.png
-                  url_zoom: 'https://cdn8.bigcommerce.com/s-id30h7ohwf/products/158/images/485/product-image__98178.1536854227.1280.1280.png?c=2'
-                  url_standard: 'https://cdn8.bigcommerce.com/s-id30h7ohwf/products/158/images/485/product-image__98178.1536854227.560.850.png?c=2'
-                  url_thumbnail: 'https://cdn8.bigcommerce.com/s-id30h7ohwf/products/158/images/485/product-image__98178.1536854227.330.500.png?c=2'
-                  url_tiny: 'https://cdn8.bigcommerce.com/s-id30h7ohwf/products/158/images/485/product-image__98178.1536854227.66.100.png?c=2'
-                  date_modified: '2018-09-13T15:57:07+00:00'
-                meta: {}
         '400':
           description: Bad Request. The requested resource could not be downloaded and may be invalid. Possible reasons include malformed request syntax or the file host blocking requests.
           content:
@@ -1677,21 +1594,62 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/productImage_Put'
+              title: application/json
+              description: The model for a POST or PUT to create or update an image on a product.
+              allOf:
+                - $ref: '#/components/schemas/productImage_Post_Put'
+          multipart/form-data:
+            schema:
+              title: multipart/form-data
+              description: The model for a POST or PUT to create or update an image on a product.
+              allOf:
+                - title: Product Image Base
+                  type: object
+                  properties:
+                    product_id:
+                      type: integer
+                      description: |
+                        The unique numeric identifier for the product with which the image is associated.
+                    date_modified:
+                      type: string
+                      description: |
+                        The date on which the product image was modified.
+                      format: date-time
+                    is_thumbnail:
+                      type: boolean
+                      description: |
+                        Flag for identifying whether the image is used as the productʼs thumbnail.
+                    sort_order:
+                      maximum: 2147483647
+                      minimum: -2147483648
+                      type: integer
+                      description: |
+                        The order in which the image will be displayed on the product page. Higher integers give the image a lower priority. When updating, if the image is given a lower priority, all images with a `sort_order` the same as or greater than the imageʼs new `sort_order` value will have their `sort_order`s reordered.
+                    description:
+                      type: string
+                      description: |
+                        The description for the image.
+                    image_file:
+                      type: string
+                      description: |
+                          The local path to the original image file uploaded to BigCommerce. Use image_url when creating a product.
+
+                          Must be sent as a `multipart/form-data` field in the request body. Limit of 8 MB per file. Cannot be used with `image_url`.
+                  description: Common ProductImage properties.
         required: true
       responses:
         '200':
-          description: ''
+          description: Success
           content:
             application/json:
               schema:
-                title: Product Image Response
+                title: application/json
                 type: object
                 properties:
                   data:
                     title: Product Image
-                    allOf:
-                      - title: Product Image Base
+                    oneOf:
+                      - title: application/json
                         type: object
                         properties:
                           id:
@@ -1741,8 +1699,13 @@ paths:
                             type: string
                             description: |
                               The description for the image.
+                          image_url:
+                            type: string
+                            description: |
+                                Must be a fully qualified URL path, including protocol. Limit of 8MB per file.
                         description: Common ProductImage properties.
                       - type: object
+                        title: multipart/form-data
                         properties:
                           id:
                             type: integer
@@ -1754,10 +1717,11 @@ paths:
                               The unique numeric identifier for the product with which the image is associated.
                           image_file:
                             type: string
-                            description: |
+                            description: |-
                               The local path to the original image file uploaded to BigCommerce. Use image_url when creating a product.
+                              A `multipart/form-data` media type.
 
-                              Must be sent as a `multipart/form-data` field in the request body. Limit of 8 MB per file.
+                              Must be sent as a multipart/form-data field in the request body. Limit of 8 MB per file.
                           url_zoom:
                             readOnly: true
                             type: string
@@ -1782,25 +1746,25 @@ paths:
                             type: string
                             description: |
                               The date on which the product image was modified.
-                            format: date-time
+                            format: date-time     
+                          is_thumbnail:
+                            type: boolean
+                            description: |
+                              Flag for identifying whether the image is used as the productʼs thumbnail.
+                          sort_order:
+                            maximum: 2147483647
+                            minimum: -2147483648
+                            type: integer
+                            description: |
+                              The order in which the image will be displayed on the product page. Higher integers give the image a lower priority. When updating, if the image is given a lower priority, all images with a `sort_order` the same as or greater than the imageʼs new `sort_order` value will have their `sort_order`s reordered.
+                          description:
+                            type: string
+                            description: |
+                              The description for the image.                 
                   meta:
                     $ref: '#/components/schemas/metaEmpty_Full'
                 description: |
                   Response payload for the BigCommerce API.
-              example:
-                data:
-                  id: 485
-                  product_id: 158
-                  is_thumbnail: false
-                  sort_order: 1
-                  description: ''
-                  image_file: o/381/product-image__98178.png
-                  url_zoom: 'https://cdn8.bigcommerce.com/s-id30h7ohwf/products/158/images/485/product-image__98178.1536854227.1280.1280.png?c=2'
-                  url_standard: 'https://cdn8.bigcommerce.com/s-id30h7ohwf/products/158/images/485/product-image__98178.1536854227.560.850.png?c=2'
-                  url_thumbnail: 'https://cdn8.bigcommerce.com/s-id30h7ohwf/products/158/images/485/product-image__98178.1536854227.330.500.png?c=2'
-                  url_tiny: 'https://cdn8.bigcommerce.com/s-id30h7ohwf/products/158/images/485/product-image__98178.1536854227.66.100.png?c=2'
-                  date_modified: '2018-09-13T15:57:07+00:00'
-                meta: {}
         '201':
           description: Created
           content:
@@ -5697,12 +5661,12 @@ components:
       title: productImage_Base
       type: object
       properties:
-        image_file:
+        image_url:
           type: string
           description: |
-            The local path to the original image file uploaded to BigCommerce. Use image_url when creating a product.
+            The URL for an image displayed on the storefront when the conditions are applied. Limit of 8MB per file.
 
-            Must be sent as a `multipart/form-data` field in the request body. Limit of 8 MB per file.
+            Cannot be used with `image_file`.
         is_thumbnail:
           type: boolean
           description: |
@@ -5717,11 +5681,16 @@ components:
           type: string
           description: |
             The description for the image.
+        date_modified:
+          type: string
+          description: |
+            The date on which the product image was modified.
+          format: date-time
       description: Common ProductImage properties.
       x-internal: false
-    productImage_Put:
-      title: productImage_Put
-      description: The model for a PUT to update applicable Product Image fields.
+    productImage_Post_Put:
+      title: productImage_Post_Put
+      description: The model for a POST or PUT to create  or update applicable Product Image fields.
       allOf:
         - title: Product Image Base
           type: object
@@ -5730,26 +5699,6 @@ components:
               type: integer
               description: |
                 The unique numeric identifier for the product with which the image is associated.
-            url_zoom:
-              readOnly: true
-              type: string
-              description: |
-                The zoom URL for this image. By default, this is used as the zoom image on product pages when zoom images are enabled. You should provide an image smaller than 1280x1280; otherwise, the API returns a resized image.
-            url_standard:
-              readOnly: true
-              type: string
-              description: |
-                The standard URL for this image. By default, this is used for product-page images.
-            url_thumbnail:
-              readOnly: true
-              type: string
-              description: |
-                The thumbnail URL for this image. By default, this is the image size used on the category page and in side panels.
-            url_tiny:
-              readOnly: true
-              type: string
-              description: |
-                The tiny URL for this image. By default, this is the image size used for thumbnails beneath the product image on a product page.
           description: Common ProductImage properties.
         - $ref: '#/components/schemas/productImage_Base'
       x-internal: false

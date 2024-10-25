@@ -1,0 +1,199 @@
+
+# Postman Collection
+
+We've integrated our sample app with Unified Billing to provide best practices for app developers. You can work with our [core sample app (GitHub)](https://github.com/bigcommerce/sample-app-nodejs).
+
+```json filename="Unified Billing Postman collection" showLineNumbers copy
+{
+	"info": {
+		"_postman_id": "9ae83029-8429-4cac-944e-630a27a99f52",
+		"name": "Unified Billing API",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "12045254"
+	},
+	"item": [
+		{
+			"name": "Create Checkout",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "X-Auth-Token",
+						"value": "{{token}}"
+					},
+					{
+						"key": "Accept",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "graphql",
+					"graphql": {
+						"query": "mutation ($checkout: CreateCheckoutInput!) {\n  checkout {\n    createCheckout(input: $checkout) {\n      checkout {\n        id\n        accountId\n        status\n        checkoutUrl\n        items(first: 1) {\n          edges {\n            node {\n              subscriptionId\n              status\n              product {\n                id\n                type\n                productLevel\n              }\n              scope {\n                id\n                type\n              }\n              pricingPlan {\n                interval\n                price {\n                  value\n                  currencyCode\n                }\n                trialDays\n              }\n              redirectUrl\n              description\n            }\n          }\n        }\n      }\n    }\n  }\n}\n",
+						"variables": "{\n    \"checkout\": {\n        \"accountId\": \"bc/account/account/{{merchant_account_uuid}}\",\n        \"items\": [\n            {\n                \"product\": {\n                    \"type\": \"APPLICATION\",\n                    \"id\": \"bc/account/product/{{application_id}}\",\n                    \"productLevel\": \"Standard Plan\"\n                },\n                \"scope\": {\n                    \"type\": \"STORE\",\n                    \"id\": \"bc/account/scope/{{store_hash}}\"\n                },\n                \"description\": \"App Name\",\n                \"pricingPlan\": {\n                    \"interval\": \"MONTH\",\n                     \"price\": {\n                         \"value\": 3.99,\n                         \"currencyCode\": \"USD\"\n                    }\n                },\n        \"redirectUrl\": \"myapp.com\"\n        }\n        ]\n    }\n}"
+					}
+				},
+				"url": {
+					"raw": "https://{{environment}}/accounts/{{partner_account_uuid}}/graphql",
+					"protocol": "https",
+					"host": [
+						"{{environment}}"
+					],
+					"path": [
+						"accounts",
+						"{{partner_account_uuid}}",
+						"graphql"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Checkout Query",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "X-Auth-Token",
+						"value": "{{token}}"
+					},
+					{
+						"key": "Accept",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "graphql",
+					"graphql": {
+						"query": "query q1($id: ID!) {\n  account {\n    checkout(id: $id) {\n      id\n      accountId\n      status\n      checkoutUrl\n      items {\n        edges {\n          node {\n            subscriptionId\n            status\n            product {\n              id\n              type\n            }\n            scope {\n              id\n              type\n            }\n            pricingPlan {\n              interval\n              price {\n                value\n                currencyCode\n              }\n              trialDays\n            }\n            redirectUrl\n            description\n          }\n        }\n      }\n    }\n  }\n}\n",
+						"variables": "{\n    \"id\": \"bc/account/checkout/{{checkout_id}}\"\n}"
+					}
+				},
+				"url": {
+					"raw": "https://{{environment}}/accounts/{{partner_account_uuid}}/graphql",
+					"protocol": "https",
+					"host": [
+						"{{environment}}"
+					],
+					"path": [
+						"accounts",
+						"{{partner_account_uuid}}",
+						"graphql"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Subscriptions Query",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "X-Auth-Token",
+						"value": "{{token}}"
+					},
+					{
+						"key": "Accept",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "graphql",
+					"graphql": {
+						"query": "query ($filters: SubscriptionFiltersInput) {\n  account {\n    subscriptions(filters: $filters) {\n      pageInfo {\n        hasNextPage\n        hasPreviousPage\n        startCursor\n        endCursor\n      }\n      edges {\n        cursor\n        node {\n          id\n          accountId\n          activationDate\n          billingInterval\n          currentPeriodEnd\n          pricePerInterval {\n            value\n            currencyCode\n          }\n          product {\n            productLevel\n            id\n            type\n          }\n          scope {\n            type\n            id\n          }\n          status\n          createdAt\n          updatedAt\n        }\n      }\n    }\n  }\n}\n",
+						"variables": "{\n    \"filters\": {\n       \"ids\": [\"bc/account/subscription/{{subscription_id}}\"],\n       \"productId\": \"bc/account/product/{{application_id}}\",\n       \"productType\": \"APPLICATION\",\n       \"updatedAfter\": \"2024-10-21T11:00:00Z\",\n       \"status\": \"ACTIVE\"\n    }\n}"
+					}
+				},
+				"url": {
+					"raw": "https://{{environment}}/accounts/{{partner_account_uuid}}/graphql",
+					"protocol": "https",
+					"host": [
+						"{{environment}}"
+					],
+					"path": [
+						"accounts",
+						"{{partner_account_uuid}}",
+						"graphql"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Update Subscription",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "X-Auth-Token",
+						"value": "{{token}}"
+					},
+					{
+						"key": "Accept",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "graphql",
+					"graphql": {
+						"query": "mutation ($checkout: CreateCheckoutInput!) {\n  checkout {\n    createCheckout(input: $checkout) {\n      checkout {\n        id\n        accountId\n        status\n        checkoutUrl\n        items(first: 1) {\n          edges {\n            node {\n              subscriptionId\n              status\n              product {\n                id\n                type\n                productLevel\n              }\n              scope {\n                id\n                type\n              }\n              pricingPlan {\n                interval\n                price {\n                  value\n                  currencyCode\n                }\n                trialDays\n              }\n              redirectUrl\n              description\n            }\n          }\n        }\n      }\n    }\n  }\n}\n",
+						"variables": "{\n    \"checkout\": {\n        \"accountId\": \"bc/account/account/{{merchant_account_uuid}}\",\n        \"items\": [\n            {\n                \"subscriptionId\": \"bc/account/subscription/{{subscription_id}}\",\n                \"product\": {\n                    \"productLevel\": \"Premium Plan\"\n                },\n                \"description\": \"App Name\",\n                \"pricingPlan\": {\n                    \"interval\": \"ANNUAL\",\n                     \"price\": {\n                         \"value\": 49.99,\n                         \"currencyCode\": \"USD\"\n                    }\n                },\n        \"redirectUrl\": \"myapp.com\"\n        }\n        ]\n    }\n}"
+					}
+				},
+				"url": {
+					"raw": "https://{{environment}}/accounts/{{partner_account_uuid}}/graphql",
+					"protocol": "https",
+					"host": [
+						"{{environment}}"
+					],
+					"path": [
+						"accounts",
+						"{{partner_account_uuid}}",
+						"graphql"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Cancel Subscription",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "X-Auth-Token",
+						"value": "{{token}}",
+						"type": "text"
+					},
+					{
+						"key": "Accept",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "graphql",
+					"graphql": {
+						"query": "mutation ($subscription: CancelSubscriptionInput!) {\n  subscription {\n    cancelSubscription(input: $subscription) {\n      subscriptionId\n      cancelledAt\n    }\n  }\n}\n",
+						"variables": "{\n  \"subscription\": {\n    \"id\": \"bc/account/subscription/{{subscription_id}}\"\n  }\n}"
+					}
+				},
+				"url": {
+					"raw": "https://{{environment}}/accounts/{{partner_account_uuid}}/graphql",
+					"protocol": "https",
+					"host": [
+						"{{environment}}"
+					],
+					"path": [
+						"accounts",
+						"{{partner_account_uuid}}",
+						"graphql"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
+```

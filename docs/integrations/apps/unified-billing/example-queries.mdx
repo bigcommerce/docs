@@ -1,0 +1,986 @@
+# GraphQL Account API: Unified billing
+
+The following examples of queries and mutations use the Unified Billing features of the BigCommerce GraphQL Account API. Use the API by submitting POST requests to `https://api.bigcommerce.com/accounts/{{partner_account_uuid}}/graphql`.
+
+## Example queries and mutations
+
+### Create a checkout
+
+The first step in charging a merchant for a product is to create a checkout. After creating a checkout through the API, it will be in a pending `status`, and a `checkoutUrl` will be included in the response. The URL routes to the BigCommerce checkout UI where a merchant must complete the checkout in their store's control panel. After checkout completion, a subscription is created and billed to the merchant, and the checkout status moves to complete.
+
+To create a checkout, run the `createCheckout` mutation:
+
+<Tabs items={["Request", "Sample variables", "Response"]}>
+  <Tab>
+
+    ```graphql filename="Example Query: Create a checkout" showLineNumbers copy
+      mutation ($checkout: CreateCheckoutInput!) {
+        checkout {
+          createCheckout(input: $checkout) {
+            checkout {
+                id
+                accountId
+                status
+                checkoutUrl
+                items(first: 1) {
+                  edges {
+                    node {
+                      subscriptionId
+                      status
+                      product {
+                        entityId
+                        type
+                        productLevel
+                      }
+                      scope {
+                        entityId
+                        type
+                      }
+                      pricingPlan {
+                        interval
+                        price {
+                          value
+                          currencyCode
+                        }
+                        trialDays
+                      }
+                      redirectUrl
+                      description
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ```
+
+  </Tab>
+  <Tab>
+
+    Here are sample variables for this mutation:
+
+    ```json filename="Sample variables" showLineNumbers copy
+      {
+        "checkout": {
+          "accountId": "bc/account/account/61db983a-cd07-4d6b-8b59-a5ffe285ca6a",
+          "items": [
+            {
+              "product": {
+                "entityId": "1234",
+                "type": "APPLICATION",
+                "productLevel": "Standard"
+              },
+              "scope": {
+                "entityId": "f0qyczpkb2",
+                "type": "STORE"
+              },
+              "pricingPlan": {
+                "interval": "MONTH",
+                "price": {
+                  "value": 29.99,
+                  "currencyCode": "USD"
+                },
+                "trialDays": 0
+              },
+              "description": "App Subscription - Standard",
+              "redirectUrl": "https://store-f0qyczpkb2.mybigcommerce.com/manage/app/1234/upgrade_success"
+            }
+          ]
+        }
+      }
+    ```
+
+  </Tab>
+  <Tab>
+
+    ```json filename="Query response: Create a checkout" showLineNumbers copy
+      {
+        "data": {
+          "checkout": {
+            "createCheckout": {
+              "checkout": {
+                "id": "bc/account/checkout/bf09f4d3-3250-4103-8735-e390c3a49aff",
+                "accountId": "bc/account/account/61db983a-cd07-4d6b-8b59-a5ffe285ca6a",
+                "status": "PENDING",
+                "checkoutUrl": "https://store-f0qyczpkb2.my-bigcommerce.com/manage/merchant-checkout?checkoutId=bf09f4d3-3250-4103-8735-e390c3a49aff",
+                "items": {
+                  "edges": [
+                    {
+                      "node": {
+                        "subscriptionId": null,
+                        "status": "PENDING",
+                        "product": {
+                          "entityId": "1234",
+                          "type": "APPLICATION",
+                          "productLevel": "Standard"
+                        },
+                        "scope": {
+                          "entityId": "f0qyczpkb2",
+                          "type": "STORE"
+                        },
+                        "pricingPlan": {
+                          "interval": "MONTH",
+                          "price": {
+                            "value": 29.99,
+                            "currencyCode": "USD"
+                          },
+                          "trialDays": 0
+                        },
+                        "redirectUrl": "https://store-f0qyczpkb2.mybigcommerce.com/manage/app/1234/upgrade_success",
+                        "description": "App Subscription - Standard"
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    ```
+  </Tab>
+</Tabs>
+
+
+### Fetch a checkout
+
+To fetch an existing checkout, copy and run the following query:
+
+<Tabs items={["Request", "Response (Pending Checkout)", "Response (Completed Checkout)"]}>
+  <Tab>
+
+    Replace the `checkoutId` with the following variable:
+
+    ```json copy
+    {
+      "checkoutId": "bc/account/checkout/ab0a8354-3caf-423b-a3be-42a59c97fcf5"
+    }
+    ```
+
+    ```graphql filename="Example query: Fetch a checkout" showLineNumbers copy
+    query Account($checkoutId: ID!) {
+      account {
+        checkout(id: $checkoutId) {
+          id
+          accountId
+          checkoutUrl
+          status
+          items {
+            edges {
+              node {
+                description
+                status
+                product {
+                  entityId
+                  productLevel
+                  type
+                }
+                scope {
+                  entityId11
+                  type
+                }
+                pricingPlan {
+                  price {
+                    value
+                    currencyCode
+                  }
+                  interval
+                  trialDays
+                }
+                subscriptionId
+                redirectUrl
+              }
+            }
+          }
+        }
+      }
+    }
+    ```
+  </Tab>
+  <Tab>
+
+    In this example, the checkout returned is a pending checkout, which means the checkout exists, but the merchant still needs to accept the charges and complete the checkout flow. At this point, a subscription has not been created, so the `subscriptionId` field returns `null`.
+
+    ```json filename="Example response: Fetch a checkout" showLineNumbers copy
+    {
+      "data": {
+        "account": {
+          "checkout": {
+            "id": "bc/account/checkout/ab0a8354-3caf-423b-a3be-42a59c97fcf5",
+            "accountId": "bc/account/account/dbf77034-5440-4365-9aca-385ab27fe4bc",
+            "checkoutUrl": "https://store-fsm6cvyxbj.my-bigcommerce.com/manage/merchant-checkout?checkoutId=ab0a8354-3caf-423b-a3be-42a59c97fcf5",
+            "status": "PENDING",
+            "items": {
+              "edges": [
+                {
+                  "node": {
+                    "description": "Silver Tier Monthly Plan",
+                    "status": "PENDING",
+                    "product": {
+                      "entityId": "5",
+                      "productLevel": null,
+                      "type": "APPLICATION"
+                    },
+                    "scope": {
+                      "entityId": "fsm6cvyxbj",
+                      "type": "STORE"
+                    },
+                    "pricingPlan": {
+                      "price": {
+                        "value": 50,
+                        "currencyCode": "USD"
+                      },
+                      "interval": "MONTH",
+                      "trialDays": 0
+                    },
+                    "subscriptionId": null,
+                    "redirectUrl": "https://store-fsm6cvyxbj.my-bigcommerce.com/manage/app/5"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+    ```
+  </Tab>
+  <Tab>
+
+    In this example, the checkout returned is a completed checkout. The merchant has completed the checkout flow, and there is a `subscriptionId` returned.
+
+    ```json filename="Query response: Checkout complete" showLineNumbers copy
+    {
+      "data": {
+        "account": {
+          "checkout": {
+            "id": "bc/account/checkout/6e3f0de4-5bb3-451e-8c1b-3f14c6798891",
+            "accountId": "bc/account/account/dbf77034-5440-4365-9aca-385ab27fe4bc",
+            "checkoutUrl": "https://store-q6sxaezcnf.my-bigcommerce.com/manage/merchant-checkout?checkoutId=6e3f0de4-5bb3-451e-8c1b-3f14c6798891",
+            "status": "COMPLETE",
+            "items": {
+              "edges": [
+                {
+                  "node": {
+                    "description": "Gold Tier Annual Plan",
+                    "status": "COMPLETE",
+                    "product": {
+                      "entityId": "5",
+                      "productLevel": null,
+                      "type": "APPLICATION"
+                    },
+                    "scope": {
+                      "entityId": "q6sxaezcnf",
+                      "type": "STORE"
+                    },
+                    "pricingPlan": {
+                      "price": {
+                        "value": 499.99,
+                        "currencyCode": "USD"
+                      },
+                      "interval": "ANNUAL",
+                      "trialDays": 10
+                    },
+                    "subscriptionId": "bc/account/subscription/9bbe8843-27eb-4f78-b34b-c692d1016382",
+                    "redirectUrl": "https://store-q6sxaezcnf.my-bigcommerce.com/manage/app/5"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+    ```
+
+  </Tab>
+</Tabs>
+
+### Update a subscription
+
+The `createCheckout` mutation can also be used to update an existing subscription's pricing plan information and product level. A `subscriptionId` must be passed in the request for this to be processed as an update.
+
+<Tabs items={["Request", "Sample variables", "Response"]}>
+  <Tab>
+
+    ```graphql filename="Example Query: Update a subscription" showLineNumbers copy
+      mutation ($checkout: CreateCheckoutInput!) {
+        checkout {
+          createCheckout(input: $checkout) {
+            checkout {
+              accountId
+              status
+              checkoutUrl
+              items(first: 1) {
+                edges {
+                  node {
+                    subscriptionId
+                    status
+                    product {
+                      id
+                      type
+                      productLevel
+                    }
+                    scope {
+                      id
+                      type
+                    }
+                    pricingPlan {
+                      interval
+                      price {
+                        value
+                        currencyCode
+                      }
+                      trialDays
+                    }
+                    redirectUrl
+                    description
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    ```
+
+  </Tab>
+  <Tab>
+
+    Here are sample variables for this mutation:
+
+    ```json filename="Sample variables" showLineNumbers copy
+    {
+      "checkout": {
+        "accountId": "bc/account/account/2a159c53-1caa-4ce8-af4f-6b00da294e2a",
+        "items": [
+          {
+            "product": {
+              "productLevel": "Premium"
+            },
+            "pricingPlan": {
+              "interval": "ANNUAL",
+              "price": {
+                "value": 129.99,
+                "currencyCode": "USD"
+              }
+            },
+            "redirectUrl": "bigcommerce.com/checkout_success",
+            "description": "test application",
+            "subscriptionId": "bc/account/subscription/9cf1f949-8a74-4938-bd13-64d9741a9685"
+          }
+        ]
+      }
+    }
+    ```
+
+    Fields for checkout input above:
+    * `checkout` (required)
+    * `accountId` (required)
+    * `items` (required)
+      * `product` (optional)
+        * `productLevel` (optional)
+      * `pricingPlan` (required)
+        * `interval` (required)
+        * `price` (required)
+        * `value` (required)
+        * `currencyCode` (required)
+      * `redirectUrl` (required)
+      * `description` (required)
+      * `subscriptionId` (required)
+
+  </Tab>
+  <Tab>
+
+    ```json filename="Query response: Update a subscription" showLineNumbers copy
+    {
+      "data": {
+        "checkout": {
+          "createCheckout": {
+            "checkout": {
+              "accountId": "bc/account/account/2a159c53-1caa-4ce8-af4f-6b00da294e2a",
+              "status": "PENDING",
+              "checkoutUrl": "https://store-hqjwlmtf9q.mybigcommerce.com/manage/merchant-checkout?checkoutId=6869d437-5eb9-4ad9-8c4a-086e448bb6f6",
+              "items": {
+                "edges": [
+                  {
+                    "node": {
+                      "subscriptionId": "bc/account/subscription/9cf1f949-8a74-4938-bd13-64d9741a9685",
+                      "status": "PENDING",
+                      "product": {
+                        "id": "bc/account/product/16267",
+                        "type": "APPLICATION",
+                        "productLevel": "Premium"
+                      },
+                      "scope": {
+                        "id": "bc/account/scope/hqjwlmtf9q",
+                        "type": "STORE"
+                      },
+                      "pricingPlan": {
+                        "interval": "ANNUAL",
+                        "price": {
+                          "value": 129.99,
+                          "currencyCode": "USD"
+                        },
+                        "trialDays": 0
+                      },
+                      "redirectUrl": "bigcommerce.com/checkout_success",
+                      "description": "test application"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+    ```
+
+    Possible Errors:
+    * Scope updates are not allowed for an existing subscription.
+    * Product updates are not allowed for an existing subscription.
+    * Trial days cannot be added to existing subscriptions.
+    * Checkouts are not available for existing trial subscriptions.
+    * Scope does not belong to account.
+    * Could not find active subscription.
+
+    If updates are needed for scope, product, or trial days, cancel the existing subscription and create a new checkout to create a new subscription.
+
+  </Tab>
+</Tabs>
+
+### Cancel a subscription
+
+This mutation cancels the subscription at the end of the merchant's current billing cycle. The `cancelledAt` value will be the last day of the merchant's billing cycle (i.e., the day through which they have already paid).
+
+<Tabs items={["Request", "Sample variables", "Response"]}>
+  <Tab>
+
+    ```graphql filename="Example Query: Cancel a subscription" showLineNumbers copy
+      mutation ($subscription: CancelSubscriptionInput!) {
+        subscription {
+          cancelSubscription(input: $subscription) {
+            subscriptionId
+            cancelledAt
+          }
+        }
+      }
+    ```
+
+  </Tab>
+  <Tab>
+
+    Variables for this mutation should look like so:
+
+    ```json filename="Sample variables" showLineNumbers copy
+      {
+        "subscription": {
+          "id": "bc/account/subscription/9bbe8843-27eb-4f78-b34b-c692d1016382"
+        }
+      }
+    ```
+
+  </Tab>
+  <Tab>
+
+    ```json filename="Example response: Cancelled subscription" showLineNumbers copy
+      {
+        "data": {
+          "subscription": {
+            "cancelSubscription": {
+              "subscriptionId": "bc/account/subscription/9bbe8843-27eb-4f78-b34b-c692d1016382",
+              "cancelledAt": "2023-11-09T00:00:00.000Z"
+            }
+          }
+        }
+      }
+    ```
+
+  </Tab>
+</Tabs>
+
+### Query subscriptions
+Subscriptions can be queried using the `subscriptions` query endpoint.
+
+Fields that can be retrieved are:
+* `id` - subscription id
+* `accountId` - account id belonging to the merchant
+* `activationDate` - date billing began
+* `billingInterval` - billing frequency
+* `createdAt` - date and time the subscription was created
+* `currentPeriodEnd` - date of the end of the current billing period
+* `updatedAt` - date and time the subscription was last updated
+* `pricePerInterval` - amount being billed with the following fields:
+  * `value` - the scalar amount
+  * `currencyCode` - the currency of the amount
+* `product` - product object with the following fields
+  * `productLevel` - the level of the product if it was provided
+  * `id` - product id
+  * `type` - product type
+* `status` - subscription status
+* `scope` - scope object with the following fields
+  * `type` - scope type
+  * `id` - scope id
+
+In this example, no filters are passed, so the response will include all subscriptions of the partner. The default number of subscriptions returned per page is 10.
+
+<Tabs items={["Request", "Response"]}>
+  <Tab>
+  ```graphql filename="Example Query: Query subscriptions" showLineNumbers copy
+  query {
+    account {
+      subscriptions {
+        pageInfo {
+          hasNextPage
+          hasPreviousPage
+          startCursor
+          endCursor
+        }
+        edges {
+          cursor
+          node {
+            id
+            accountId
+            activationDate
+            pricePerInterval {
+              value
+              currencyCode
+            }
+            billingInterval
+            status
+            scope {
+              type
+              id
+            }
+            product {
+              productLevel
+              id
+              type
+            }
+            createdAt
+            currentPeriodEnd
+            updatedAt
+          }
+        }
+      }
+    }
+  }
+  ```
+  </Tab>
+
+  <Tab>
+  ```json filename="Example response: Subscriptions" showLineNumbers copy
+  {
+    "data": {
+      "account": {
+        "subscriptions": {
+          "pageInfo": {
+            "hasNextPage": true,
+            "hasPreviousPage": false,
+            "startCursor": "WzE3MjQ0MzgzODk0MzY0NzYsODhd",
+            "endCursor": "WzE3MTk3NDYxNzUyNjg2NDUsNzdd"
+          },
+          "edges": [
+            {
+              "cursor": "WzE3MjQ0MzgzODk0MzY0NzYsODhd",
+              "node": {
+                "id": "bc/account/subscription/d7762d54-1aab-4243-938b-294b846222b5",
+                "accountId": "bc/account/account/0b2d26c8-e4e2-4635-9c99-8bf3cfd93153",
+                "activationDate": "2024-08-23T00:00:00Z",
+                "pricePerInterval": {
+                  "value": 14.99,
+                  "currencyCode": "USD"
+                },
+                "billingInterval": "ONCE",
+                "status": "ACTIVE",
+                "scope": {
+                  "type": "STORE",
+                  "id": "bc/account/scope/9godyw034y"
+                },
+                "product": {
+                  "productLevel": "",
+                  "id": "bc/account/product/16267",
+                  "type": "APPLICATION"
+                },
+                "createdAt": "2024-08-23T18:39:48Z",
+                "currentPeriodEnd": "2024-08-24T00:00:00Z",
+                "updatedAt": "2024-08-23T18:39:48Z"
+              }
+            },
+            {
+              "cursor": "WzE3MjQzNDQ1Njc2ODkwMjMsODdd",
+              "node": {
+                "id": "bc/account/subscription/f34807ed-493a-4d17-90f1-11b2c3283cfd",
+                "accountId": "bc/account/account/6c3efb7e-10cf-48a3-af71-e64df983579f",
+                "activationDate": "2024-08-22T00:00:00Z",
+                "pricePerInterval": {
+                  "value": 14.99,
+                  "currencyCode": "USD"
+                },
+                "billingInterval": "ONCE",
+                "status": "ACTIVE",
+                "scope": {
+                  "type": "STORE",
+                  "id": "bc/account/scope/ptjktkt6tj"
+                },
+                "product": {
+                  "productLevel": "",
+                  "id": "bc/account/product/16267",
+                  "type": "APPLICATION"
+                },
+                "createdAt": "2024-08-22T16:36:06Z",
+                "currentPeriodEnd": "2024-08-23T00:00:00Z",
+                "updatedAt": "2024-08-22T16:36:06Z"
+              }
+            },
+            {
+              "cursor": "WzE3MjQzMzk2NjcyOTMyMjQsODZd",
+              "node": {
+                "id": "bc/account/subscription/803d7fea-defd-41d9-83c4-33d63b7ab22a",
+                "accountId": "bc/account/account/209dcf7b-79d8-45fb-9990-8685e464d3fa",
+                "activationDate": "2024-08-22T00:00:00Z",
+                "pricePerInterval": {
+                  "value": 14.99,
+                  "currencyCode": "USD"
+                },
+                "billingInterval": "ONCE",
+                "status": "ACTIVE",
+                "scope": {
+                  "type": "STORE",
+                  "id": "bc/account/scope/akpitaw5xe"
+                },
+                "product": {
+                  "productLevel": "",
+                  "id": "bc/account/product/16267",
+                  "type": "APPLICATION"
+                },
+                "createdAt": "2024-08-22T15:14:25Z",
+                "currentPeriodEnd": "2024-08-23T00:00:00Z",
+                "updatedAt": "2024-08-22T15:14:25Z"
+              }
+            },
+            {
+              "cursor": "WzE3MjQzMzgyNjIwMTEzMjMsODVd",
+              "node": {
+                "id": "bc/account/subscription/586989f3-8f3a-40c2-bb51-23b54a2b1563",
+                "accountId": "bc/account/account/3df4828d-eb17-4076-b516-6c1b7c44d65b",
+                "activationDate": "2024-08-22T00:00:00Z",
+                "pricePerInterval": {
+                  "value": 14.99,
+                  "currencyCode": "USD"
+                },
+                "billingInterval": "ONCE",
+                "status": "ACTIVE",
+                "scope": {
+                  "type": "STORE",
+                  "id": "bc/account/scope/m8gmsdvhrz"
+                },
+                "product": {
+                  "productLevel": "",
+                  "id": "bc/account/product/16267",
+                  "type": "APPLICATION"
+                },
+                "createdAt": "2024-08-22T14:51:00Z",
+                "currentPeriodEnd": "2024-08-23T00:00:00Z",
+                "updatedAt": "2024-08-22T14:51:00Z"
+              }
+            },
+            {
+              "cursor": "WzE3MjQyNjA0ODI2MzYyMTQsODRd",
+              "node": {
+                "id": "bc/account/subscription/e19d08e7-621e-4f30-90ad-6608e34ff7b0",
+                "accountId": "bc/account/account/e9d261ee-a46a-4d03-a850-12bc56358a05",
+                "activationDate": "2024-08-21T00:00:00Z",
+                "pricePerInterval": {
+                  "value": 14.99,
+                  "currencyCode": "USD"
+                },
+                "billingInterval": "ONCE",
+                "status": "ACTIVE",
+                "scope": {
+                  "type": "STORE",
+                  "id": "bc/account/scope/ixsnyuymca"
+                },
+                "product": {
+                  "productLevel": "",
+                  "id": "bc/account/product/16267",
+                  "type": "APPLICATION"
+                },
+                "createdAt": "2024-08-21T17:14:41Z",
+                "currentPeriodEnd": "2024-08-22T00:00:00Z",
+                "updatedAt": "2024-08-21T17:14:41Z"
+              }
+            },
+            {
+              "cursor": "WzE3MjQwODQ4MTAxMzA1ODQsODNd",
+              "node": {
+                "id": "bc/account/subscription/4391144f-4ef1-4d44-9e39-88c92f74413d",
+                "accountId": "bc/account/account/e6472f2c-4fda-4ac6-85bf-06ed6a3dcc3e",
+                "activationDate": "2024-08-29T00:00:00Z",
+                "pricePerInterval": {
+                  "value": 39.99,
+                  "currencyCode": "USD"
+                },
+                "billingInterval": "ANNUAL",
+                "status": "ACTIVE",
+                "scope": {
+                  "type": "STORE",
+                  "id": "bc/account/scope/qithb7k8wh"
+                },
+                "product": {
+                  "productLevel": "",
+                  "id": "bc/account/product/16267",
+                  "type": "APPLICATION"
+                },
+                "createdAt": "2024-08-19T16:34:45Z",
+                "currentPeriodEnd": "2025-08-19T00:00:00Z",
+                "updatedAt": "2024-08-19T16:34:45Z"
+              }
+            },
+            {
+              "cursor": "WzE3MjM0NzU1MDQ3MzEzMTUsODJd",
+              "node": {
+                "id": "bc/account/subscription/462beb00-10b6-4eeb-a314-d6cddd91bf43",
+                "accountId": "bc/account/account/fd0809ce-2f3e-4236-8d1a-d85cc9fe723a",
+                "activationDate": "2024-08-22T00:00:00Z",
+                "pricePerInterval": {
+                  "value": 12.1,
+                  "currencyCode": "USD"
+                },
+                "billingInterval": "MONTH",
+                "status": "ACTIVE",
+                "scope": {
+                  "type": "STORE",
+                  "id": "bc/account/scope/hfwvcccsmx"
+                },
+                "product": {
+                  "productLevel": "",
+                  "id": "bc/account/product/16267",
+                  "type": "APPLICATION"
+                },
+                "createdAt": "2024-08-23T16:55:05Z",
+                "currentPeriodEnd": "2024-08-22T00:00:00Z",
+                "updatedAt": "2024-08-23T16:55:05Z"
+              }
+            },
+            {
+              "cursor": "WzE3MjMwMjkzNzgyMTM3ODgsODBd",
+              "node": {
+                "id": "bc/account/subscription/69f56ca2-2eac-463c-981e-40f0df48037a",
+                "accountId": "bc/account/account/b347426e-dbce-4fa9-9b4c-f38e48e1fe83",
+                "activationDate": "2024-07-21T00:00:00Z",
+                "pricePerInterval": {
+                  "value": 12.1,
+                  "currencyCode": "USD"
+                },
+                "billingInterval": "MONTH",
+                "status": "SUSPENDED",
+                "scope": {
+                  "type": "STORE",
+                  "id": "bc/account/scope/nflzugwhtu"
+                },
+                "product": {
+                  "productLevel": "",
+                  "id": "bc/account/product/16267",
+                  "type": "APPLICATION"
+                },
+                "createdAt": "2024-08-07T11:16:13Z",
+                "currentPeriodEnd": "2024-08-11T00:00:00Z",
+                "updatedAt": "2024-08-07T11:16:13Z"
+              }
+            },
+            {
+              "cursor": "WzE3MjI4OTA0MDEzMjA3ODksODFd",
+              "node": {
+                "id": "bc/account/subscription/40ff5c2c-4e30-44a7-8eba-666606ceac9c",
+                "accountId": "bc/account/account/e3a45b63-9255-42d9-b980-4345d6becf70",
+                "activationDate": "2024-08-05T00:00:00Z",
+                "pricePerInterval": {
+                  "value": 12.1,
+                  "currencyCode": "USD"
+                },
+                "billingInterval": "MONTH",
+                "status": "ACTIVE",
+                "scope": {
+                  "type": "STORE",
+                  "id": "bc/account/scope/mkjajoayfu"
+                },
+                "product": {
+                  "productLevel": "",
+                  "id": "bc/account/product/16267",
+                  "type": "APPLICATION"
+                },
+                "createdAt": "2024-08-05T20:40:00Z",
+                "currentPeriodEnd": "2024-09-05T00:00:00Z",
+                "updatedAt": "2024-08-05T20:40:00Z"
+              }
+            },
+            {
+              "cursor": "WzE3MTk3NDYxNzUyNjg2NDUsNzdd",
+              "node": {
+                "id": "bc/account/subscription/2cab6d7e-f575-441f-9290-1e164991ea08",
+                "accountId": "bc/account/account/48c32212-61cc-4a87-a061-cb0affc71067",
+                "activationDate": "2024-09-11T00:00:00Z",
+                "pricePerInterval": {
+                  "value": 12.1,
+                  "currencyCode": "USD"
+                },
+                "billingInterval": "MONTH",
+                "status": "SUSPENDED",
+                "scope": {
+                  "type": "STORE",
+                  "id": "bc/account/scope/gwbeti9gpi"
+                },
+                "product": {
+                  "productLevel": "",
+                  "id": "bc/account/product/16267",
+                  "type": "APPLICATION"
+                },
+                "createdAt": "2024-06-30T11:16:11Z",
+                "currentPeriodEnd": "2024-10-03T00:00:00Z",
+                "updatedAt": "2024-09-10T00:00:00Z"
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+  ```
+  </Tab>
+</Tabs>
+
+Pagination info is returned with cursors on every subscription node. The `pageInfo` provides information on the next page along with the cursors to use in traversing the graph.
+
+```json
+"pageInfo": {
+  "hasNextPage": true,
+  "hasPreviousPage": false,
+  "startCursor": "WzE3MjQ0MzgzODk0MzY0NzYsODhd",
+  "endCursor": "WzE3MTk3NDYxNzUyNjg2NDUsNzdd"
+}
+```
+
+Use the `endCursor` to begin the next query. `first` can be used to limit how many subscriptions are returned. The max limit is 50 subscriptions at a time.
+
+```graphql filename="Example Query: Query subscriptions" showLineNumbers copy
+query {
+  account {
+    subscriptions(first: 10, after: "WzE3MTk3NDYxNzUyNjg2NDUsNzdd") {
+      pageInfo {
+        hasNextPage
+        hasPreviousPage
+        startCursor
+        endCursor
+      }
+      edges {
+        cursor
+        node {
+          id
+          accountId
+          activationDate
+          pricePerInterval {
+            value
+            currencyCode
+          }
+          billingInterval
+          status
+          scope {
+            type
+            id
+          }
+          product {
+            productLevel
+            id
+            type
+          }
+          createdAt
+          currentPeriodEnd
+          updatedAt
+        }
+      }
+    }
+  }
+}
+```
+
+Filters can also be used to query subscriptions.
+
+The supported filters are
+* `productId`
+* `productType`
+* `updatedAfter`
+* `status`
+* `ids`
+
+<Tabs items={["Request", "Sample variables"]}>
+  <Tab>
+  ```graphql filename="Example Query: Query subscriptions with filters" showLineNumbers copy
+    query ($filters: SubscriptionFiltersInput) {
+      account {
+        subscriptions(filters: $filters) {
+          pageInfo {
+            hasNextPage
+            hasPreviousPage
+            startCursor
+            endCursor
+          }
+          edges {
+            cursor
+            node {
+              id
+              accountId
+              activationDate
+              pricePerInterval {
+                value
+                currencyCode
+              }
+              billingInterval
+              status
+              scope {
+                type
+                id
+              }
+              product {
+                productLevel
+                id
+                type
+              }
+              createdAt
+              currentPeriodEnd
+              updatedAt
+            }
+          }
+        }
+      }
+    }
+    ```
+  </Tab>
+  <Tab>
+
+    Variables for this query should look like so:
+
+    ```json filename="Sample variables" showLineNumbers copy
+    {
+      "filters": {
+        "productId": "bc/account/product/16267",
+        "productType": "APPLICATION",
+        "updatedAfter": "2024-05-01T00:00:00Z",
+        "status": "ACTIVE"
+      }
+    }
+    ```
+
+    The `ids` filter can be used to retrieve specific subscriptions:
+
+    ```json filename="IDs filter" showLineNumbers copy
+    {
+       "filters": {
+           "ids": ["bc/account/subscription/d7762d54-1aab-4243-938b-294b846222b5", "bc/account/subscription/f34807ed-493a-4d17-90f1-11b2c3283cfd"]
+       }
+    }
+    ```
+  </Tab>
+</Tabs>

@@ -57,8 +57,6 @@ paths:
           $ref: '#/components/responses/404'
         '422':
           $ref: '#/components/responses/422'
-        '500':
-          $ref: '#/components/responses/500'
       security:
         - authToken: []
     put:
@@ -199,8 +197,6 @@ paths:
                 message: success
         '404':
           $ref: '#/components/responses/404'
-        '500':
-          $ref: '#/components/responses/500'
       security:
         - authToken: []
       x-code-samples:
@@ -353,7 +349,12 @@ paths:
       tags:
         - User
       summary: Create a User
-      description: 'Create a company user who belongs to the company.'
+      description: |-
+        Create a company user who belongs to the company.
+
+        * When `independent company behavior` is enabled, B2B Edition company accounts are the source of truth for defining a company user’s customer group assignment. If no default customer group is configured or the set value of `customerGroupId` is 0, the B2B company will not be associated with any customer group. The company users will have their corresponding customer records assigned to No Group in BigCommerce.
+
+        * When the `independent company behavior` is disabled, the BigCommerce customer record's customer group assignment will be the source of truth for defining a company user's company assignment.
       operationId: companies_users_create
       requestBody:
         content:
@@ -791,7 +792,7 @@ paths:
         description: Customer ID of BigCommerce customer user.
   /users/extra-fields:
     get:
-      summary: Get user extra field configs
+      summary: Get User Extra Field Configs
       description: Get user extra field configs
       tags:
         - User
@@ -833,15 +834,25 @@ components:
                 type: object
                 description: Response data
                 properties:
+                  errMsg:
+                    type: string
+                    example: User does not exist
+                    description: Error detail
+              meta:
+                type: object
+                description: Response meta
+                properties:
                   message:
                     type: string
                     example: Not Found Error
-                    description: Error message of this response
+                    description: Error message
           examples:
             example-1:
               value:
                 code: 404
-                data: {}
+                data: {
+                  errMsg: User does not exists
+                }
                 meta:
                   message: Not Found Error
     '422':

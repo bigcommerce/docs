@@ -210,6 +210,8 @@ paths:
       operationId: getPromotionCodes
       parameters:
         - $ref: '#/components/parameters/PromotionIdPath'
+        - $ref: '#/components/parameters/BeforeCursorQuery'
+        - $ref: '#/components/parameters/AfterCursorQuery'
       responses:
         '200':
           $ref: '#/components/responses/PromotionCodesCollectionResponse'
@@ -860,6 +862,19 @@ components:
         **Money**
         Represents a monetary value in the store’s default currency.
       example: '12.95'
+    OptionalCursorCollectionMeta:
+      title: Collection Meta
+      type: object
+      properties:
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+        cursor_pagination:
+          $ref: '#/components/schemas/CursorPagination'
+      description: >
+        Contains data about paginating the response via cursors.
+        If no pagination details are specified then both properties will be present. 
+        When a 'before' or 'after' cursor is provided only the 'cursor_pagination' property will be present.
+        When a 'page' parameter is provided only the offset based 'pagination' property will be present.
     CollectionMeta:
       title: Collection Meta
       type: object
@@ -900,6 +915,26 @@ components:
               description: Link to the next page returned in the response.
           description: Pagination links for the previous and next parts of the whole collection.
       description: 'Data about the response, including pagination and collection totals.'
+    CursorPagination:
+      title: Cursor Pagination
+      type: object
+      required: [previous, next, current]
+      properties:
+        previous:
+          type: string
+          nullable: true
+          description: Link to the previous page returned in the response.
+          example: '?limit=5&before=eyJpZCI6IjIzNzU1NyJ9'
+        current:
+          type: string
+          description: Link to the current page returned in the response.
+          example: '?limit=5&after=eyJpZCI6IjIzNzU1NyJ9'
+        next:
+          type: string
+          nullable: true
+          description: Link to the next page returned in the response.
+          example: '?limit=5&after=eyJpZCI6IjIzNzU1NyJ9'
+      description: Pagination links for the previous and next parts of the whole collection.
     ErrorResponse:
       title: Error Response
       type: object
@@ -1429,7 +1464,7 @@ components:
                 items:
                   $ref: '#/components/schemas/CouponCode'
               meta:
-                $ref: '#/components/schemas/CollectionMeta'
+                $ref: '#/components/schemas/OptionalCursorCollectionMeta'
           examples:
             example-1:
               value:
@@ -1680,6 +1715,29 @@ components:
       in: path
       description: The ID of the associated promotion.
       required: true
+      schema:
+        type: string
+    BeforeCursorQuery:
+      name: before
+      in: query
+      required: false
+      description: >
+        A cursor that can be used for backwards pagination.
+        Will fetch results before the position corresponding to the cursor.
+        Cannot be used with the 'page' query parameter.
+        Cannot be used with the 'after' query parameter.
+      schema:
+        type: string
+
+    AfterCursorQuery:
+      name: after
+      in: query
+      required: false
+      description: >
+        A cursor that can be used for backwards pagination.
+        Will fetch results after the position corresponding to the cursor.
+        Cannot be used with the 'page' query parameter.
+        Cannot be used with the 'before' query parameter.
       schema:
         type: string
     ChannelQuery:

@@ -632,9 +632,9 @@ paths:
 
         There are three methods for generating a tracking link for a shipment:
 
-        1. Use `shipping_provider` and `tracking_number`: This generates an automatic tracking link that you can click from the BigCommerce control panel and customer-facing emails. The `generated_tracking_link` property in the API response represents this tracking link. The `tracking_link` property in the API response will remain empty.
+        1. Use `shipping_provider` and `tracking_number`: This generates a link to one of our integrated providers that you can click from the BigCommerce control panel and customer-facing emails. If a merchant still needs to set up a shipping provider or if the provider is not one of our natively integrated providers, you will click on an Aftership tracking link instead. The `generated_tracking_link` property in the API response represents one of these tracking links. The `tracking_link` property in the API response will remain empty.
 
-        2. Use `tracking_carrier` and `tracking_number`: This also creates an automatic tracking link that you can click in both the BigCommerce control panel and customer-facing emails. Like the previous method, the `generated_tracking_link` property in the API response represents this tracking link. The `tracking_link` property in the API response will remain empty.
+        2. Use `tracking_carrier` and `tracking_number`: This also creates a link to one of our integrated providers or an Aftership tracking link that you can click in both the BigCommerce control panel and customer-facing emails. Like the previous method, the `generated_tracking_link` property in the API response represents this tracking link. The `tracking_link` property in the API response will remain empty.
 
         3. Supply a custom `tracking_link`: By providing a value for the `tracking_link` property, you can use your own tracking link within the BigCommerce control panel and in customer-facing emails. The API response will return your supplied tracking link as part of the `tracking_link` property in the response. In situations when there isn't a `generated_tracking_link`, the property in the API response will remain empty. 
         
@@ -651,7 +651,7 @@ paths:
          - `shipperhq`
          - `carrier_{your_carrier_id}`, when the carrier is a [third-party Shipping Provider](/docs/integrations/shipping) 
         
-        Acceptable values for `tracking_carrier` include an empty string (`""`) or one of the valid [tracking-carrier values](https://github.com/bigcommerce/dev-docs/blob/master/assets/csv/tracking_carrier_values.csv).
+        Acceptable values for `tracking_carrier` include an empty string (`""`) or one of the valid [tracking-carrier values](https://www.aftership.com/docs/tracking/others/supported-couriers).
       summary: Create Order Shipment
       parameters:
         - $ref: '#/components/parameters/ContentType'
@@ -2618,6 +2618,7 @@ components:
                   priority: 0
                   priority_amount: '17.6400'
                   line_amount: '17.6400'
+                  order_pickup_method_id: 0
                 - id: 14
                   order_id: 138
                   order_address_id: 40
@@ -2629,6 +2630,7 @@ components:
                   priority: 0
                   priority_amount: '4.4000'
                   line_amount: '4.4000'
+                  order_pickup_method_id: 0
     404_Resp:
       description: Not Found
       content:
@@ -2809,6 +2811,7 @@ components:
           enum:
             - physical
             - digital
+            - giftcertificate
           example: physical
           description: Type of product.
         base_price:
@@ -3195,6 +3198,10 @@ components:
           description: (Float, Float-As-String, Integer)
           example: '1.5200'
           type: string
+        order_pickup_method_id:
+          type: number
+          description: The ID of the order pickup method object (which contains pickup location details) associated with the order.
+          example: 0
         order_product_id:
           type: string
           description: If the `line_item_type` is `item` or `handling` then this field will be the order product id. Otherwise the field will return as null.
@@ -3254,11 +3261,11 @@ components:
           title: Tracking Carrier
           description: |-
             Tracking carrier for the shipment.
-            Acceptable values for `tracking_carrier` include an empty string (`""`) or one of the valid [tracking-carrier values](https://github.com/bigcommerce/dev-docs/blob/master/assets/csv/tracking_carrier_values.csv).
+            Acceptable values for `tracking_carrier` include an empty string (`""`) or one of the valid [tracking-carrier values](https://www.aftership.com/docs/tracking/others/supported-couriers).
           example: ""
         tracking_link:
           type: string
-          description: The custom tracking link supplied on POST or PUT shipments. For the auto-generated tracking link see the `generated_tracking_link` property.
+          description: The custom tracking link supplied on POST or PUT shipments. For the link to one of our integrated providers or Aftership tracking link, see the `generated_tracking_link` property.
         comments:
           type: string
           description: Comments the shipper wishes to add.
@@ -3289,7 +3296,7 @@ components:
           readOnly: true
         generated_tracking_link:
           type: string
-          description: The tracking link that is generated using the combination of either the `tracking_number` and `shipping_provider` or `tracking_number` and `tracking_carrier`. This will be empty if the custom `tracking_link` value is provided.
+          description: The link to one of our integrated providers or Aftership tracking link that is generated using the combination of either the `tracking_number` and `shipping_provider` or `tracking_number` and `tracking_carrier`. This will be empty if the custom `tracking_link` value is provided.
       x-internal: false
     orderConsignments_Resource:
       title: orderConsignments_Resource
@@ -3631,7 +3638,7 @@ components:
           maxLength: 50
         tracking_link:
           type: string
-          description: The custom tracking link supplied on POST or PUT shipments. For the auto-generated tracking link see the `generated_tracking_link` property.
+          description: The custom tracking link supplied on POST or PUT shipments. For the link to one of our integrated providers or Aftership tracking link see the `generated_tracking_link` property.
           example: https://www.mycustomtrackinglink.com/tracking
           maxLength: 500
         merchant_shipping_cost: 
@@ -3653,7 +3660,7 @@ components:
           title: Tracking Carrier
           description: |-
             Tracking carrier for the shipment.
-            Acceptable values for `tracking_carrier` include an empty string (`""`) or one of the valid [tracking-carrier values](https://github.com/bigcommerce/dev-docs/blob/master/assets/csv/tracking_carrier_values.csv).
+            Acceptable values for `tracking_carrier` include an empty string (`""`) or one of the valid [tracking-carrier values](https://www.aftership.com/docs/tracking/others/supported-couriers).
           example: ""
         comments:
           type: string
@@ -3703,11 +3710,11 @@ components:
           title: Tracking Carrier
           description: |-
             Tracking carrier for the shipment.
-            Acceptable values for `tracking_carrier` include an empty string (`""`) or one of the valid [tracking-carrier values](https://github.com/bigcommerce/dev-docs/blob/master/assets/csv/tracking_carrier_values.csv).
+            Acceptable values for `tracking_carrier` include an empty string (`""`) or one of the valid [tracking-carrier values](https://www.aftership.com/docs/tracking/others/supported-couriers).
           example: ""
         tracking_link:
           type: string
-          description: The custom tracking link supplied on POST or PUT shipments. For the auto-generated tracking link see the `generated_tracking_link` property.
+          description: The custom tracking link supplied on POST or PUT shipments. For the link to one of our integrated providers or Aftership tracking link see the `generated_tracking_link` property.
           example: https://www.mycustomtrackinglink.com/tracking
           maxLength: 500
         comments:

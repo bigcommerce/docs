@@ -268,12 +268,15 @@ paths:
                               channelName:
                                 type: string
                                 description: Store Channel name
-                        parentCompanyId:
-                          type: integer
-                          description: Parent company ID
-                        parentCompanyName:
-                          type: string
-                          description: Parent company name
+                        parentCompany:
+                          type: object
+                          properties:
+                            id:
+                              type: integer
+                              description: Parent company ID
+                            name:
+                              type: string
+                              description: Parent company name
                       required:
                         - companyId
                         - companyName
@@ -326,8 +329,9 @@ paths:
                             labelName: Enter your license
                         bcGroupId: 0
                         priceListAssign: []
-                        parentCompanyId: 1
-                        parentCompanyName: "Parent Company"
+                        parentCompany:
+                          id: 1
+                          name: Parent Company
                     meta:
                       message: SUCCESS
                       pagination:
@@ -351,8 +355,9 @@ paths:
                         createdAt: "1618787774"
                         bcGroupId: 0
                         priceListAssign: []
-                        parentCompanyId: 1
-                        parentCompanyName: "Parent Company"
+                        parentCompany:
+                          id: 1
+                          name: Parent Company
                     meta:
                       message: SUCCESS
                       pagination:
@@ -765,12 +770,15 @@ paths:
                       bcGroupId:
                         type: string
                         description: BigCommerce customer group ID
-                      parentCompanyId:
-                        type: integer
-                        description: Parent company ID
-                      parentCompanyName:
-                        type: string
-                        description: Parent company name
+                      parentCompany:
+                        type: object
+                        properties:
+                          id: 
+                            type: integer
+                            description: Parent company ID
+                          name:
+                            type: string
+                            description: Parent company name
                   meta:
                     type: object
                     required:
@@ -806,6 +814,9 @@ paths:
                           labelName: Enter your license
                       bcGroupId: "1"
                       bcGroupName: salons
+                      parentCompany:
+                          id: 1
+                          name: Parent Company
                     meta:
                       message: SUCCESS
         "404":
@@ -3079,13 +3090,26 @@ paths:
         required: true
         description: ID of company
     get:
-      summary: Get Company Subsidiary
+      summary: Get Company Subsidiaries
       operationId: get-companies-companyId-subsidiaries
-      description: 'Get all subsidiary in a company family.'
+      description: 'Get company subsidiaries.'
       security:
         - authToken: []
       tags:
        - Company
+      parameters:
+        - schema:
+            type: integer
+            default: 0
+          name: offset
+          in: query
+          description: Pagination offset
+        - schema:
+            type: integer
+            default: 10
+          name: limit
+          in: query
+          description: Pagination limit
       responses:
         "200":
           description: OK
@@ -3104,58 +3128,84 @@ paths:
                       properties:
                         companyStatus:
                           type: integer
-                          description: The status of the company.
+                          description: 'The status of the company. 0: PENDING 1: APPROVED 2: REJECTED 3: INACTIVE'
+                          enum:
+                            - 0
+                            - 1
+                            - 2
+                            - 3
                         companyId:
                           type: integer
                           description: ID of the company
                         companyName:
                           type: string
                           description: Name of the company
-                        parentCompanyId:
-                          type: integer
-                          description: ID of the parent company
-                        parentCompanyName:
-                          type: string
-                          description: Name of the parent company
-                        channels:
-                          type: array
-                          items:
-                            type: object
-                            properties:
-                              id:
-                                type: integer
-                                description: B2B Edition channel ID
-                              channelId:
-                                type: integer
-                                description: BigCommerce channel ID
-                              channelName:
-                                type: string
-                                description: Channel name
                   meta:
                     type: object
                     properties:
                       message:
                         type: string
                         default: SUCCESS
+                      pagination:
+                        type: object
+                        properties:
+                          totalCount:
+                            type: integer
+                          limit:
+                            type: integer
+                          offset:
+                            type: integer
               examples:
                 Examples 1:
                   value:
                     code: 200
                     data: 
                       - companyStatus: 1
-                        channels:
-                          - id: 1
-                            name: store channel name
                         companyId: 123
                         companyName: "Company"
-                        parentCompanyId: 12
-                        parentCompanyName: "Parent company"
                     meta:
                       message: SUCCESS
+                      pagination:
+                        totalCount: 10
+                        limit: 10
+                        offset: 0
+        "404":
+              description: Not found error
+              content:
+                application/json:
+                  schema:
+                    required:
+                      - code
+                      - data
+                      - meta
+                    type: object
+                    properties:
+                      code:
+                        type: number
+                      data:
+                        type: object
+                        properties: 
+                          errMsg:
+                            type: string
+                      meta:
+                        type: object
+                        properties:
+                          message:
+                            type: string
+                  examples:
+                    parameter error:
+                      value:
+                        code: 404
+                        data: {
+                          errMsg: Company does not exist.
+                        }
+                        meta:
+                          message: Not found error
+  
     delete:
-      summary: Delete Company Subsidiaries
-      operationId: delete-companies-companyId-subsidiaries
-      description: 'Delete company subsidiaries'
+      summary: Delete Company Subsidiary
+      operationId: delete-companies-companyId-subsidiary
+      description: 'Delete company subsidiary'
       security:
         - authToken: []
       tags:
@@ -3182,9 +3232,6 @@ paths:
                   code:
                     type: number
                     default: 200
-                  data:
-                    type: object
-                    properties: {}
                   meta:
                     type: object
                     properties:
@@ -3195,9 +3242,40 @@ paths:
                 Example 1:
                   value:
                     code: 200
-                    data: {}
                     meta:
                       message: SUCCESS
+        "400":
+                    description: Parameter error
+                    content:
+                      application/json:
+                        schema:
+                          required:
+                            - code
+                            - data
+                            - meta
+                          type: object
+                          properties:
+                            code:
+                              type: number
+                            data:
+                              type: object
+                              properties: 
+                                errMsg:
+                                  type: string
+                            meta:
+                              type: object
+                              properties:
+                                message:
+                                  type: string
+                        examples:
+                          parameter error:
+                            value:
+                              code: 400
+                              data: {
+                                errMsg: Invalid child company ID.
+                              }
+                              meta:
+                                message: Parameter error
   "/companies/{companyId}/parent":
     parameters:
       - schema:
@@ -3207,9 +3285,9 @@ paths:
         required: true
         description: ID of company
     post:
-      summary: Create Company Parent-Child Relationship
+      summary: Attach a company as parent to current company
       operationId: post-companies-companyId-parents
-      description: 'Create company parent-child relationship'
+      description: 'Attach a company as parent to current company'
       security:
         - authToken: []
       tags:
@@ -3236,15 +3314,6 @@ paths:
                   code:
                     type: number
                     default: 200
-                  data:
-                    type: object
-                    properties:
-                      parentCompanyId:
-                        type: integer
-                        description: ID of parent company.
-                      childCompanyId:
-                        type: integer
-                        description: ID of child company.
                   meta:
                     type: object
                     properties:
@@ -3255,9 +3324,6 @@ paths:
                 success:
                   value:
                     code: 200
-                    data:
-                      parentCompanyId: 123
-                      childCompanyId: 12
                     meta:
                       message: SUCCESS
         "400":

@@ -54,11 +54,6 @@ For more complex changes, fork and edit locally:
 - Do not end the subject line with a period.
 - Use the body to explain what and why versus how.
 
-## Style Guides
-
-- [Documentation Style Guide](_project/_doc_style_guide.md)
-- [API Specification Style Guide](_project/_spec_style_guide.md)
-
 ## Contributing to Other Projects
 
 There are many other public BigCommerce repositories accepting contributions. If you're interested in contributing to those projects, see the [full list of public source repos](https://github.com/bigcommerce?utf8=%E2%9C%93&q=is%3Apublic&type=source&language=). Also, consider joining the [BigCommerce Developer Community](https://developer.bigcommerce.com/community).

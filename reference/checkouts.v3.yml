@@ -27,6 +27,7 @@ tags:
   - name: Checkout Orders
   - name: Checkout Settings
   - name: Checkout Token
+  - name: Checkout Fees
 security:
   - X-Auth-Token: []
 paths:
@@ -7764,6 +7765,109 @@ paths:
                 meta: {}
         '409':
           $ref: '#/components/responses/CartConflictErrorResponse'
+  '/checkouts/{checkoutId}/fees':
+    post:
+      tags:
+        - Checkout Fees
+      summary: Add an Order Level Fee to Checkout
+      description: |-
+        Adds an order level fee to a checkout. 
+        
+        Limits: 
+          - max of 5 fees per checkout.
+      operationId: CheckoutsFeesByCheckoutIdPost
+      parameters:
+        - $ref: '#/components/parameters/checkoutId'
+        - $ref: '#/components/parameters/Accept'
+        - $ref: '#/components/parameters/Content-Type'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApplyFeesRequest'
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Checkout'
+                  meta:
+                    $ref: '#/components/schemas/MetaOpen'
+      x-unitTests: []
+      x-operation-settings:
+        CollectParameters: false
+        AllowDynamicQueryParameters: false
+        AllowDynamicFormParameters: false
+        IsMultiContentStreaming: false
+      x-codegen-request-body-name: body
+  '/checkouts/{checkoutId}/fees/{feeId}':
+    put:
+      tags:
+        - Checkout Fees
+      summary: Update a checkout order level fee
+      description: |-
+        Update an order level fee from a checkout by fee ID.
+        > We do not support partial updates, so please send the full entity values.
+      operationId: CheckoutsFeesByCheckoutIdAndFeeIdUpdate
+      parameters:
+        - $ref: '#/components/parameters/checkoutId'
+        - $ref: '#/components/parameters/Accept'
+        - name: feeId
+          in: path
+          description: 'The fee ID.'
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApplyFeesRequest'
+        required: true
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Checkout'
+                  meta:
+                    $ref: '#/components/schemas/MetaOpen'
+    delete:
+      tags:
+        - Checkout Fees
+      summary: Delete a checkout order level fee.
+      description: Delete a fee from a checkout by fee ID.
+      operationId: CheckoutsFeesByCheckoutIdAndFeeIdDelete
+      parameters:
+        - $ref: '#/components/parameters/checkoutId'
+        - $ref: '#/components/parameters/Accept'
+        - name: feeId
+          in: path
+          description: 'The fee ID.'
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Checkout'
+                  meta:
+                    $ref: '#/components/schemas/MetaOpen'
   '/checkouts/{checkoutId}/orders':
     post:
       tags:
@@ -8655,6 +8759,11 @@ components:
           description: Coupons applied at checkout level.
           items:
             $ref: '#/components/schemas/AppliedCoupon'
+        fees:
+          type: array
+          description: Fees applied at checkout level.
+          items:
+            $ref: '#/components/schemas/CheckoutFee'
         order_id:
           type: string
           description: ''
@@ -8766,6 +8875,46 @@ components:
           description: The discounted amount applied within a given context.
           format: float
           example: 0.9
+      x-internal: false
+    CheckoutFee:
+      title: Checkout Fee
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: The fee ID.
+          example: 497f6eca-6276-4993-bfeb-53cbbbba6f08
+        type:
+          type: string
+          description: The type of the fee
+          enum:
+            - custom_fee
+        name:
+          type: string
+          description: Name of the fee.
+          example: ROUTEINS
+        display_name:
+          type: string
+          description: Display name of the fee targeting customers/shoppers
+          example: Package Protection Insurance
+        cost_inc_tax:
+          type: number
+          description: Cost of the fee including tax
+          example: 10.0
+        cost_ex_tax:
+          type: number
+          description: Cost of the fee excluding tax
+          example: 9.9
+        source:
+          type: string
+          description: The source of the request
+          example: Route
+        tax_class_id:
+          type: integer
+          nullable: true
+          description: The tax class ID
+          example: 1
       x-internal: false
     AddressProperties:
       title: Address Properties
@@ -9045,6 +9194,48 @@ components:
         version:
           type: integer
           description: The cart version that you expect to apply the updates. If the provided version doesn't match the current cart version, you will receive a conflict error. This field is optional; if not provided, optimistic concurrency control will not apply.
+          example: 1
+      x-internal: false
+    ApplyFeesRequest:
+      title: Fees Post/Put request
+      type: object
+      required:
+        - type
+        - name
+        - display_name
+        - cost
+        - source
+      properties:
+        type:
+          type: string
+          description: The type of the fee.
+          enum:
+            - custom_fee
+        name:
+          type: string
+          minLength: 1
+          maxLength: 50
+          description: The name of the fee.
+          example: ROUTEINS
+        display_name:
+          type: string
+          minLength: 1
+          maxLength: 200
+          description: The display name of the fee targeting customers/shoppers.
+          example: Package Protection Insurance
+        cost:
+          type: number
+          description: The cost of the fee.
+          example: 7.12
+        source:
+          type: string
+          minLength: 1
+          maxLength: 50
+          description: The source of the request.
+          example: Route
+        tax_class_id:
+          type: integer
+          description: The tax class id applied to this fee (the tax class id can be retrieved from our management API - v2/tax_classes). If the tax class is not provided or is null, the default fee tax class set in the control panel will be used.
           example: 1
       x-internal: false
     DeleteCouponCodeRequest:

@@ -97,12 +97,12 @@ paths:
             format: date-time
         - name: 'date_created:max'
           in: query
-          description: 'Filter items by maximum date created, for example, `2024-05-14T09:34:00` or `2024-05-14`. Returns metafields created before this date.'
+          description: 'Filter items by maximum date created, for example, `2024-05-14T09:34:00` or `2024-05-14`. Returns customers created before this date.'
           schema:
             type: string
         - name: 'date_created:min'
           in: query
-          description: 'Filter items by date created for example, `2024-05-14T09:34:00` or `2024-05-14`. Returns metafields created after this date.'
+          description: 'Filter items by date created for example, `2024-05-14T09:34:00` or `2024-05-14`. Returns customers created after this date.'
           schema:
             type: string
             format: date-time
@@ -114,12 +114,12 @@ paths:
             format: date-time
         - name: 'date_modified:min'
           in: query
-          description: 'Filter items by minimum date modified, for example, `2024-05-14T09:34:00` or `2024-05-14`. Returns metafields modified after this date.' 
+          description: 'Filter items by minimum date modified, for example, `2024-05-14T09:34:00` or `2024-05-14`. Returns customers modified after this date.' 
           schema:
             type: string
         - name: 'date_modified:max'
           in: query
-          description: 'Filter items by maximum date modified, for example, `2024-05-14T09:34:00` or `2024-05-14`. Returns metafields modified before this date.' 
+          description: 'Filter items by maximum date modified, for example, `2024-05-14T09:34:00` or `2024-05-14`. Returns customers modified before this date.' 
           schema:
             type: string
             format: date-time
@@ -153,6 +153,13 @@ paths:
             type: array
             items:
               type: string
+        - name: 'phone:in'
+          in: query
+          description: 'Filter items by phone number. `phone:in=555-55-5555`'
+          style: form
+          explode: false
+          schema:
+            type: string
         - name: 'registration_ip_address:in'
           in: query
           description: |-
@@ -204,6 +211,13 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/CustomerCollectionResponse'
+        '422':
+          description: |
+            The optional filter parameter was not valid. This is the result of missing required fields, or of invalid data. See the response for more details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
     post:
       description: |-
         Creates Customers. Create up to 10 customers in one call.
@@ -307,7 +321,7 @@ paths:
                       .customer_create: Error creating customers
     put:
       description: |-
-        Updates Customers. Subresource updates are not supported. Up to 10 customers can be updated in one call.
+        Updates Customers. Subresource updates are not supported. 
 
         **Required Fields**
         * id -- ID of the *Customer* This must be included in the request body
@@ -319,7 +333,10 @@ paths:
         * date_modified
         * origin_channel_id
 
-
+        **Limits**
+        * Limit of 10 customers per call.
+        * Limit of 3 concurrent requests
+        
         **Notes**
 
         * Attributes Values can not be updated using Update a Customer. Use the [Update customer attribute values](/docs/rest-management/customers/customer-attribute-values#upsert-customer-attribute-values) endpoint.
@@ -412,6 +429,12 @@ paths:
         '204':
           description: ''
           headers: {}
+        '422':
+          description: The `id:in` was not valid. This is the result of missing required fields, or of invalid data. See the response for more details. 
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   '/customers/addresses':
     get:
       description: Returns a list of Customer Addresses. Optional filter parameters can be passed in.
@@ -1296,7 +1319,9 @@ paths:
         Upsert checks for an existing record. If there is none, it creates the record, if there is a matching record, it updates that record.
 
         **Limits**
-        * 10 per call limit.
+        * Limit of 10 customers per call.
+        * Limit of 3 concurrent requests.
+        
       summary: Upsert Customer Attribute Values
       operationId: upsertCustomersAttributeValues
       deprecated: false
@@ -1483,11 +1508,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-      summary: Upsert Customer Form Field Values
+      summary: Upsert Customer Form Field Values (Deprecated)
       description: |-
-        Updates form field values on the Customer or Customer Address objects. Multiple form field values can be updated in one call.
-
-        Upsert checks for an existing record, if there is none it creates the record, if there is a matching record it updates that record.
+        This endpoint is deprecated. Use [Update a Customer Address](/docs/rest-management/customers/addresses#update-a-customer-address) and [Update Customers](/docs/rest-management/customers#update-customers) endpoints instead.
 
         To learn more about editing form fields, see [Adding and Editing Fields in the Account Signup Form](https://support.bigcommerce.com/s/article/Editing-Form-Fields).
 
@@ -1672,12 +1695,6 @@ paths:
       operationId: getCustomersMetafields
       parameters:
         - $ref: '#/components/parameters/customerId'
-      requestBody:
-        required: true
-        content: 
-          application/json:
-            schema:
-             $ref: '#/components/schemas/Metafield'
       responses:
         '200':
           $ref: '#/components/responses/MetafieldCollectionResponse'
@@ -1760,12 +1777,6 @@ paths:
           required: true
           schema:
             type: integer
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Metafield'
       responses:
         '200':
           $ref: '#/components/responses/MetafieldCollectionResponse'
@@ -1800,18 +1811,16 @@ paths:
         content:
           application/json:
             schema:
-              type: array
-              items:
-                allOf:
-                  - $ref: '#/components/schemas/MetafieldBase_Put'
-                  - type: object
-                    properties:
-                      id:
-                        type: integer
-                        example: 42
-                        description: |
-                          The ID of metafield to update.
-                    required:
+              allOf:
+                - $ref: '#/components/schemas/MetafieldBase_Put'
+                - type: object
+                  properties:
+                    id:
+                      type: integer
+                      example: 42
+                      description: |
+                        The ID of metafield to update.
+                  required:
                       - id
         description: ''
       responses:
@@ -1868,14 +1877,6 @@ paths:
         - $ref: '#/components/parameters/customerId'
         - $ref: '#/components/parameters/metafieldId'
       operationId: deleteCustomerMetafieldsId
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: array
-              items:
-                type: integer
-        description: ''
       responses:
         '204':
           description: | 
@@ -2051,14 +2052,6 @@ paths:
         - Metafields Batch
       description: Delete all customer metafields.
       operationId: deleteCustomersMetafields
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: array
-              items:
-                type: integer
-        description: Metafields ID list.
       responses:
         '200':
           description: |

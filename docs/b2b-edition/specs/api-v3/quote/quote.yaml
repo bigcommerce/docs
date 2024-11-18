@@ -1935,3 +1935,289 @@ paths:
       description: Get quote extra fields configs. It is better to cache the response results to avoid frequent API requests.
       security:
         - authToken: []
+  '/rfq/{quote_id}/shipping-rates':
+    parameters:
+      - schema:
+          type: string
+        name: quote_id
+        in: path
+        required: true
+        description: Unique quote ID
+    get:
+      summary: Get available shipping rates for quote
+      operationId: get-rfq-quote_id-shipping-rates
+      description: Get available shipping rates for quote.
+      security:
+        - authToken: []
+      tags:
+        - Quote
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                description: ''
+                type: object
+                properties:
+                  code:
+                    type: number
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        shippingMethodId:
+                          type: string
+                          description: Shipping method ID
+                        type: 
+                          type: string
+                          description: Shipping method type
+                        description:
+                          type: string
+                          description: Shipping method description
+                        cost:
+                          type: number
+                          description: Shipping cost
+                  meta:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+              examples:
+                Success:
+                  value:
+                    code: 200
+                    data:
+                      - shippingMethodId: "07a4b3bc067385847b04d80d430486d9"
+                        type: "shipping_flatrate"
+                        description: "Flat Rate"
+                        cost: 10
+                    meta:
+                      message: SUCCESS
+        '404':
+          description: Not found error
+          content:
+            application/json:
+              schema:
+                description: ''
+                type: object
+                properties:
+                  code:
+                    type: number
+                  data:
+                    type: object
+                    properties:
+                      errMsg:
+                        type: string
+                  meta:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+
+              examples:
+                Not found error:
+                  value:
+                    code: 404
+                    data:
+                      errMsg: "Quote does not exist."
+                    meta:
+                      message: "Not found error"
+
+  '/rfq/custom/shipping-methods':
+    get:
+      summary: Get all B2B quote custom shipping methods
+      operationId: get-rfq-quote_id-custom-shipping
+      description: Get all B2B quote custom shipping methods. 
+      security:
+        - authToken: []
+      tags:
+        - Quote
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                description: ''
+                type: object
+                properties:
+                  code:
+                    type: number
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        customShippingMethodName:
+                          type: string
+                          description: Custom shipping method name
+                  meta:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+              examples:
+                Success:
+                  value:
+                    code: 200
+                    data:
+                        - customShippingMethodName: "custom1"
+                        - customShippingMethodName: "custom2"
+                    meta:
+                      message: SUCCESS
+        '422':
+          description: Parameter error
+          content:
+            application/json:
+              schema:
+                description: ''
+                type: object
+                properties:
+                  code:
+                    type: number
+                  data:
+                    type: object
+                    properties:
+                      errMsg:
+                        type: string
+                  meta:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+
+              examples:
+                Parameter error:
+                  value:
+                    code: 422
+                    data:
+                      errMsg: "Custom shipping is not enabled."
+                    meta:
+                      message: "Parameter error"
+
+  '/rfq/{quote_id}/shipping-rate':
+    parameters:
+        - schema:
+            type: string
+          name: quote_id
+          in: path
+          required: true
+          description: Unique quote ID
+    put:
+      summary: Select a shipping rate for quote
+      operationId: rfq-quote_id-select-shipping-rate
+      description: Select a shipping rate for quote. 
+      security:
+        - authToken: []
+      tags:
+        - Quote
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                shippingMethodId:
+                  type: string
+                  description: Shipping method ID. Cannot be used with `customShippingMethodName` at the same time.
+                customShippingMethodName:
+                  type: string
+                  description: Custom shipping method name. Cannot be used with `shippingMethodId` at the same time.
+                customShippingMethodCost:
+                  type: number
+                  description: Custom shipping method cost. Required when using custom shipping method.
+                  minimum: 0
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                description: ''
+                type: object
+                properties:
+                  code:
+                    type: number
+                  meta:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+              examples:
+                Success:
+                  value:
+                    code: 200
+                    meta:
+                      message: SUCCESS
+        '422':
+          description: Parameter error
+          content:
+            application/json:
+              schema:
+                description: ''
+                type: object
+                properties:
+                  code:
+                    type: number
+                  data:
+                    type: object
+                    properties:
+                      errMsg:
+                        type: string
+                  meta:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+
+              examples:
+                Parameter error:
+                  value:
+                    code: 422
+                    data:
+                      errMsg: "Shipping cost is required when using a custom shipping method."
+                    meta:
+                      message: "Parameter error"
+    delete:
+      summary: Remove selected shipping rate for quote
+      operationId: rfq-quote_id-delete-shipping-rate
+      description: Remove selected shipping rate for quote.
+      security:
+        - authToken: []
+      tags:
+        - Quote
+      responses:
+        '204':
+          description: OK
+        '422':
+          description: Parameter error
+          content:
+            application/json:
+              schema:
+                description: ''
+                type: object
+                properties:
+                  code:
+                    type: number
+                  data:
+                    type: object
+                    properties:
+                      errMsg:
+                        type: string
+                  meta:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+
+              examples:
+                Parameter error:
+                  value:
+                    code: 422
+                    data:
+                      errMsg: "Quote does not have any shipping rate."
+                    meta:
+                      message: "Parameter error"
+    

@@ -100,7 +100,8 @@ paths:
 
         After the update, the PUT request clears all discounts and promotions applied to the changed order line items. Since the order data syncs with other ERP systems, like Amazon or eBay, the updated order returns to the default setting, removing any applied discounts.
         
-        To update the fees for an order, include the fee `id` in the request body. The body should include all relevant fields, with either the updated values or the existing values you wish to retain. Fees not included in the payload will be deleted. Fees provided in the request will be updated, and fees without an ID will be created as new.
+        To update order fees, include the fee id in the request body along with all relevant fee fields. Fees not included will be deleted. Fees with an id will be updated, and fees without an id will be created as new.
+        Note: Sub-resources like products in the /v2/orders PUT request behave like PATCH, updating only the provided fields. Fees, however, follow standard PUT semantics—fees in the request body will fully replace existing ones. To retain an existing fee, include it in the body with its associated id.
         
         To learn more about creating or updating orders, see [Orders Overview](/docs/store-operations/orders).
       summary: Update an Order
@@ -1176,7 +1177,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/orderFees'
+                $ref: '#/components/schemas/orderFees_Resp'
               examples:
                 response:
                   value:
@@ -4921,6 +4922,11 @@ components:
           description: The status ID of the order.
         billing_address:
           $ref: '#/components/schemas/billingAddress_Resp'
+        fees:
+          type: array
+          items:
+            allOf:
+              - $ref: '#/components/schemas/orderFees_Resp'
     orderCustomProduct_Put:
       type: object
       title: Custom product
@@ -5387,6 +5393,12 @@ components:
               description: The value of the wrapping cost, including tax. The value can't be negative. (Float, Float-As-String, Integer)
               example: '0.0000'
               type: string
+            fees:
+              type: array
+              items:
+                anyOf:
+                  - $ref: '#/components/schemas/orderFees_Put'
+                  - $ref: '#/components/schemas/orderFees_Post'
     order_Post:
       title: order_Post
       description: Products and Billing address only required for POST operation.
@@ -5417,6 +5429,11 @@ components:
                         example: Free Shipping
             consignments:
               $ref: '#/components/schemas/orderConsignment_Post'
+            fees:
+              type: array
+              items:
+                allOf:
+                  - $ref: '#/components/schemas/orderFees_Post'
         - $ref: '#/components/schemas/order_Shared'
       x-internal: false
     shippingAddress_Put:
@@ -6140,8 +6157,8 @@ components:
           line_items:
             - url: 'https://api.bigcommerce.com/stores/{store_hash}/v2/orders/129/products/12'
               resource: /orders/129/products/12
-    orderFees:
-      title: orderFees
+    orderFees_Resp:
+      title: orderFees_Resp
       type: object
       properties:
         id:
@@ -6159,7 +6176,7 @@ components:
           type: string
         display_name_merchant:
           description: The display name of the fee targeting shoppers.
-                        NOTE - At least one of the following fields (display_name_customer, display_name_merchant) must be included in the request.
+            NOTE - At least one of the following fields (display_name_customer, display_name_merchant) must be included in the request.
           example: Package Protection Fee
           type: string
         source:
@@ -6170,21 +6187,123 @@ components:
           description: |-
             The base fee cost value. (Float, Float-As-String, Integer)
           example: 8.5000
-          type: number
+          oneOf:
+            - type: string
+            - type: number
         cost_ex_tax:
           description: The fee cost value excluding tax. (Float, Float-As-String, Integer)
           example: 8.5000
-          type: number
+          oneOf:
+            - type: string
+            - type: number
         cost_inc_tax:
           description: The fee cost value including tax. (Float, Float-As-String, Integer)
           example: 10.0000
-          type: number
+          oneOf:
+            - type: string
+            - type: number
         cost_tax:
-          description: The tax amount on the fee cost. (Float, Float-As-String, Integer) 
-                       NOTE - At least two of the following fields (cost_ex_tax, cost_inc_tax, and cost_tax) must be included in the request.
+          description: The tax amount on the fee cost. (Float, Float-As-String, Integer)
+            NOTE - At least two of the following fields (cost_ex_tax, cost_inc_tax, and cost_tax) must be included in the request.
           example: 1.5000
-          type: number
+          oneOf:
+            - type: string
+            - type: number
         tax_class_id:
-          description: A unique numeric identifier for the tax class object. The value will be 0 if automatic tax is enabled or if the default tax class is applied.
+          description: A unique numeric identifier for the tax class. It defaults to 0 if automatic tax is enabled, the default tax class is applied, or if tax_class_id is absent or null.
+          example: 0
+          type: integer
+    orderFees_Post:
+      title: orderFees_Post
+      type: object
+      properties:
+        type:
+          description: The type of the fee.
+          type: string
+          enum:
+            - custom_fee
+        display_name_customer:
+          description: The display name of the fee targeting customers.
+          example: Package Protection Insurance
+          type: string
+        display_name_merchant:
+          description: The display name of the fee targeting shoppers.
+            NOTE - At least one of the following fields (display_name_customer, display_name_merchant) must be included in the request.
+          example: Package Protection Fee
+          type: string
+        source:
+          description: TThe source of the request.
+          example: "v2"
+          type: string
+        cost_ex_tax:
+          description: The fee cost value excluding tax. (Float, Float-As-String, Integer)
+          example: 8.5000
+          oneOf:
+            - type: string
+            - type: number
+        cost_inc_tax:
+          description: The fee cost value including tax. (Float, Float-As-String, Integer)
+          example: 10.0000
+          oneOf:
+            - type: string
+            - type: number
+        cost_tax:
+          description: The tax amount on the fee cost. (Float, Float-As-String, Integer)
+            NOTE - At least two of the following fields (cost_ex_tax, cost_inc_tax, and cost_tax) must be included in the request.
+          example: 1.5000
+          oneOf:
+            - type: string
+            - type: number
+        tax_class_id:
+          description: A unique numeric identifier for the tax class. It defaults to 0 if automatic tax is enabled, the default tax class is applied, or if tax_class_id is absent or null.
+          example: 0
+          type: integer
+    orderFees_Put:
+      title: orderFees_Put
+      type: object
+      properties:
+        id:
+          description: The unique numeric identifier of the fees object.
+          example: 1
+          type: integer
+        type:
+          description: The type of the fee.
+          type: string
+          enum:
+            - custom_fee
+        display_name_customer:
+          description: The display name of the fee targeting customers.
+          example: Package Protection Insurance
+          type: string
+        display_name_merchant:
+          description: The display name of the fee targeting shoppers.
+            NOTE - At least one of the following fields (display_name_customer, display_name_merchant) must be included in the request.
+          example: Package Protection Fee
+          type: string
+        source:
+          description: TThe source of the request.
+          example: "v2"
+          type: string
+        cost_ex_tax:
+          description: The fee cost value excluding tax. (Float, Float-As-String, Integer)
+          example: 8.5000
+          oneOf:
+            - type: string
+            - type: number
+        cost_inc_tax:
+          description: The fee cost value including tax. (Float, Float-As-String, Integer)
+          example: 10.0000
+          oneOf:
+            - type: string
+            - type: number
+        cost_tax:
+          description: The tax amount on the fee cost. (Float, Float-As-String, Integer)
+            NOTE - At least two of the following fields (cost_ex_tax, cost_inc_tax, and cost_tax) must be included in the request.
+          example: 1.5000
+          oneOf:
+            - type: string
+            - type: number
+        tax_class_id:
+          description: A unique numeric identifier for the tax class. It defaults to 0 if automatic tax is enabled, the default tax class is applied, or if tax_class_id is absent or null.
           example: 0
           type: integer

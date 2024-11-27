@@ -7769,9 +7769,9 @@ paths:
     post:
       tags:
         - Checkout Fees
-      summary: Add an Order Level Fee to Checkout
+      summary: Add order level fees to a checkout
       description: |-
-        Adds an order level fee to a checkout. 
+        Adds order level fees to a checkout. 
         
         Limits: 
           - Maximum of 5 fees per checkout.
@@ -7784,7 +7784,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ApplyFeesRequest'
+              $ref: '#/components/schemas/AddFeesRequest'
         required: true
       responses:
         '200':
@@ -7805,29 +7805,22 @@ paths:
         AllowDynamicFormParameters: false
         IsMultiContentStreaming: false
       x-codegen-request-body-name: body
-  '/checkouts/{checkoutId}/fees/{feeId}':
     put:
       tags:
         - Checkout Fees
-      summary: Update a checkout order level fee
+      summary: Update order level fees in a checkout
       description: |-
-        Update an order level fee from a checkout by fee ID.
-        > We do not support partial updates, so please send the full entity values.
-      operationId: CheckoutsFeesByCheckoutIdAndFeeIdUpdate
+        Updates order level fees in a checkout.
+        > We do not support partial updates, so please send the full entity values for each fee to be updated.
+      operationId: CheckoutsFeesByCheckoutIdPut
       parameters:
         - $ref: '#/components/parameters/checkoutId'
         - $ref: '#/components/parameters/Accept'
-        - name: feeId
-          in: path
-          description: 'The fee ID.'
-          required: true
-          schema:
-            type: string
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ApplyFeesRequest'
+              $ref: '#/components/schemas/UpdateFeesRequest'
         required: true
       responses:
         '200':
@@ -7844,18 +7837,18 @@ paths:
     delete:
       tags:
         - Checkout Fees
-      summary: Delete a checkout order level fee.
-      description: Delete a fee from a checkout by fee ID.
-      operationId: CheckoutsFeesByCheckoutIdAndFeeIdDelete
+      summary: Delete order level fees from a checkout.
+      description: Delete fees from a checkout.
+      operationId: CheckoutsFeesByCheckoutIdDelete
       parameters:
         - $ref: '#/components/parameters/checkoutId'
         - $ref: '#/components/parameters/Accept'
-        - name: feeId
-          in: path
-          description: 'The fee ID.'
-          required: true
-          schema:
-            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeleteFeesRequest'
+        required: true
       responses:
         '200':
           description: ''
@@ -9196,8 +9189,7 @@ components:
           description: The cart version that you expect to apply the updates. If the provided version doesn't match the current cart version, you will receive a conflict error. This field is optional; if not provided, optimistic concurrency control will not apply.
           example: 1
       x-internal: false
-    ApplyFeesRequest:
-      title: Fees Post/Put request
+    BaseFee:
       type: object
       required:
         - type
@@ -9237,6 +9229,57 @@ components:
           type: integer
           description: The tax class ID applied to this fee (the tax class ID can be retrieved from our management API - v2/tax_classes). If the tax class is not provided or is null, the default fee tax class set in the control panel will be used.
           example: 1
+    FeeWithId:
+      allOf:
+        - $ref: '#/components/schemas/BaseFee'
+        - type: object
+          properties:
+            id:
+              type: string
+              description: ID of the fee
+              example: 3c26f3e6-146d-4dce-8159-2a77c0bba409
+          required:
+            - id
+    AddFeesRequest:
+      title: Fees POST request
+      type: object
+      required:
+        - fees
+      properties:
+        fees:
+          type: array
+          description: The fees to be added to a checkout
+          items:
+            $ref: '#/components/schemas/BaseFee'
+          minItems: 1
+      x-internal: false
+    UpdateFeesRequest:
+      title: Fees PUT request
+      type: object
+      required:
+        - fees
+      properties:
+        fees:
+          type: array
+          description: The fees to be updated in a checkout
+          items:
+            $ref: '#/components/schemas/FeeWithId'
+          minItems: 1
+      x-internal: false
+    DeleteFeesRequest:
+      title: Fees DELETE request
+      type: object
+      required:
+        - ids
+      properties:
+        ids:
+          type: array
+          description: The ids of the fees to be deleted from a checkout
+          items:
+            type: string
+            description: The id of the fee.
+            example: 3c26f3e6-146d-4dce-8159-2a77c0bba409
+          minItems: 1
       x-internal: false
     DeleteCouponCodeRequest:
       title: Delete Coupon Request

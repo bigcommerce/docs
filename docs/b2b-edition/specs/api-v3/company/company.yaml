@@ -3088,7 +3088,7 @@ paths:
         name: companyId
         in: path
         required: true
-        description: ID of company
+        description: ID of company.
     get:
       summary: Get Company Subsidiaries
       operationId: get-companies-companyId-subsidiaries
@@ -3103,13 +3103,13 @@ paths:
             default: 0
           name: offset
           in: query
-          description: Pagination offset
+          description: Pagination offset.
         - schema:
             type: integer
             default: 10
           name: limit
           in: query
-          description: Pagination limit
+          description: Pagination limit.
       responses:
         "200":
           description: OK
@@ -3126,20 +3126,20 @@ paths:
                     items:
                       type: object
                       properties:
+                        companyId:
+                          type: integer
+                          description: ID of the company.
+                        companyName:
+                          type: string
+                          description: Name of the company.
                         companyStatus:
                           type: integer
-                          description: 'The status of the company. 0: PENDING 1: APPROVED 2: REJECTED 3: INACTIVE'
+                          description: 'The status of the company. 0: PENDING 1: APPROVED 2: REJECTED 3: INACTIVE.'
                           enum:
                             - 0
                             - 1
                             - 2
                             - 3
-                        companyId:
-                          type: integer
-                          description: ID of the company
-                        companyName:
-                          type: string
-                          description: Name of the company
                   meta:
                     type: object
                     properties:
@@ -3200,12 +3200,12 @@ paths:
                           errMsg: Company does not exist.
                         }
                         meta:
-                          message: Not found error
+                          message: Not found error.
   
     delete:
       summary: Delete Company Subsidiary
       operationId: delete-companies-companyId-subsidiary
-      description: 'Delete company subsidiary'
+      description: 'Delete company subsidiary.'
       security:
         - authToken: []
       tags:
@@ -3225,7 +3225,7 @@ paths:
         "204":
           description: Success
         "400":
-                    description: Parameter error
+                    description: Parameter error.
                     content:
                       application/json:
                         schema:
@@ -3255,7 +3255,7 @@ paths:
                                 errMsg: Invalid child company ID.
                               }
                               meta:
-                                message: Parameter error
+                                message: Parameter error.
   "/companies/{companyId}/parent":
     parameters:
       - schema:
@@ -3263,11 +3263,11 @@ paths:
         name: companyId
         in: path
         required: true
-        description: ID of company
+        description: ID of company.
     post:
       summary: Attach a company as parent to current company
       operationId: post-companies-companyId-parents
-      description: 'Attach a company as parent to current company'
+      description: 'Attach a company as parent to current company.'
       security:
         - authToken: []
       tags:
@@ -3280,7 +3280,7 @@ paths:
               properties:
                 parentCompanyId:
                   type: integer
-                  description: Parent company ID
+                  description: Parent company ID.
               required:
                 - parentCompanyId
       responses:
@@ -3334,10 +3334,198 @@ paths:
                   value:
                     code: 400
                     data: {
-                      errMsg: The parent company has reached the maximum layer
+                      errMsg: The parent company has reached the maximum layer.
                     }
                     meta:
-                      message: The parent company has reached the maximum layer
+                      message: The parent company has reached the maximum layer.
+  "/companies/{companyId}/hierarchy":
+    parameters:
+      - schema:
+          type: integer
+        name: companyId
+        in: path
+        required: true
+        description: ID of company.
+    get:
+      summary: Get Company Hierarchy
+      operationId: get-companies-companyId-hierarchy
+      description: |-
+        Get the complete hierarchy of current company, including its parent companies and subsidiaries.
+        The API rate limit is 15/min per store.
+      security:
+        - authToken: []
+      tags:
+       - Company
+      parameters:
+        - schema:
+            type: integer
+            default: 0
+          name: offset
+          in: query
+          description: Pagination offset.
+        - schema:
+            type: integer
+            default: 10
+          name: limit
+          in: query
+          description: Pagination limit for subsidiaries of current company.
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: number
+                    default: 200
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        companyId:
+                          type: integer
+                          description: ID of the company.
+                        companyName:
+                          type: string
+                          description: Name of the company.
+                        companyStatus:
+                          type: integer
+                          description: 'The status of the company. 0: PENDING 1: APPROVED 2: REJECTED 3: INACTIVE.'
+                          enum:
+                            - 0
+                            - 1
+                            - 2
+                            - 3
+                        subsidiaries:
+                          description: Subsidiaries of the company.
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              companyId:
+                                type: integer
+                                description: ID of the company.
+                              companyName:
+                                type: string
+                                description: Name of the company.
+                              companyStatus:
+                                type: integer
+                                description: 'The status of the company. 0: PENDING 1: APPROVED 2: REJECTED 3: INACTIVE.'
+                                enum:
+                                  - 0
+                                  - 1
+                                  - 2
+                                  - 3
+                              subsidiaries:
+                                type: array
+                                description: Subsidiaries of the company.
+                                items:
+                                  type: object
+                                  properties:
+                                    companyId:
+                                      type: integer
+                                      description: ID of the company.
+                                    companyName:
+                                      type: string
+                                      description: Name of the company.
+                                    companyStatus:
+                                      type: integer
+                                      description: 'The status of the company. 0: PENDING 1: APPROVED 2: REJECTED 3: INACTIVE.'
+                                      enum:
+                                        - 0
+                                        - 1
+                                        - 2
+                                        - 3
+                                    subsidiaries:
+                                      type: array
+                                      description: Subsidiaries of the company. When the array is empty, it indicates that the company has no subsidiaries. 
+                  meta:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        default: SUCCESS
+                      pagination:
+                        type: object
+                        properties:
+                          totalCount:
+                            type: integer
+                            description: Total number of subsidiaries of current company.
+                          limit:
+                            type: integer
+                          offset:
+                            type: integer
+              examples:
+                Examples 1:
+                  value:
+                    code: 200
+                    data: 
+                      - companyId: 1
+                        companyName: "Company A"
+                        companyStatus: 1
+                        subsidiaries: 
+                          - companyId: 2
+                            companyName: "Company B"
+                            companyStatus: 1
+                            subsidiaries: 
+                              - companyId: 4
+                                companyName: "Company D"
+                                companyStatus: 1
+                                subsidiaries:
+                                - companyId: 5
+                                  companyName: "Company E"
+                                  companyStatus: 1
+                                  subsidiaries:
+                                  - companyId: 6
+                                    companyName: "Company F"
+                                    companyStatus: 1
+                                    subsidiaries: []
+                          - companyId: 3
+                            companyName: "Company C"
+                            companyStatus: 1
+                            subsidiaries: []
+                            
+                    meta:
+                      message: SUCCESS
+                      pagination:
+                        totalCount: 2
+                        limit: 10
+                        offset: 0
+        "404":
+              description: Not found error
+              content:
+                application/json:
+                  schema:
+                    required:
+                      - code
+                      - data
+                      - meta
+                    type: object
+                    properties:
+                      code:
+                        type: number
+                      data:
+                        type: object
+                        properties: 
+                          errMsg:
+                            type: string
+                      meta:
+                        type: object
+                        properties:
+                          message:
+                            type: string
+                  examples:
+                    parameter error:
+                      value:
+                        code: 404
+                        data: {
+                          errMsg: Company does not exist.
+                        }
+                        meta:
+                          message: Not found error.
   components:
   securitySchemes:
     authToken:

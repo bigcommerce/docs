@@ -65,7 +65,7 @@ Thanks for your interest in contributing!
 ## Edit
 
 * **Edit:** Fork the repository and edit with your preferred editor. We recommend [VS Code](https://code.visualstudio.com/).
-* **Lint:** Check for errors using [Spectral](https://stoplight.io/open-source/spectral) or another OAS linter.
+* **Lint:** Check for errors using [Spectral](https://stoplight.io/open-source/spectral) or another OAS linter. Schemas are written in OpenAPI 3.0 YAML format.
 
 * **Commit:** Write good commit messages using the guidelines in the following section.
 * **Push** to your fork to ensure that your pull request contains the most up-to-date version of your code.

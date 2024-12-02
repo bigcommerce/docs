@@ -101,7 +101,7 @@ paths:
         After the update, the PUT request clears all discounts and promotions applied to the changed order line items. Since the order data syncs with other ERP systems, like Amazon or eBay, the updated order returns to the default setting, removing any applied discounts.
         
         To update order fees, include the fee id in the request body along with all relevant fee fields. Fees not included will be deleted. Fees with an id will be updated, and fees without an id will be created as new.
-        Note: Sub-resources like products in the /v2/orders PUT request behave like PATCH, updating only the provided fields. Fees, however, follow standard PUT semantics—fees in the request body will fully replace existing ones. To retain an existing fee, include it in the body with its associated id.
+        Note: Sub-resources like products in the /v2/orders PUT request behave like PATCH, updating only the provided fields. Fees, however, follow standard PUT semantics fees in the request body will fully replace existing ones. To retain an existing fee, include it in the body with its associated id.
         
         To learn more about creating or updating orders, see [Orders Overview](/docs/store-operations/orders).
       summary: Update an Order
@@ -160,11 +160,17 @@ paths:
                   fees:
                     - id: 1
                       type: custom_fee
-                      display_name_customer: ABC Retail Delivery Fee
-                      source: v2
+                      display_name_customer: A Fee
+                      source: AA
                       cost_ex_tax: 12.3000
                       cost_inc_tax: 12.3000
                       tax_class_id: 22
+                    - id: 2
+                      type: custom_fee
+                      display_name_customer: B Fee
+                      source: AA
+                      cost_ex_tax: 8.0000
+                      cost_inc_tax: 12.0000
               Adding an existing product to order:
                 value:
                   products:
@@ -194,70 +200,55 @@ paths:
                           value: 12
                       price_inc_tax: 12.45
                       price_ex_tax: 10.12
-              Adding a fee to the order (fee provided without an ID):
+              Adding a new fee (no ID) while retaining existing fees (with ID):
                 value:
                   fees:
                     - type: custom_fee
                       display_name_customer: C Fee
-                      source: v2
+                      source: AA
                       cost_ex_tax: '22.5000'
                       cost_inc_tax: '25.0000'
-                      tax_class_id: 22
                     - id: 1
                       type: custom_fee
                       display_name_customer: A Fee
-                      source: v2
+                      source: AA
                       cost_exc_tax: '12.3000'
-                      cost_inc_tax: '12.30000'
+                      cost_inc_tax: '12.3000'
                       tax_class_id: 22
                     - id: 2
                       type: custom_fee
                       display_name_merchant: B Fee
-                      source: v2
+                      source: AA
                       cost_ex_tax: '4.0000'
                       cost_tax: '8.0000'
-                      tax_class_id: 0
+                      tax_class_id: null
               Updating order fees (all fees provided with IDs and attributes):
                 value:
                   fees:
                     - id: 3
                       type: custom_fee
-                      display_name_customer: Retail Delivery Fee
-                      source: v2
-                      cost_ex_tax: '22.5000'
+                      display_name_customer: C Fee Updated
+                      source: AA
+                      cost_ex_tax: '20.0000'
                       cost_inc_tax: '25.0000'
-                      tax_class_id: 22
                     - id: 1
                       type: custom_fee
-                      display_name_customer: A Fee
-                      source: v2
-                      cost_exc_tax: '12.3000'
-                      cost_inc_tax: '14.30000'
-                      tax_class_id: 22
+                      display_name_customer: A Fee Updated
+                      source: AA
+                      cost_exc_tax: '10.0000'
+                      cost_inc_tax: '15.0000'
+                      tax_class_id: 1
                     - id: 2
                       type: custom_fee
-                      display_name_merchant: B Fee
-                      source: v2
+                      display_name_merchant: B Fee Updated
+                      source: AA
                       cost_ex_tax: '5.0000'
                       cost_tax: '8.0000'
-                      tax_class_id: 0
+                      tax_class_id: 2
               Deleting a fee from the order (fee missing from the payload will be removed):
                 value:
                   fees:
-                    - id: 1
-                      type: custom_fee
-                      display_name_customer: A Fee
-                      source: v2
-                      cost_exc_tax: '12.3000'
-                      cost_inc_tax: '14.30000'
-                      tax_class_id: 22
-                    - id: 2
-                      type: custom_fee
-                      display_name_merchant: B Fee
-                      source: v2
-                      cost_ex_tax: '5.0000'
-                      cost_tax: '8.0000'
-                      tax_class_id: 0
+                    -
 
         required: true
       responses:
@@ -398,14 +389,6 @@ paths:
                     - product_id: 118
                       quantity: 1
                       variant_id: 93
-                  fees:
-                    - type: custom_fee
-                      display_name_customer: ABC Retail Delivery Fee
-                      display_name_merchant: ABC Retail Delivery Fee
-                      source: v2
-                      cost_ex_tax: 12.3000
-                      cost_inc_tax: 12.3000
-                      tax_class_id: 22
               Custom Product:
                 value:
                   status_id: 0
@@ -531,27 +514,26 @@ paths:
                           value: '180'
                         - id: 230
                           value: '192'
-              Adding a fee to the order (fee provided without an ID):
+              Create an order with fees (include the fees object as shown with rest of the payload):
                 value:
                   fees:
                     - type: custom_fee
                       display_name_customer: D Fee
-                      source: v2
+                      source: AA
                       cost_ex_tax: '22.5000'
                       cost_inc_tax: '25.0000'
                       tax_class_id: 22
                     - type: custom_fee
                       display_name_customer: E Fee
-                      source: v2
+                      source: AA
                       cost_exc_tax: '12.3000'
-                      cost_inc_tax: '12.30000'
-                      tax_class_id: 22
+                      cost_inc_tax: '12.3000'
+                      tax_class_id: null
                     - type: custom_fee
                       display_name_merchant: F Fee
-                      source: v2
+                      source: AA
                       cost_ex_tax: '4.0000'
                       cost_tax: '8.0000'
-                      tax_class_id: 0
         required: true
       responses:
         '200':
@@ -1186,22 +1168,22 @@ paths:
                         type: custom_fee
                         display_name_customer: A Fee
                         display_name_merchant: A Fee
-                        source: v2
+                        source: AA
                         base_cost: '12.3000'
                         cost_exc_tax: '12.3000'
-                        cost_inc_tax: '12.30000'
+                        cost_inc_tax: '12.3000'
                         cost_tax: '0.0000'
                         tax_class_id: 22
                       - id: 2
                         type: custom_fee
                         display_name_customer: B Fee
                         display_name_merchant: B Fee
-                        source: v2
+                        source: AA
                         base_cost: '4.0000'
                         cost_ex_tax: '4.0000'
                         cost_inc_tax: '12.0000'
                         cost_tax: '8.0000'
-                        tax_class_id: 0
+                        tax_class_id: null
         '404':
           $ref: '#/components/responses/404_Resp'
       operationId: getOrderFees
@@ -1880,22 +1862,22 @@ components:
                     type: custom_fee
                     display_name_customer: A Fee
                     display_name_merchant: A Fee
-                    source: v2
+                    source: AA
                     base_cost: '12.3000'
                     cost_exc_tax: '12.3000'
-                    cost_inc_tax: '12.30000'
+                    cost_inc_tax: '12.3000'
                     cost_tax: '0.0000'
                     tax_class_id: 22
                   - id: 2
                     type: custom_fee
                     display_name_customer: B Fee
                     display_name_merchant: B Fee
-                    source: v2
+                    source: AA
                     base_cost: '4.0000'
                     cost_ex_tax: '4.0000'
                     cost_inc_tax: '12.0000'
                     cost_tax: '8.0000'
-                    tax_class_id: 0
+                    tax_class_id: null
             'Multiple Items':
               value:
                 id: 247
@@ -2095,22 +2077,22 @@ components:
                     type: custom_fee
                     display_name_customer: A Fee
                     display_name_merchant: A Fee
-                    source: v2
+                    source: AA
                     base_cost: '12.3000'
                     cost_exc_tax: '12.3000'
-                    cost_inc_tax: '12.30000'
+                    cost_inc_tax: '12.3000'
                     cost_tax: '0.0000'
                     tax_class_id: 22
                   - id: 2
                     type: custom_fee
                     display_name_customer: B Fee
                     display_name_merchant: B Fee
-                    source: v2
+                    source: AA
                     base_cost: '4.0000'
                     cost_ex_tax: '4.0000'
                     cost_inc_tax: '12.0000'
                     cost_tax: '8.0000'
-                    tax_class_id: 0
+                    tax_class_id: null
             'Multiple Items':
               value:
                 id: 247
@@ -2211,88 +2193,76 @@ components:
                     type: custom_fee
                     display_name_customer: A Fee
                     display_name_merchant: A Fee
-                    source: v2
+                    source: AA
                     base_cost: '12.3000'
                     cost_exc_tax: '12.3000'
-                    cost_inc_tax: '12.30000'
+                    cost_inc_tax: '12.3000'
                     cost_tax: '0.0000'
                     tax_class_id: 22
                   - id: 2
                     type: custom_fee
                     display_name_customer: B Fee
                     display_name_merchant: B Fee
-                    source: v2
+                    source: AA
                     base_cost: '4.0000'
                     cost_ex_tax: '4.0000'
                     cost_inc_tax: '12.0000'
                     cost_tax: '8.0000'
-                    tax_class_id: 0
+                    tax_class_id: null
                   - id: 3
                     type: custom_fee
                     display_name_customer: C Fee
                     display_name_merchant: C Fee
-                    source: v2
+                    source: AA
                     base_cost: '25.0000'
                     cost_ex_tax: '22.5000'
                     cost_inc_tax: '25.0000'
                     cost_tax: '2.5000'
-                    tax_class_id: 22
+                    tax_class_id: null
             Fee Updated:
               value:
                 fees:
                   - id: 1
                     type: custom_fee
-                    display_name_customer: A Fee
-                    display_name_merchant: A Fee
-                    source: v2
-                    base_cost: '14.3000'
-                    cost_exc_tax: '12.3000'
-                    cost_inc_tax: '14.30000'
-                    cost_tax: '2.0000'
-                    tax_class_id: 22
+                    display_name_customer: A Fee Updated
+                    display_name_merchant: A Fee Updated
+                    source: AA
+                    base_cost: '15.0000'
+                    cost_exc_tax: '10.0000'
+                    cost_inc_tax: '15.3000'
+                    cost_tax: '3.0000'
+                    tax_class_id: 1
                   - id: 2
                     type: custom_fee
-                    display_name_customer: B Fee
-                    display_name_merchant: B Fee
-                    source: v2
+                    display_name_customer: B Fee Updated
+                    display_name_merchant: B Fee Updated
+                    source: AA
                     base_cost: '13.0000'
                     cost_ex_tax: '5.0000'
                     cost_inc_tax: '13.0000'
                     cost_tax: '8.0000'
-                    tax_class_id: 0
+                    tax_class_id: 2
                   - id: 3
                     type: custom_fee
-                    display_name_customer: Retail Delivery Fee
-                    display_name_merchant: Retail Delivery Fee
-                    source: v2
+                    display_name_customer: C Fee Updated
+                    display_name_merchant: C Fee Updated
+                    source: AA
                     base_cost: '25.0000'
-                    cost_ex_tax: '22.5000'
+                    cost_ex_tax: '20.0000'
                     cost_inc_tax: '25.0000'
-                    cost_tax: '2.5000'
-                    tax_class_id: 22
-            Fee Deleted:
+                    cost_tax: '5.0000'
+                    tax_class_id: null
+            Fee Deleted (Missing fee will be deleted):
               value:
                 fees:
-                  - id: 1
-                    type: custom_fee
-                    display_name_customer: A Fee
-                    display_name_merchant: A Fee
-                    source: v2
-                    base_cost: '14.3000'
-                    cost_exc_tax: '12.3000'
-                    cost_inc_tax: '14.30000'
-                    cost_tax: '2.0000'
-                    tax_class_id: 22
                   - id: 2
                     type: custom_fee
-                    display_name_customer: B Fee
-                    display_name_merchant: B Fee
-                    source: v2
-                    base_cost: '13.0000'
+                    display_name_customer: B Fee Updated
+                    display_name_merchant: B Fee Updated
+                    source: AA
                     cost_ex_tax: '5.0000'
                     cost_inc_tax: '13.0000'
-                    cost_tax: '8.0000'
-                    tax_class_id: 0
+                    tax_class_id: 2
     orderPost_Resp:
       description: Order Response.
       content:
@@ -2394,27 +2364,6 @@ components:
                 custom_status: Awaiting Payment
                 customer_locale: en
                 external_order_id: external-order-id
-                fees:
-                  - id: 1
-                    type: custom_fee
-                    display_name_customer: A Fee
-                    display_name_merchant: A Fee
-                    source: v2
-                    base_cost: '12.3000'
-                    cost_exc_tax: '12.3000'
-                    cost_inc_tax: '12.30000'
-                    cost_tax: '0.0000'
-                    tax_class_id: 22
-                  - id: 2
-                    type: custom_fee
-                    display_name_customer: B Fee
-                    display_name_merchant: B Fee
-                    source: v2
-                    base_cost: '4.0000'
-                    cost_ex_tax: '4.0000'
-                    cost_inc_tax: '12.0000'
-                    cost_tax: '8.0000'
-                    tax_class_id: 0
             'Multiple Items':
               value:
                 id: 247
@@ -2508,39 +2457,39 @@ components:
                 custom_status: Awaiting Fulfillment
                 customer_locale: en
                 external_order_id: external-order-id
-            Fee Added:
+            Fees Added:
               value:
                 fees:
                   - id: 4
                     type: custom_fee
                     display_name_customer: D Fee
                     display_name_merchant: D Fee
-                    source: v2
+                    source: AA
                     base_cost: '12.3000'
                     cost_exc_tax: '12.3000'
-                    cost_inc_tax: '12.30000'
+                    cost_inc_tax: '12.3000'
                     cost_tax: '0.0000'
                     tax_class_id: 22
                   - id: 5
                     type: custom_fee
                     display_name_customer: E Fee
                     display_name_merchant: E Fee
-                    source: v2
+                    source: AA
                     base_cost: '4.0000'
                     cost_ex_tax: '4.0000'
                     cost_inc_tax: '12.0000'
                     cost_tax: '8.0000'
-                    tax_class_id: 0
+                    tax_class_id: null
                   - id: 6
                     type: custom_fee
                     display_name_customer: F Fee
                     display_name_merchant: F Fee
-                    source: v2
+                    source: AA
                     base_cost: '25.0000'
                     cost_ex_tax: '22.5000'
                     cost_inc_tax: '25.0000'
                     cost_tax: '2.5000'
-                    tax_class_id: 22
+                    tax_class_id: null
     orderCouponsCollection_Resp:
       description: ''
       content:
@@ -3908,9 +3857,10 @@ components:
           type: integer
         tax_class_id:
           description: |-
-            The unique numeric identifier of the tax class object. NOTE: Will be 0 if automatic tax was enabled, or if the default tax class was used.
+            A unique numeric identifier for the tax class. If not provided or null, the default fee tax class from the control panel is used.
           example: 0
           type: integer
+          nullable: true
         name:
           description: The name of the tax class object.
           example: "State Tax"
@@ -6180,7 +6130,7 @@ components:
           example: Package Protection Fee
           type: string
         source:
-          description: TThe source of the request.
+          description: The source of the request.
           example: "v2"
           type: string
         base_cost:
@@ -6210,9 +6160,10 @@ components:
             - type: string
             - type: number
         tax_class_id:
-          description: A unique numeric identifier for the tax class. It defaults to 0 if automatic tax is enabled, the default tax class is applied, or if tax_class_id is absent or null.
+          description: A unique numeric identifier for the tax class. If not provided or null, the default fee tax class from the control panel is used.
           example: 0
           type: integer
+          nullable: true
     orderFees_Post:
       title: orderFees_Post
       type: object
@@ -6232,7 +6183,7 @@ components:
           example: Package Protection Fee
           type: string
         source:
-          description: TThe source of the request.
+          description: The source of the request.
           example: "v2"
           type: string
         cost_ex_tax:
@@ -6255,9 +6206,10 @@ components:
             - type: string
             - type: number
         tax_class_id:
-          description: A unique numeric identifier for the tax class. It defaults to 0 if automatic tax is enabled, the default tax class is applied, or if tax_class_id is absent or null.
-          example: 0
+          description: A unique numeric identifier for the tax class. If not provided or null, the default fee tax class from the control panel is used.
+          example: 1
           type: integer
+          nullable: true
     orderFees_Put:
       title: orderFees_Put
       type: object
@@ -6281,7 +6233,7 @@ components:
           example: Package Protection Fee
           type: string
         source:
-          description: TThe source of the request.
+          description: The source of the request.
           example: "v2"
           type: string
         cost_ex_tax:
@@ -6304,6 +6256,7 @@ components:
             - type: string
             - type: number
         tax_class_id:
-          description: A unique numeric identifier for the tax class. It defaults to 0 if automatic tax is enabled, the default tax class is applied, or if tax_class_id is absent or null.
-          example: 0
+          description: A unique numeric identifier for the tax class. If not provided or null, the default fee tax class from the control panel is used.
+          example: 2
           type: integer
+          nullable: true

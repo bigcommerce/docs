@@ -101,8 +101,12 @@ paths:
         After the update, the PUT request clears all discounts and promotions applied to the changed order line items. Since the order data syncs with other ERP systems, like Amazon or eBay, the updated order returns to the default setting, removing any applied discounts.
         
         To update order fees, include the fee id in the request body along with all relevant fee fields. Fees not included will be deleted. Fees with an id will be updated, and fees without an id will be created as new.
-        Note: Sub-resources like products in the /v2/orders PUT request behave like PATCH, updating only the provided fields. Fees, however, follow standard PUT semantics fees in the request body will fully replace existing ones. To retain an existing fee, include it in the body with its associated id. 
-              The values for cost_ex_tax, cost_inc_tax and cost_tax in the payload should reflect the tax rate associated with the tax_class_id. For a 10% tax rate, the difference between cost_inc_tax and cost_ex_tax should be 10%. If no tax_class_id is provided, the store's default "tax class for fee" will apply. Incorrect data may lead to issues in downstream operations like refunds.
+        
+        **Notes**
+        
+        * Sub-resources like products in the /v2/orders PUT request behave like PATCH, updating only the provided fields. Fees, however, follow standard PUT semantics and fees in the request body will fully replace existing ones. 
+        To retain an existing fee, include it in the body with its associated id. 
+        * The values for cost_ex_tax, cost_inc_tax and cost_tax in the fees payload should reflect the tax rate associated with the tax_class_id. For a 10% tax rate, the difference between cost_inc_tax and cost_ex_tax should be 10%. If no tax_class_id is provided, the store's default "tax class for fee" will apply. Incorrect data may lead to issues in downstream operations like refunds.
         
         To learn more about creating or updating orders, see [Orders Overview](/docs/store-operations/orders).
       summary: Update an Order
@@ -254,7 +258,7 @@ paths:
         required: true
       responses:
         '200':
-          $ref: '#/components/responses/orderPut_Resp'
+          $ref: '#/components/responses/order_Resp'
       operationId: updateOrder
     delete:
       description: Archives an order. To remove a single product from an order, see `PUT /orders/{order_id}`.
@@ -357,10 +361,13 @@ paths:
         - `products`
         
         Include the `fees` object along with all its attributes in the request to create order-level fees for the newly created order.
-        Note: The values for cost_ex_tax, cost_inc_tax and cost_tax in the fees payload should reflect the tax rate associated with the tax_class_id. For a 10% tax rate, the difference between cost_inc_tax and cost_ex_tax should be 10%. If no tax_class_id is provided, the store's default "tax class for fee" will apply. Incorrect data may lead to issues in downstream operations like refunds.
+        
+        **Notes**
+        
+        * The values for cost_ex_tax, cost_inc_tax and cost_tax in the fees payload should reflect the tax rate associated with the tax_class_id. For a 10% tax rate, the difference between cost_inc_tax and cost_ex_tax should be 10%. If no tax_class_id is provided, the store's default "tax class for fee" will apply. Incorrect data may lead to issues in downstream operations like refunds.
 
         The V2 Orders API will not trigger the typical [Order Email](https://support.bigcommerce.com/s/article/Customizing-Emails?language=en_US) when creating orders. To create an order that does trigger this email, you can instead [create a cart](/docs/rest-management/carts/carts-single#create-a-cart) and [convert that cart into an order](/docs/rest-management/checkouts/checkout-orders#create-an-order).
-        
+
       summary: Create an Order
       tags:
         - Orders
@@ -539,7 +546,7 @@ paths:
         required: true
       responses:
         '200':
-          $ref: '#/components/responses/orderPost_Resp'
+          $ref: '#/components/responses/order_Resp'
       operationId: createOrder
     delete:
       description: Archives all orders.
@@ -1973,525 +1980,6 @@ components:
                 custom_status: Awaiting Fulfillment
                 customer_locale: en
                 external_order_id: external-order-id
-    orderPut_Resp:
-      description: Order Response.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/order_Resp'
-          examples:
-            Response:
-              value:
-                id: 218
-                customer_id: 11
-                date_created: 'Tue, 05 Mar 2019 21:40:11 +0000'
-                date_modified: 'Mon, 11 Mar 2019 15:17:25 +0000'
-                date_shipped: ''
-                status_id: 7
-                status: Awaiting Payment
-                subtotal_ex_tax: '62.6793'
-                subtotal_inc_tax: '67.8400'
-                subtotal_tax: '4.4000'
-                base_shipping_cost: '12.0000'
-                shipping_cost_ex_tax: '11.0900'
-                shipping_cost_inc_tax: '12.0000'
-                shipping_cost_tax: '0.9100'
-                shipping_cost_tax_class_id: 0
-                base_handling_cost: '0.0000'
-                handling_cost_ex_tax: '0.0000'
-                handling_cost_inc_tax: '0.0000'
-                handling_cost_tax: '0.0000'
-                handling_cost_tax_class_id: 0
-                base_wrapping_cost: '0.0000'
-                wrapping_cost_ex_tax: '0.0000'
-                wrapping_cost_inc_tax: '0.0000'
-                wrapping_cost_tax: '0.0000'
-                wrapping_cost_tax_class_id: 0
-                total_ex_tax: '64.5300'
-                total_inc_tax: '69.8400'
-                total_tax: '5.3100'
-                is_tax_inclusive_pricing: false
-                items_total: 4
-                items_shipped: 0
-                payment_method: Cash
-                payment_provider_id: ''
-                payment_status: authorized
-                refunded_amount: '0.0000'
-                order_is_digital: false
-                store_credit_amount: '0.0000'
-                gift_certificate_amount: '0.0000'
-                ip_address: ''
-                ip_address_v6: ''
-                geoip_country: ''
-                geoip_country_iso2: ''
-                currency_id: 1
-                currency_code: USD
-                currency_exchange_rate: '1.0000000000'
-                default_currency_id: 1
-                default_currency_code: USD
-                staff_notes: ''
-                customer_message: ''
-                discount_amount: '5.0000'
-                coupon_discount: '5.0000'
-                shipping_address_count: 1
-                ebay_order_id: '0'
-                cart_id: 7e48f7ef-2e88-4817-aea4-b0ed01490114
-                billing_address:
-                  first_name: Jane
-                  last_name: Doe
-                  company: ''
-                  street_1: 555 East Street
-                  street_2: ''
-                  city: Austin
-                  state: Texas
-                  zip: '78108'
-                  country: United States
-                  country_iso2: US
-                  phone: '1234567890'
-                  email: janedoe@example.com
-                  form_fields:
-                    - name: Delivery Instructions
-                      value: Leave in backyard
-                is_email_opt_in: false
-                credit_card_type: null
-                order_source: external
-                channel_id: 1
-                external_source: null
-                products:
-                  url: 'https://api.bigcommerce.com/stores/{store_hash}/v2/orders/218/products'
-                  resource: /orders/218/products
-                shipping_addresses:
-                  url: 'https://api.bigcommerce.com/stores/{store_hash}/v2/orders/218/shippingaddresses'
-                  resource: /orders/218/shippingaddresses
-                coupons:
-                  url: 'https://api.bigcommerce.com/stores/{store_hash}/v2/orders/218/coupons'
-                  resource: /orders/218/coupons
-                external_id: null
-                external_merchant_id: null
-                tax_provider_id: BasicTaxProvider
-                store_default_currency_code: ''
-                store_default_to_transactional_exchange_rate: '1.0000000000'
-                custom_status: Awaiting Payment
-                customer_locale: en
-                external_order_id: external-order-id
-                fees:
-                  - id: 1
-                    type: custom_fee
-                    display_name_customer: A Fee
-                    display_name_merchant: A Fee
-                    source: AA
-                    base_cost: '12.3000'
-                    cost_exc_tax: '12.3000'
-                    cost_inc_tax: '12.3000'
-                    cost_tax: '0.0000'
-                    tax_class_id: 22
-                  - id: 2
-                    type: custom_fee
-                    display_name_customer: B Fee
-                    display_name_merchant: B Fee
-                    source: AA
-                    base_cost: '4.0000'
-                    cost_ex_tax: '4.0000'
-                    cost_inc_tax: '12.0000'
-                    cost_tax: '8.0000'
-                    tax_class_id: null
-            'Multiple Items':
-              value:
-                id: 247
-                customer_id: 11
-                date_created: 'Thu, 20 Jun 2019 16:07:08 +0000'
-                date_modified: 'Thu, 20 Jun 2019 16:07:08 +0000'
-                date_shipped: ''
-                status_id: 11
-                status: Awaiting Fulfillment
-                subtotal_ex_tax: '924.47'
-                subtotal_inc_tax: '1000.74'
-                subtotal_tax: '76.27'
-                base_shipping_cost: '8'
-                shipping_cost_ex_tax: '7.39'
-                shipping_cost_inc_tax: '8'
-                shipping_cost_tax: '0.61'
-                shipping_cost_tax_class_id: 0
-                base_handling_cost: '0'
-                handling_cost_ex_tax: '0'
-                handling_cost_inc_tax: '0'
-                handling_cost_tax: '0'
-                handling_cost_tax_class_id: 0
-                base_wrapping_cost: '0'
-                wrapping_cost_ex_tax: '0'
-                wrapping_cost_inc_tax: '0'
-                wrapping_cost_tax: '0'
-                wrapping_cost_tax_class_id: 0
-                total_ex_tax: '931.86'
-                total_inc_tax: '1008.74'
-                total_tax: 76.88
-                is_tax_inclusive_pricing: false
-                items_total: 11
-                items_shipped: 0
-                payment_method: Test Payment Gateway
-                payment_provider_id: ''
-                payment_status: captured
-                refunded_amount: '0'
-                order_is_digital: false
-                store_credit_amount: '0'
-                gift_certificate_amount: '0'
-                ip_address: 70.112.53.67
-                geoip_country: United States
-                geoip_country_iso2: US
-                currency_id: 1
-                currency_code": USD
-                currency_exchange_rate: '1'
-                default_currency_id: 1
-                default_currency_code: USD
-                staff_notes: BIN-45
-                customer_message: Custom Journal Added
-                discount_amount: '0'
-                coupon_discount": 0
-                shipping_address_count: 1
-                ebay_order_id: '0'
-                cart_id: 8b84f622-faf1-4c10-887b-f5dff2f9eaf4
-                billing_address:
-                  first_name: Jane
-                  last_name: Doe
-                  company: ''
-                  street_1: 555 East Street
-                  street_2: ''
-                  city: Austin
-                  state: Texas
-                  zip: '78108'
-                  country: United States
-                  country_iso2: US
-                  phone: '1234567890'
-                  email: janedoe@email.com
-                  form_fields:
-                    - name: Delivery Instructions
-                      value: Leave in backyard
-                is_email_opt_in: false
-                credit_card_type: { }
-                order_source: manual
-                channel_id: 1
-                external_source: ''
-                products:
-                  url: 'https://api.bigcommerce.com/stores/{store_hash}/v2/orders/247/products'
-                  resource: /orders/247/products
-                shipping_addresses:
-                  url: 'https://api.bigcommerce.com/stores/{store_hash}/v2/orders/247/shippingaddresses'
-                  resource: /orders/247/shippingaddresses
-                coupons:
-                  url: 'https://api.bigcommerce.com/stores/{store_hash}/v2/orders/247/coupons'
-                  resource: /orders/247/coupons
-                external_id: null
-                external_merchant_id: null
-                tax_provider_id: BasicTaxProvider
-                store_default_currency_code: USD
-                store_default_to_transactional_exchange_rate: '1'
-                custom_status: Awaiting Fulfillment
-                customer_locale: en
-                external_order_id: external-order-id
-            Fee Added:
-              value:
-                fees:
-                  - id: 1
-                    type: custom_fee
-                    display_name_customer: A Fee
-                    display_name_merchant: A Fee
-                    source: AA
-                    base_cost: '12.3000'
-                    cost_exc_tax: '12.3000'
-                    cost_inc_tax: '12.3000'
-                    cost_tax: '0.0000'
-                    tax_class_id: 22
-                  - id: 2
-                    type: custom_fee
-                    display_name_customer: B Fee
-                    display_name_merchant: B Fee
-                    source: AA
-                    base_cost: '4.0000'
-                    cost_ex_tax: '4.0000'
-                    cost_inc_tax: '12.0000'
-                    cost_tax: '8.0000'
-                    tax_class_id: null
-                  - id: 3
-                    type: custom_fee
-                    display_name_customer: C Fee
-                    display_name_merchant: C Fee
-                    source: AA
-                    base_cost: '25.0000'
-                    cost_ex_tax: '22.5000'
-                    cost_inc_tax: '25.0000'
-                    cost_tax: '2.5000'
-                    tax_class_id: null
-            Fee Updated:
-              value:
-                fees:
-                  - id: 1
-                    type: custom_fee
-                    display_name_customer: A Fee Updated
-                    display_name_merchant: A Fee Updated
-                    source: AA
-                    base_cost: '15.0000'
-                    cost_exc_tax: '10.0000'
-                    cost_inc_tax: '15.3000'
-                    cost_tax: '3.0000'
-                    tax_class_id: 1
-                  - id: 2
-                    type: custom_fee
-                    display_name_customer: B Fee Updated
-                    display_name_merchant: B Fee Updated
-                    source: AA
-                    base_cost: '13.0000'
-                    cost_ex_tax: '5.0000'
-                    cost_inc_tax: '13.0000'
-                    cost_tax: '8.0000'
-                    tax_class_id: 2
-                  - id: 3
-                    type: custom_fee
-                    display_name_customer: C Fee Updated
-                    display_name_merchant: C Fee Updated
-                    source: AA
-                    base_cost: '25.0000'
-                    cost_ex_tax: '20.0000'
-                    cost_inc_tax: '25.0000'
-                    cost_tax: '5.0000'
-                    tax_class_id: null
-            Fee Deleted (Missing fee will be deleted):
-              value:
-                fees:
-                  - id: 2
-                    type: custom_fee
-                    display_name_customer: B Fee Updated
-                    display_name_merchant: B Fee Updated
-                    source: AA
-                    cost_ex_tax: '5.0000'
-                    cost_inc_tax: '13.0000'
-                    tax_class_id: 2
-    orderPost_Resp:
-      description: Order Response.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/order_Resp'
-          examples:
-            Response:
-              value:
-                id: 218
-                customer_id: 11
-                date_created: 'Tue, 05 Mar 2019 21:40:11 +0000'
-                date_modified: 'Mon, 11 Mar 2019 15:17:25 +0000'
-                date_shipped: ''
-                status_id: 7
-                status: Awaiting Payment
-                subtotal_ex_tax: '62.6793'
-                subtotal_inc_tax: '67.8400'
-                subtotal_tax: '4.4000'
-                base_shipping_cost: '12.0000'
-                shipping_cost_ex_tax: '11.0900'
-                shipping_cost_inc_tax: '12.0000'
-                shipping_cost_tax: '0.9100'
-                shipping_cost_tax_class_id: 0
-                base_handling_cost: '0.0000'
-                handling_cost_ex_tax: '0.0000'
-                handling_cost_inc_tax: '0.0000'
-                handling_cost_tax: '0.0000'
-                handling_cost_tax_class_id: 0
-                base_wrapping_cost: '0.0000'
-                wrapping_cost_ex_tax: '0.0000'
-                wrapping_cost_inc_tax: '0.0000'
-                wrapping_cost_tax: '0.0000'
-                wrapping_cost_tax_class_id: 0
-                total_ex_tax: '64.5300'
-                total_inc_tax: '69.8400'
-                total_tax: '5.3100'
-                is_tax_inclusive_pricing: false
-                items_total: 4
-                items_shipped: 0
-                payment_method: Cash
-                payment_provider_id: ''
-                payment_status: authorized
-                refunded_amount: '0.0000'
-                order_is_digital: false
-                store_credit_amount: '0.0000'
-                gift_certificate_amount: '0.0000'
-                ip_address: ''
-                ip_address_v6: ''
-                geoip_country: ''
-                geoip_country_iso2: ''
-                currency_id: 1
-                currency_code: USD
-                currency_exchange_rate: '1.0000000000'
-                default_currency_id: 1
-                default_currency_code: USD
-                staff_notes: ''
-                customer_message: ''
-                discount_amount: '5.0000'
-                coupon_discount: '5.0000'
-                shipping_address_count: 1
-                ebay_order_id: '0'
-                cart_id: 7e48f7ef-2e88-4817-aea4-b0ed01490114
-                billing_address:
-                  first_name: Jane
-                  last_name: Doe
-                  company: ''
-                  street_1: 555 East Street
-                  street_2: ''
-                  city: Austin
-                  state: Texas
-                  zip: '78108'
-                  country: United States
-                  country_iso2: US
-                  phone: '1234567890'
-                  email: janedoe@example.com
-                  form_fields:
-                    - name: Delivery Instructions
-                      value: Leave in backyard
-                is_email_opt_in: false
-                credit_card_type: null
-                order_source: external
-                channel_id: 1
-                external_source: null
-                products:
-                  url: 'https://api.bigcommerce.com/stores/{store_hash}/v2/orders/218/products'
-                  resource: /orders/218/products
-                shipping_addresses:
-                  url: 'https://api.bigcommerce.com/stores/{store_hash}/v2/orders/218/shippingaddresses'
-                  resource: /orders/218/shippingaddresses
-                coupons:
-                  url: 'https://api.bigcommerce.com/stores/{store_hash}/v2/orders/218/coupons'
-                  resource: /orders/218/coupons
-                external_id: null
-                external_merchant_id: null
-                tax_provider_id: BasicTaxProvider
-                store_default_currency_code: ''
-                store_default_to_transactional_exchange_rate: '1.0000000000'
-                custom_status: Awaiting Payment
-                customer_locale: en
-                external_order_id: external-order-id
-            'Multiple Items':
-              value:
-                id: 247
-                customer_id: 11
-                date_created: 'Thu, 20 Jun 2019 16:07:08 +0000'
-                date_modified: 'Thu, 20 Jun 2019 16:07:08 +0000'
-                date_shipped: ''
-                status_id: 11
-                status: Awaiting Fulfillment
-                subtotal_ex_tax: '924.47'
-                subtotal_inc_tax: '1000.74'
-                subtotal_tax: '76.27'
-                base_shipping_cost: '8'
-                shipping_cost_ex_tax: '7.39'
-                shipping_cost_inc_tax: '8'
-                shipping_cost_tax: '0.61'
-                shipping_cost_tax_class_id: 0
-                base_handling_cost: '0'
-                handling_cost_ex_tax: '0'
-                handling_cost_inc_tax: '0'
-                handling_cost_tax: '0'
-                handling_cost_tax_class_id: 0
-                base_wrapping_cost: '0'
-                wrapping_cost_ex_tax: '0'
-                wrapping_cost_inc_tax: '0'
-                wrapping_cost_tax: '0'
-                wrapping_cost_tax_class_id: 0
-                total_ex_tax: '931.86'
-                total_inc_tax: '1008.74'
-                total_tax: 76.88
-                is_tax_inclusive_pricing: false
-                items_total: 11
-                items_shipped: 0
-                payment_method: Test Payment Gateway
-                payment_provider_id: ''
-                payment_status: captured
-                refunded_amount: '0'
-                order_is_digital: false
-                store_credit_amount: '0'
-                gift_certificate_amount: '0'
-                ip_address: 70.112.53.67
-                geoip_country: United States
-                geoip_country_iso2: US
-                currency_id: 1
-                currency_code": USD
-                currency_exchange_rate: '1'
-                default_currency_id: 1
-                default_currency_code: USD
-                staff_notes: BIN-45
-                customer_message: Custom Journal Added
-                discount_amount: '0'
-                coupon_discount": 0
-                shipping_address_count: 1
-                ebay_order_id: '0'
-                cart_id: 8b84f622-faf1-4c10-887b-f5dff2f9eaf4
-                billing_address:
-                  first_name: Jane
-                  last_name: Doe
-                  company: ''
-                  street_1: 555 East Street
-                  street_2: ''
-                  city: Austin
-                  state: Texas
-                  zip: '78108'
-                  country: United States
-                  country_iso2: US
-                  phone: '1234567890'
-                  email: janedoe@email.com
-                  form_fields:
-                    - name: Delivery Instructions
-                      value: Leave in backyard
-                is_email_opt_in: false
-                credit_card_type: { }
-                order_source: manual
-                channel_id: 1
-                external_source: ''
-                products:
-                  url: 'https://api.bigcommerce.com/stores/{store_hash}/v2/orders/247/products'
-                  resource: /orders/247/products
-                shipping_addresses:
-                  url: 'https://api.bigcommerce.com/stores/{store_hash}/v2/orders/247/shippingaddresses'
-                  resource: /orders/247/shippingaddresses
-                coupons:
-                  url: 'https://api.bigcommerce.com/stores/{store_hash}/v2/orders/247/coupons'
-                  resource: /orders/247/coupons
-                external_id: null
-                external_merchant_id: null
-                tax_provider_id: BasicTaxProvider
-                store_default_currency_code: USD
-                store_default_to_transactional_exchange_rate: '1'
-                custom_status: Awaiting Fulfillment
-                customer_locale: en
-                external_order_id: external-order-id
-            Fees Added:
-              value:
-                fees:
-                  - id: 4
-                    type: custom_fee
-                    display_name_customer: D Fee
-                    display_name_merchant: D Fee
-                    source: AA
-                    base_cost: '12.3000'
-                    cost_exc_tax: '12.3000'
-                    cost_inc_tax: '12.3000'
-                    cost_tax: '0.0000'
-                    tax_class_id: 22
-                  - id: 5
-                    type: custom_fee
-                    display_name_customer: E Fee
-                    display_name_merchant: E Fee
-                    source: AA
-                    base_cost: '4.0000'
-                    cost_ex_tax: '4.0000'
-                    cost_inc_tax: '12.0000'
-                    cost_tax: '8.0000'
-                    tax_class_id: null
-                  - id: 6
-                    type: custom_fee
-                    display_name_customer: F Fee
-                    display_name_merchant: F Fee
-                    source: AA
-                    base_cost: '25.0000'
-                    cost_ex_tax: '22.5000'
-                    cost_inc_tax: '25.0000'
-                    cost_tax: '2.5000'
-                    tax_class_id: null
     orderCouponsCollection_Resp:
       description: ''
       content:
@@ -3576,15 +3064,15 @@ components:
           oneOf:
             - type: number
             - type: string
-        width: 
+        width:
           description: Product width. The value can't be negative.
           type: string
           example: "1.0000"
-        height: 
+        height:
           description: Product height. The value can't be negative.
           type: string
           example: "1.0000"
-        depth: 
+        depth:
           description: Product depth. The value can't be negative.
           type: string
           example: "1.0000"
@@ -3611,7 +3099,7 @@ components:
           description: Numeric ID for the refund.
           example: 0
           type: number
-        wrapping_id: 
+        wrapping_id:
           description: ID of the gift wrapping option.
           example: 0
           type: integer
@@ -3699,7 +3187,7 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/orderProductOptions'
-        configurable_fields: 
+        configurable_fields:
           type: array
           description: Available for only [Catalog V2 stores](/docs/store-operations/catalog/migration).
           items:
@@ -4331,7 +3819,7 @@ components:
           description: The custom tracking link supplied on POST or PUT shipments. For the link to one of our integrated providers or Aftership tracking link see the `generated_tracking_link` property.
           example: https://www.mycustomtrackinglink.com/tracking
           maxLength: 500
-        merchant_shipping_cost: 
+        merchant_shipping_cost:
           type: string
           description: Shipping cost for the merchant.
           example: "1.0000"
@@ -4381,7 +3869,7 @@ components:
           description: Tracking number of the shipment.
           example: w4se4b6ASFEW4T
           type: string
-        merchant_shipping_cost: 
+        merchant_shipping_cost:
           type: string
           description: Shipping cost for the merchant.
           example: "1.0000"
@@ -5348,9 +4836,7 @@ components:
             fees:
               type: array
               items:
-                anyOf:
-                  - $ref: '#/components/schemas/orderFees_Put'
-                  - $ref: '#/components/schemas/orderFees_Post'
+                $ref: '#/components/schemas/orderFees_Put'
     order_Post:
       title: order_Post
       description: Products and Billing address only required for POST operation.
@@ -6128,7 +5614,6 @@ components:
           type: string
         display_name_merchant:
           description: The display name of the fee targeting shoppers.
-            NOTE - At least one of the following fields (display_name_customer, display_name_merchant) must be included in the request.
           example: Package Protection Fee
           type: string
         source:
@@ -6156,13 +5641,12 @@ components:
             - type: number
         cost_tax:
           description: The tax amount on the fee cost. (Float, Float-As-String, Integer)
-            NOTE - At least two of the following fields (cost_ex_tax, cost_inc_tax, and cost_tax) must be included in the request.
           example: 1.5000
           oneOf:
             - type: string
             - type: number
         tax_class_id:
-          description: A unique numeric identifier for the tax class. If not provided or null, the default fee tax class from the control panel is used.
+          description: A unique numeric identifier for the tax class. If not persisted or null, the default fee tax class from the control panel is used.
           example: 0
           type: integer
           nullable: true

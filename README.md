@@ -62,7 +62,8 @@ Always update your fork to ensure you're working with the newest source files.
     ├── csv/                           # static files used in docs
     ├── images/                        # images and screenshots
     ├── json/                          # theme translation files
-    └── PO/                            
+    └── PO/
+├── diataxis-templates/                # templates for contributing to our documentation                             
 ├── docs                               # narrative documentation
     ├── api-docs/                      
     ├── bigcommerce-for-wordpress/     

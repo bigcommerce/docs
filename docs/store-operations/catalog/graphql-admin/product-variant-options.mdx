@@ -10,11 +10,10 @@
 Using the Catalog features of the Admin API, you can set and query information about a [product variant option](https://support.bigcommerce.com/s/article/Product-Options-v3?language=en_US#variations), such as option name and values. 
 
 Perform the following for product variant options:
-- [Set global variant option information](#set-variant-options-at-the-global-level) for the catalog. Channels inherit global information by default.
-- [Create overrides for a channel locale](#set-variant-options-for-a-locale) using the `overridesForLocale` field. These override global store information.
+- [Set variant options](#set-variant-options): You can set global variant option information for the catalog. Channels inherit global information by default. You can also create overrides for a channel locale. These override global store information.
 - [Remove overrides for a channel locale](#remove-variant-options-for-a-locale)
 
-You can also set and remove information for [shared variant options](https://support.bigcommerce.com/s/article/Product-Options-v3?language=en_US#svo). The changes affect all products that you assign to the shared variant option. [Querying variant options](#query-product-variant-options) returns all variant options, including shared ones.
+You can also set and remove information for [shared variant options](https://support.bigcommerce.com/s/article/Product-Options-v3?language=en_US#svo). Changing a shared variant option affects all products that you assign to the shared variant option. You cannot customize shared variant options on a product level. [Querying variant options](#query-product-variant-options) returns all variant options, including shared ones.
 
 For a full schema, see the [GraphQL Admin API reference](https://developer.bigcommerce.com/graphql-admin/reference).
 
@@ -22,7 +21,7 @@ For a full schema, see the [GraphQL Admin API reference](https://developer.bigco
 
 Setting or removing information requires that you specify ID fields in the input. For more information on how to specify ID fields, see [Input fields](/docs/store-operations/catalog/msf-international-enhancements#input-fields).
 
-## Set variant options
+## Variant options
 
 Set information about a product variant option for a store or a locale within a storefront channel. 
 
@@ -32,25 +31,25 @@ The following mutations let you set the name and values for existing variant opt
   The responses may include all variant options, including those that are shared. However, to _set_ shared variant options, use the mutations in [Set shared variant options](#set-shared-variant-options).
 </Callout>
 
-### Set variant options at the global level
+### Set variant options
 
-The following example sets the store's global product variant option information, from which channels inherit by default. You can set the name and values for existing variant options.
+The following example sets product variant option information for the global store and a channel locale.
 
 <Tabs items={['Request', 'Response']}>
   <Tab>
 
-    ```graphql filename="Example mutation: Set product variant options at the global level" showLineNumbers copy
+    ```graphql filename="Example mutation: Set product variant options" showLineNumbers copy
     POST https://api.bigcommerce.com/stores/{{STORE_HASH}}/graphql
     X-Auth-Token: {{ACCESS_TOKEN}}
     Content-Type: application/json
     Accept: application/json      
     
-    mutation ($input: SetProductOptionsInformationInput!) {
+    mutation ($input: UpdateProductOptionsInput!) {
       product {
-        setProductOptionsInformation (input: $input) {
+        updateProductOptions(input: $input) {
           product {
             id
-            options (first: 2) {
+            options (first: 1) {
               edges {
                 node {
                   id
@@ -60,6 +59,23 @@ The following example sets the store's global product variant option information
                     id
                     label
                   }
+                  overrides(context: { channelId: "bc/store/channel/1", locale: "fr" }) {
+                    edges {
+                      node {
+                        ... on ProductOptionOverridesForChannelLocale {
+                          context {
+                            channelId
+                            locale
+                          }
+                          displayName
+                          values {
+                            id
+                            label
+                          }
+                        }
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -72,218 +88,118 @@ The following example sets the store's global product variant option information
     {
       "input": {
         "productId": "bc/store/product/111",
-        "data": {
-          "options": [
-            {
-              "optionId": "bc/store/productOption/108",
-              "data": {
-                "dropdown": {
-                  "displayName": "Size US",
-                  "values": [
-                    {
-                      "valueId": "bc/store/productOptionValue/68",
-                      "label": "Small US"
-                    },
-                    {
-                      "valueId": "bc/store/productOptionValue/69",
-                      "label": "Medium US"
-                    },
-                    {
-                      "valueId": "bc/store/productOptionValue/70",
-                      "label": "Large US"
-                    }
-                  ]
-                }
-              }
-            }
-          ]
-        }
-      }
-    }
-    ```
-
-  </Tab>
-  <Tab>
-
-    ```json filename="Example mutation: Set product variant options at the global level" showLineNumbers copy
-    {
-      "data": {
-        "product": {
-          "setProductOptionsInformation": {
-            "product": {
-              "id": "bc/store/product/111",
-              "options": {
-                "edges": [
+        "data": [
+          {
+            "optionId": "bc/store/productOption/108",
+            "optionData": {
+              "dropdown": {
+                "displayName": "Size UK",
+                "values": [
                   {
-                    "node": {
-                      "id": "bc/store/productOption/108",
-                      "displayName": "Size US",
-                      "isShared": false,
-                      "values": [
-                        {
-                          "id": "bc/store/productOptionValue/68",
-                          "label": "Small US"
-                        },
-                        {
-                          "id": "bc/store/productOptionValue/69",
-                          "label": "Medium US"
-                        },
-                        {
-                          "id": "bc/store/productOptionValue/70",
-                          "label": "Large US"
-                        }
-                      ]
-                    }
+                    "valueId": "bc/store/productOptionValue/68",
+                    "label": "Small UK"
                   },
                   {
-                    "node": {
-                      "id": "bc/store/productOption/109",
-                      "displayName": "Color",
-                      "isShared": false,
-                      "values": [
-                        {
-                          "id": "bc/store/productOptionValue/7",
-                          "label": "Silver"
-                        },
-                        {
-                          "id": "bc/store/productOptionValue/8",
-                          "label": "Black"
-                        }
-                      ]
-                    }
-                  }
-                ]
-              }
-            }
-          }
-        }
-      }
-    }
-    ```    
-
-  </Tab>
-</Tabs>
-
-### Set variant options for a locale
-
-The following example sets product variant option information for the locale within the specified storefront channel. These override global store information. You can set the name and values for existing variant options.
-
-<Tabs items={['Request', 'Response']}>
-  <Tab>
-
-    ```graphql filename="Example mutation: Set product variant options for a locale" showLineNumbers copy
-    POST https://api.bigcommerce.com/stores/{{STORE_HASH}}/graphql
-    X-Auth-Token: {{ACCESS_TOKEN}}
-    Content-Type: application/json
-    Accept: application/json      
-    
-    mutation ($input: SetProductOptionsInformationInput!) {
-      product {
-        setProductOptionsInformation (input: $input) {
-          product {
-            id
-            options (first: 2) {
-              edges {
-                node {
-                  id
-                  overridesForLocale(
-                    localeContext: {
-                      channelId: "bc/store/channel/2",
-                      locale: "uk"
-                    }
-                  ) {
-                    displayName
-                    values {
-                      id
-                      label
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-    ```
-    ```json filename="GraphQL variables" showLineNumbers copy
-    {
-      "input": {
-        "productId": "bc/store/product/111",
-        "localeContext": {
-          "channelId": "bc/store/channel/2",
-          "locale": "uk"
-        },
-        "data": {
-          "options": [
-            {
-              "optionId": "bc/store/productOption/108",
-              "data": {
-                "dropdown": {
-                  "displayName": "Size UK",
-                  "values": [
-                    {
-                      "valueId": "bc/store/productOptionValue/68",
-                      "label": "Small UK"
-                    },
-                    {
-                      "valueId": "bc/store/productOptionValue/69",
-                      "label": "Medium UK"
-                    },
-                    {
-                      "valueId": "bc/store/productOptionValue/70",
-                      "label": "Large UK"
-                    } 
-                  ]
-                }
-              }
-            }
-          ]
-        }
-      }
-    }
-    ```
-
-  </Tab>
-  <Tab>
-
-    ```json filename="Example mutation: Set product variant options for a locale" showLineNumbers copy
-    {
-      "data": {
-        "product": {
-          "setProductOptionsInformation": {
-            "product": {
-              "id": "bc/store/product/111",
-              "options": {
-                "edges": [
+                    "valueId": "bc/store/productOptionValue/69",
+                    "label": "Medium UK"
+                  },
                   {
-                    "node": {
-                      "id": "bc/store/productOption/108",
-                      "overridesForLocale": {
-                        "displayName": "Size UK",
+                    "valueId": "bc/store/productOptionValue/70",
+                    "label": "Large UK"
+                  }
+                ],
+                "overrides": [
+                  {
+                    "channelLocaleOverrides": {
+                      "context": {
+                        "channelId": "bc/store/channel/1",
+                        "locale": "fr"
+                      },
+                      "data": {
+                        "displayName": "Override Size UK",
                         "values": [
                           {
-                            "id": "bc/store/productOptionValue/68",
-                            "label": "Small UK"
+                            "valueId": "bc/store/productOptionValue/68",
+                            "label": "Override Small UK"
                           },
                           {
-                            "id": "bc/store/productOptionValue/69",
-                            "label": "Medium UK"
+                            "valueId": "bc/store/productOptionValue/69",
+                            "label": "Override Medium UK"
                           },
                           {
-                            "id": "bc/store/productOptionValue/70",
-                            "label": "Large UK"
+                            "valueId": "bc/store/productOptionValue/70",
+                            "label": "Override Large UK"
                           }
                         ]
                       }
                     }
-                  },
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    }
+    ```
+
+  </Tab>
+  <Tab>
+
+    ```json filename="Example mutation: Set product variant options" showLineNumbers copy
+    {
+      "data": {
+        "product": {
+          "updateProductOptions": {
+            "product": {
+              "id": "bc/store/product/111",
+              "options": {
+                "edges": [
                   {
                     "node": {
-                      "id": "bc/store/productOption/109",
-                      "overridesForLocale": {
-                        "displayName": null,
-                        "values": []
+                      "id": "bc/store/productOption/108",
+                      "displayName": "Size UK",
+                      "isShared": false,
+                      "values": [
+                        {
+                          "id": "bc/store/productOptionValue/68",
+                          "label": "Small UK"
+                        },
+                        {
+                          "id": "bc/store/productOptionValue/69",
+                          "label": "Medium UK"
+                        },
+                        {
+                          "id": "bc/store/productOptionValue/70",
+                          "label": "Large UK"
+                        }
+                      ],
+                      "overrides": {
+                        "edges": [
+                          {
+                            "node": {
+                              "context": {
+                                "channelId": "bc/store/channel/1",
+                                "locale": "fr"
+                              },
+                              "displayName": "Override Size UK",
+                              "values": [
+                                {
+                                  "id": "bc/store/productOptionValue/68",
+                                  "label": "Override Small UK"
+                                },
+                                {
+                                  "id": "bc/store/productOptionValue/69",
+                                  "label": "Override Medium UK"
+                                },
+                                {
+                                  "id": "bc/store/productOptionValue/70",
+                                  "label": "Override Large UK"
+                                }
+                              ]
+                            }
+                          }
+                        ]
                       }
                     }
                   }
@@ -298,6 +214,7 @@ The following example sets product variant option information for the locale wit
 
   </Tab>
 </Tabs>
+
 
 ### Remove variant options for a locale
 
@@ -314,10 +231,10 @@ The following example removes product variant option information for the locale 
     
     mutation ($input: RemoveProductOptionsOverridesInput!) {
       product {
-        removeProductOptionsOverrides (input: $input) {
+        removeProductOptionsOverrides(input: $input) {
           product {
             id
-            options (first: 2) {
+            options (first: 1) {
               edges {
                 node {
                   id
@@ -326,11 +243,21 @@ The following example removes product variant option information for the locale 
                     id
                     label
                   }
-                  overridesForLocale (localeContext: {channelId: "bc/store/channel/2", locale: "uk"}) {
-                    displayName
-                    values {
-                      id
-                      label
+                  overrides(context: { channelId: "bc/store/channel/1", locale: "fr" }) {
+                    edges {
+                      node {
+                        ... on ProductOptionOverridesForChannelLocale {
+                          context {
+                            channelId
+                            locale
+                          }
+                          displayName
+                          values {
+                            id
+                            label
+                          }
+                        }
+                      }
                     }
                   }
                 }
@@ -347,8 +274,8 @@ The following example removes product variant option information for the locale 
       "input": {
         "productId": "bc/store/product/111",
         "localeContext": { 
-          "channelId": "bc/store/channel/2",
-          "locale": "uk"
+          "channelId": "bc/store/channel/1",
+          "locale": "fr"
         },
         "data": {
           "options": [
@@ -384,53 +311,43 @@ The following example removes product variant option information for the locale 
                   {
                     "node": {
                       "id": "bc/store/productOption/108",
-                      "displayName": "Size US",
+                      "displayName": "Size UK",
                       "values": [
                         {
                           "id": "bc/store/productOptionValue/68",
-                          "label": "Small US"
+                          "label": "Small UK"
                         },
                         {
                           "id": "bc/store/productOptionValue/69",
-                          "label": "Medium US"
+                          "label": "Medium UK"
                         },
                         {
                           "id": "bc/store/productOptionValue/70",
-                          "label": "Large US"
+                          "label": "Large UK"
                         }
                       ],
-                      "overridesForLocale": {
-                        "displayName": null,
-                        "values": [
+                      "overrides": {
+                        "edges": [
                           {
-                            "id": "bc/store/productOptionValue/68",
-                            "label": "Small UK"
-                          },
-                          {
-                            "id": "bc/store/productOptionValue/69",
-                            "label": "Medium UK"
+                            "node": {
+                              "context": {
+                                "channelId": "bc/store/channel/1",
+                                "locale": "fr"
+                              },
+                              "displayName": null,
+                              "values": [
+                                {
+                                  "id": "bc/store/productOptionValue/68",
+                                  "label": "Override Small UK"
+                                },
+                                {
+                                  "id": "bc/store/productOptionValue/69",
+                                  "label": "Override Medium UK"
+                                }
+                              ]
+                            }
                           }
                         ]
-                      }
-                    }
-                  },
-                  {
-                    "node": {
-                      "id": "bc/store/productOption/109",
-                      "displayName": "Color",
-                      "values": [
-                        {
-                          "id": "bc/store/productOptionValue/7",
-                          "label": "Silver"
-                        },
-                        {
-                          "id": "bc/store/productOptionValue/8",
-                          "label": "Black"
-                        }
-                      ],
-                      "overridesForLocale": {
-                        "displayName": null,
-                        "values": []
                       }
                     }
                   }
@@ -446,30 +363,51 @@ The following example removes product variant option information for the locale 
   </Tab>
 </Tabs>
 
-## Set shared variant options
+## Shared variant options
 
-You can set information about a shared variant option for a store or a locale within a storefront channel. You must first create the shared variant options through the control panel. Changing a shared variant option affects all products that you assign to the shared variant option. You cannot customize shared variant options on a product level.
+### Set shared variant options
 
-The following mutations let you set the name and values for existing shared variant options. 
+You can set information about a shared variant option for a store or a locale within a storefront channel. You must first create the shared variant options through the control panel.
 
-### Set shared variant options at the global level
-
-The following example sets global shared variant option information for the store, from which channels inherit by default. You can set the name and values for existing variant options.
+The following mutation sets the name and values for an existing shared variant option. 
 
 <Tabs items={['Request', 'Response']}>
   <Tab>
 
-    ```graphql filename="Example mutation: Set shared variant options at the global level" showLineNumbers copy
+    ```graphql filename="Example mutation: Set shared variant options" showLineNumbers copy
     POST https://api.bigcommerce.com/stores/{{STORE_HASH}}/graphql
     X-Auth-Token: {{ACCESS_TOKEN}}
     Content-Type: application/json
     Accept: application/json      
 
-    mutation ($input: SetSharedProductOptionsInformationInput!) {
+    mutation ($input: UpdateSharedProductOptionsInput!) {
       sharedProductOptions {
-        setSharedProductOptionsInformation (input: $input) {
+        updateSharedProductOptions(input: $input) {
           sharedProductOptions {
             id
+            displayName
+            values {
+              id
+              isDefault
+              label
+            }
+            overrides(context: { channelId: "bc/store/channel/1", locale: "fr" }) {
+              edges {
+                node {
+                  ... on SharedProductOptionOverridesForChannelLocale {
+                    context {
+                      channelId
+                      locale
+                    }
+                    displayName
+                    values {
+                      id
+                      label
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -478,46 +416,90 @@ The following example sets global shared variant option information for the stor
     ```json filename="GraphQL variables" showLineNumbers copy
     {
       "input": {
-        "data": {
-          "options": [
-            {
-              "optionId": "bc/store/sharedProductOption/1",
-              "data": {
-                "dropdown": {
-                  "displayName": "Fabric",
-                  "values": [
-                    {
-                      "valueId": "bc/store/sharedProductOptionValue/123",
-                      "label": "Cotton"
-                    },
-                    {
-                      "valueId": "bc/store/sharedProductOptionValue/124",
-                      "label": "Polyester"
+        "data": [
+          {
+            "optionId": "bc/store/sharedProductOption/1",
+            "optionData": {
+              "dropdown": {
+                "displayName": "Fabric",
+                "values": [
+                  {
+                    "valueId": "bc/store/sharedProductOptionValue/123",
+                    "label": "Cotton"
+                  },
+                  {
+                    "valueId": "bc/store/sharedProductOptionValue/124",
+                    "label": "Polyester"
+                  }
+                ],
+                "overrides": [
+                  {
+                    "channelLocaleOverrides": {
+                      "context": {
+                        "channelId": "bc/store/channel/1",
+                        "locale": "fr"
+                      },
+                      "data": {
+                        "displayName": "Fabric channel override",
+                        "values": [
+                          {
+                            "valueId": "bc/store/sharedProductOptionValue/123",
+                            "label": "Cotton channel override"
+                          },
+                          {
+                            "valueId": "bc/store/sharedProductOptionValue/124",
+                            "label": "Polyester channel override"
+                          }
+                        ]
+                      }
                     }
-                  ]
-                }
-              }
-            },
-            {
-              "optionId": "bc/store/sharedProductOption/4",
-              "data": {
-                "swatch": {
-                  "displayName": "Zipper color",
-                  "values": [
-                    {
-                      "valueId": "bc/store/sharedProductOptionValue/129",
-                      "label": "Orange"
-                    },
-                    {
-                      "valueId": "bc/store/sharedProductOptionValue/130",
-                      "label": "Green"
-                    }
-                  ]
-                }
+                  }
+                ]
               }
             }
-          ]
-        }
+          },
+          {
+            "optionId": "bc/store/sharedProductOption/4",
+            "optionData": {
+              "swatch": {
+                "displayName": "Zipper color",
+                "values": [
+                  {
+                    "valueId": "bc/store/sharedProductOptionValue/129",
+                    "label": "Orange"
+                  },
+                  {
+                    "valueId": "bc/store/sharedProductOptionValue/130",
+                    "label": "Green"
+                  }
+                ],
+                "overrides": [
+                  {
+                    "channelLocaleOverrides": {
+                      "context": {
+                        "channelId": "bc/store/channel/1",
+                        "locale": "fr"
+                      },
+                      "data": {
+                        "displayName": "Zipper color override",
+                        "values": [
+                          {
+                            "valueId": "bc/store/sharedProductOptionValue/129",
+                            "label": "Orange override"
+                          },
+                          {
+                            "valueId": "bc/store/sharedProductOptionValue/130",
+                            "label": "Green override"
+                          }
+                        ]
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        ]
       }
     }
     ```
@@ -525,116 +507,71 @@ The following example sets global shared variant option information for the stor
   </Tab>
   <Tab>
 
-    ```json filename="Example mutation: Set shared variant options at the global level" showLineNumbers copy
+    ```json filename="Example mutation: Set shared variant options" showLineNumbers copy
     {
       "data": {
         "sharedProductOptions": {
-          "setSharedProductOptionsInformation": {
+          "updateSharedProductOptions": {
             "sharedProductOptions": [
               {
-                "id": "bc/store/sharedProductOption/1"
-              },
-              {
-                "id": "bc/store/sharedProductOption/4"
-              }
-            ]
-          }
-        }
-      }
-    }
-    ```    
-
-  </Tab>
-</Tabs>
-
-### Set shared variant options for a locale
-
-The following example sets shared variant option information for the locale within the specified storefront channel. These override global store information. You can set the name and values for existing variant options.
-
-<Tabs items={['Request', 'Response']}>
-  <Tab>
-
-    ```graphql filename="Example mutation: Set shared variant options for a locale" showLineNumbers copy
-    POST https://api.bigcommerce.com/stores/{{STORE_HASH}}/graphql
-    X-Auth-Token: {{ACCESS_TOKEN}}
-    Content-Type: application/json
-    Accept: application/json      
-
-    mutation ($input: SetSharedProductOptionsInformationInput!) {
-      sharedProductOptions {
-        setSharedProductOptionsInformation (input: $input) {
-          sharedProductOptions {
-            id
-          }
-        }
-      }
-    }
-    ```
-    ```json filename="GraphQL variables" showLineNumbers copy
-    {
-      "input": {
-        "localeContext": {
-          "channelId": "bc/store/channel/2",
-          "locale": "uk"
-        },
-        "data": {
-          "options": [
-            {
-              "optionId": "bc/store/sharedProductOption/1",
-              "data": {
-                "dropdown": {
-                  "displayName": "Fabric material",
-                  "values": [
+                "id": "bc/store/sharedProductOption/1",
+                "displayName": "Fabric",
+                "values": [
+                  {
+                    "id": "bc/store/sharedProductOptionValue/1",
+                    "isDefault": true,
+                    "label": "Cotton"
+                  },
+                  {
+                    "id": "bc/store/sharedProductOptionValue/2",
+                    "isDefault": false,
+                    "label": "Polyester"
+                  }
+                ],
+                "overrides": {
+                  "edges": [
                     {
-                      "valueId": "bc/store/sharedProductOptionValue/123",
-                      "label": "Linen"
-                    },
-                    {
-                      "valueId": "bc/store/sharedProductOptionValue/124",
-                      "label": "Nylon"
+                      "node": {
+                        "context": {
+                          "channelId": "bc/store/channel/1",
+                          "locale": "fr"
+                        },
+                        "displayName": "Fabric channel override",
+                        "values": []
+                      }
                     }
                   ]
                 }
-              }
-            },
-            {
-              "optionId": "bc/store/sharedProductOption/4",
-              "data": {
-                "swatch": {
-                  "displayName": "Color of zipper",
-                  "values": [
+              },
+              {
+                "id": "bc/store/sharedProductOption/4",
+                "displayName": "Zipper color",
+                "values": [
+                  {
+                    "id": "bc/store/sharedProductOptionValue/7",
+                    "isDefault": false,
+                    "label": "Orange"
+                  },
+                  {
+                    "id": "bc/store/sharedProductOptionValue/8",
+                    "isDefault": true,
+                    "label": "Green"
+                  }
+                ],
+                "overrides": {
+                  "edges": [
                     {
-                      "valueId": "bc/store/sharedProductOptionValue/129",
-                      "label": "Black"
-                    },
-                    {
-                      "valueId": "bc/store/sharedProductOptionValue/130",
-                      "label": "Brown"
+                      "node": {
+                        "context": {
+                          "channelId": "bc/store/channel/1",
+                          "locale": "fr"
+                        },
+                        "displayName": "Zipper color override",
+                        "values": []
+                      }
                     }
                   ]
                 }
-              }
-            }
-          ]
-        }
-      }
-    }
-    ```
-
-  </Tab>
-  <Tab>
-
-    ```json filename="Example mutation: Set shared variant options for a locale" showLineNumbers copy
-    {
-      "data": {
-        "sharedProductOptions": {
-          "setSharedProductOptionsInformation": {
-            "sharedProductOptions": [
-              {
-                "id": "bc/store/sharedProductOption/1"
-              },
-              {
-                "id": "bc/store/sharedProductOption/4"
               }
             ]
           }
@@ -735,7 +672,7 @@ The following example retrieves variant information. You can retrieve global inf
       store {
         product(id: "bc/store/product/111") {
           id
-          options (first: 3) {
+          options (first: 1) {
             edges {
               node {
                 id
@@ -746,13 +683,21 @@ The following example retrieves variant information. You can retrieve global inf
                   label
                   isDefault
                 }
-                overridesForLocale(
-                  localeContext: { channelId: "bc/store/channel/2", locale: "uk"}
-                ) {
-                  displayName
-                  values {
-                    id
-                    label
+                overrides(context: { channelId: "bc/store/channel/1", locale: "fr" }) {
+                  edges {
+                    node {
+                      ... on ProductOptionOverridesForChannelLocale {
+                        context {
+                          channelId
+                          locale
+                        }
+                        displayName
+                        values {
+                          id
+                          label
+                        }
+                      }
+                    }
                   }
                 }
               }
@@ -760,7 +705,7 @@ The following example retrieves variant information. You can retrieve global inf
           }
         }
       }
-    }    
+    }  
     ```
   </Tab>
   <Tab>
@@ -776,90 +721,49 @@ The following example retrieves variant information. You can retrieve global inf
                 {
                   "node": {
                     "id": "bc/store/productOption/108",
-                    "displayName": "Size",
+                    "displayName": "Size UK",
                     "isShared": false,
                     "values": [
                       {
                         "id": "bc/store/productOptionValue/68",
-                        "label": "Small US",
+                        "label": "Small UK",
                         "isDefault": false
                       },
                       {
                         "id": "bc/store/productOptionValue/69",
-                        "label": "Medium US",
+                        "label": "Medium UK",
                         "isDefault": false
                       },
                       {
                         "id": "bc/store/productOptionValue/70",
-                        "label": "Large US",
-                        "isDefault": false
-                      }
-                    ],
-                    "overridesForLocale": {
-                      "displayName": "Size UK",
-                      "values": [
-                        {
-                          "id": "bc/store/productOptionValue/68",
-                          "label": "Small UK"
-                        },
-                        {
-                          "id": "bc/store/productOptionValue/69",
-                          "label": "Medium UK"
-                        }
-                      ]
-                    }
-                  }
-                },
-                {
-                  "node": {
-                    "id": "bc/store/productOption/109",
-                    "displayName": "Color",
-                    "isShared": false,
-                    "values": [
-                      {
-                        "id": "bc/store/productOptionValue/7",
-                        "label": "Silver",
-                        "isDefault": false
-                      },
-                      {
-                        "id": "bc/store/productOptionValue/8",
-                        "label": "Black",
-                        "isDefault": false
-                      }
-                    ],
-                    "overridesForLocale": {
-                      "displayName": null,
-                      "values": []
-                    }
-                  }
-                },
-                {
-                  "node": {
-                    "id": "bc/store/productOption/130",
-                    "displayName": "Fabric",
-                    "isShared": true,
-                    "values": [
-                      {
-                        "id": "bc/store/productOptionValue/123",
-                        "label": "Cotton",
+                        "label": "Large UK",
                         "isDefault": true
-                      },
-                      {
-                        "id": "bc/store/productOptionValue/124",
-                        "label": "Polyester",
-                        "isDefault": false
                       }
                     ],
-                    "overridesForLocale": {
-                      "displayName": "Fabric material",
-                      "values": [
+                    "overrides": {
+                      "edges": [
                         {
-                          "id": "bc/store/productOptionValue/123",
-                          "label": "Linen"
-                        },
-                        {
-                          "id": "bc/store/productOptionValue/124",
-                          "label": "Nylon"
+                          "node": {
+                            "context": {
+                              "channelId": "bc/store/channel/1",
+                              "locale": "fr"
+                            },
+                            "displayName": "Override Size UK",
+                            "values": [
+                              {
+                                "id": "bc/store/productOptionValue/68",
+                                "label": "Override Small UK"
+                              },
+                              {
+                                "id": "bc/store/productOptionValue/69",
+                                "label": "Override Medium UK"
+                              },
+                              {
+                                "id": "bc/store/productOptionValue/70",
+                                "label": "Override Large UK"
+                              }
+                            ]
+                          }
                         }
                       ]
                     }

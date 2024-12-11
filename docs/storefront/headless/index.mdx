@@ -143,6 +143,78 @@ The following example uses the GraphQL Storefront API to complete a checkout and
   </Tab>
 </Tabs>
 
+## Headless/GraphQL account login
+
+BigCommerce has introduced a feature that leverages the [Customer Access Token](/docs/start/authentication/graphql-storefront#customer-access-tokens) for seamless redirection, logging in customers automatically when they reach checkout from the storefront. Built with JWT-based "Session Sync," this enhancement enables transferring session details, such as customer and cart data, across various contexts. Developers can use GraphQL API for advanced session syncing, ensuring a smoother, cohesive experience for customers across platforms.
+
+The following examples demonstrate how to sync and validate session details for headless storefronts and hosted checkouts.    
+
+<Tabs items={['Format', 'Mutation', 'Validate']}>
+  <Tab>
+
+```json # Low-level session sync JWT generation
+# Returns JUST a JWT, *not* a URL
+# Can "sync" any arbitrary combination of parameters
+# e.g., just sync analytics ID, just sync customer ID, just sync analytics + customer, etc
+# Designed to be used omni-directionally
+# e.g., headless -> stencil, stencil-> headless, headless->headless, stencil->stencil
+
+mutation GenerateSessionSyncJwt ($redirectTo: String!,$cartId: String,$visitorId: String,$ipAddress: IpAddress){
+   generateSessionSyncJwt(redirectTo:$redirectTo,cartId: $cartId, visitorId: $visitorId, ipAddress: $ipAddress){
+      result { 
+        token
+        url
+        }
+     }
+  }
+```
+</Tab>
+  <Tab>
+    
+```json # Low-level session sync JWT generation
+# Returns JUST a JWT, *not* a URL
+# Can "sync" any arbitrary combination of parameters
+# e.g., just sync analytics ID, just sync customer ID, just sync analytics + customer, etc
+# Designed to be used omni-directionally
+# e.g., headless -> stencil, stencil-> headless, headless->headless, stencil->stencil
+
+mutation GenerateSessionSyncJwt {
+  generateSessionSyncJwt(redirectTo:"/foo",visitorId:"abc123"){
+    result {
+      token
+      url
+      }
+   }
+}
+```
+  </Tab>
+
+   <Tab>
+```json # 
+mutation ValidateJwt{
+  validateSessionSyncJwt(jwt: "eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiJ9.eyJpc3MiOiJCQyIsImlhdCI6MTczMDQwMTc3MiwiZWF0IjoxNzMwNDAxODAyLCJqdGkiOiI2NTI5NDAyMi02MDA4LTRmY2YtOTUxOC03MWE5NjA0MjEyMjgiLCJvcGVyYXRpb24iOiJzZXNzaW9uX3N5bmMiLCJzaWQiOjczMzE5Nywic2Vzc2lvbl9wYXlsb2FkIjp7ImNhcnRfaWQiOm51bGwsImN1c3RvbWVyX2lkIjpudWxsLCJ2aXNpdG9yX2lkIjoiYWJjMTIzIn0sInJlcXVlc3RfaXAiOm51bGwsInJlZGlyZWN0X3RvIjoiaHR0cHM6Ly9iaWdjb21tZXJjZS5zdXBwb3J0L2ZvbyJ9.TAueByfTCdpw3UwwuKElUoeEjYcqCT13H3pt7UzIh6t6682_w4aaz1akS-FOyyOstOUYcjyUPLN5qi04eXXKKA"){
+   content{
+     analytics{
+       visitorId
+}
+     cart{
+       entityId    
+}
+     customer {
+       firstName
+}
+     customerAccessToken{
+       expiresAt
+       value    
+}
+     redirectTo
+     }
+   }
+}
+```
+</Tab>
+</Tabs>
+
 ## Next step
 
 - [Learn how to create a channel and a channel site](/docs/storefront/headless/channels)

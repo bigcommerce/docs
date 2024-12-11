@@ -16,52 +16,72 @@ To complete the guide, you need the following:
 
 ## Accessing the GraphQL Storefront API
 
-You can make requests to the GraphQL Storefront API in a server-to-server context. Typically, server-side API clients should use [customer impersonation tokens](/docs/rest-authentication/tokens/customer-impersonation-token) to authenticate requests to the GraphQL Storefront API. Frontend API clients that primarily serve static sites with no sign-in capabilities can use [storefront tokens](/docs/rest-authentication/tokens). However, server-to-server requests can use storefront tokens as well. This guide describes creating and using customer impersonation tokens to authenticate and use the GraphQL Storefront API. 
+You can make requests to the GraphQL Storefront API in a server-to-server context. This guide describes creating and using a customer access token to authenticate and use the GraphQL Storefront API. 
 
-### Create a customer impersonation token
+### Create a customer access token
 
-A customer impersonation token lets you conduct actions for any shopper, in the context of their account. Customer impersonation tokens are sensitive, and you must not expose them publicly. To generate a customer impersonation token, send a request to the [Create a customer impersonation token](/docs/rest-authentication/tokens/customer-impersonation-token#create-a-token) endpoint.
-
-You can make customer impersonation token-authenticated requests by specifying the customer ID as the value of the `X-BC-Customer-Id` header when making requests to the GraphQL Storefront API endpoint. For an example that uses the `X-BC-Customer-Id` header, see this guide's section on [Querying product data](#querying-product-data).
-
-<Callout type="info">
-Typically, there is no need to use a customer impersonation token in the GraphQL Storefront API playground. Using the playground with a customer impersonation token is solely an example in this guide.
-</Callout>
+A customer access token is unique to an individual user's account. To generate a customer access token, enter your GraphQL variables (user email and password) and run the [login mutation](/docs/start/authentication/graphql-storefront#login-mutation). 
 
 <Tabs items={['Request', 'Response']}>
   <Tab>
-    ```http filename="Create a customer impersonation token" showLineNumbers copy
-    POST https://api.bigcommerce.com/stores/{{STORE_HASH}}/v3/storefront/api-token-customer-impersonation
-    X-Auth-Token: {{ACCESS_TOKEN}}
+    ```json filename="GraphQL variables" showLineNumbers copy 
+    {
+      "email": "user@email.com", 
+      "pass": "password"
+    }
+    ```
+
+    ```graphql filename="Create a customer access token" showLineNumbers copy
+    # Create a customer access token
+    POST https:{{storeDomain}}/graphql
+    Authorization: Bearer {{STOREFRONT_TOKEN}}
     Accept: application/json
     Content-Type: application/json
 
-    {
-      "channel_id": 1, 
-      "expires_at": 1602288000 
-    }
-    ```
+    mutation Login($email: String!, $pass: String!) {
+      login(email: $email, password: $pass) {
+       result
+       customer {
+         entityId
+         email
+       }
+       customerAccessToken {
+         value
+         expiresAt
+     }
+   }
+}
+```
+</Tab>
 
-  </Tab>
-  <Tab>
-
-    ```json filename="Create a customer impersonation token" showLineNumbers copy
-    {
-        "data":
-        {
-            "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
+<Tab>
+```json filename="Example login mutation: Create a customer access token" showLineNumbers copy
+{
+    "data": {
+        "login": {
+            "result": "success",
+            "customer": {
+                "entityId": 21,
+                "email": "user@email.com"
+            },
+            "customerAccessToken": {
+                "value": "53ea9099d5484cdedddbf8f59a73bc284afefd7943c4dbe578db52435e0c0de7_1721406629",
+                "expiresAt": "2024-07-19T16:30:29Z"
+            }
         }
-          "meta": {}
     }
-    ```
-  </Tab>
+}
+```
+</Tab>
 </Tabs>
 
-In the playground, add the customer impersonation token to the **Headers** tab as follows. Ensure that you leave a space between `Bearer` and the customer impersonation token.
 
-```json filename="Authorization header with customer impersonation token" copy
+In a tool like [Postman](https://postman.com/) or [Altair](https://altairgraphql.dev/), add the customer access token to the **Headers** tab as follows. For more information, see Using a [Customer Access Token](/docs/start/authentication/graphql-storefront#using-a-customer-access-token).
+
+```json filename="Authorization header with customer access token" copy
 {
-  "Authorization": "Bearer {customer impersonation token}"
+  "X-Bc-Customer-Access-Token": "{{customer access token}}",
+  "Authorization": "Bearer {{STOREFRONT_TOKEN}}"
 }
 ```
 
@@ -82,9 +102,9 @@ When possible, use the following best practices for queries to the GraphQL Store
   <Tab>
     ```http filename="Get a product" showLineNumbers copy
     GET https://store.example.com/graphql
-    Authorization: Bearer {{CUSTOMER_IMPERSONATION_TOKEN}}
+    Authorization: Bearer {{STOREFRONT_TOKEN}}
     Accept: application/json
-    X-Bc-Customer-Id: 123
+    X-Bc-Customer-Access-Token: {{CUSTOMER_ACCESS_TOKEN}}
 
     # This query retrieves one product.
     query SingleProduct ($entityId: Int) {
@@ -110,9 +130,26 @@ When possible, use the following best practices for queries to the GraphQL Store
   <Tab>
 
     ```http filename="Get a product" showLineNumbers copy
-
-    ```
-
+      {
+    "data": {
+        "site": {
+            "product": {
+                "id": "UHJvZHVjdDoxNTk=",
+                "entityId": 159,
+                "name": "computer",
+                "sku": "CMP-1-223",
+                "description": "<p><span>High speed Computer</span></p>",
+                "prices": {
+                    "price": {
+                        "value": 739.03,
+                        "currencyCode": "USD"
+                    }
+                }
+            }
+        }
+    }
+}   
+```
   </Tab>
 </Tabs>
 
@@ -129,8 +166,8 @@ Make note of one of the cart's `entityId` displayed in the response. You will ne
     ```graphql filename="Create a cart (simple)" showLineNumbers copy
     POST https://store.example.com/graphql
     Accept: application/json
-    Authorization: Bearer {{CUSTOMER_IMPERSONATION_TOKEN}}
-    X-Bc-Customer-Id: 123
+    Authorization: Bearer {{STOREFRONT_TOKEN}}
+    X-Bc-Customer-Access-Token: {{CUSTOMER_ACCESS_TOKEN}}
 
     # Creates a new cart, adding a simple product.
 
@@ -213,8 +250,8 @@ To add a new line item to the existing cart, add the cart ID to the input variab
   <Tab>
     ```http filename="Add cart line items" showLineNumbers copy
       POST https://store.example.com/graphql
-      Authorization: Bearer {{CUSTOMER_IMPERSONATION_TOKEN}}
-      X-Bc-Customer-Id: 123
+      Authorization: Bearer {{STOREFRONT_TOKEN}}
+      X-Bc-Customer-Access-Token: {{CUSTOMER_ACCESS_TOKEN}}
 
       mutation addCartLineItems($addCartLineItemsInput: AddCartLineItemsInput!) {
         cart {
@@ -276,8 +313,8 @@ You can access cart and checkout details in the same request as other informatio
     
     ```graphql filename="Get checkout" showLineNumbers copy
     GET https://store.example.com/graphql
-    Authorization: Bearer {{CUSTOMER_IMPERSONATION_TOKEN}}
-    X-Bc-Customer-Id: 123
+    Authorization: Bearer {{STOREFRONT_TOKEN}}
+    X-Bc-Customer-Access-Token: {{CUSTOMER_ACCESS_TOKEN}}
 
     query getCheckout($entityId: Int) {
       site {
@@ -530,8 +567,8 @@ This mutation adds a billing address to an existing checkout.
   <Tab>
     ```graphql filename="Add a checkout billing address" showLineNumbers copy
       POST https://store.example.com/graphql
-      Authorization: Bearer {{CUSTOMER_IMPERSONATION_TOKEN}}
-      X-Bc-Customer-Id: 123
+      Authorization: Bearer {{STOREFRONT_TOKEN}}
+      X-Bc-Customer-Access-Token: {{CUSTOMER_ACCESS_TOKEN}}
 
       mutation addCheckoutBillingAddress($addCheckoutBillingAddressInput: AddCheckoutBillingAddressInput!) {
         checkout {
@@ -601,8 +638,8 @@ Make a note of a shipping consignment's `entityId` and the desired shipping opti
   <Tab>
     ```graphql filename="Add a checkout shipping consignment" showLineNumbers copy
     POST https://store.example.com/graphql
-    Authorization: Bearer {{CUSTOMER_IMPERSONATION_TOKEN}}
-    X-Bc-Customer-Id: 123
+    Authorization: Bearer {{STOREFRONT_TOKEN}}
+    X-Bc-Customer-Access-Token: {{CUSTOMER_ACCESS_TOKEN}}
 
     mutation addCheckoutShippingConsignments($addCheckoutShippingConsignmentsInput: AddCheckoutShippingConsignmentsInput!) {
       checkout {
@@ -700,8 +737,8 @@ This mutation adds a selected shipping to an existing checkout.
   <Tab>
     ```graphql filename="Select checkout shipping option" showLineNumbers copy
     POST https://store.example.com/graphql
-    Authorization: Bearer {{CUSTOMER_IMPERSONATION_TOKEN}}
-    X-Bc-Customer-Id: 123
+    Authorization: Bearer {{STOREFRONT_TOKEN}}
+    X-Bc-Customer-Access-Token: {{CUSTOMER_ACCESS_TOKEN}}
 
     mutation selectCheckoutShippingOption($selectCheckoutShippingOptionInput: SelectCheckoutShippingOptionInput!) {
         checkout {
@@ -757,8 +794,8 @@ Completing a checkout creates an incomplete order until you process the payment.
   <Tab>
     ```graphql filename="Complete checkout" showLineNumbers copy
       POST https://store.example.com/graphql
-      Authorization: Bearer {{CUSTOMER_IMPERSONATION_TOKEN}}
-      X-Bc-Customer-Id: 123
+      Authorization: Bearer {{STOREFRONT_TOKEN}}
+      X-Bc-Customer-Access-Token: {{CUSTOMER_ACCESS_TOKEN}}
 
       mutation completeCheckout($completeCheckoutInput: CompleteCheckoutInput!) {
           checkout {
@@ -803,6 +840,7 @@ Completing a checkout creates an incomplete order until you process the payment.
 ### GraphQL Storefront API
 
 * [Storefront tokens](/docs/storefront/cart-checkout/guide/graphql-storefront#tokens)
+* [Customer access tokens](/docs/start/authentication/graphql-storefront#customer-access-tokens)
 * [Querying within a BigCommerce storefront](/docs/storefront/graphql#querying-within-a-bigcommerce-storefront)
 * [Create a cart using a simple product](/docs/storefront/cart-checkout/guide/graphql-storefront#create-a-cart-using-a-simple-product)
 * [Add cart line items](/docs/storefront/cart-checkout/guide/graphql-storefront#add-cart-line-items)

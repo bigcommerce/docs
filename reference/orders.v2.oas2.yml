@@ -97,7 +97,7 @@ paths:
         
         To remove a product from an order, set that product’s `quantity` to `0`.
 
-        After the update, the PUT request clears all discounts and promotions applied to the order. Since the order data syncs with other ERP systems, like Amazon or eBay, the updated order returns to the default setting, removing any applied discounts.
+        After the update, the PUT request clears all discounts and promotions applied to the changed order line items. Since the order data syncs with other ERP systems, like Amazon or eBay, the updated order returns to the default setting, removing any applied discounts.
         
         To learn more about creating or updating orders, see [Orders Overview](/docs/store-operations/orders).
       summary: Update an Order
@@ -146,6 +146,7 @@ paths:
                       price_inc_tax: 50
                       price_ex_tax: 45
                     - product_id: 184
+                      quanity: 1
                       product_options:
                         - id: 200
                           value: '180'
@@ -198,6 +199,21 @@ paths:
   '/orders/count':
     parameters:
       - $ref: '#/components/parameters/Accept'
+      - $ref: '#/components/parameters/min_id'
+      - $ref: '#/components/parameters/max_id'
+      - $ref: '#/components/parameters/min_total'
+      - $ref: '#/components/parameters/max_total'
+      - $ref: '#/components/parameters/customer_id'
+      - $ref: '#/components/parameters/email'
+      - $ref: '#/components/parameters/status_id'
+      - $ref: '#/components/parameters/cart_id'
+      - $ref: '#/components/parameters/payment_method'
+      - $ref: '#/components/parameters/min_date_created'
+      - $ref: '#/components/parameters/max_date_created'
+      - $ref: '#/components/parameters/min_date_modified'
+      - $ref: '#/components/parameters/max_date_modified'
+      - $ref: '#/components/parameters/channel_id'
+      - $ref: '#/components/parameters/external_order_id'
     get:
       description: Gets an array of orders in the store organized by order status.
       summary: Get a Count of Orders
@@ -270,6 +286,9 @@ paths:
         This means that if the `consignments` array is present in the request, then _none_ of the following may be present and vice-versa:
         - `shipping_addresses`
         - `products`
+
+        The V2 Orders API will not trigger the typical [Order Email](https://support.bigcommerce.com/s/article/Customizing-Emails?language=en_US) when creating orders. To create an order that does trigger this email, you can instead [create a cart](/docs/rest-management/carts/carts-single#create-a-cart) and [convert that cart into an order](/docs/rest-management/checkouts/checkout-orders#create-an-order).
+        
       summary: Create an Order
       tags:
         - Orders
@@ -514,15 +533,16 @@ paths:
         Returns a Collection of All Order Statuses.
         
         **Order Status Descriptions:**
+        
         |Status ID | Name  | Description |
-        |--|--|--|
+        |-|-|-|
         | 0 | Incomplete  | An incomplete order happens when a shopper reached the payment page, but did not complete the transaction. |
         | 1 | Pending |Customer started the checkout process, but did not complete it. |
         | 2 | Shipped | Order has been shipped, but receipt has not been confirmed; seller has used the Ship Items action. |
         | 3 | Partially Shipped | Only some items in the order have been shipped, due to some products being pre-order only or other reasons. |
         | 4 | Refunded | Seller has used the Refund action. |
         | 5 | Cancelled | Seller has cancelled an order, due to a stock inconsistency or other reasons. |
-        | 6 |Declined | Seller has marked the order as declined for lack of manual payment, or other reasons. |
+        | 6 | Declined | Seller has marked the order as declined for lack of manual payment, or other reasons. |
         | 7 | Awaiting Payment | Customer has completed checkout process, but payment has yet to be confirmed. |
         | 8 | Awaiting Pickup | Order has been pulled, and is awaiting customer pickup from a seller-specified location. |
         | 9 | Awaiting Shipment | Order has been pulled and packaged, and is awaiting collection from a shipping provider. |
@@ -612,6 +632,9 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/orderShipmentCollection_Resp'
+        '204':
+          description: No Content (No shipments exist)
+          content: {}
       tags:
         - Order Shipments
       operationId: getOrderShipments
@@ -627,9 +650,9 @@ paths:
 
         There are three methods for generating a tracking link for a shipment:
 
-        1. Use `shipping_provider` and `tracking_number`: This generates an automatic tracking link that you can click from the BigCommerce control panel and customer-facing emails. The `generated_tracking_link` property in the API response represents this tracking link. The `tracking_link` property in the API response will remain empty.
+        1. Use `shipping_provider` and `tracking_number`: This generates a link to one of our integrated providers that you can click from the BigCommerce control panel and customer-facing emails. If a merchant still needs to set up a shipping provider or if the provider is not one of our natively integrated providers, you will click on an Aftership tracking link instead. The `generated_tracking_link` property in the API response represents one of these tracking links. The `tracking_link` property in the API response will remain empty.
 
-        2. Use `tracking_carrier` and `tracking_number`: This also creates an automatic tracking link that you can click in both the BigCommerce control panel and customer-facing emails. Like the previous method, the `generated_tracking_link` property in the API response represents this tracking link. The `tracking_link` property in the API response will remain empty.
+        2. Use `tracking_carrier` and `tracking_number`: This also creates a link to one of our integrated providers or an Aftership tracking link that you can click in both the BigCommerce control panel and customer-facing emails. Like the previous method, the `generated_tracking_link` property in the API response represents this tracking link. The `tracking_link` property in the API response will remain empty.
 
         3. Supply a custom `tracking_link`: By providing a value for the `tracking_link` property, you can use your own tracking link within the BigCommerce control panel and in customer-facing emails. The API response will return your supplied tracking link as part of the `tracking_link` property in the response. In situations when there isn't a `generated_tracking_link`, the property in the API response will remain empty. 
         
@@ -646,7 +669,7 @@ paths:
          - `shipperhq`
          - `carrier_{your_carrier_id}`, when the carrier is a [third-party Shipping Provider](/docs/integrations/shipping) 
         
-        Acceptable values for `tracking_carrier` include an empty string (`""`) or one of the valid [tracking-carrier values](https://github.com/bigcommerce/dev-docs/blob/master/assets/csv/tracking_carrier_values.csv).
+        Acceptable values for `tracking_carrier` include an empty string (`""`) or one of the valid [tracking-carrier values](https://www.aftership.com/docs/tracking/others/supported-couriers).
       summary: Create Order Shipment
       parameters:
         - $ref: '#/components/parameters/ContentType'
@@ -713,11 +736,9 @@ paths:
               application/json:
                 value:
                   tracking_number: EJ958083578US
+                  merchant_shipping_cost: '1.0000'
                   order_address_id: 1
                   shipping_provider: fedex
-                  items:
-                    - order_product_id: 15
-                      quantity: 2
         required: true
       responses:
         '200':
@@ -1121,15 +1142,9 @@ components:
     payment_method:
       name: payment_method
       in: query
-      description: The display name of the payment method used on the order.
+      description: The display name of the payment method used on the order. For example, `Manual`, `Credit Card`, `cash`, `Test Payment Gateway`, etc.'
       schema:
         type: string
-        enum:
-          - Manual
-          - Cash on Delivery
-          - Credit Card
-          - Test Payment Gateway
-          - Pay In Store
     min_date_created:
       name: min_date_created
       in: query
@@ -1428,6 +1443,7 @@ components:
                   total_ex_tax: '361.9500'
                   total_inc_tax: '361.9500'
                   total_tax: '0.0000'
+                  is_tax_inclusive_pricing: false
                   items_total: 17
                   items_shipped: 0
                   payment_method: Credit Card
@@ -1642,6 +1658,7 @@ components:
                 total_ex_tax: '64.5300'
                 total_inc_tax: '69.8400'
                 total_tax: '5.3100'
+                is_tax_inclusive_pricing: false
                 items_total: 4
                 items_shipped: 0
                 payment_method: Cash
@@ -1735,6 +1752,7 @@ components:
                 total_ex_tax: '931.86'
                 total_inc_tax: '1008.74'
                 total_tax: 76.88
+                is_tax_inclusive_pricing: false
                 items_total: 11
                 items_shipped: 0
                 payment_method: Test Payment Gateway
@@ -1865,6 +1883,9 @@ components:
                   total_inc_tax: '65.2300'
                   total_tax: '9.2400'
                   weight: '1.0000'
+                  width: '1.0000'
+                  height: '1.0000'
+                  depth: '1.0000'
                   quantity: 1
                   base_cost_price: '50.0000'
                   cost_price_inc_tax: '50.0000'
@@ -1874,6 +1895,7 @@ components:
                   quantity_refunded: 0
                   refund_amount: '0.0000'
                   return_id: 0
+                  wrapping_id: 0
                   wrapping_name: ''
                   base_wrapping_cost: '0.0000'
                   wrapping_cost_ex_tax: '0.0000'
@@ -1889,7 +1911,6 @@ components:
                   is_bundled_product: false
                   bin_picking_number: ''
                   external_id: null
-                  fulfillment_source: ''
                   brand: BigCommerce
                   applied_discounts:
                     - id: manual-discount
@@ -1973,6 +1994,9 @@ components:
                   total_inc_tax: '0.0000'
                   total_tax: '0.0000'
                   weight: '0.0000'
+                  width: '1.0000'
+                  height: '1.0000'
+                  depth: '1.0000'
                   quantity: 1
                   base_cost_price: '50.0000'
                   cost_price_inc_tax: '50.0000'
@@ -1982,6 +2006,7 @@ components:
                   quantity_refunded: 0
                   refund_amount: '0.0000'
                   return_id: 0
+                  wrapping_id: 0
                   wrapping_name: ''
                   base_wrapping_cost: '0.0000'
                   wrapping_cost_ex_tax: '0.0000'
@@ -1999,7 +2024,6 @@ components:
                   is_bundled_product: true
                   bin_picking_number: BIN
                   external_id: null
-                  fulfillment_source: ''
                   brand: BigCommerce
                   applied_discounts: []
                   product_options: []
@@ -2034,6 +2058,9 @@ components:
                 total_inc_tax: '37.2300'
                 total_tax: '5.2800'
                 weight: '2.0000'
+                width: '1.0000'
+                height: '1.0000'
+                depth: '1.0000'
                 quantity: 1
                 base_cost_price: '50.0000'
                 cost_price_inc_tax: '50.0000'
@@ -2043,6 +2070,7 @@ components:
                 quantity_refunded: 0
                 refund_amount: '0.0000'
                 return_id: 0
+                wrapping_id: 0
                 wrapping_name: ''
                 base_wrapping_cost: '0.0000'
                 wrapping_cost_ex_tax: '0.0000'
@@ -2060,10 +2088,10 @@ components:
                 is_bundled_product: false
                 bin_picking_number: ''
                 external_id: null
-                fulfillment_source: ''
                 brand: BigCommerce
                 applied_discounts: []
                 product_options: []
+                configurable_fields: []
                 discounted_total_inc_tax: '37.2300'
             Product with file upload:
               value:
@@ -2099,6 +2127,7 @@ components:
                 quantity_refunded: 0
                 refund_amount: '0.0000'
                 return_id: 0
+                wrapping_id: 0
                 wrapping_name: ''
                 base_wrapping_cost: '0.0000'
                 wrapping_cost_ex_tax: '0.0000'
@@ -2116,7 +2145,6 @@ components:
                 is_bundled_product: false
                 bin_picking_number: ''
                 external_id: null
-                fulfillment_source: ''
                 brand: BigCommerce
                 applied_discounts: []
                 product_options:
@@ -2170,6 +2198,7 @@ components:
                 quantity_refunded: 0
                 refund_amount: '0.0000'
                 return_id: 0
+                wrapping_id: 0
                 wrapping_name: ''
                 base_wrapping_cost: '0.0000'
                 wrapping_cost_ex_tax: '0.0000'
@@ -2187,7 +2216,6 @@ components:
                 is_bundled_product: false
                 bin_picking_number: ''
                 external_id: null
-                fulfillment_source: ''
                 brand: BigCommerce
                 applied_discounts: []
                 product_options: []
@@ -2227,6 +2255,7 @@ components:
                 quantity_refunded: 0
                 refund_amount: '0.0000'
                 return_id: 0
+                wrapping_id: 0
                 wrapping_name: ''
                 base_wrapping_cost: '0.0000'
                 wrapping_cost_ex_tax: '0.0000'
@@ -2244,7 +2273,7 @@ components:
                 is_bundled_product: false
                 bin_picking_number: ''
                 external_id: null
-                fulfillment_source: ''
+                configurable_fields: []
                 brand: BigCommerce
                 applied_discounts: []
     orderShipmentCollection_Resp:
@@ -2601,6 +2630,7 @@ components:
                   priority: 0
                   priority_amount: '17.6400'
                   line_amount: '17.6400'
+                  order_pickup_method_id: 0
                 - id: 14
                   order_id: 138
                   order_address_id: 40
@@ -2612,6 +2642,7 @@ components:
                   priority: 0
                   priority_amount: '4.4000'
                   line_amount: '4.4000'
+                  order_pickup_method_id: 0
     404_Resp:
       description: Not Found
       content:
@@ -2792,6 +2823,7 @@ components:
           enum:
             - physical
             - digital
+            - giftcertificate
           example: physical
           description: Type of product.
         base_price:
@@ -2799,11 +2831,11 @@ components:
           example: '54.0000'
           type: string
         price_ex_tax:
-          description: The product’s price excluding tax. (Float, Float-As-String, Integer)
+          description: The product’s price excluding tax. The value can't be negative. (Float, Float-As-String, Integer)
           example: '54.0000'
           type: string
         price_inc_tax:
-          description: The product’s price including tax. (Float, Float-As-String, Integer)
+          description: The product’s price including tax. The value can't be negative. (Float, Float-As-String, Integer)
           example: '54.0000'
           type: string
         price_tax:
@@ -2824,11 +2856,11 @@ components:
           example: '54.0000'
           type: string
         total_ex_tax:
-          description: Total base price excluding tax. (Float, Float-As-String, Integer)
+          description: Total base price excluding tax. The value can't be negative. (Float, Float-As-String, Integer)
           example: '54.0000'
           type: string
         total_inc_tax:
-          description: Total base price including tax. (Float, Float-As-String, Integer)
+          description: Total base price including tax. The value can't be negative. (Float, Float-As-String, Integer)
           example: '54.0000'
           type: string
         total_tax:
@@ -2852,21 +2884,33 @@ components:
         cost_price_inc_tax:
           description: |-
             The product’s cost price including tax. (Float, Float-As-String, Integer)
-            The cost of your products to you; this is never shown to customers, but can be used for accounting purposes.
+            The cost of your products to you; this is never shown to customers, but can be used for accounting purposes. The value can't be negative.
           example: '50.0000'
           type: string
         cost_price_ex_tax:
           description: |-
             The product cost price excluding tax. (Float, Float-As-String, Integer)
-            The cost of your products to you; this is never shown to customers, but can be used for accounting purposes.
+            The cost of your products to you; this is never shown to customers, but can be used for accounting purposes. The value can't be negative.
           example: '50.0000'
           type: string
         weight:
-          description: Weight of the product. (Float, Float-As-String, Integer)
+          description: Weight of the product. The value can't be negative. (Float, Float-As-String, Integer)
           example: 1
           oneOf:
             - type: number
             - type: string
+        width: 
+          description: Product width. The value can't be negative.
+          type: string
+          example: "1.0000"
+        height: 
+          description: Product height. The value can't be negative.
+          type: string
+          example: "1.0000"
+        depth: 
+          description: Product depth. The value can't be negative.
+          type: string
+          example: "1.0000"
         cost_price_tax:
           description: |-
             Tax applied to the product’s cost price. (Float, Float-As-String, Integer)
@@ -2881,7 +2925,7 @@ components:
           type: number
           description: The total quantity of product refunded from this transaction.
           example: 0
-        refunded_amount:
+        refund_amount:
           type: string
           description: The amount refunded from this transaction; always returns `0`. (Float, Float-As-String, Integer)
           example: '0.0000'
@@ -2890,23 +2934,27 @@ components:
           description: Numeric ID for the refund.
           example: 0
           type: number
+        wrapping_id: 
+          description: ID of the gift wrapping option.
+          example: 0
+          type: integer
         wrapping_name:
           description: Name of gift-wrapping option.
           example: null
           type: string
           nullable: true
         base_wrapping_cost:
-          description: The value of the base wrapping cost. (Float, Float-As-String, Integer)
+          description: The value of the base wrapping cost. The value can't be negative. (Float, Float-As-String, Integer)
           example: '0.0000'
           oneOf:
             - type: string
             - type: number
         wrapping_cost_ex_tax:
-          description: The value of the wrapping cost, excluding tax. (Float, Float-As-String, Integer)
+          description: The value of the wrapping cost, excluding tax. The value can't be negative. (Float, Float-As-String, Integer)
           example: '0.0000'
           type: string
         wrapping_cost_inc_tax:
-          description: The value of the wrapping cost, including tax. (Float, Float-As-String, Integer)
+          description: The value of the wrapping cost, including tax. The value can't be negative. (Float, Float-As-String, Integer)
           example: '0.0000'
           type: string
         wrapping_cost_tax:
@@ -2974,6 +3022,18 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/orderProductOptions'
+        configurable_fields: 
+          type: array
+          description: Available for only [Catalog V2 stores](/docs/store-operations/catalog/migration).
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+                example: Engraving
+              value:
+                type: string
+                example: Rabin
         upc:
           type: string
           maxLength: 255
@@ -3058,15 +3118,15 @@ components:
               example: 2
             base_handling_cost:
               type: string
-              description: The base handling charge. (Float, Float-As-String, Integer)
+              description: The base handling charge. The value can't be negative. (Float, Float-As-String, Integer)
               example: '0.0000'
             handling_cost_ex_tax:
               type: string
-              description: The handling charge, excluding tax. (Float, Float-As-String, Integer)
+              description: The handling charge, excluding tax. The value can't be negative. (Float, Float-As-String, Integer)
               example: '0.0000'
             handling_cost_inc_tax:
               type: string
-              description: The handling charge, including tax. (Float, Float-As-String, Integer)
+              description: The handling charge, including tax. The value can't be negative. (Float, Float-As-String, Integer)
               example: '0.0000'
             handling_cost_tax:
               type: string
@@ -3091,6 +3151,12 @@ components:
             shipping_quotes:
               $ref: '#/components/schemas/shippingQuotes_Resource'
         - $ref: '#/components/schemas/shippingAddress_Base'
+        - type: object
+          properties:
+            shipping_method:
+              type: string
+              description: Text code identifying the BigCommerce shipping module selected by the customer.
+              example: Free Shipping
       x-internal: false
     orderTaxes_Base:
       title: orderTaxes_Base
@@ -3144,6 +3210,10 @@ components:
           description: (Float, Float-As-String, Integer)
           example: '1.5200'
           type: string
+        order_pickup_method_id:
+          type: number
+          description: The ID of the order pickup method object (which contains pickup location details) associated with the order.
+          example: 0
         order_product_id:
           type: string
           description: If the `line_item_type` is `item` or `handling` then this field will be the order product id. Otherwise the field will return as null.
@@ -3184,6 +3254,10 @@ components:
           description: Tracking number of the shipment.
           example: w4se4b6ASFEW4T
           type: string
+        merchant_shipping_cost:
+          description: Shipping cost for the merchant.
+          example: "1.0000"
+          type: string
         shipping_method:
           description: |-
             Additional information to describe the method of shipment (ex. Standard, Ship by Weight, Custom Shipment). Can be used for live quotes from certain shipping providers.
@@ -3199,11 +3273,11 @@ components:
           title: Tracking Carrier
           description: |-
             Tracking carrier for the shipment.
-            Acceptable values for `tracking_carrier` include an empty string (`""`) or one of the valid [tracking-carrier values](https://github.com/bigcommerce/dev-docs/blob/master/assets/csv/tracking_carrier_values.csv).
+            Acceptable values for `tracking_carrier` include an empty string (`""`) or one of the valid [tracking-carrier values](https://www.aftership.com/docs/tracking/others/supported-couriers).
           example: ""
         tracking_link:
           type: string
-          description: The custom tracking link supplied on POST or PUT shipments. For the auto-generated tracking link see the `generated_tracking_link` property.
+          description: The custom tracking link supplied on POST or PUT shipments. For the link to one of our integrated providers or Aftership tracking link, see the `generated_tracking_link` property.
         comments:
           type: string
           description: Comments the shipper wishes to add.
@@ -3234,7 +3308,7 @@ components:
           readOnly: true
         generated_tracking_link:
           type: string
-          description: The tracking link that is generated using the combination of either the `tracking_number` and `shipping_provider` or `tracking_number` and `tracking_carrier`. This will be empty if the custom `tracking_link` value is provided.
+          description: The link to one of our integrated providers or Aftership tracking link that is generated using the combination of either the `tracking_number` and `shipping_provider` or `tracking_number` and `tracking_carrier`. This will be empty if the custom `tracking_link` value is provided.
       x-internal: false
     orderConsignments_Resource:
       title: orderConsignments_Resource
@@ -3576,9 +3650,13 @@ components:
           maxLength: 50
         tracking_link:
           type: string
-          description: The custom tracking link supplied on POST or PUT shipments. For the auto-generated tracking link see the `generated_tracking_link` property.
+          description: The custom tracking link supplied on POST or PUT shipments. For the link to one of our integrated providers or Aftership tracking link see the `generated_tracking_link` property.
           example: https://www.mycustomtrackinglink.com/tracking
           maxLength: 500
+        merchant_shipping_cost: 
+          type: string
+          description: Shipping cost for the merchant.
+          example: "1.0000"
         shipping_method:
           description: |
             Additional information to describe the method of shipment (ex. Standard, Ship by Weight, Custom Shipment). Can be used for live quotes from certain shipping providers.
@@ -3594,7 +3672,7 @@ components:
           title: Tracking Carrier
           description: |-
             Tracking carrier for the shipment.
-            Acceptable values for `tracking_carrier` include an empty string (`""`) or one of the valid [tracking-carrier values](https://github.com/bigcommerce/dev-docs/blob/master/assets/csv/tracking_carrier_values.csv).
+            Acceptable values for `tracking_carrier` include an empty string (`""`) or one of the valid [tracking-carrier values](https://www.aftership.com/docs/tracking/others/supported-couriers).
           example: ""
         comments:
           type: string
@@ -3625,6 +3703,10 @@ components:
           description: Tracking number of the shipment.
           example: w4se4b6ASFEW4T
           type: string
+        merchant_shipping_cost: 
+          type: string
+          description: Shipping cost for the merchant.
+          example: "1.0000"
         shipping_method:
           description: |
             Additional information to describe the method of shipment (ex. Standard, Ship by Weight, Custom Shipment). Can be used for live quotes from certain shipping providers.
@@ -3640,11 +3722,11 @@ components:
           title: Tracking Carrier
           description: |-
             Tracking carrier for the shipment.
-            Acceptable values for `tracking_carrier` include an empty string (`""`) or one of the valid [tracking-carrier values](https://github.com/bigcommerce/dev-docs/blob/master/assets/csv/tracking_carrier_values.csv).
+            Acceptable values for `tracking_carrier` include an empty string (`""`) or one of the valid [tracking-carrier values](https://www.aftership.com/docs/tracking/others/supported-couriers).
           example: ""
         tracking_link:
           type: string
-          description: The custom tracking link supplied on POST or PUT shipments. For the auto-generated tracking link see the `generated_tracking_link` property.
+          description: The custom tracking link supplied on POST or PUT shipments. For the link to one of our integrated providers or Aftership tracking link see the `generated_tracking_link` property.
           example: https://www.mycustomtrackinglink.com/tracking
           maxLength: 500
         comments:
@@ -3699,15 +3781,15 @@ components:
       x-internal: false
       properties:
         base_handling_cost:
-          description: The value of the base handling cost. (Float, Float-As-String, Integer)
+          description: The value of the base handling cost. The value can't be negative. (Float, Float-As-String, Integer)
           example: '0.0000'
           type: string
         base_shipping_cost:
-          description: The value of the base shipping cost. (Float, Float-As-String, Integer)
+          description: The value of the base shipping cost. The value can't be negative. (Float, Float-As-String, Integer)
           example: '0.0000'
           type: string
         base_wrapping_cost:
-          description: The value of the base wrapping cost expressed as a floating point number to four decimal places in string format.
+          description: The value of the base wrapping cost expressed as a floating point number to four decimal places in string format. The value can't be negative.
           example: '0.0000'
           type: string
         channel_id:
@@ -3724,8 +3806,19 @@ components:
           description: The date the order was created, formatted in the RFC-2822 standard. You set this attribute on Order creation (POST) to support the migration of historical orders. If you do not provide a value, then it will default to the current date/time. e.g., `Tue, 20 Nov 2012 00:00:00 +0000`.
           type: string
         discount_amount:
-          description: Amount of discount for this transaction. (Float, Float-As-String, Integer)
+          description: Amount of discount for this transaction. The value can't be negative. (Float, Float-As-String, Integer)
           example: '0.0000'
+          type: string
+        order_source:
+          description: |-
+            The `order_source` reflects the origin of the order. It will indicate whether the order was created by one of the following:
+            * storefront 
+            * control panel
+            * manual order
+            * /v2/orders API
+            * Checkout API
+            * or by an integration with an external platform such as Facebook by Meta or Amazon.
+          example: 'www'
           type: string
         ebay_order_id:
           description: If the order was placed through eBay, the eBay order number will be included. Otherwise, the value will be `0`.
@@ -3760,11 +3853,11 @@ components:
           example: US
           type: string
         handling_cost_ex_tax:
-          description: The value of the handling cost, excluding tax. (Float, Float-As-String, Integer)
+          description: The value of the handling cost, excluding tax. The value can't be negative. (Float, Float-As-String, Integer)
           example: '0.0000'
           type: string
         handling_cost_inc_tax:
-          description: The value of the handling cost, including tax. (Float, Float-As-String, Integer)
+          description: The value of the handling cost, including tax. The value can't be negative. (Float, Float-As-String, Integer)
           example: '0.0000'
           type: string
         ip_address:
@@ -3796,13 +3889,7 @@ components:
           example: false
           type: boolean
         payment_method:
-          description: |-
-            The payment method for this order. Can be one of the following: `Manual`, `Credit Card`, `cash`, `Test Payment Gateway`, etc.
-          enum:
-            - Credit Card
-            - Cash
-            - Test Payment Gateway
-            - Manual
+          description: 'The payment method for this order. For example, `Manual`, `Credit Card`, `cash`, `Test Payment Gateway`, etc.'
           type: string
         payment_provider_id:
           description: The external Transaction ID/Payment ID within this order’s payment provider (if a payment provider was used).
@@ -3811,15 +3898,15 @@ components:
             - type: string
             - type: number
         refunded_amount:
-          description: The amount refunded from this transaction; always returns `0`. (Float, Float-As-String, Integer)
+          description: The amount refunded from this transaction; always returns `0`. The value can't be negative. (Float, Float-As-String, Integer)
           example: '0.0000'
           type: string
         shipping_cost_ex_tax:
-          description: The value of shipping cost, excluding tax. (Float, Float-As-String, Integer)
+          description: The value of shipping cost, excluding tax. The value can't be negative. (Float, Float-As-String, Integer)
           example: '0.0000'
           type: string
         shipping_cost_inc_tax:
-          description: The value of shipping cost, including tax. (Float, Float-As-String, Integer)
+          description: The value of shipping cost, including tax. The value can't be negative. (Float, Float-As-String, Integer)
           example: '0.0000'
           type: string
         staff_notes:
@@ -3831,11 +3918,11 @@ components:
           description: The status ID of the order.
           type: integer
         subtotal_ex_tax:
-          description: Override value for subtotal excluding tax. If specified, the field `subtotal_inc_tax` is also required. (Float, Float-As-String, Integer)
+          description: Override value for subtotal excluding tax. The value can't be negative. If specified, the field `subtotal_inc_tax` is also required. (Float, Float-As-String, Integer)
           example: '225.0000'
           type: string
         subtotal_inc_tax:
-          description: Override value for subtotal including tax. If specified, the field `subtotal_ex_tax` is also required. (Float, Float-As-String, Integer)
+          description: Override value for subtotal including tax. The value can't be negative. If specified, the field `subtotal_ex_tax` is also required. (Float, Float-As-String, Integer)
           example: '225.0000'
           type: string
         tax_provider_id:
@@ -3856,19 +3943,19 @@ components:
           example: external-order-id
           description: The order ID in another system, such as the Amazon Order ID if this is an Amazon order. After setting it, you can update this field using a POST or PUT request.
         total_ex_tax:
-          description: Override value for the total, excluding tax. If specified, the field `total_inc_tax` is also required. (Float, Float-As-String, Integer)
+          description: Override value for the total, excluding tax. If specified, the field `total_inc_tax` is also required. The value can't be negative. (Float, Float-As-String, Integer)
           example: '225.0000'
           type: string
         total_inc_tax:
-          description: Override value for the total, including tax. If specified, the field `total_ex_tax` is also required. (Float, Float-As-String, Integer)
+          description: Override value for the total, including tax. If specified, the field `total_ex_tax` is also required. The value can't be negative. (Float, Float-As-String, Integer)
           example: '225.0000'
           type: string
         wrapping_cost_ex_tax:
-          description: The value of the wrapping cost, excluding tax. (Float, Float-As-String, Integer)
+          description: The value of the wrapping cost, excluding tax. The value can't be negative. (Float, Float-As-String, Integer)
           example: '0.0000'
           type: string
         wrapping_cost_inc_tax:
-          description: The value of the wrapping cost, including tax. (Float, Float-As-String, Integer)
+          description: The value of the wrapping cost, including tax. The value can't be negative. (Float, Float-As-String, Integer)
           example: '0.0000'
           type: string
     billingAddress_Base:
@@ -3956,10 +4043,6 @@ components:
           type: string
           example: janedoe@example.com
           description: 'Recipient’s email address. '
-        shipping_method:
-          type: string
-          description: Text code identifying the BigCommerce shipping module selected by the customer.
-          example: Free Shipping
       x-internal: false
     order_RespOnly:
       title: order_RespOnly
@@ -4077,19 +4160,27 @@ components:
         shipping_address_count:
           type: number
           description: The number of shipping addresses associated with this transaction. A read-only value. Do not pass in a POST or PUT.
+        is_deleted:
+          description: Indicates whether the order is deleted/archived. When set to true in a PUT request, it has the same result as the DELETE an order request.
+          example: false
+          type: boolean
+        is_tax_inclusive_pricing:
+          description: |-
+            Indicate whether the order's base prices include tax.
+
+            If true, the base prices are inclusive of tax, and the values of `subtotal_inc_tax`, `shipping_cost_inc_tax`, `handling_cost_inc_tax`, `wrapping_cost_inc_tax` and `total_inc_tax` are not estimated but actual values and can be reliable for accounting purposes.
+
+            If false, the base prices are exclusive of tax, and the values of `subtotal_ex_tax`, `shipping_cost_ex_tax`, `handling_cost_ex_tax`, `wrapping_cost_ex_tax` and `total_ex_tax` are not estimated but actual values and can be reliable for accounting purposes.
+          example: false
+          type: boolean
         is_email_opt_in:
           description: Indicates whether the shopper has selected an opt-in check box (on the checkout page) to receive emails. A read-only value. Do not pass in a POST or PUT.
           example: false
           type: boolean
         order_source:
           description: |-
-            The `order_source` is set upon order creation and reflects the origin of the order. It will indicate whether the order was created by one of the following:
-            * storefront 
-            * control panel
-            * manual order
-            * /v2/orders API
-            * Checkout API
-            * or by an integration with an external platform such as Facebook by Meta or Amazon.
+            Reflects the origin of the order. It can affect the order’s icon and source as defined in the control panel listing.
+            Allowed values: `www` (Desktop) | `iphone` (Iphone) | `ipad` (Ipad) | `android` (Android) | `mobile` (Mobile) | `manual` (manual order) | `external` (Orders API) | `checkout_api` (Checkout API) | `buybutton` (Buy Button) | `amazon` (Amazon) | `ebay` (Ebay) | `facebookshop` (Facebook Shop) | `facebookcheckout` (Facebook Checkout) | `facebookmarketplace` (Facebook Marketplace) | `pinterest` (Pinterest) | `socialshop` (Social Shop)
           type: string
         consignments:
           $ref: '#/components/schemas/orderConsignments_Resource'
@@ -4206,13 +4297,13 @@ components:
                 type: string
                 description: |-
                   The product’s cost price including tax. (Float, Float-As-String, Integer)
-                  The cost of your products to you; this is never shown to customers, but can be used for accounting purposes.
+                  The cost of your products to you; this is never shown to customers, but can be used for accounting purposes. The value can't be negative.
                 example: '50.0000'
               price_ex_tax:
                 type: string
                 description: |-
                   The products cost price excluding tax. (Float, Float-As-String, Integer)
-                  The cost of your products to you; this is never shown to customers, but can be used for accounting purposes. Read Only.
+                  The cost of your products to you; this is never shown to customers, but can be used for accounting purposes. Read Only. The value can't be negative.
                 readOnly: true
                 example: '0.0000'
     orderCatalogProduct_Post:
@@ -4313,10 +4404,10 @@ components:
           type: string
         wrapping_cost_ex_tax:
           type: number
-          description: When provided, this value should be equal to `wrapping_cost_ex_tax` times quantity to accurately reflect wrapping cost per unit.
+          description: When provided, this value should be equal to `wrapping_cost_ex_tax` times quantity to accurately reflect wrapping cost per unit. The value can't be negative.
         wrapping_cost_inc_tax:
           type: number
-          description: When provided, this value should be equal to `wrapping_cost_inc_tax` times quantity to accurately reflect wrapping cost per unit.
+          description: When provided, this value should be equal to `wrapping_cost_inc_tax` times quantity to accurately reflect wrapping cost per unit. The value can't be negative.
       x-internal: false
     orderCustomProduct_Post:
       title: orderCustomProduct_Post
@@ -4370,15 +4461,15 @@ components:
         - type: object
           properties:
             base_handling_cost:
-              description: The value of the base handling cost. (Float, Float-As-String, Integer)
+              description: The value of the base handling cost. The value can't be negative. (Float, Float-As-String, Integer)
               example: '0.0000'
               type: string
             base_shipping_cost:
-              description: The value of the base shipping cost. (Float, Float-As-String, Integer)
+              description: The value of the base shipping cost. The value can't be negative. (Float, Float-As-String, Integer)
               example: '0.0000'
               type: string
             base_wrapping_cost:
-              description: The value of the base wrapping cost expressed as a floating point number to four decimal places in string format.
+              description: The value of the base wrapping cost expressed as a floating point number to four decimal places in string format. The value can't be negative.
               example: '0.0000'
               type: string
             billing_address:
@@ -4403,8 +4494,19 @@ components:
               type: string
               readOnly: true
             discount_amount:
-              description: Amount of discount for this transaction. (Float, Float-As-String, Integer)
+              description: Amount of discount for this transaction. The value can't be negative. (Float, Float-As-String, Integer)
               example: '0.0000'
+              type: string
+            order_source:
+              description: |-
+                The `order_source` reflects the origin of the order. It will indicate whether the order was created by one of the following:
+                * storefront 
+                * control panel
+                * manual order
+                * /v2/orders API
+                * Checkout API
+                * or by an integration with an external platform such as Facebook by Meta or Amazon.
+              example: 'www'
               type: string
             ebay_order_id:
               description: If the order was placed through eBay, the eBay order number will be included. Otherwise, the value will be `0`.
@@ -4425,7 +4527,7 @@ components:
               description: |-
                 This value identifies an external system that generated the order and submitted it to BigCommerce with the Orders API.
                 * When supplying the value, we recommend combining the type of system and vendor, e.g., ERP (Acumatica) or POS (Square).
-                * If you are migrating historical orders processed on another eCommerce platform to BigCommerce, supply the following code as the value: M-MIG. This code will exclude historical orders from the store’s GMV/order count, which factors into pricing.
+                * If you are migrating historical orders processed on another eCommerce platform to BigCommerce, supply the following code as the value: M-MIG. This code will exclude historical orders from the store’s GMV/order count, which factors into pricing. Also, this code will not affect the `total_sold` on products for imported orders. 
                 * If you do not provide a value, then it will default to null.
               example: null
               type: string
@@ -4439,11 +4541,11 @@ components:
               example: US
               type: string
             handling_cost_ex_tax:
-              description: The value of the handling cost, excluding tax. (Float, Float-As-String, Integer)
+              description: The value of the handling cost, excluding tax. The value can't be negative. (Float, Float-As-String, Integer)
               example: '0.0000'
               type: string
             handling_cost_inc_tax:
-              description: The value of the handling cost, including tax. (Float, Float-As-String, Integer)
+              description: The value of the handling cost, including tax. The value can't be negative. (Float, Float-As-String, Integer)
               example: '0.0000'
               type: string
             ip_address:
@@ -4476,7 +4578,7 @@ components:
               type: boolean
             payment_method:
               type: string
-              description: 'The payment method for this order. Can be one of the following: `Manual`, `Credit Card`, `Cash`,`Test Payment Gateway`, etc.'
+              description: 'The payment method for this order. For example, `Manual`, `Credit Card`, `Cash`,`Test Payment Gateway`, etc.'
             payment_provider_id:
               description: The external Transaction ID/Payment ID within this order’s payment provider (if a payment provider was used).
               oneOf:
@@ -4490,15 +4592,15 @@ components:
                   - $ref: '#/components/schemas/orderCustomProduct_Put'
                   - $ref: '#/components/schemas/orderRemoveProduct_Put'
             refunded_amount:
-              description: The amount refunded from this transaction; always returns `0`. (Float, Float-As-String, Integer)
+              description: The amount refunded from this transaction; always returns `0`. The value can't be negative. (Float, Float-As-String, Integer)
               example: '0.0000'
               type: string
             shipping_cost_ex_tax:
-              description: The value of shipping cost, excluding tax. (Float, Float-As-String, Integer)
+              description: The value of shipping cost, excluding tax. The value can't be negative. (Float, Float-As-String, Integer)
               example: '0.0000'
               type: string
             shipping_cost_inc_tax:
-              description: The value of shipping cost, including tax. (Float, Float-As-String, Integer)
+              description: The value of shipping cost, including tax. The value can't be negative. (Float, Float-As-String, Integer)
               example: '0.0000'
               type: string
             staff_notes:
@@ -4519,11 +4621,11 @@ components:
               description: The status ID of the order.
               type: integer
             subtotal_ex_tax:
-              description: 'Override value for subtotal excluding tax. If specified, the field `subtotal_inc_tax` is also required. (Float, Float-As-String, Integer)'
+              description: Override value for subtotal excluding tax. The value can't be negative. If specified, the field `subtotal_inc_tax` is also required. (Float, Float-As-String, Integer)
               example: '225.0000'
               type: string
             subtotal_inc_tax:
-              description: 'Override value for subtotal including tax. If specified, the field `subtotal_ex_tax` is also required. (Float, Float-As-String, Integer)'
+              description: Override value for subtotal including tax. The value can't be negative. If specified, the field `subtotal_ex_tax` is also required. (Float, Float-As-String, Integer)
               example: '225.0000'
               type: string
             tax_provider_id:
@@ -4545,19 +4647,19 @@ components:
               example: external-order-id
               description: The order ID in another system, such as the Amazon Order ID if this is an Amazon order. After setting it, you can update this field using a POST or PUT request.
             total_ex_tax:
-              description: Override value for the total, excluding tax. If specified, the field `total_inc_tax` is also required. (Float, Float-As-String, Integer)
+              description: Override value for the total, excluding tax. If specified, the field `total_inc_tax` is also required. The value can't be negative. (Float, Float-As-String, Integer)
               example: '225.0000'
               type: string
             total_inc_tax:
-              description: Override value for the total, including tax. If specified, the field `total_ex_tax` is also required. (Float, Float-As-String, Integer)
+              description: Override value for the total, including tax. If specified, the field `total_ex_tax` is also required. The value can't be negative. (Float, Float-As-String, Integer)
               example: '225.0000'
               type: string
             wrapping_cost_ex_tax:
-              description: The value of the wrapping cost, excluding tax. (Float, Float-As-String, Integer)
+              description: The value of the wrapping cost, excluding tax. The value can't be negative. (Float, Float-As-String, Integer)
               example: '0.0000'
               type: string
             wrapping_cost_inc_tax:
-              description: The value of the wrapping cost, including tax. (Float, Float-As-String, Integer)
+              description: The value of the wrapping cost, including tax. The value can't be negative. (Float, Float-As-String, Integer)
               example: '0.0000'
               type: string
     order_Post:
@@ -4580,7 +4682,14 @@ components:
             shipping_addresses:
               type: array
               items:
-                $ref: '#/components/schemas/shippingAddress_Base'
+                allOf:
+                  - $ref: '#/components/schemas/shippingAddress_Base'
+                  - type: object
+                    properties:
+                      shipping_method:
+                        type: string
+                        description: Text code identifying the BigCommerce shipping module selected by the customer.
+                        example: Free Shipping
             consignments:
               $ref: '#/components/schemas/orderConsignment_Post'
         - $ref: '#/components/schemas/order_Shared'
@@ -4588,6 +4697,12 @@ components:
     shippingAddress_Put:
       allOf:
         - $ref: '#/components/schemas/shippingAddress_Base'
+        - type: object
+          properties:
+            shipping_method:
+              type: string
+              description: Text code identifying the BigCommerce shipping module selected by the customer.
+              example: Free Shipping
         - type: object
           properties:
             form_fields:
@@ -5153,15 +5268,15 @@ components:
               example: 2
             base_handling_cost:
               type: number
-              description: The base handling charge.
+              description: The base handling charge. The value can't be negative.
               example: 4.1
             handling_cost_ex_tax:
               type: number
-              description: The handling charge, excluding tax.
+              description: The handling charge, excluding tax. The value can't be negative.
               example: 4.1
             handling_cost_inc_tax:
               type: number
-              description: The handling charge, including tax.
+              description: The handling charge, including tax. The value can't be negative.
               example: 5.3
             handling_cost_tax:
               type: number

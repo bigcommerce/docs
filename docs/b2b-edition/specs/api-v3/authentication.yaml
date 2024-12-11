@@ -1,8 +1,12 @@
 openapi: '3.0.0'
 info:
-  title: authentication
+  title: Auth
   version: '3.0'
-  description: Api auth manage
+  description: API auth manage
+  contact:
+    name: BigCommerce
+    url: 'https://www.bigcommerce.com'
+    email: support@bigcommerce.com
 servers:
   - url: 'https://api-b2b.bigcommerce.com/api/io'
 tags:
@@ -12,7 +16,7 @@ paths:
   /auth/backend:
     parameters: []
     post:
-      summary: Get Server to Server OpenAPI tokens
+      summary: Get Server to Server Tokens
       operationId: post-auth-backend
       tags:
         - Auth
@@ -108,14 +112,14 @@ paths:
                 email:
                   type: string
                   minLength: 1
-                  description: 'Backend user email, the credential you use to log in B2B Edition APP'
+                  description: 'You can use the backend user email to log into the B2B Edition APP.'
                 password:
                   type: string
                   minLength: 1
-                  description: 'Backend user password, the credential you use to log in B2B Edition APP'
+                  description: 'You can use the backend user password to log into the B2B Edition APP.'
                 name:
                   type: string
-                  description: The token name if you want specfiy
+                  description: The token name, if you want to specify it.
               required:
                 - storeHash
                 - email
@@ -153,10 +157,13 @@ paths:
                   email: dev.test@bundleb2b.net
                   password: 1mdsafu3nf9x
         description: ''
-      description: Get Server to Server OpenAPI tokens
+      description: |-
+        Get Server to Server Tokens.
+
+        Administrators are the only role allowed to create API tokens.
       security: []
     delete:
-      summary: Delete Backend OpenAPI tokens
+      summary: Delete Backend API Tokens
       operationId: delete-auth-backend
       responses:
         '200':
@@ -212,7 +219,7 @@ paths:
                       errMsg: No matching token was found
                     meta:
                       message: Not Found Error
-      description: Delete backend OpenAPI tokens.
+      description: Delete backend API tokens.
       security:
         - authToken: []
       requestBody:
@@ -224,7 +231,7 @@ paths:
                 email:
                   type: string
                   description: |
-                    Backend user email, the credential you use to log in B2B Edition APP. Which will be used as a query parameter.
+                    The backend user email is the credential you use to log into the B2B Edition APP, which will be used as a query parameter.
                   minLength: 1
                 name:
                   type: string
@@ -273,7 +280,7 @@ paths:
                           description: Token
                         eventChannel:
                           type: string
-                          description: 'The channel that token created from app,admin or api.'
+                          description: 'The channel of the token created from an app, admin or API.'
                   meta:
                     type: object
                     properties:
@@ -323,7 +330,7 @@ paths:
                 example-1:
                   value: {}
       operationId: get-backend-tokens
-      description: Get all Server to Server OpenAPI tokens
+      description: Get all Server to Server tokens
       parameters:
         - schema:
             type: integer
@@ -339,7 +346,7 @@ paths:
           description: Pagination offset
   /auth/storefront:
     get:
-      summary: Get a StoreFront OpenAPI AuthToken
+      summary: Get a Storefront API authToken
       tags:
         - Auth
       responses:
@@ -410,7 +417,7 @@ paths:
                     meta:
                       message: Invalid token header. No credentials provided.
       operationId: get-auth-storefront
-      description: Get a storeFront openAPI authToken
+      description: Get a storefront API authToken
       parameters:
         - schema:
             type: string
@@ -422,11 +429,11 @@ paths:
             type: string
           in: query
           name: channelId
-          description: The BigCommerce channel id. Do not use this parameter if you do not have opened multi-storefront
+          description: The BigCommerce channel ID. Do not use this parameter if you do not have an opened multi-storefront.
       security: []
   /auth/customers:
     post:
-      summary: Get StoreFront authToken with Credentials
+      summary: Get Storefront authToken with Credentials
       operationId: post-auth-customer
       responses:
         '200':
@@ -512,11 +519,11 @@ paths:
                   description: BC customer password
                 channelId:
                   type: number
-                  description: BigCommerce channel id
+                  description: BigCommerce channel ID
                 name:
                   type: string
                   minLength: 1
-                  description: The token name if you want to specfiy
+                  description: The token name, if you want to specify it.
               required:
                 - storeHash
                 - email
@@ -534,14 +541,14 @@ paths:
                   beginAt: 1000
                   endAt: 1721930486
         description: ''
-      description: BC customer get a authentication token
+      description: BigCommerce customer gets an authentication token
       tags:
         - Auth
       security: []
     parameters: []
   /auth/customers/storefront:
     post:
-      summary: Get B2B storefront token
+      summary: Get a B2B Storefront Token
       operationId: post-auth-customers-storefront
       responses:
         '200':
@@ -580,10 +587,13 @@ paths:
               properties:
                 customerId:
                   type: integer
-                  description: BigCommerce customer id.
+                  description: BigCommerce customer ID
                 channelId:
                   type: integer
-                  description: BigCommerce channel id
+                  description: BigCommerce channel ID
+                customerAccessToken:
+                  type: string
+                  description: BigCommerce Customer Access Token
               required:
                 - customerId
             examples:
@@ -591,6 +601,7 @@ paths:
                 value:
                   customerId: 999
                   channelId: 1
+                  customerAccessToken: <sometoken>
       tags:
         - Auth
 components:
@@ -598,6 +609,8 @@ components:
   securitySchemes:
     authToken:
       name: authToken
+      description: |-
+        Required to authenticate requests. Include the token in a header parameter called `authToken`.
       type: apiKey
       in: header
 security:

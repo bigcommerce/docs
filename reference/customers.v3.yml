@@ -97,12 +97,12 @@ paths:
             format: date-time
         - name: 'date_created:max'
           in: query
-          description: 'Filter items by maximum date created, for example, `2024-05-14T09:34:00` or `2024-05-14`. Returns metafields created before this date.'
+          description: 'Filter items by maximum date created, for example, `2024-05-14T09:34:00` or `2024-05-14`. Returns customers created before this date.'
           schema:
             type: string
         - name: 'date_created:min'
           in: query
-          description: 'Filter items by date created for example, `2024-05-14T09:34:00` or `2024-05-14`. Returns metafields created after this date.'
+          description: 'Filter items by date created for example, `2024-05-14T09:34:00` or `2024-05-14`. Returns customers created after this date.'
           schema:
             type: string
             format: date-time
@@ -114,12 +114,12 @@ paths:
             format: date-time
         - name: 'date_modified:min'
           in: query
-          description: 'Filter items by minimum date modified, for example, `2024-05-14T09:34:00` or `2024-05-14`. Returns metafields modified after this date.' 
+          description: 'Filter items by minimum date modified, for example, `2024-05-14T09:34:00` or `2024-05-14`. Returns customers modified after this date.' 
           schema:
             type: string
         - name: 'date_modified:max'
           in: query
-          description: 'Filter items by maximum date modified, for example, `2024-05-14T09:34:00` or `2024-05-14`. Returns metafields modified before this date.' 
+          description: 'Filter items by maximum date modified, for example, `2024-05-14T09:34:00` or `2024-05-14`. Returns customers modified before this date.' 
           schema:
             type: string
             format: date-time
@@ -153,6 +153,13 @@ paths:
             type: array
             items:
               type: string
+        - name: 'phone:in'
+          in: query
+          description: 'Filter items by phone number. `phone:in=555-55-5555`'
+          style: form
+          explode: false
+          schema:
+            type: string
         - name: 'registration_ip_address:in'
           in: query
           description: |-
@@ -204,6 +211,13 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/CustomerCollectionResponse'
+        '422':
+          description: |
+            The optional filter parameter was not valid. This is the result of missing required fields, or of invalid data. See the response for more details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
     post:
       description: |-
         Creates Customers. Create up to 10 customers in one call.
@@ -275,6 +289,7 @@ paths:
                       force_password_reset: true
                       new_password: string123
                     accepts_product_review_abandoned_cart_emails: true
+                    trigger_account_created_notification: true
                     store_credit_amounts:
                       - amount: 43.15
                     origin_channel_id: 1
@@ -306,7 +321,7 @@ paths:
                       .customer_create: Error creating customers
     put:
       description: |-
-        Updates Customers. Subresource updates are not supported. Up to 10 customers can be updated in one call.
+        Updates Customers. Subresource updates are not supported. 
 
         **Required Fields**
         * id -- ID of the *Customer* This must be included in the request body
@@ -318,7 +333,10 @@ paths:
         * date_modified
         * origin_channel_id
 
-
+        **Limits**
+        * Limit of 10 customers per call.
+        * Limit of 3 concurrent requests
+        
         **Notes**
 
         * Attributes Values can not be updated using Update a Customer. Use the [Update customer attribute values](/docs/rest-management/customers/customer-attribute-values#upsert-customer-attribute-values) endpoint.
@@ -411,6 +429,12 @@ paths:
         '204':
           description: ''
           headers: {}
+        '422':
+          description: The `id:in` was not valid. This is the result of missing required fields, or of invalid data. See the response for more details. 
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   '/customers/addresses':
     get:
       description: Returns a list of Customer Addresses. Optional filter parameters can be passed in.
@@ -779,7 +803,12 @@ paths:
     get:
       tags:
         - Global Settings
-      description: Returns the global-level customer settings.
+      description: |
+        Returns the global-level customer settings.
+
+        **Notes:**
+        * Global customer settings don't apply when the `default_customer_group_id` is present.
+
       summary: Get Customer Settings
       operationId: getCustomersSettings
       responses:
@@ -857,9 +886,10 @@ paths:
       description: |-
         Returns the customer settings per channel.
 
-        **Notes**
+        **Notes:**
 
          * `null` indicates that there is no override per given channel and values are inherited from the global level.
+         * Global customer settings don't apply when the `default_customer_group_id` is present.
       summary: Get Customer Settings per Channel
       operationId: getCustomersSettingsChannel
       parameters:
@@ -1289,7 +1319,9 @@ paths:
         Upsert checks for an existing record. If there is none, it creates the record, if there is a matching record, it updates that record.
 
         **Limits**
-        * 10 per call limit.
+        * Limit of 10 customers per call.
+        * Limit of 3 concurrent requests.
+        
       summary: Upsert Customer Attribute Values
       operationId: upsertCustomersAttributeValues
       deprecated: false
@@ -1476,11 +1508,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-      summary: Upsert Customer Form Field Values
+      summary: Upsert Customer Form Field Values (Deprecated)
       description: |-
-        Updates form field values on the Customer or Customer Address objects. Multiple form field values can be updated in one call.
-
-        Upsert checks for an existing record, if there is none it creates the record, if there is a matching record it updates that record.
+        This endpoint is deprecated. Use [Update a Customer Address](/docs/rest-management/customers/addresses#update-a-customer-address) and [Update Customers](/docs/rest-management/customers#update-customers) endpoints instead.
 
         To learn more about editing form fields, see [Adding and Editing Fields in the Account Signup Form](https://support.bigcommerce.com/s/article/Editing-Form-Fields).
 
@@ -1665,12 +1695,6 @@ paths:
       operationId: getCustomersMetafields
       parameters:
         - $ref: '#/components/parameters/customerId'
-      requestBody:
-        required: true
-        content: 
-          application/json:
-            schema:
-             $ref: '#/components/schemas/Metafield'
       responses:
         '200':
           $ref: '#/components/responses/MetafieldCollectionResponse'
@@ -1753,12 +1777,6 @@ paths:
           required: true
           schema:
             type: integer
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Metafield'
       responses:
         '200':
           $ref: '#/components/responses/MetafieldCollectionResponse'
@@ -1793,18 +1811,16 @@ paths:
         content:
           application/json:
             schema:
-              type: array
-              items:
-                allOf:
-                  - $ref: '#/components/schemas/MetafieldBase_Put'
-                  - type: object
-                    properties:
-                      id:
-                        type: integer
-                        example: 42
-                        description: |
-                          The ID of metafield to update.
-                    required:
+              allOf:
+                - $ref: '#/components/schemas/MetafieldBase_Put'
+                - type: object
+                  properties:
+                    id:
+                      type: integer
+                      example: 42
+                      description: |
+                        The ID of metafield to update.
+                  required:
                       - id
         description: ''
       responses:
@@ -1861,14 +1877,6 @@ paths:
         - $ref: '#/components/parameters/customerId'
         - $ref: '#/components/parameters/metafieldId'
       operationId: deleteCustomerMetafieldsId
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: array
-              items:
-                type: integer
-        description: ''
       responses:
         '204':
           description: | 
@@ -2044,14 +2052,6 @@ paths:
         - Metafields Batch
       description: Delete all customer metafields.
       operationId: deleteCustomersMetafields
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: array
-              items:
-                type: integer
-        description: Metafields ID list.
       responses:
         '200':
           description: |
@@ -3071,100 +3071,98 @@ components:
           schema:
             type: object
             properties:
-              data:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    id: 
-                      type: integer
-                      description: Unique ID of the *Metafield*. Read-Only.
-                      readOnly: true
-                      example: 0
-                    key:
-                      type: string
-                      description: The key for the metafields.
-                      example: Staff Name
-                    value:
-                      type: string
-                      description: The description for the metafield.
-                      example: Ronaldo
-                    namespace:
-                      type: string
-                      description: |
-                        Namespace for the metafield, for organizational purposes.
-                      example: Sales Department
-                      minLength: 1
-                      maxLength: 64
-                    permission_set:
-                      type: string
-                      description: |
-                        Determines the visibility and writeability of the field by other API consumers.
-                        | Value | Description |
-                        | :--- | :--- |
-                        | `app_only` | Private to the app that owns the field. |
-                        | `read` | Visible to other API consumers. |
-                        | `write` | Open for reading and writing by other API consumers. |
-                        | `read_and_sf_access` | Visible to other API consumers, including on storefront. |
-                        | `write_and_sf_access` | Open for reading and writing by other API consumers, including on storefront. |
-                      enum:
-                        - app_only
-                        - read
-                        - write
-                        - read_and_sf_access
-                        - write_and_sf_access
-                    resource_type:
-                      type: string
-                      description: |
-                        The type of resource with which the metafield is associated.
-                      enum:
-                        - brand
-                        - product
-                        - variant
-                        - category
-                        - cart
-                        - channel
-                        - location
-                        - order
-                        - customer
-                      example: cart 
-                    resource_id:
-                      type: integer
-                      description: |
-                        The unique identifier for the resource with which the metafield is associated.
-                      example: 0
-                      readOnly: true
-                    description: 
-                      type: string
-                      description: |
-                        Description for the metafields.
-                      example: order
-                    date_created:
-                      type: string
-                      format: date-time
-                      description: Date and time of the metafieldʼs creation.
-                      example: '2022-06-16T18:39:00+00:00'
-                    date_modified:
-                      type: string
-                      format: date-time
-                      description: Date and time when the metafield was last updated.
-                      example: '2022-06-16T18:39:00+00:00'
-                    owner_client_id:
-                      type: string
-                      description: Client ID for the metafield's creator.
-                      readOnly: true
-                      example: ramciw4fnoz87it3ynjfif2zrkil5p
-                  required:
-                    - namespace
-                    - key
-                    - value
-                    - permission_set
-                    - resource_type
-                    - resource_id
-                    - description
-                    - id
-                    - date_created
-                    - date_modified       
+              items:
+                type: object
+                properties:
+                  id: 
+                    type: integer
+                    description: Unique ID of the *Metafield*. Read-Only.
+                    readOnly: true
+                    example: 0
+                  key:
+                    type: string
+                    description: The key for the metafields.
+                    example: Staff Name
+                  value:
+                    type: string
+                    description: The description for the metafield.
+                    example: Ronaldo
+                  namespace:
+                    type: string
+                    description: |
+                      Namespace for the metafield, for organizational purposes.
+                    example: Sales Department
+                    minLength: 1
+                    maxLength: 64
+                  permission_set:
+                    type: string
+                    description: |
+                      Determines the visibility and writeability of the field by other API consumers.
+                      | Value | Description |
+                      | :--- | :--- |
+                      | `app_only` | Private to the app that owns the field. |
+                      | `read` | Visible to other API consumers. |
+                      | `write` | Open for reading and writing by other API consumers. |
+                      | `read_and_sf_access` | Visible to other API consumers, including on storefront. |
+                      | `write_and_sf_access` | Open for reading and writing by other API consumers, including on storefront. |
+                    enum:
+                      - app_only
+                      - read
+                      - write
+                      - read_and_sf_access
+                      - write_and_sf_access
+                  resource_type:
+                    type: string
+                    description: |
+                      The type of resource with which the metafield is associated.
+                    enum:
+                      - brand
+                      - product
+                      - variant
+                      - category
+                      - cart
+                      - channel
+                      - location
+                      - order
+                      - customer
+                    example: cart 
+                  resource_id:
+                    type: integer
+                    description: |
+                      The unique identifier for the resource with which the metafield is associated.
+                    example: 0
+                    readOnly: true
+                  description: 
+                    type: string
+                    description: |
+                      Description for the metafields.
+                    example: order
+                  date_created:
+                    type: string
+                    format: date-time
+                    description: Date and time of the metafieldʼs creation.
+                    example: '2022-06-16T18:39:00+00:00'
+                  date_modified:
+                    type: string
+                    format: date-time
+                    description: Date and time when the metafield was last updated.
+                    example: '2022-06-16T18:39:00+00:00'
+                  owner_client_id:
+                    type: string
+                    description: Client ID for the metafield's creator.
+                    readOnly: true
+                    example: ramciw4fnoz87it3ynjfif2zrkil5p
+                required:
+                  - namespace
+                  - key
+                  - value
+                  - permission_set
+                  - resource_type
+                  - resource_id
+                  - description
+                  - id
+                  - date_created
+                  - date_modified       
     consent_Resp:
       description: ''
       content:
@@ -3444,6 +3442,9 @@ components:
             Array of form fields. Controlled by formfields parameter.
           items:
             $ref: "#/components/schemas/formFieldValue"    
+        trigger_account_created_notification:
+          type: boolean
+          description: Indicates whether to send a customer registered welcome email.
       required:
         - email
         - first_name

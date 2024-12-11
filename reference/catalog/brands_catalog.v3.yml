@@ -383,9 +383,6 @@ paths:
                           The name of the brand. Must be unique.
                           Required in POST.
                         example: Common Good
-                        x-required:
-                          - post
-                          - put
                       page_title:
                         maxLength: 255
                         minLength: 0
@@ -645,9 +642,6 @@ paths:
                     The name of the brand. Must be unique.
                     Required in POST.
                   example: Common Good
-                  x-required:
-                    - post
-                    - put
                 page_title:
                   maxLength: 255
                   minLength: 0
@@ -951,6 +945,7 @@ paths:
                     description: Location in the warehouse
                     date_created: '1973-01-20T21:34:57.903Z'
                     date_modified: '1990-12-30T00:29:23.515Z'
+                    owner_client_id: "e8o0nm9ujew7byzu6x5dwjqe2rya2fv"
                   - id: 7
                     key: Brand location
                     value: 4HG
@@ -961,6 +956,7 @@ paths:
                     description: Location in the warehouse
                     date_created: '1973-01-20T21:34:57.903Z'
                     date_modified: '1990-12-30T00:29:23.515Z'
+                    owner_client_id: "e8o0nm9ujew7byzu6x5dwjqe2rya2fv"
                 meta:
                   pagination:
                     total: 2
@@ -1017,6 +1013,7 @@ paths:
                       description: Where products are located
                       date_created: '2021-08-06T19:15:35+00:00'
                       date_modified: '2021-08-06T19:15:35+00:00'
+                      owner_client_id: "e8o0nm9ujew7byzu6x5dwjqe2rya2fv"
                     meta: {}
                 example-2:
                   value:
@@ -1031,6 +1028,7 @@ paths:
                       description: Location in the warehouse.
                       date_created: '2018-05-07T20:14:17+00:00'
                       date_modified: '2018-05-07T20:14:17+00:00'
+                      owner_client_id: "e8o0nm9ujew7byzu6x5dwjqe2rya2fv"
                     meta: {}
                 example-3:
                   value:
@@ -1045,6 +1043,7 @@ paths:
                       description: Where products are located.
                       date_created: '2021-08-06T19:15:35+00:00'
                       date_modified: '2021-08-06T19:15:35+00:00'
+                      owner_client_id: "e8o0nm9ujew7byzu6x5dwjqe2rya2fv"
                     meta: {}
         '400':
           description: Bad Request. Input is invalid.
@@ -1161,6 +1160,7 @@ paths:
                   description: Where products are located
                   date_created: '2021-08-06T19:15:35+00:00'
                   date_modified: '2021-08-06T19:15:35+00:00'
+                  owner_client_id: "e8o0nm9ujew7byzu6x5dwjqe2rya2fv"
                 meta: {}
         '404':
           description: |
@@ -1313,15 +1313,13 @@ paths:
         Creates a brand image.
 
         **Required Fields**
-        - image_file: Form posts are the only accepted upload option.
+        - image_file: Form posts are the only accepted upload option. For more information on how to upload an image see [Adding product images](docs/store-operations/catalog#adding-product-images). NOTE:  Ensure you set the `Content-Type` header to `multipart/form-data; boundary=--example-boundary--` and set the correct URL for this endpoint.
 
         **Read-Only Fields**
         - id
 
         Only one image at a time can be created. To update a brand image, use the [Update a brand](/docs/rest-catalog/brands#update-a-brand) endpoint and an `image_url`.
       operationId: createBrandImage
-      parameters:
-        - $ref: '#/components/parameters/ContentType'
       requestBody:
         content:
           multipart/form-data:
@@ -1431,6 +1429,23 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MetaFieldCollectionResponse'
+        '400':
+          description: Bad Request. Input is invalid.
+          content:
+            application/json:
+              schema:
+                description: ''
+                type: object
+                properties:
+                  status:
+                    type: number
+                  title:
+                    type: string
+                    minLength: 1
+                  type:
+                    type: string
+                    minLength: 1
+                  errors: {}
       parameters:
         - $ref: '#/components/parameters/PageQuery'
         - $ref: '#/components/parameters/LimitQuery'
@@ -1555,21 +1570,34 @@ paths:
                   type:
                     type: string
                     minLength: 1
-                  detail:
-                    type: string
-                    minLength: 1
+                  errors:
+                    type: object
+                    properties: {}
               example:
                 status: 400
                 title: Input is invalid
                 type: 'https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes'
-                detail: Syntax error
+                errors: {}
         '422':
-          description: |
-            Response object for metafields creation with partial success.
+          description: JSON data is missing or invalid
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/MetaFieldCollectionResponsePartialSuccess_POST_PUT'
+                description: ''
+                type: object
+                properties:
+                  status:
+                    type: number
+                  title:
+                    type: string
+                    minLength: 1
+                  type:
+                    type: string
+                    minLength: 1
+                  errors:
+                    type: object
+                    properties: {}
+                    description: Empty for 200 responses.
     delete:
       summary: Delete Multiple Metafields
       tags:
@@ -1645,9 +1673,6 @@ components:
             The name of the brand. Must be unique.
             Required in POST.
           example: Common Good
-          x-required:
-            - post
-            - put
         page_title:
           maxLength: 255
           minLength: 0
@@ -1878,8 +1903,6 @@ components:
                 - brand
                 - product
                 - variant
-              x-required:
-                - post
             resource_id:
               maximum: 10000000000
               minimum: 0
@@ -1887,8 +1910,6 @@ components:
               description: |
                 The ID of the resource with which the metafield is associated.
               example: 111
-              x-required:
-                - post
             date_created:
               type: string
               description: |
@@ -1903,6 +1924,11 @@ components:
               readOnly: true
               format: date-time
               example: '2018-05-07T20:14:17+00:00'
+            owner_client_id:
+              type: string
+              description: Client ID for the metafieldʼs creator.
+              example: asdfasdfasdfasdfasdfasdfasdf
+              readOnly: true
       x-internal: false
     Metafield:
       type: object
@@ -1994,17 +2020,6 @@ components:
           description: Client ID for the metafieldʼs creator.
           example: asdfasdfasdfasdfasdfasdfasdf
           readOnly: true
-      required:
-        - namespace
-        - key
-        - value
-        - permission_set
-        - resource_type
-        - resource_id
-        - description
-        - id
-        - date_created
-        - date_modified
     MetaFieldCollectionResponse:
       type: object
       description: |

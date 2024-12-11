@@ -13,7 +13,7 @@ This article explains the benefits and limitations of the Scripts API, then work
 
 The control panel counterpart of the Scripts API is the Script Manager, which is available in the channel settings for the subject storefront on non-[Blueprint](#blueprint-themes) stores. Scripts that you install with the Scripts API appear in the storefront's Script Manager, but can only be modified by the [API account](/docs/start/authentication/api-accounts#api-accounts) that created them. However, authorized control panel users can change the consent category or entirely delete any script using Script Manager, including scripts created using the API. To learn more, see our Help Center article on [Script Manager](https://support.bigcommerce.com/s/article/Using-Script-Manager).
 
-Similarly, scripts added manually belong to control panel users collectively. When you use the API to [Get all scripts](/docs/rest-management/scripts#get-all-scripts), [Get a script](/docs/rest-management/scripts#get-a-script), [Update a script](/docs/rest-management/scripts#update-a-script), or [Delete a script](/docs/rest-management/scripts#delete-a-script), you can only retrieve, modify, and delete scripts added by [API account](/docs/start/authentication/api-accounts#api-accounts) you use to make the request. The Scripts API can’t update or delete scripts added using the control panel Script Manager.
+Similarly, scripts added manually are visible to all control panel users. When you use the API to [Get all scripts](/docs/rest-management/scripts#get-all-scripts), [Get a script](/docs/rest-management/scripts#get-a-script), [Update a script](/docs/rest-management/scripts#update-a-script), or [Delete a script](/docs/rest-management/scripts#delete-a-script), you can only retrieve, modify, and delete scripts added by the [API account](/docs/start/authentication/api-accounts#api-accounts) you use to make the request. The Scripts API can’t update or delete scripts added using the control panel Script Manager.
 
 After a merchant installs your app, the app can freely update its own scripts. All the app's scripts are available in the Script Manager for the merchant to inspect. 
 
@@ -35,7 +35,7 @@ These steps can help prevent unexpected behavior.
 ### Limits
 - Each app can have 10 API-created scripts
 - Each channel can have 50 control panel-created scripts 
-- You can install up to five scripts in a single call
+- If you use inline scripts, you can include up to five `<script>` tags
 - On a BigCommerce-hosted storefront, new or updated scripts take 20 seconds to cache
 
 ## Stencil themes
@@ -69,39 +69,6 @@ For more on checking which theme engine a storefront is using, see this article'
 If you're using an [app-level API account](/docs/start/authentication/api-accounts#app-level-api-accounts), we recommend inserting your scripts immediately following completion of the [auth callback](/docs/integrations/apps/guide/auth). The app can use the [uninstall callback](/docs/integrations/apps/guide/callbacks) to remove its scripts when a merchant uninstalls it, and the [remove_user callback](/docs/integrations/apps/guide/callbacks) to remove any scripts related to a particular user when they lose access privileges.
 
 Your implementation may use a [store-level API account](/docs/start/authentication/api-accounts#store-level-api-accounts) to authenticate. If so, any references to app callbacks do not apply to your code.
-
-## Upgrading
-
-If your app is already live, you may have previously asked merchants to paste a code snippet into one of these places:
-
-- The footer scripts or other in-template location in a Stencil or Blueprint theme
-- The **Web Analytics** control panel menu or its successor, **[Data solutions > Web analytics (SSF)](http://login.bigcommerce.com/deep-links/manage/data-solutions)** or **[Data solutions > Web analytics (MSF channel 1)](http://login.bigcommerce.com/deep-links/manage/channel/1/data-solutions)**
-- **Site verification tags** or its successor, **[Data Solutions > Site verification tags (SSF)](http://login.bigcommerce.com/deep-links/manage/data-solutions)** or **[Data solutions > Web analytics (MSF channel 1)](http://login.bigcommerce.com/deep-links/manage/channel/1/data-solutions)**
-- **[Script Manager (SSF)](http://login.bigcommerce.com/deep-links/manage/script-manager)** or **[Script Manager (MSF channel 1)](http://login.bigcommerce.com/deep-links/manage/1/script-manager)**
-
-Although Blueprint-based themes do not support Script Manager or the Scripts API, you may choose to add or continue Blueprint support. If so, you need some way of providing Blueprint stores access to the app's programmatically created scripts, without burdening users of Stencil or headless storefronts with additional unnecessary steps.
-
-To ease your app's transition to using the Scripts API, there are several possible strategies, depending on your app's ecosystem and customer base. 
-
-**Do nothing**
-
-You may decide that it doesn't make sense for your implementation to use the Scripts API.
-
-**Upgrade or encourage upgrade**
-
-If you want your merchants to upgrade to programmatically created scripts, you can prompt them to do so on your app’s landing page. You’ll need to keep track of which of your merchants are not using the Scripts API to know whether you need to display this prompt. For more on checking which theme engine a storefront is using, see this article's section on [Scripts API and Script Manager](#scripts-api-and-script-manager).
-
-Once a user decides to upgrade, you can use a form to walk them through removing the old manual code in their control panel. When the merchant clicks submit, install your scripts using the Scripts API.
-
-**Silently upgrade**
-
-You may decide that your old pasted-in scripts can live alongside your new approach to script management. However, BigCommerce does not recommend upgrading without disclosure. See this article's [section on disclosure](#disclosure-is-best-practice). 
-
-## Disclosure is best practice
-
-Solutions that add dynamic script support using revisions to or additions of scripts pasted into the theme or inserted in a **Data Solutions > Web Analytics** menu should disclose the change to all client stores, including Blueprint users. 
-
-Release notes can work for all storefronts. Changes to the [OAuth scopes](/docs/start/authentication/api-accounts#oauth-scopes) of apps that use [app-level API accounts](/docs/start/authentication/api-accounts#app-level-api-accounts) require the store owner or other authorized user to accept the new scopes, which could provide a mechanism to trigger release note display. Store owners aren't prompted to reauthorize until they next open an app in the control panel, so direct contact may be advisable from a conversion perspective. You can't change the OAuth scopes for a [store-level API account](/docs/start/authentication/api-accounts#store-level-api-accounts), so directly contacting the store or stores that you want to change may be your only option for disclosure.
 
 ## Subresource integrity
 

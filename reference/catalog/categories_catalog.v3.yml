@@ -262,7 +262,7 @@ paths:
                 description:
                   type: string
                   description: |
-                    The product description, which can include HTML formatting.
+                    The category description, which can include HTML formatting.
                   example: <p>We offer a wide variety of products perfect for relaxing</p>
                 views:
                   type: integer
@@ -701,8 +701,6 @@ paths:
                           The unique numeric ID of the categoryʼs parent. This field controls where the category sits in the tree of categories that organize the catalog.
                           Required in a POST if creating a child category.
                         example: 2
-                        x-required:
-                          - post
                       name:
                         maxLength: 50
                         minLength: 1
@@ -711,8 +709,6 @@ paths:
                           The name displayed for the category. Name is unique with respect to the categoryʼs siblings.
                           Required in a POST.
                         example: Bath
-                        x-required:
-                          - post
                       description:
                         type: string
                         description: |
@@ -809,9 +805,6 @@ paths:
                             x-required:
                               - post
                               - put
-                    required:
-                      - parent_id
-                      - name
                   meta:
                     title: Meta
                     type: object
@@ -1304,8 +1297,6 @@ paths:
         Limit image size to `8MB`.
         To update a *Category Image*, use the [Update categories](/docs/rest-catalog/category-trees/categories#update-categories) endpoint and an `image_url`.
       operationId: createCategoryImage
-      parameters:
-        - $ref: '#/components/parameters/ContentType'
       requestBody:
         content:
           multipart/form-data:
@@ -1440,6 +1431,9 @@ paths:
       description: |-
         Returns a list of products and their sort order for a specific category.
 
+        **Limits**
+        * page=2&limit=250 will return page 2 of the results with 250 items per page.
+
         **Usage Notes**
         * Data pairs are displayed in ascending order based on products' `sort_order` values.
         * `null` values are allowed for products without specified `sort_order` values.
@@ -1456,9 +1450,14 @@ paths:
             application/json:
               schema:
                 title: Product Sort Order Response
-                type: array
-                items:
-                  $ref: '#/components/schemas/productSortOrder'
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/productSortOrder'
+                  meta:
+                      $ref: '#/components/schemas/metaCollection_Full'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
         '403':
@@ -1523,6 +1522,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/Accept'
       - $ref: '#/components/parameters/CategoryIdParam'
+      - $ref: '#/components/parameters/PageParam'
   '/catalog/categories/metafields':
     get:
       summary: Get All Category Metafields
@@ -1756,8 +1756,6 @@ components:
             The unique numeric ID of the categoryʼs parent. This field controls where the category sits in the tree of categories that organize the catalog.
             Required in a POST if creating a child category.
           example: 2
-          x-required:
-            - post
         name:
           maxLength: 50
           minLength: 1
@@ -1766,8 +1764,6 @@ components:
             The name displayed for the category. Name is unique with respect to the categoryʼs siblings.
             Required in a POST.
           example: Bath
-          x-required:
-            - post
         description:
           type: string
           description: |
@@ -1843,9 +1839,6 @@ components:
           x-url: true
         custom_url:
           $ref: '#/components/schemas/customUrl_Full'
-      required:
-        - parent_id
-        - name
     metafield_Base:
       title: metafield_Base
       type: object
@@ -2346,17 +2339,6 @@ components:
           description: Client ID for the metafieldʼs creator.
           example: asdfasdfasdfasdfasdfasdfasdf
           readOnly: true
-      required:
-        - namespace
-        - key
-        - value
-        - permission_set
-        - resource_type
-        - resource_id
-        - description
-        - id
-        - date_created
-        - date_modified
     MetaFieldCollectionResponse:
       type: object
       description: |

@@ -11,23 +11,37 @@ This section covers different ways to associate customers with headless carts.
 
 You can use the GraphQL Storefront API to sign in to a customer account using hosted client-side, headless client-side, or server-side code. 
 
-### Hosted client-side sign in
+### Hosted client-side sign-in
 
-To sign in a customer account with an email address and a password in client-side code on a hosted storefront, use the [login mutation](/docs/start/authentication/graphql-storefront#signing-customers-in).
+To sign into a customer account with an email address and a password in client-side code on a hosted storefront, use the [login mutation](/docs/start/authentication/graphql-storefront#signing-customers-in).
 
-When you sign in a customer using the login mutation, subsequent queries made to the GraphQL Storefront API will return customer-specific results, such as customer group pricing.
+When you sign in a customer using the login mutation, subsequent queries to the GraphQL Storefront API will return customer-specific results, such as customer group pricing.
 
-### Headless and server-side sign in
+### Headless and server-side sign-in
 
-To make queries from the perspective of a particular customer in headless or server-side code, use [customer impersonation tokens](/docs/start/authentication/graphql-storefront#customer-impersonation-tokens) rather than storefront tokens. 
+To make queries from the perspective of a particular customer using headless or server-side code, use [customer access tokens](/docs/start/authentication/graphql-storefront#customer-access-tokens) and [storefront tokens](/docs/start/authentication/graphql-storefront#storefront-tokens). Then, use the customer access token in the `X-Bc-Customer-Access-Token` header.
 
-Depending on your implementation, you can use the login mutation or a combination of the [Current Customer API](/docs/start/authentication/current-customer), the [Customer Login API](/docs/start/authentication/customer-login), or the REST Management API's [customers feature](/docs/rest-management/customers) to authenticate the customer and get their customer ID. Pass the customer ID with your GraphQL Storefront requests using the `X-Bc-Customer-Id` header to interact with the store from the customer's perspective. The responses will reflect customer-specific pricing, product availability, account information, and more.
+We recommend using the login mutation and customer access token because this combination is more secure. In addition, there is a seamless redirection and synchronization between headless storefronts and hosted checkouts, which allow for transferring session details, such as customer and cart data, across various contexts.
 
 ## Customer single sign-on
 
-When a customer signs in to your headless storefront and your application redirects them to a BigCommerce-hosted page, such as checkout, you can use the [Customer Login API](/docs/start/authentication/customer-login) to sign them in to the hosted session. 
+If using the customer access token, then you just need to use the `createCartRedirectUrls` mutation and use the redirectUrl provided there. It will be a session sync link that will copy data from the headless storefront to the BigCommerce-hosted page. This approach simplifies session synchronization and offers consistent login states.
 
-You can sign a customer in to an embedded checkout by setting `redirect_to` in the Customer Login JWT payload to the relative path of the `embedded_checkout_url` generated using the [REST Management API carts feature](/docs/rest-management/carts) or the GraphQL Storefront API [createCartRedirectUrls mutation](/graphql-storefront/reference#definition-CartMutations).
+```js "Generate redirectUrl example" showLineNumbers copy
+mutation createRedirectUrl($input: CreateCartRedirectUrlsInput!) {
+  cart {
+    createCartRedirectUrls(input: $input) {
+      redirectUrls {
+        redirectedCheckoutUrl
+      }
+    }
+  }
+}
+```
+
+The other option is when a customer signs in to your headless storefront and your application redirects them to a BigCommerce-hosted page, such as checkout, you can use the [Customer Login API](/docs/start/authentication/customer-login) to sign them in to the hosted session. 
+
+You can sign a customer in to an embedded checkout by using the session-sync URL from the [createCartRedirectUrls mutation](https://developer.bigcommerce.com/graphql-storefront/reference#definition-CartMutations).
 
 ```js filename="Example JWT payload" showLineNumbers copy
 {
@@ -51,7 +65,7 @@ To address this need, BigCommerce provides the [Current Customer API](/docs/star
 
 ## Surfacing customer group pricing
 
-When querying the GraphQL Storefront API, customer-specific pricing will be reflected in query results if the request is made using a [customer impersonation token](/docs/start/authentication/graphql-storefront#customer-impersonation-tokens).
+When querying the GraphQL Storefront API, customer-specific pricing will be reflected in query results if the request is made using a [customer access token](/docs/start/authentication/graphql-storefront#customer-access-tokens).
 
 For server-side REST implementations, you can use the [REST Management API pricing feature](/docs/rest-management/pricing) to [Get prices](/docs/rest-management/pricing/products#get-prices-batch) for a particular customer group.
 

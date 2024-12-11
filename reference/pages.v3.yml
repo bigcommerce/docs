@@ -95,7 +95,7 @@ paths:
                   - $ref: '#/components/schemas/typeFeed'
                   - $ref: '#/components/schemas/typeRaw'
                   - $ref: '#/components/schemas/typeLink'
-                - title: "Create multiple pages using array" 
+                - title: "Create multiple pages using array"
                   type: array
                   items:
                     anyOf:
@@ -258,9 +258,6 @@ paths:
       description: |-
         Deletes one or more content pages. This endpoint supports bulk operations.
 
-        > #### Warning
-        > **Pay attention to query parameters**
-        > If you attempt to delete multiple pages by passing more than one page ID to `id:in` and one or more of them does not exist, you will receive a 404 response. However, the pages corresponding to the page IDs that do exist will still be deleted.
       responses:
         '204':
           $ref: '#/components/responses/HTTP204'
@@ -291,6 +288,7 @@ paths:
                     detail: 'missing the required field: id'
       parameters:
         - $ref: '#/components/parameters/idInQueryDelete'
+        - $ref: '#/components/parameters/deleteChildrenQuery'
       summary: Delete Pages
     parameters:
       - $ref: '#/components/parameters/Accept'
@@ -384,7 +382,7 @@ paths:
                     meta: {}
                 Link:
                   value:
-                    data:        
+                    data:
                       id: 18
                       channel_id: 1
                       name: California carcinogen list
@@ -458,7 +456,7 @@ paths:
       responses:
         '200':
           description: |-
-            
+
           content:
             application/json:
               schema:
@@ -583,6 +581,15 @@ components:
           type: integer
       in: query
       required: true
+    deleteChildrenQuery:
+      name: 'delete_children'
+      example: true
+      description: |
+        When you explicitly set this query parameter to `true`, deleting a parent page will recursively delete all its immediate children and their descendants.
+        Otherwise, if you set this query parameter to `false` or not provided, deleting a parent page will update its immediate children by setting their `parent_id` to `0` and their `is_visible` status to `false`.
+      schema:
+        type: boolean
+      in: query
     nameQuery:
       schema:
         type: string
@@ -833,7 +840,7 @@ components:
         is_customers_only:
           type: boolean
           description: |
-            Boolean value. If this value is set to `true`, this page will not be visible when the user is logged in to the store control panel.
+            Boolean value. When `true`, this page is visible only to logged-in customers.
         email:
           type: string
           description: 'Applicable when the page type is `contact_form`: contact email address that receives messages sent via the form. Must be unique.'
@@ -948,7 +955,7 @@ components:
           default: false
         is_customers_only:
           type: boolean
-          description: 'When `true`, this page is not visible to merchant users who are signed in to the store control panel.'
+          description: 'When `true`, this page is visible only to logged-in customers.'
           default: false
         url:
           type: string

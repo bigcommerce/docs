@@ -70,6 +70,7 @@ paths:
           schema:
             type: integer
         - $ref: '#/components/parameters/IdInParam'
+        - $ref: '#/components/parameters/ChannelIdInParam'
         - $ref: '#/components/parameters/IdNotInParam'
         - $ref: '#/components/parameters/IncludeParam'
         - $ref: '#/components/parameters/IncludeFieldsParam'
@@ -129,7 +130,15 @@ paths:
                   data:
                     type: array
                     items:
-                      $ref: '#/components/schemas/product_Full'
+                      allOf:
+                      - $ref: '#/components/schemas/product_Full'
+                      - type: object
+                        properties:
+                          channels: 
+                            type: array
+                            items: 
+                              type: integer
+                            description: 'The channels to which the product is assigned. This field only appears in the response if you include `channels` in the `include` query parameter.'
                   meta:
                     $ref: '#/components/schemas/metaCollection_Full'
     put:
@@ -138,7 +147,7 @@ paths:
       summary: Update Products (Batch)
       description: |-
         Updates products in batches. Batches are limited to 10 products.
-
+        
         **Required Fields**
         * `id` - product `id` is required for batch updates to products.
 
@@ -148,6 +157,7 @@ paths:
         - `date_modified`
         - `calculated_price`
         - `base_variant_id`
+    
       operationId: updateProducts
       parameters:
         - $ref: '#/components/parameters/ContentType'
@@ -431,6 +441,7 @@ paths:
         - `type`
         - `weight`
         - `price`
+        - `categories` (required when you enable the V2 product experience in the control panel)
 
         **Read-Only Fields**
         - `id`
@@ -442,7 +453,7 @@ paths:
         **Limits**
         - 250 characters product name length.
         - A product can have up to 1000 images. Each image file or image uploaded by URL can be up to 8 MB.
-
+       
         **Usage Notes**
         * You can create multiple product variants using the `variants` array.
         * This endpoint accepts a `video` array. To create a product video that accepts a `video` object, see [Create a Product Video](/docs/rest-catalog/products/videos#create-a-product-video) for information.
@@ -694,7 +705,15 @@ paths:
                 type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/product_Full'
+                    allOf:
+                    - $ref: '#/components/schemas/product_Full'
+                    - type: object
+                      properties:
+                        channels: 
+                          type: array
+                          items: 
+                            type: integer
+                          description: 'The channels to which the product is assigned. This field only appears in the response if you include `channels` in the `include` query parameter.'
                   meta:
                     $ref: '#/components/schemas/metaEmpty_Full'
               example:
@@ -802,7 +821,7 @@ paths:
 
         **Limits**
         - A product can have up to 1000 images. Each image file or image uploaded by URL can be up to 8 MB.
-
+        
         **Read-Only Fields**
         - id
         - date_created
@@ -3202,9 +3221,7 @@ paths:
       summary: Get Product Custom Fields
       description: |-
         Returns a list of product *Custom Fields*. You can pass in optional parameters.
-
-        **Note:**
-        The default rate limit for this endpoint is 40 concurrent requests.
+        
       operationId: getProductCustomFields
       parameters:
         - $ref: '#/components/parameters/IncludeFieldsParam'
@@ -3242,9 +3259,7 @@ paths:
         **Limits**
         - 200 custom fields per product limit.
         - 250 characters per custom field limit.
-
-        **Note:**
-        The default rate limit for this endpoint is 40 concurrent requests.
+        
       operationId: createProductCustomField
       requestBody:
         content:
@@ -3277,8 +3292,6 @@ paths:
       description: |
         Returns a *Custom Field*.
         
-        **Note:**
-        The default rate limit for this endpoint is 40 concurrent requests.
       operationId: getProductCustomField
       parameters:
         - $ref: '#/components/parameters/IncludeFieldsParam'
@@ -3313,7 +3326,6 @@ paths:
          **Limits**
         - 200 custom fields per product limit.
         - 250 characters per custom field limit.
-        - 40 concurrent requests default rate limit.
       operationId: updateProductCustomField
       requestBody:
         content:
@@ -3343,8 +3355,6 @@ paths:
       description: |-
         Deletes a product *Custom Field*.
 
-        **Note:**
-        The default rate limit for this endpoint is 40 concurrent requests.
       operationId: deleteProductCustomField
       responses:
         '204':
@@ -5389,6 +5399,7 @@ components:
               description: Variant ID
             sku:
               type: string
+              description: A unique user-defined alphanumeric product code/stock keeping unit (SKU). The SKU is always unique regardless of the letter case for both products and variants.
             sku_id:
               type: integer
               example: 70
@@ -6899,7 +6910,7 @@ components:
           minLength: 0
           type: string
           description: |
-            A unique user-defined alphanumeric product code/stock keeping unit (SKU).
+            A unique user-defined alphanumeric product code/stock keeping unit (SKU). The SKU is always unique regardless of the letter case for both products and variants.
           example: SM-13
         description:
           type: string
@@ -6976,7 +6987,7 @@ components:
         categories:
           type: array
           description: |
-            An array of IDs for the categories to which this product belongs. When updating a product, if an array of categories is supplied, all product categories will be overwritten. Does not accept more than 1,000 ID values.
+            An array of IDs for the categories to which this product belongs. You will overwrite all product categories when updating a product and supplying an array of categories. The limit is 1,000 ID values. When you enable the catalog V2 product experience in the control panel, you must include the categories array in the request body.
           required:
             - post
           items:
@@ -7257,7 +7268,7 @@ components:
           type: array
           minimum: 0
           maximum: 255
-          description: 200 maximum custom fields per product. 255 maximum characters per custom field. The default rate limit for this endpoint is 40 concurrent requests.
+          description: 200 maximum custom fields per product. 255 maximum characters per custom field.
           items:
             $ref: '#/components/schemas/productCustomField_Put'
         bulk_pricing_rules:
@@ -7399,7 +7410,7 @@ components:
           minLength: 0
           type: string
           description: |
-            A unique user-defined alphanumeric product code/stock keeping unit (SKU).
+            A unique user-defined alphanumeric product code/stock keeping unit (SKU). The SKU is always unique regardless of the letter case for both products and variants.
           example: SM-13
         description:
           type: string
@@ -7755,7 +7766,7 @@ components:
           type: array
           minimum: 0
           maximum: 255
-          description: 200 maximum custom fields per product. 255 maximum characters per custom field. The default rate limit for this endpoint is 40 concurrent requests.
+          description: 200 maximum custom fields per product. 255 maximum characters per custom field.
           items:
             $ref: '#/components/schemas/productCustomField_Put'
         bulk_pricing_rules:
@@ -8243,7 +8254,7 @@ components:
           type: array
           minimum: 0
           maximum: 255
-          description: 200 maximum custom fields per product. 255 maximum characters per custom field. The default rate limit for this endpoint is 40 concurrent requests.
+          description: 200 maximum custom fields per product. 255 maximum characters per custom field.
           items:
             $ref: '#/components/schemas/productCustomField_Put'
         bulk_pricing_rules:
@@ -9543,6 +9554,7 @@ components:
             - options
             - parent_relations
             - custom_fields
+            - channels
     IdMinParam:
       name: 'id:min'
       in: query

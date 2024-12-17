@@ -1,0 +1,106 @@
+# Creating Channels
+
+<Steps>
+
+### Prepare
+
+You will need to create two API tokens for your BigCommerce store. They have different permissions required, so please pay attention to which one is used for the step you are working on. Refer to this [support article](https://support.bigcommerce.com/s/article/Store-API-Accounts?language=en_US#:~:text=Level%20API%20Accounts-,1.,to%20use%20the%20API%20account) for more information on how to create API Accounts.
+
+* Create a token (TOKEN_A) with modify permissions for the following resources:
+  - Channel listings
+  - Channel settings
+  - Sites & routes
+
+* Create a token (TOKEN_B)  with modify permissions for the following resources:
+  - Carts
+  - Storefront API tokens
+  - Storefront API customer impersonation tokens
+
+ <Callout type="info">
+  Tokens are created using the API path: https://{storehash}.mybigcommerce.com/manage/settings/api-account
+ </Callout>
+
+Also check that you have multistorefront feature enabled and available seats
+
+### Create the channel
+
+Send a request to the [Create a channel](/docs/rest-management/channels#create-a-channel) endpoint using TOKEN_A to create a channel for your headless platform. Note the channel ID returned in the response; you'll use it in successive steps.
+
+```http filename="Example request: Create channel" showLineNumbers copy
+POST https://api.bigcommerce.com/stores/{store_hash}/v3/channels
+Accept: application/json
+Content-Type: application/json
+X-Auth-Token: {{TOKEN_A}}
+
+data '{
+    "name": "<the name you want for your channel>",
+    "platform": "<desired platform>",
+    "type": "storefront",
+    "status": "active",
+    "is_listable_from_ui": true,
+    "is_visible": true
+}'
+```
+
+ <Callout type="info">
+  Currently we’re working with [Vercel template, and that uses NextJS](https://github.com/B3BC/b2b-headless-example).
+ </Callout>
+
+ ### Generate an impersonation token
+
+[Generate an impersonation token](/docs/storefront-auth/tokens/customer-impersonation-token) by using the next cURL as base and using TOKEN_B.
+
+```http filename="Example request: Create an impersonation token" showLineNumbers copy
+POST https://api.bigcommerce.com/stores/{store_hash}/v3/storefront/api-token-customer-impersonation
+Accept: application/json
+Content-Type: application/json
+X-Auth-Token: {{TOKEN_B}}
+
+data '{
+  "channel_id": <channel returned on the first request>,
+  "expires_at": <Unix timestamp (UTC time) defining when the token should expire. Supports seconds, but does not support milliseconds, microseconds, or nanoseconds.>
+}'
+```
+
+### Create a site for the channel
+
+[Create the site for the channel](/docs/rest-management/sites#create-a-site), you should use TOKEN_A.
+
+```http filename="Example request: Create an impersonation token" showLineNumbers copy
+POST https://api.bigcommerce.com/stores/{store_hash}/v3/sites
+Accept: application/json
+Content-Type: application/json
+X-Auth-Token: {{TOKEN_A}}
+
+data '{
+    "url": <url you want to point>,
+    "channel_id": <the channel id returned on step 1>
+}'
+```
+
+### Update script tag information
+
+Add the following script tag on your application. 
+
+```http copy
+<script
+  type="module"
+  data-storehash="yourStoreHash"
+  data-channelid="yourChannelId"
+  src="https://cdn.bundleb2b.net/b2b/production/storefront/headless.js"
+></script>
+```
+### Enable headless channel on the B2B dashboard
+
+In the B2B dashboard, go to **Storefronts** > **Headless Storefronts** and select **Activate B2B** for the storefront channel.
+
+### Make products available on your new channel
+
+In the control panel, go to **Products** > **View** and select all the products you want to make available on the new channel. Then click **Bulk Actions** > **Add to channels** > select the desired channels > and click **Add**.
+
+ <Callout type="info">
+   #### Staging environment
+    If you are targeting the B2B Edition staging environment, you can use this script instead of the src attribute: https://cdn.bundleb2b.net/b2b/staging/storefront/assets/headless.js
+ </Callout>
+
+ </Steps>

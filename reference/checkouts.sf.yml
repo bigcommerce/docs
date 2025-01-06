@@ -284,8 +284,11 @@ paths:
         Adds a new *Consignment* to *Checkout*.
 
         Perform the following two steps to define the fulfillment of the items in the cart.
-        ### For **shipping** consignments:
+        
+        ### For shipping consignments:
+        
           1. Add a new Consignment to Checkout.
+          
               * Send a `POST` request to `/consignments` with each shipping address, line item IDs, and quantities. Each address can have its own line item IDs.
               * Provide a full valid customer address before placing the order. If provided, the order placement will succeed. 
               * As part of the request URL make sure to add `include=consignments.availableShippingOptions` to return the available shipping options based on the items, the address, and the shipping location. This will return `availableShippingOptions` in the response.
@@ -296,8 +299,10 @@ paths:
               
           2. Update the Consignment with Shipping Options using the [REST Storefront API](/docs/rest-storefront/checkouts/checkout-consignments#update-a-consignment), the [REST Management API](/docs/rest-management/checkouts/checkout-consignments#update-checkout-consignment) or the [GraphQL Storefront API](/docs/storefront/cart-checkout/guide/graphql-storefront).
                 
-        ### For **pickup** consignments:
-          1. Create a new consignment object. 
+        ### For pickup consignments:
+        
+          Create a new consignment object. 
+          
               - Send a `POST` request to `/consignments` with line item IDs and quantities.
               - Provide a `pickupMethodId`. This is the `id` of the Pickup Method provided in the response body of the Storefront Pickup Options API.
               - Required Fields:
@@ -898,7 +903,15 @@ components:
             discountedAmount: 5
             displayName: $5.00 off the order total
             id: 1
-        customer: 
+        fees:
+          - id: 497f6eca-6276-4993-bfeb-53cbbbba6f08
+            type: custom_fee
+            name: AAINS
+            displayName: Package Protection Insurance
+            cost: 12.02
+            source: AA
+            taxClassId: 12
+        customer:
           addresses: [{}]
           customerGroup:
             id: 1
@@ -965,6 +978,11 @@ components:
           description: Coupons applied at the checkout level.
           items:
             $ref: '#/components/schemas/CheckoutCoupon'
+        fees:
+          type: array
+          description: Fees applied at the checkout level.
+          items:
+            $ref: '#/components/schemas/CheckoutFee'
         createdTime:
           type: string
           description: Time when the cart was created.
@@ -1089,7 +1107,7 @@ components:
           description: the coupon code
         displayName:
           type: string
-          description: The coupon title based on different types provided in control panel section.
+          description: The coupon name displayed on the storefront.
         couponType:
           type: string
           description: Key name to identify the type of coupon.
@@ -1118,7 +1136,7 @@ components:
           description: the coupon code
         displayName:
           type: string
-          description: The coupon title based on different types provided in control panel section.
+          description: The coupon name displayed on the storefront.
         couponType:
           type: integer
           description: |-
@@ -1134,7 +1152,42 @@ components:
           type: number
           description: The discounted amount applied within a given context.
           format: double
-    Customer: 
+    CheckoutFee:
+      title: Checkout Fee
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: The fee ID.
+          example: 497f6eca-6276-4993-bfeb-53cbbbba6f08
+        type:
+          type: string
+          description: The type of the fee.
+          enum:
+            - custom_fee
+        name:
+          type: string
+          description: Name of the fee.
+          example: AAINS
+        displayName:
+          type: string
+          description: Display name of the fee targeting customers/shoppers.
+          example: Package Protection Insurance
+        cost:
+          type: number
+          description: Cost of the fee (include or exclude tax dependent on tax settings, same as shipping cost).
+          example: 10.0
+        source:
+          type: string
+          description: The source of the request.
+          example: AA
+        taxClassId:
+          type: integer
+          description: The tax class ID.
+          example: 1
+      x-internal: false
+    Customer:
       type: object
       description: Customer details.
       properties:
@@ -1819,7 +1872,7 @@ components:
                       description: ID of the custom item.
                     listPrice:
                       type: string
-                      description: Price of the item. With or without tax depending on your store setup.
+                      description: The net item price before discounts and coupons. BigCommerce derives an item's list price from the product default price or, if applicable, the sale price configured in the admin panel.
                     name:
                       type: string
                       description: Item name.
@@ -1986,7 +2039,7 @@ components:
           description: Whether the item is taxable.
         listPrice:
           type: number
-          description: The item’s list price, as quoted by the manufacturer or distributor.
+          description: The net item price before discounts and coupons. BigCommerce derives an item's list price from the product default price or, if applicable, the sale price configured in the admin panel.
           format: double
         name:
           type: string

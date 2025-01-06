@@ -33,15 +33,37 @@ In the diagram below, the storefront is where the shopper interacts with product
 | `Application` | A solution built by a developer to control the requests and responses from BigCommerce APIs. In addition to handling essential ecommerce tasks like requesting product information or sending the request to process a payment, the application layer can also handle the logic for custom functionality, like presenting discount codes based on a shopper's history or pre-filling details on the checkout page. |
 | `BigCommerce` | BigCommerce will respond to the application with the requested data to power the backend ecommerce functionality. It can handle processing payments, storing customer data, and retrieving the catalog and order information. |
 
-## Trusted proxy enablement
+# Trusted Proxy Configuration
 
-Trusted proxy enablement is a feature that allows you to use a custom proxy to send requests to your stores. This feature benefits headless merchants and merchants behind a proxy because it enables BigCommerce to honor the true-client-ip header the proxy passes during the session. Otherwise, when the requests are passed from the head/proxy to BigCommerce, all our systems can see is the IP of the middleware. This structure makes it difficult for BigCommerce to differentiate between traffic sources at the external edge. It may lead us to limit certain aspects of the connection during periods of high traffic.
+## Overview
+The Trusted Proxy feature allows merchants to set up authenticated proxy servers in front of BigCommerce. When properly configured, BigCommerce will use the end user's actual IP address instead of the proxy's IP address, enabling more accurate traffic management and improved security.
 
-### Headers
+## How It Works
+1. Merchant sets up a proxy server in front of BigCommerce
+2. BigCommerce provides a secret key to the merchant
+3. Proxy server includes two required headers in all requests:
+   - A secret key to authenticate the proxy
+   - The remote user's original IP address
 
-* X-BC-Trusted-Proxy-Secret: The value of the secret the rundeck task generates. BigCommerce uses it to validate that the request comes from a trusted proxy.
+## Required Headers
 
-* True-Client-IP: The IP address passes from the customer's (shopper's) browser to an intermediary. This requires configuration on the merchant's end to set this header appropriately.
+| Header Name | Description | Source |
+|------------|-------------|---------|
+| X-BC-Trusted-Proxy-Secret | Authentication secret provided by BigCommerce support | BigCommerce |
+| True-Client-IP | Original IP address of the remote user (shopper's browser or backend service) | Proxy server |
+
+## Implementation Steps
+
+1. Contact BigCommerce support to receive your trusted proxy secret
+2. Configure your proxy server to:
+   - Include the secret in the `X-BC-Trusted-Proxy-Secret` header
+   - Extract the remote user's IP address
+   - Pass the remote user's IP in the `True-Client-IP` header
+
+## Technical Notes
+- All headers must be included with every request
+- The proxy secret should be kept secure and not exposed publicly
+- Invalid or missing headers will cause requests to be treated as coming from the proxy IP
 
 ## Correlating requests
 
@@ -141,6 +163,78 @@ The following example uses the GraphQL Storefront API to complete a checkout and
     ```
 
   </Tab>
+</Tabs>
+
+## Headless/GraphQL account login
+
+BigCommerce has introduced a feature that leverages the [Customer Access Token](/docs/start/authentication/graphql-storefront#customer-access-tokens) for seamless redirection, logging in customers automatically when they reach checkout from the storefront. Built with JWT-based "Session Sync," this enhancement enables transferring session details, such as customer and cart data, across various contexts. Developers can use GraphQL API for advanced session syncing, ensuring a smoother, cohesive experience for customers across platforms.
+
+The following examples demonstrate how to sync and validate session details for headless storefronts and hosted checkouts.    
+
+<Tabs items={['Format', 'Mutation', 'Validate']}>
+  <Tab>
+
+```json # Low-level session sync JWT generation
+# Returns JUST a JWT, *not* a URL
+# Can "sync" any arbitrary combination of parameters
+# e.g., just sync analytics ID, just sync customer ID, just sync analytics + customer, etc
+# Designed to be used omni-directionally
+# e.g., headless -> stencil, stencil-> headless, headless->headless, stencil->stencil
+
+mutation GenerateSessionSyncJwt ($redirectTo: String!,$cartId: String,$visitorId: String,$ipAddress: IpAddress){
+   generateSessionSyncJwt(redirectTo:$redirectTo,cartId: $cartId, visitorId: $visitorId, ipAddress: $ipAddress){
+      result { 
+        token
+        url
+        }
+     }
+  }
+```
+</Tab>
+  <Tab>
+    
+```json # Low-level session sync JWT generation
+# Returns JUST a JWT, *not* a URL
+# Can "sync" any arbitrary combination of parameters
+# e.g., just sync analytics ID, just sync customer ID, just sync analytics + customer, etc
+# Designed to be used omni-directionally
+# e.g., headless -> stencil, stencil-> headless, headless->headless, stencil->stencil
+
+mutation GenerateSessionSyncJwt {
+  generateSessionSyncJwt(redirectTo:"/foo",visitorId:"abc123"){
+    result {
+      token
+      url
+      }
+   }
+}
+```
+  </Tab>
+
+   <Tab>
+```json # 
+mutation ValidateJwt{
+  validateSessionSyncJwt(jwt: "eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiJ9.eyJpc3MiOiJCQyIsImlhdCI6MTczMDQwMTc3MiwiZWF0IjoxNzMwNDAxODAyLCJqdGkiOiI2NTI5NDAyMi02MDA4LTRmY2YtOTUxOC03MWE5NjA0MjEyMjgiLCJvcGVyYXRpb24iOiJzZXNzaW9uX3N5bmMiLCJzaWQiOjczMzE5Nywic2Vzc2lvbl9wYXlsb2FkIjp7ImNhcnRfaWQiOm51bGwsImN1c3RvbWVyX2lkIjpudWxsLCJ2aXNpdG9yX2lkIjoiYWJjMTIzIn0sInJlcXVlc3RfaXAiOm51bGwsInJlZGlyZWN0X3RvIjoiaHR0cHM6Ly9iaWdjb21tZXJjZS5zdXBwb3J0L2ZvbyJ9.TAueByfTCdpw3UwwuKElUoeEjYcqCT13H3pt7UzIh6t6682_w4aaz1akS-FOyyOstOUYcjyUPLN5qi04eXXKKA"){
+   content{
+     analytics{
+       visitorId
+}
+     cart{
+       entityId    
+}
+     customer {
+       firstName
+}
+     customerAccessToken{
+       expiresAt
+       value    
+}
+     redirectTo
+     }
+   }
+}
+```
+</Tab>
 </Tabs>
 
 ## Next step

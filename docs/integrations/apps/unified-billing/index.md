@@ -10,7 +10,6 @@ To implement Unified Billing, you need to use the GraphQL API, as well as a [par
   To indicate your interest in becoming part of this program, please take a few minutes to fill out [this Google form](https://docs.google.com/forms/d/e/1FAIpQLSfupvSoZBeFzJMA5My3Cxbh-DilwsAGNJ4NlMMNYDwuzqMZRA/viewform).
 </Callout>
 
-
 ### OAuth scopes
 
 The following scopes pertain directly to Unified Partner Billing. For a complete list of generally available account-level OAuth scopes, see the [Guide to API Accounts](/api-docs/getting-started/api-accounts#account-resource-scopes).
@@ -21,7 +20,6 @@ The following scopes pertain directly to Unified Partner Billing. For a complete
 | Subscriptions | read-only | `account_subscriptions_read` | View account-level subscriptions | [GraphQL Account API](/docs/graphql-account/users-overview) |
 | Checkouts | modify | `account_checkouts_create` | View or cancel account-level checkouts | [GraphQL Account API](/docs/graphql-account/users-overview) |
 | Checkouts | read-only | `account_checkouts_read` | View account-level checkouts | [GraphQL Account API](/docs/graphql-account/users-overview) |
-
 
 ### Gathering Information 
 

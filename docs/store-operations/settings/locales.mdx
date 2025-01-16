@@ -1,0 +1,260 @@
+# Locales Configuration
+
+This overview explains how to manage locales using the [GraphQL Admin API](/docs/graphql-admin).
+
+## Introduction
+
+The BigCommerce GraphQL Admin API enables developers to manage languages across different channels. By accessing locale data and related configurations, developers can more easily localize headless storefronts. 
+
+<Callout type="info">
+Locale management is available on Catalyst storefronts.
+</Callout>
+
+## Getting started
+
+With the GraphQL Admin API, merchants can add, update, or remove locales for each sales channel, change locale status, and set a locale as the default. Below are examples of GraphQL queries and mutations for retrieving and managing locale settings.
+
+## Example requests
+This section provides examples of GraphQL Admin API queries and mutations that demonstrate how to manage locales, along with the required HTTP configuration.
+
+```http filename="GraphQL Admin API HTTP configuration" showLineNumbers copy
+POST https://api.bigcommerce.com/accounts/{{store_hash}}/graphql
+X-Auth-Token: {{access_token}}
+Accept: application/json
+Content-Type: application/json
+```
+
+### Query locales supported by the platform
+
+This query returns a static list of all locales currently supported by the platform.
+<Tabs items={['Request', 'Response']}>
+  <Tab>
+    ```graphql filename="Example query: Get locales supported by the platform" showLineNumbers copy
+    query {
+      i18n {
+        supportedLocales {
+          code
+          englishName
+          hasBuiltInTranslations
+          }
+        }
+      }
+    ```
+  </Tab>
+<Tab>
+```json filename="Example query: Get locales supported by the platform" showLineNumbers copy
+     {
+  "data": {
+    "i18n": {
+      "supportedLocales": [
+        {
+          "code": "ua",
+          "englishName": "Ukrainian",
+          "hasBuiltInTranslations": "false"
+        },
+        {
+          "code": "en-US",
+          "englishName": "English (United States)",
+          "hasBuiltInTranslations": "true"
+        },
+        {
+          "code": "en-UK",
+          "englishName": "English (United Kingdom)",
+          "hasBuiltInTranslations": "true"
+        },
+        {
+          "code": "fr",
+          "englishName": "French",
+          "hasBuiltInTranslations": "true"
+        }
+      }
+    }
+  }
+```
+</Tab>
+</Tabs>
+
+### Query channel locales
+
+The following query returns channel locales. 
+
+<Tabs items={['Request', 'Response']}>
+  <Tab>
+    ```graphql filename="Example query: Get locales" showLineNumbers copy
+    query {
+      store {
+        locales(input: { channelId: "bc/store/channel/1"}) {
+          edges {
+            node {
+              code
+              status
+              isDefault
+            }
+          }
+        }
+      }
+    }
+    ```
+  </Tab>
+  <Tab>
+
+    ```json filename="Example query: Get locales" showLineNumbers copy
+     {
+      "data": {
+        "store": {
+          "locales": 
+            "edges": [
+              {
+                "node": {
+                  "code": "en",
+                  "status": "INACTIVE",
+                  "isDefault": true
+                }
+              }
+            ]
+          }
+        }
+      }
+    ```
+  </Tab>
+</Tabs>
+
+### Add a locale
+
+The following mutation adds a locale. 
+
+<Tabs items={['Request', 'Response']}>
+  <Tab>
+    ```graphql filename="Example query: Add a locale" showLineNumbers copy
+    mutation {
+      locale {
+         addLocale(input: {
+            channelId: "bc/store/channel/1",
+            code: "fr",
+            status: INACTIVE
+            }) {
+                  locale {
+                      code
+                      status
+                }
+                  errors {
+                      ... on Error {
+                      message
+                            }
+                        }
+                    }
+                }
+            }
+    ```
+  </Tab>
+   <Tab>
+    ```json filename="Example query: Add a locale" showLineNumbers copy
+     {
+      "data": {
+        "locales": {
+          "addlocale": 
+            "locale": {
+              "code": "fr",
+              "status": "INACTIVE",
+              "isDefault": false
+              },
+            "errors": []
+          }
+        }
+      }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+### Update a locale
+
+The following mutation updates a channel's locale. 
+
+<Tabs items={['Request', 'Response']}>
+  <Tab>
+   ```graphql filename="Example query: Update a locale" showLineNumbers copy
+     mutation {
+      locale {
+         updateLocale(input: {
+            channelId: "bc/store/channel/1",
+            code: "fr",
+            status: ACTIVE,
+            isDefault: false
+            }) {
+                  locale {
+                      code
+                      status
+                      isDefault
+                }
+                  errors {
+                      ... on Error {
+                          message
+                            }
+                        }
+                    }
+                }
+            }
+   ```
+  </Tab>
+  <Tab>
+    ```json filename="Example query: Update a locale" showLineNumbers copy
+     {
+      "data": {
+        "locale": {
+          "updateLocale": {
+            "locale": {
+              "code": "fr",
+              "status": "ACTIVE",
+              "isDefault": false
+              },
+            "errors": []
+          }
+        }
+      }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+### Delete a locale
+
+The following mutation deletes a channel's locale. 
+
+<Tabs items={['Request', 'Response']}>
+  <Tab>
+   ```graphql filename="Example query: Delete a locale" showLineNumbers copy
+    mutation {
+      locale {
+         deleteLocale(input: {
+            channelId: "bc/store/channel/1",
+            code: "fr",
+            }) {
+                  code
+                  errors {
+                      ... on Error {
+                      message
+                            }
+                        }
+                    }
+                }
+            }
+    ```
+  </Tab>
+   <Tab>
+    ```json filename="Example query: Delete a locale" showLineNumbers copy
+      {
+      "data": {
+        "locale": {
+          "deleteLocale": {
+            "code": "fr",
+            "errors": []
+          }
+        }
+      }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+

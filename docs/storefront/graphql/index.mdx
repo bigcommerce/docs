@@ -340,6 +340,87 @@ query brands {
 
 If `first` is not specified, a query returns only 10 items by default.
 
+### GraphQL bi-directional pagination
+
+The GraphQL Storefront API allows bi-directional pagination. The following scenarios are available:
+
+* Base query
+* Forward pagination
+* Backward pagination
+
+**Base Query**: You can use a query as the base case for the next queries. The example below shows a query for 50 products.
+
+```graphql filename="Example base query" showLineNumbers copy
+ query {
+  site {
+    products(first: 50) {
+      pageInfo {
+        startCursor
+        endCursor
+        hasNextPage
+        hasPreviousPage
+      }
+      edges {
+        cursor
+        node {
+          entityId
+          name
+        }
+      }
+    }
+  }
+}
+```
+
+**Forward pagination**: You can query in a forward direction using the `hasNextPage=true` and the `hasPreviousPage=false`. The example below queries the first 5 products.
+
+```graphql filename="Example of forward pagination" showLineNumbers copy
+ query {
+  site {
+    products(first: 5) {
+      pageInfo {
+        startCursor
+        endCursor
+        hasNextPage
+        hasPreviousPage
+      }
+      edges {
+        cursor
+        node {
+          entityId
+          name
+        }
+      }
+    }
+  }
+}
+```
+
+**Backward pagination**: You can query in a backward direction using the `hasNextPage=false` and the `hasPreviousPage=true`. The example below queries the last 5 products.
+
+```graphql filename="Example of forward pagination" showLineNumbers copy
+  query {
+  site {
+    products(last: 5, before: "YXJyYXljb25uZWN0aW9uOjU=") {
+      pageInfo {
+        startCursor
+        endCursor
+        hasNextPage
+        hasPreviousPage
+      }
+      edges {
+        cursor
+        node {
+          entityId
+          name
+        }
+      }
+    }
+  }
+}
+```
+
+
 ## Complexity limits
 
 Complexity scores estimate the load that a single GraphQL request may generate. BigCommerce calculates the complexity score using an algorithm before executing the call, based on the provided query.

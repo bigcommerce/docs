@@ -11,6 +11,7 @@ info:
 tags:
   - name: Manage Webhooks (Single)
   - name: Manage Webhooks (Bulk)
+  - name: Webhook Events
   - name: Webhooks Admin
 security:
   - X-Auth-Token: []
@@ -34,12 +35,8 @@ paths:
                 properties:
                   data:
                     $ref: '#/components/schemas/webhook_Full'
-                  meta:
-                    type: object
-                    properties:
-                      pagination:
-                        $ref: '#/components/schemas/Pagination'
-              examples:
+                  meta: {}
+              x-examples:
                 application/json:
                   value:
                     data:
@@ -48,22 +45,12 @@ paths:
                       store_hash: sftg45fsd
                       created_at: 1561488106
                       updated_at: 1561488106
-                      scope: store/order/*
+                      scope: store/order/created
                       destination: 'https://665b65a6.ngrok.io/webhooks'
                       is_active: true
                       headers:
                         'custom-key': developer-defined value
-                    meta:
-                      pagination:
-                        count: 5
-                        current_page: 1
-                        links:
-                          current: '?limit=100&page=1'
-                          next: '?limit=100&page=1'
-                          previous: '?limit=100&page=1'
-                        per_page: 100
-                        total: 5
-                        total_pages: 1
+                    meta: {}
           links:
             getHook:
               operationId: getWebhook
@@ -87,13 +74,11 @@ paths:
             schema:
               $ref: '#/components/schemas/webhook_Base'
       tags:
-        - Manage Webhooks (Single)
+        - Manage Webhooks (Bulk)
     get:
       responses:
         '200':
           $ref: '#/components/responses/webhooks_Resp'
-        '400':
-          $ref: '#/components/responses/400_BadRequest'
         '401':
           $ref: '#/components/responses/401_Unauthorized'
       summary: Get Webhooks
@@ -117,8 +102,6 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/webhook_Resp'
-        '400':
-          $ref: '#/components/responses/400_BadRequest'
         '401':
           $ref: '#/components/responses/401_Unauthorized'
         '404':
@@ -132,13 +115,13 @@ paths:
         - $ref: '#/components/parameters/Accept'
         - $ref: '#/components/parameters/Content-Type'
     parameters:
-      - $ref: '#/components/parameters/WebhookId'
+      - $ref: '#/components/parameters/WebhookId' 
     put:
       responses:
         '200':
           $ref: '#/components/responses/webhook_Resp'
       summary: Update a Webhook
-      description: Updates a webhook. You can add custom headers. At least one field is required to perform an update.
+      description: Updates a webhook. Custom headers can be added.
       operationId: updateWebhook
       parameters:
         - $ref: '#/components/parameters/Accept'
@@ -216,7 +199,7 @@ paths:
                               type: string
                               minLength: 1
                               description: Event you subscribe to
-                              example: store/order/*
+                              example: store/order/created
                             destination:
                               type: string
                               minLength: 1
@@ -320,6 +303,41 @@ paths:
           $ref: '#/components/responses/422_UnprocessableEntity'
       tags:
         - Webhooks Admin
+  '/hooks/events':
+    get:
+      tags:
+        - Webhook Events
+      summary: Get Events
+      deprecated: true
+      parameters:
+        - $ref: '#/components/parameters/FilterPageParam'
+        - $ref: '#/components/parameters/FilterLimitParam'
+        - $ref: '#/components/parameters/FilterMaxCreatedAtParam'
+        - $ref: '#/components/parameters/FilterMinCreatedAtParam'
+      operationId: getWebhookEvents
+      responses:
+        '200':
+          description: Successful operation.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/HistoryEvent'
+                  meta:
+                    type: object
+                    properties:
+                      pagination:
+                        $ref: '#/components/schemas/Pagination'
+        '400':
+          $ref: '#/components/responses/400_BadRequest'
+        '401':
+          $ref: '#/components/responses/401_Unauthorized'
+      description: |
+        Get a list of events that were sent but not successfully received. Events are stored for not less than one week.
 components:
   parameters:
     WebhookId:
@@ -370,6 +388,22 @@ components:
       required: false
       schema:
         type: integer
+    FilterMaxCreatedAtParam:
+      name: 'created_at:max'
+      in: query
+      description: |
+        Maximum value for returned data.
+      required: false
+      schema:
+        type: string
+    FilterMinCreatedAtParam:
+      name: 'created_at:min'
+      in: query
+      description: |
+        Minimum value for returned data.
+      required: false
+      schema:
+        type: string
     Accept:
       in: header
       name: Accept
@@ -545,7 +579,7 @@ components:
                   id: 22041448
                   client_id: hm6ttr1z8fzu2utb7d1p9qile9jtugv
                   store_hash: 29iql3rwa6
-                  scope: store/order/*
+                  scope: store/order/created
                   destination: 'https://665b65a6.ngrok.io/webhooks'
                   headers: null
                   is_active: false
@@ -584,11 +618,7 @@ components:
                   updated_at:
                     type: integer
                     description: The time the webhook was most recently updated, represented in UNIX epoch time.
-              meta:
-                type: object
-                properties:
-                  pagination:
-                    $ref: '#/components/schemas/Pagination'
+              meta: {}
           examples:
             application/json:
               value:
@@ -598,22 +628,12 @@ components:
                   store_hash: sftg45fsd
                   created_at: 1561488106
                   updated_at: 1561488106
-                  scope: store/order/*
+                  scope: store/order/created
                   destination: 'https://665b65a6.ngrok.io/webhooks'
                   is_active: true
                   headers:
                     'custom-key': developer-defined value
-                meta:
-                  pagination:
-                    count: 5
-                    current_page: 1
-                    links:
-                      current: '?limit=100&page=1'
-                      next: '?limit=100&page=1'
-                      previous: '?limit=100&page=1'
-                    per_page: 100
-                    total: 5
-                    total_pages: 1
+                meta: {}
   securitySchemes:
     X-Auth-Token:
       name: X-Auth-Token
@@ -638,2249 +658,6 @@ components:
       type: apiKey
       in: header
   schemas:
-    store_cart_wildcard:
-      description: |-
-        Fires for each of the following events:
-        * `store/cart/created`
-        * `store/cart/updated`
-        * `store/cart/deleted`
-        * `store/cart/couponApplied`
-        * `store/cart/abandoned`
-        * `store/cart/converted`
-        * `store/cart/lineItem`
-        
-        See individual events for more information.
-      title: store/cart/*
-      x-internal: false
-    store_cart_created:
-      description: |-
-        This webhook fires on new cart creation when any of the following occur:
-        * a storefront shopper adds their first product to a cart during a new session
-        * an application makes a successful `POST` request to `/carts` using either the [REST Storefront](/docs/rest-storefront/carts#create-a-cart) API or the [REST Management](/docs/rest-management/carts/carts-single#create-a-cart) API
-        * a storefront makes a successful call to create a cart using the [GraphQL Storefront API](/docs/storefront/cart-checkout/guide/graphql-storefront)
-
-        Cart creation also fires the `store/cart/updated` webhook.
-
-        ```json filename="Example callback object" showLineNumbers
-        {
-          "created_at": 1561482670,
-          "store_id": "1025646",
-          "producer": "stores/{store_hash}",
-          "scope": "store/cart/created",
-          "hash": "352e4afc6dd3fc85ea26bfdf3f91852604d57528",
-          "data": {
-            "type": "cart",
-            "id": "09346904-4175-44fd-be53-f7e598531b6c"
-          }
-        }
-        ```
-      title: store/cart/created
-      allOf:
-        - $ref: '#/components/schemas/webhook_callback_base'
-        - type: object
-          description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-          properties:
-            data:
-              type: object
-              description: A lightweight description of the event that triggered the webhook.
-              properties:
-                type:
-                  type: string
-                  description: can be `cart` or `cart_line_item`
-                  example: cart
-                  enum:
-                    - cart
-                    - cart_line_item
-                id:
-                  type: string
-                  description: ID of the cart
-                  example: 09346904-4175-44fd-be53-f7e598531b6c
-      x-tags:
-        - created
-      x-internal: false
-    store_cart_updated:
-      title: store/cart/updated
-      description: |-
-        Fires when one of the following occurs:
-        * A cartʼs line items are modified by adding a new item to a cart, updating an existing itemʼs quantity, or deleting an item.
-        * A shopper enters or changes their email address during guest checkout. This includes signing in to a customer account after creating a guest cart, which associates the accountʼs email address with the cart.
-
-        The `store/cart/created` webhook firing also triggers this webhook because adding a product to an empty cart is considered an update. 
-
-        Changes to the following fields trigger this event:
-        * Quantity
-        * Item Price
-
-        ```json filename="Example callback object" showLineNumbers
-        {
-          "created_at": 1561482670,
-          "store_id": "1025646",
-          "producer": "stores/{store_hash}",
-          "scope": "store/cart/updated",
-          "hash": "352e4afc6dd3fc85ea26bfdf3f91852604d57528",
-          "data": {
-            "type": "cart",
-            "id": "09346904-4175-44fd-be53-f7e598531b6c"
-          }
-        }
-        ```
-      allOf:
-        - $ref: '#/components/schemas/webhook_callback_base'
-        - type: object
-          description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-          properties:
-            data:
-              type: object
-              description: A lightweight description of the event that triggered the webhook.
-              properties:
-                type:
-                  type: string
-                  description: can be `cart` or `cart_line_item`
-                  example: cart
-                id:
-                  type: string
-                  description: ID of the cart
-                  example: 09346904-4175-44fd-be53-f7e598531b6c
-      x-tags:
-        - created
-      x-internal: false
-    store_cart_deleted:
-      title: store/cart/deleted
-      description: |-
-        Fires when a cart is deleted. Carts are deleted in two ways; when all items are removed from a cart, and when an API consumer explicitly removes the cart using a `DELETE` request. Cart deletion ends the cart lifecycle. The `store/cart/updated` webhook also fires when the last item is removed.
-
-        ```json filename="Example callback object" showLineNumbers
-        {
-          "created_at": 1561482670,
-          "store_id": "1025646",
-          "producer": "stores/{store_hash}",
-          "scope": "store/cart/deleted",
-          "hash": "352e4afc6dd3fc85ea26bfdf3f91852604d57528",
-          "data": {
-            "type": "cart",
-            "id": "09346904-4175-44fd-be53-f7e598531b6c"
-          }
-        }
-        ```
-      allOf:
-        - $ref: '#/components/schemas/webhook_callback_base'
-        - type: object
-          description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-          properties:
-            data:
-              type: object
-              description: A lightweight description of the event that triggered the webhook.
-              properties:
-                type:
-                  type: string
-                  description: can be `cart` or `cart_line_item`
-                  example: cart
-                id:
-                  type: string
-                  description: ID of the cart
-                  example: 09346904-4175-44fd-be53-f7e598531b6c
-      x-tags:
-        - deleted
-      x-internal: false
-    store_cart_couponApplied:
-      title: store/cart/couponApplied
-      description: |-
-        Fires when a new coupon code is applied to a cart. The webhook request body includes the ID of the coupon code.
-
-        ```json filename="Example callback object" showLineNumbers
-        {
-          "created_at": 1561482670,
-          "store_id": "1025646",
-          "producer": "stores/{store_hash}",
-          "scope": "store/cart/couponApplied",
-          "hash": "352e4afc6dd3fc85ea26bfdf3f91852604d57528",
-          "data": {
-            "type": "cart",
-            "id": "09346904-4175-44fd-be53-f7e598531b6c",
-            "couponId": 1
-          }
-        }
-        ```
-      allOf:
-        - $ref: '#/components/schemas/webhook_callback_base'
-        - type: object
-          description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-          properties:
-            data:
-              type: object
-              description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-              properties:
-                type:
-                  type: string
-                  description: can be `cart` or `cart_line_item`
-                  example: cart
-                id:
-                  type: string
-                  description: ID of the cart
-                  example: 09346904-4175-44fd-be53-f7e598531b6c
-                couponId:
-                  type: integer
-                  description: ID of the coupon
-                  example: 1
-      x-tags:
-        - created
-      x-internal: false
-    store_cart_abandoned:
-      title: store/cart/abandoned
-      description: |-
-        This webhook fires after a cart is abandoned. BigCommerce considers a cart abandoned when it has no activity for at least one hour. This webhook is available for all store plans, regardless of whether the Abandoned Cart Saver feature is enabled.
-
-        ```json filename="Example callback object" showLineNumbers
-        {
-          "created_at": 1561482670,
-          "store_id": "1025646",
-          "producer": "stores/{store_hash}",
-          "scope": "store/cart/abandoned",
-          "hash": "352e4afc6dd3fc85ea26bfdf3f91852604d57528",
-          "data": {
-            "type": "cart",
-            "id": "09346904-4175-44fd-be53-f7e598531b6c",
-            "token": "1eed6d2d979776ff18e695ceeb10ea61"
-          }
-        }
-        ```
-      allOf:
-        - $ref: '#/components/schemas/webhook_callback_base'
-        - type: object
-          description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-          properties:
-            data:
-              type: object
-              description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-              properties:
-                type:
-                  type: string
-                  description: can be `cart` or `cart_line_item`
-                  example: cart
-                id:
-                  type: string
-                  description: ID of the cart
-                  example: 09346904-4175-44fd-be53-f7e598531b6c
-                token:
-                  type: string
-                  example: 1eed6d2d979776ff18e695ceeb10ea61
-                  description: Use this token to obtain cart data.
-      x-internal: false
-    store_cart_converted:
-      title: store/cart/converted
-      description: |-
-        Fires when a cart/checkout is converted into an order, which is typically after the checkout payment step on the storefront. At this point, the cart is automatically deleted and no longer accessible. This webhook returns both the cart/checkout ID and order ID for correlation purposes.
-
-        ```json filename="Example callback object" showLineNumbers
-        {
-          "created_at": 1561482670,
-          "store_id": "1025646",
-          "producer": "stores/{store_hash}",
-          "scope": "store/cart/converted",
-          "hash": "352e4afc6dd3fc85ea26bfdf3f91852604d57528",
-          "data": {
-            "type": "cart",
-            "id": "09346904-4175-44fd-be53-f7e598531b6c",
-            "orderId": 252
-          }
-        }
-        ```
-      allOf:
-        - $ref: '#/components/schemas/webhook_callback_base'
-        - type: object
-          description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-          properties:
-            data:
-              type: object
-              description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-              properties:
-                type:
-                  type: string
-                  description: The type will always be `cart`.
-                  default: cart
-                id:
-                  type: string
-                  description: ID of the cart
-                  example: 09346904-4175-44fd-be53-f7e598531b6c
-                orderId:
-                  type: integer
-                  description: ID of the order created.
-                  example: 252
-      x-tags:
-        - created
-      x-internal: false
-    store_cart_lineItem_wildcard:
-      title: store/cart/lineItem/*
-      description: |-
-        This webhook subscribes to all cart line item events. 
-
-        ```json filename="Example callback object" showLineNumbers
-        {
-          "created_at": 1561482670,
-          "store_id": "1025646",
-          "producer": "stores/{store_hash}",
-          "scope": "store/cart/created",
-          "hash": "352e4afc6dd3fc85ea26bfdf3f91852604d57528",
-          "data": {
-            "type": "cart",
-            "id": "09346904-4175-44fd-be53-f7e598531b6c",
-            "cartId": "b0386708-fef3-45de-9d8b-fbe3031450a4"
-          }
-        }
-        ```
-
-      allOf:
-        - $ref: '#/components/schemas/webhook_callback_base'
-        - type: object
-          description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-          properties:
-            data:
-              type: object
-              description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-              properties:
-                type:
-                  type: string
-                  description: Can be `cart` or `cart_line_item`.
-                id:
-                  type: string
-                  description: ID of the cart.
-                cartId:
-                  type: string
-                  description: ID of the cart.
-      x-tags:
-        - created
-      x-internal: false
-    store_cart_lineItem_created:
-      title: store/cart/lineItem/created
-      description: |-
-        Fires when a new item is added to the cart.
-
-        ```json filename="Example callback object" showLineNumbers
-        {
-          "created_at": 1561482670,
-          "store_id": "1025646",
-          "producer": "stores/{store_hash}",
-          "scope": "store/cart/lineItem/created",
-          "hash": "352e4afc6dd3fc85ea26bfdf3f91852604d57528",
-          "data": {
-            "type": "cart",
-            "id": "09346904-4175-44fd-be53-f7e598531b6c",
-            "cartId": "b0386708-fef3-45de-9d8b-fbe3031450a4"            
-          }
-        }
-        ```
-
-      allOf:
-        - $ref: '#/components/schemas/webhook_callback_base'
-        - type: object
-          description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-          properties:
-            data:
-              type: object
-              description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-              properties:
-                type:
-                  type: string
-                  description: can be `cart` or `cart_line_item`
-                  example: cart
-                id:
-                  type: string
-                  description: ID of the line item
-                  example: 09346904-4175-44fd-be53-f7e598531b6c
-                cartId:
-                  type: string
-                  description: ID of the cart
-                  example: b0386708-fef3-45de-9d8b-fbe3031450a4
-      x-tags:
-        - created
-      x-internal: false
-    store_cart_lineItem_updated:
-      title: store/cart/lineItem/updated
-      description: |-
-        Fires when an item’s quantity has changed or the product options change.
-
-        Changes to the following fields trigger this event:
-        * Quantity
-        * Item Price
-
-        ```json filename="Example callback object" showLineNumbers
-        {
-          "created_at": 1561482670,
-          "store_id": "1025646",
-          "producer": "stores/{store_hash}",
-          "scope": "store/cart/lineItem/updated",
-          "hash": "352e4afc6dd3fc85ea26bfdf3f91852604d57528",
-          "data": {
-            "type": "cart",
-            "id": "09346904-4175-44fd-be53-f7e598531b6c",
-            "cartId": "b0386708-fef3-45de-9d8b-fbe3031450a4"            
-          }
-        }
-        ```
-
-      allOf:
-        - $ref: '#/components/schemas/webhook_callback_base'
-        - type: object
-          description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-          properties:
-            data:
-              type: object
-              description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-              properties:
-                type:
-                  type: string
-                  description: can be `cart` or `cart_line_item`
-                  example: cart
-                id:
-                  type: string
-                  description: ID of the line item
-                  example: 09346904-4175-44fd-be53-f7e598531b6c
-                cartId:
-                  type: string
-                  description: ID of the cart
-                  example: b0386708-fef3-45de-9d8b-fbe3031450a4
-      x-tags:
-        - updated
-      x-internal: false
-    store_cart_lineItem_deleted:
-      title: store/cart/lineItem/deleted
-      description: |-
-        Fires when an item is deleted from the cart.
-
-        ```json filename="Example callback object" showLineNumbers
-        {
-          "created_at": 1561482670,
-          "store_id": "1025646",
-          "producer": "stores/{store_hash}",
-          "scope": "store/cart/lineItem/deleted",
-          "hash": "352e4afc6dd3fc85ea26bfdf3f91852604d57528",
-          "data": {
-            "type": "cart",
-            "id": "09346904-4175-44fd-be53-f7e598531b6c",
-            "cartId": "b0386708-fef3-45de-9d8b-fbe3031450a4"
-          }
-        }
-        ```
-      allOf:
-        - $ref: '#/components/schemas/webhook_callback_base'
-        - type: object
-          description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-          properties:
-            data:
-              type: object
-              description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-              properties:
-                type:
-                  type: string
-                  description: Can be `cart` or `cart_line_item`.
-                  example: cart
-                id:
-                  type: string
-                  description: ID of the line item.
-                  example: 09346904-4175-44fd-be53-f7e598531b6c
-                cartId:
-                  type: string
-                  description: ID of the cart.
-                  example: b0386708-fef3-45de-9d8b-fbe3031450a4
-      x-tags:
-        - deleted
-      x-internal: false
-    store_category_wildcard:
-      title: store/category/*
-      description: |
-        Fires for all `store/category` events.
-      x-tags:
-        - created
-      x-internal: false
-    store_category_created:
-      title: store/category/created
-      description: |-
-        Fires when a category is created.
-
-        ```json filename="Example callback object" showLineNumbers
-        {
-          "created_at": 1561482670,
-          "store_id": "1025646",
-          "producer": "stores/{store_hash}",
-          "scope": "store/category/created",
-          "hash": "352e4afc6dd3fc85ea26bfdf3f91852604d57528",
-          "data": {
-            "type": "category",
-            "id": 42
-          }
-        }
-        ```
-      allOf:
-        - $ref: '#/components/schemas/webhook_callback_base'
-        - $ref: '#/components/schemas/callback_category_data'
-      x-tags:
-        - created
-      x-internal: false
-    store_category_updated:
-      title: store/category/updated
-      description: |-
-        Fires when a category is updated. 
-        
-        Changes to the following fields trigger this event:
-        * URL
-        * Name
-        * Redirect Old URLs
-        * Description
-        * Parent Category
-        * Template Layout File
-        * Sort Order
-        * Default Product Sort
-        * Category Image
-        * Page Title
-        * Meta Keywords
-        * Meta Description
-        * Search Keywords
-        * Google Product Category
-        * Enable Google Shopping
-
-
-        ```json filename="Example callback object" showLineNumbers
-        {
-          "created_at": 1561482670,
-          "store_id": "1025646",
-          "producer": "stores/{store_hash}",
-          "scope": "store/category/updated",
-          "hash": "352e4afc6dd3fc85ea26bfdf3f91852604d57528",
-          "data": {
-            "type": "category",
-            "id": 42
-          }
-        }
-        ```
-
-      allOf:
-        - $ref: '#/components/schemas/webhook_callback_base'
-        - type: object
-          description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-          properties:
-            data:
-              type: object
-              description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-              properties:
-                type:
-                  type: string
-                  description: The type will always be `category`.
-                  default: category
-                id:
-                  type: integer
-                  description: ID of the category
-                  example: 42
-      x-tags:
-        - updated
-      x-internal: false
-    store_category_deleted:
-      title: store/category/deleted
-      description: |-
-        Fires when a category is deleted.
-
-        ```json filename="Example callback object" showLineNumbers
-        {
-          "created_at": 1561482670,
-          "store_id": "1025646",
-          "producer": "stores/{store_hash}",
-          "scope": "store/category/deleted",
-          "hash": "352e4afc6dd3fc85ea26bfdf3f91852604d57528",
-          "data": {
-            "type": "category",
-            "id": "42"
-          }
-        }
-        ```
-
-      allOf:
-        - $ref: '#/components/schemas/webhook_callback_base'
-        - type: object
-          description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-          properties:
-            data:
-              type: object
-              description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-              properties:
-                type:
-                  type: string
-                  description: The type will always be `category`.
-                  default: category
-                  example: category
-                id:
-                  type: integer
-                  description: ID of the category
-                  example: 42
-      x-tags:
-        - deleted
-      x-internal: false
-    store_channel_wildcard:
-      title: store/channel/*
-      description: Fires for all `store/channel` events.
-      x-tags:
-        - created
-      x-internal: false
-    store_channel_created:
-      title: store/channel/created
-      description: |-
-        Fires when a channel is created in the control panel or by API.
-
-        ```json filename="Example callback object" showLineNumbers
-        {
-          "created_at": 1561482670,
-          "store_id": "1025646",
-          "producer": "stores/{store_hash}",
-          "scope": "store/channel/created",
-          "hash": "352e4afc6dd3fc85ea26bfdf3f91852604d57528",
-          "data": {
-            "type": "channel",
-            "id": 173331
-          }
-        }
-        ```
-
-      allOf:
-        - $ref: '#/components/schemas/webhook_callback_base'
-        - type: object
-          description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-          properties:
-            data:
-              type: object
-              description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-              properties:
-                type:
-                  type: string
-                  description: The type will always be `channel`.
-                  default: channel
-                  example: channel
-                  readOnly: true
-                id:
-                  type: integer
-                  description: ID of the channel
-                  example: 173331
-      x-tags:
-        - created
-      x-internal: false
-    store_channel_updated:
-      title: store/channel/updated
-      description: |-
-        This webhook is triggered when a channel is updated in the control panel or by API. 
-
-        Changes to the following fields trigger this event:
-        * name
-        * external_id
-        * status
-        * is_listable_from_ui
-        * is_visible
-        * config_meta
-
-
-        ```json filename="Example callback object" showLineNumbers
-        {
-          "created_at": 1561482670,
-          "store_id": "1025646",
-          "producer": "stores/{store_hash}",
-          "scope": "store/channel/updated",
-          "hash": "352e4afc6dd3fc85ea26bfdf3f91852604d57528",
-          "data": {
-            "type": "channel",
-            "id": 173331
-          }
-        }
-        ```
-
-      allOf:
-        - $ref: '#/components/schemas/webhook_callback_base'
-        - type: object
-          description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-          properties:
-            data:
-              type: object
-              description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-              properties:
-                type:
-                  type: string
-                  description: The type will always be `channel`.
-                  default: channel
-                  example: channel
-                  readOnly: true
-                id:
-                  type: integer
-                  description: ID of the channel
-                  example: 173331
-      x-tags:
-        - created
-      x-internal: false
-    store_customer_wildcard:
-      title: store/customer/*
-      description: |
-        Fires for all `store/customer` events.
-      x-tags:
-        - created
-      x-internal: false
-    store_customer_created:
-      title: store/customer/created
-      description: |-
-        Fires when a new customer is created.
-
-        ```json filename="Example callback object" showLineNumbers
-        {
-          "created_at": 1561482670,
-          "store_id": "1025646",
-          "producer": "stores/{store_hash}",
-          "scope": "store/customer/created",
-          "hash": "352e4afc6dd3fc85ea26bfdf3f91852604d57528",
-          "data": {
-            "type": "customer",
-            "id": 32
-          }
-        }
-        ```
-
-      allOf:
-        - $ref: '#/components/schemas/webhook_callback_base'
-        - type: object
-          description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-          properties:
-            data:
-              type: object
-              description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-              properties:
-                type:
-                  type: string
-                  description: The type will always be `customer`.
-                  default: customer
-                  example: customer
-                  readOnly: true
-                id:
-                  type: integer
-                  description: ID of the customer
-                  example: 32
-      x-tags:
-        - created
-      x-internal: false
-    store_customer_updated:
-      title: store/customer/updated
-      description: |-
-        This webhook is triggered when a customer is updated. In addition, this webhook is triggered when a shopper initially enters custom form field values within the account sign-up form. Please note that neither changing existing data in customer form fields nor changing a customerʼs address will trigger the webhook.
-
-
-        ```json filename="Example callback object" showLineNumbers
-        {
-          "created_at": 1561482670,
-          "store_id": "1025646",
-          "producer": "stores/{store_hash}",
-          "scope": "store/customer/updated",
-          "hash": "352e4afc6dd3fc85ea26bfdf3f91852604d57528",
-          "data": {
-            "type": "customer",
-            "id": 32
-          }
-        }
-        ```
-
-      allOf:
-        - $ref: '#/components/schemas/webhook_callback_base'
-        - type: object
-          description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-          properties:
-            data:
-              type: object
-              description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-              properties:
-                type:
-                  type: string
-                  description: The type will always be `customer`.
-                  default: customer
-                  example: customer
-                  readOnly: true
-                id:
-                  type: integer
-                  description: ID of the customer
-                  example: 32
-      x-tags:
-        - created
-      x-internal: false
-    store_customer_deleted:
-      title: store/customer/deleted
-      description: |-
-        This webhook is triggered when a customer is deleted.
-
-        ```json filename="Example callback object" showLineNumbers
-        {
-          "created_at": 1561482670,
-          "store_id": "1025646",
-          "producer": "stores/{store_hash}",
-          "scope": "store/customer/deleted",
-          "hash": "352e4afc6dd3fc85ea26bfdf3f91852604d57528",
-          "data": {
-            "type": "customer",
-            "id": 32
-          }
-        }
-        ```
-      allOf:
-        - $ref: '#/components/schemas/webhook_callback_base'
-        - type: object
-          description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-          properties:
-            data:
-              type: object
-              description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-              properties:
-                type:
-                  type: string
-                  description: The type will always be `customer`.
-                  default: customer
-                  example: customer
-                  readOnly: true
-                id:
-                  type: integer
-                  description: ID of the customer.
-                  example: 32
-      x-tags:
-        - created
-      x-internal: false
-    store_customer_address_updated:
-      title: store/customer/address/updated
-      description: |-
-        Fires when a customer address is updated.
-
-        ```json filename="Example callback object" showLineNumbers
-        {
-          "created_at": 1561482670,
-          "store_id": "1025646",
-          "producer": "stores/{store_hash}",
-          "scope": "store/customer/address/updated",
-          "hash": "352e4afc6dd3fc85ea26bfdf3f91852604d57528",
-          "data": {
-            "type": "customer",
-            "id": 60,
-            "address": {
-              "customer_id": 32
-            }
-          }
-        }
-        ```
-
-      allOf:
-        - $ref: '#/components/schemas/webhook_callback_base'
-        - type: object
-          description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-          properties:
-            data:
-              type: object
-              description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-              properties:
-                type:
-                  type: string
-                  description: The type will always be `customer`.
-                  example: customer
-                id:
-                  type: integer
-                  description: ID of the customer address.
-                  example: 60
-                address:
-                  type: object
-                  properties:
-                    customer_id:
-                      type: integer
-                      description: ID of the customer.
-                      example: 32
-      x-tags:
-        - created
-      x-internal: false
-    store_customer_address_created:
-      title: store/customer/address/created
-      description: |-
-        Fires when a customer address is created.
-
-        ```json filename="Example callback object" showLineNumbers
-        {
-          "created_at": 1561482670,
-          "store_id": "1025646",
-          "producer": "stores/{store_hash}",
-          "scope": "store/customer/address/created",
-          "hash": "352e4afc6dd3fc85ea26bfdf3f91852604d57528",
-          "data": {
-            "type": "customer",
-            "id": 60,
-            "address": {
-              "customer_id": 32
-            }
-          }
-        }
-        ```
-
-      allOf:
-        - $ref: '#/components/schemas/webhook_callback_base'
-        - type: object
-          description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-          properties:
-            data:
-              type: object
-              description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-              properties:
-                type:
-                  type: string
-                  description: The type will always be `customer`.
-                  example: customer
-                id:
-                  type: integer
-                  description: ID of the customer address.
-                  example: 60
-                address:
-                  type: object
-                  properties:
-                    customer_id:
-                      type: integer
-                      description: ID of the customer.
-                      example: 32
-      x-tags:
-        - created
-      x-internal: false
-    store_customer_address_deleted:
-      title: store/customer/address/deleted
-      description: |-
-        Fires when a customer address is deleted.
-
-        ```json filename="Example callback object" showLineNumbers
-        {
-          "created_at": 1561482670,
-          "store_id": "1025646",
-          "producer": "stores/{store_hash}",
-          "scope": "store/customer/address/deleted",
-          "hash": "352e4afc6dd3fc85ea26bfdf3f91852604d57528",
-          "data": {
-            "type": "customer",
-            "id": 60,
-            "address": {
-              "customer_id": 32
-            }
-          }
-        }
-        ```
-
-      allOf:
-        - $ref: '#/components/schemas/webhook_callback_base'
-        - type: object
-          description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-          properties:
-            data:
-              type: object
-              description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-              properties:
-                type:
-                  type: string
-                  description: The type will always be `customer`.
-                  example: customer
-                id:
-                  type: integer
-                  description: ID of the customer address.
-                  example: 60
-                address:
-                  type: object
-                  properties:
-                    customer_id:
-                      type: integer
-                      description: ID of the customer.
-                      example: 32
-      x-tags:
-        - created
-      x-internal: false
-    store_customer_payment_instrument_default_updated:
-      title: store/customer/payment/instrument/default/updated
-      description: |-
-        Fires when a customer default payment instrument is updated.
-
-        ```json filename="Example callback object" showLineNumbers
-        {
-          "created_at": 1561482670,
-          "store_id": "1025646",
-          "producer": "stores/{store_hash}",
-          "scope": "store/customer/payment/instrument/default/updated",
-          "hash": "352e4afc6dd3fc85ea26bfdf3f91852604d57528",
-          "data": {
-            "type": "customer",
-            "id": 32
-          }
-        }
-        ```
-
-      allOf:
-        - $ref: '#/components/schemas/webhook_callback_base'
-        - type: object
-          description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-          properties:
-            data:
-              type: object
-              description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-              properties:
-                type:
-                  type: string
-                  description: can be `cart` or `cart_line_item`
-                  default: '"customer"'
-                  example: '"customer"'
-                  readOnly: true
-                id:
-                  type: integer
-                  description: ID of the customer.
-                  example: 32
-      x-tags:
-        - created
-      x-internal: false
-    store_order_wildcard:
-      title: store/order/*
-      description: Fires for all `store/order` events.
-      x-internal: false
-    store_order_created:
-      title: store/order/created
-      description: |-
-        This webhook is triggered when an order is created in the control panel, using an app, or by API.
-
-        ```json filename="Example callback object" showLineNumbers
-        {
-          "created_at": 1561482670,
-          "store_id": "1025646",
-          "producer": "stores/{store_hash}",
-          "scope": "store/order/created",
-          "hash": "352e4afc6dd3fc85ea26bfdf3f91852604d57528",
-          "data": {
-            "type": "order",
-            "id": 250
-          }
-        }
-        ```
-
-      allOf:
-        - $ref: '#/components/schemas/webhook_callback_base'
-        - type: object
-          description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-          properties:
-            data:
-              type: object
-              description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-              properties:
-                type:
-                  type: string
-                  description: The type will always be `order`.
-                  default: order
-                  example: order
-                id:
-                  type: integer
-                  description: ID of the order.
-                  example: 250
-      x-tags:
-        - created
-      x-internal: false
-    store_order_updated:
-      title: store/order/updated
-      description: |-
-        Fires when a previously-created order is updated.  
-
-        Changes to the following fields trigger this event: 
-        * Status
-        * Coupon Code
-        * Billing and Shipping Address
-        * Product Type
-        * Search Keywords
-        * Related Products
-        * Warranty Information
-        * Page Title
-        * Meta Description
-        * Gift Wrapping options
-        * Bin Picking Number (BPN)
-        * Fixed Shipping Price
-        * Free Shipping
-        * Open Graph Sharing Type
-        * Availability Text
-        * Purchasability
-        * Release Date
-        * Remove pre-order status on this date
-
-        ```json filename="Example callback object" showLineNumbers
-        {
-          "created_at": 1561482670,
-          "store_id": "1025646",
-          "producer": "stores/{store_hash}",
-          "scope": "store/order/updated",
-          "hash": "352e4afc6dd3fc85ea26bfdf3f91852604d57528",
-          "data": {
-            "type": "order",
-            "id": 250
-          }
-        }
-        ```
-
-      allOf:
-        - $ref: '#/components/schemas/webhook_callback_base'
-        - type: object
-          description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-          properties:
-            data:
-              type: object
-              description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-              properties:
-                type:
-                  type: string
-                  description: The type will always be `order`.
-                  default: order
-                  example: order
-                id:
-                  type: integer
-                  description: ID of the order.
-                  example: 250
-      x-tags:
-        - created
-      x-internal: false
-    store_order_archived:
-      title: store/order/archived
-      description: |-
-        Fires when an order is archived.
-
-        ```json filename="Example callback object" showLineNumbers
-        {
-          "created_at": 1561482670,
-          "store_id": "1025646",
-          "producer": "stores/{store_hash}",
-          "scope": "store/order/archived",
-          "hash": "352e4afc6dd3fc85ea26bfdf3f91852604d57528",
-          "data": {
-            "type": "order",
-            "id": 250
-          }
-        }
-        ```
-      allOf:
-        - $ref: '#/components/schemas/webhook_callback_base'
-        - type: object
-          description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-          properties:
-            data:
-              type: object
-              description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-              properties:
-                type:
-                  type: string
-                  description: The type will always be `order`.
-                  default: order
-                  example: order
-                id:
-                  type: integer
-                  description: ID of the order.
-                  example: 250
-      x-tags:
-        - created
-      x-internal: false
-    store_order_statusUpdated:
-      title: store/order/statusUpdated
-      description: |-
-        This webhook is triggered when an order status changes; for example, from `Pending` to `Awaiting Payment`.
-
-        ```json filename="Example callback object" showLineNumbers
-        {
-          "created_at": 1561482670,
-          "store_id": "1025646",
-          "producer": "stores/{store_hash}",
-          "scope": "store/order/statusUpdated",
-          "hash": "352e4afc6dd3fc85ea26bfdf3f91852604d57528",
-          "data": {
-            "type": "order",
-            "id": 250,
-            "status": {
-              "previous_status_id": 1,
-              "new_status_id": 11
-            }
-          }
-        }
-        ```
-
-      allOf:
-        - $ref: '#/components/schemas/webhook_callback_base'
-        - type: object
-          description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-          properties:
-            data:
-              type: object
-              description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-              properties:
-                type:
-                  type: string
-                  description: The type will always be `order`.
-                  example: order
-                id:
-                  type: integer
-                  description: ID of the order.
-                  example: 250
-                status:
-                  type: object
-                  properties:
-                    previous_status_id:
-                      type: integer
-                      description: ID of the previous status.
-                      example: 1
-                    new_status_id:
-                      type: integer
-                      description: ID of the updated status.
-                      example: 11
-      x-tags:
-        - created
-      x-internal: false
-    store_order_message_created:
-      title: store/order/message/created
-      description: |-
-        This webhook is triggered when an order message is created by a customer or in the control panel.
-
-        ```json filename="Example callback object" showLineNumbers
-        {
-          "created_at": 1561482670,
-          "store_id": "1025646",
-          "producer": "stores/{store_hash}",
-          "scope": "store/order/message/created",
-          "hash": "352e4afc6dd3fc85ea26bfdf3f91852604d57528",
-         "data": {
-            "type": "order",
-            "id": 250,
-            "message": {
-              "order_message_id": 3
-            }
-          }
-        }
-        ```
-
-      allOf:
-        - $ref: '#/components/schemas/webhook_callback_base'
-        - type: object
-          description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-          properties:
-            data:
-              type: object
-              description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-              properties:
-                type:
-                  type: string
-                  description: The type will always be `order`.
-                  example: order
-                id:
-                  type: integer
-                  description: ID of the order.
-                  example: 250
-                message:
-                  type: object
-                  properties:
-                    order_message_id:
-                      type: integer
-                      description: ID of the message on the order.
-                      example: 3
-      x-tags:
-        - created
-      x-internal: false
-    store_order_refund_created:
-      title: store/order/refund/created
-      description: |-
-        This webhook is triggered when a refund is submitted against an order.
-
-        ```json filename="Example callback object" showLineNumbers
-        {
-          "created_at": 1561482670,
-          "store_id": "1025646",
-          "producer": "stores/{store_hash}",
-          "scope": "store/order/refund/created",
-          "hash": "352e4afc6dd3fc85ea26bfdf3f91852604d57528",
-          "data": {
-            "type": "order",
-            "id": 250,
-            "refund": {
-              "refund_id": 3
-            }
-          }
-        }
-        ```
-
-      allOf:
-        - $ref: '#/components/schemas/webhook_callback_base'
-        - type: object
-          description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-          properties:
-            data:
-              type: object
-              description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-              properties:
-                type:
-                  type: string
-                  description: The type will always be `order`.
-                  example: order
-                id:
-                  type: integer
-                  description: ID of the order.
-                  example: 250
-                refund:
-                  type: object
-                  properties:
-                    refund_id:
-                      type: integer
-                      description: ID of the refund submitted against the order.
-                      example: 3
-      x-tags:
-        - created
-      x-internal: false
-    store_product_wildcard:
-      title: store/product/*
-      description: Fires for all `store/product` events.
-      x-internal: false
-    store_product_deleted:
-      title: store/product/deleted
-      description: |-
-        This webhook is triggered when a product is deleted.
-
-        ```json filename="Example callback object" showLineNumbers
-        {
-          "created_at": 1561482670,
-          "store_id": "1025646",
-          "producer": "stores/{store_hash}",
-          "scope": "store/product/deleted",
-          "hash": "352e4afc6dd3fc85ea26bfdf3f91852604d57528",
-          "data": {
-            "type": "product",
-            "id": 205
-          }
-        }
-        ```
-
-      allOf:
-        - $ref: '#/components/schemas/webhook_callback_base'
-        - type: object
-          description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-          properties:
-            data:
-              type: object
-              description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-              properties:
-                type:
-                  type: string
-                  description: The type ill always be `product`.
-                  default: product
-                  example: product
-                id:
-                  type: integer
-                  description: ID of the product.
-                  example: 205
-      x-tags:
-        - created
-      x-internal: false
-    store_product_created:
-      title: store/product/created
-      description: |-
-        Fires when a new product is created.
-
-        ```json filename="Example callback object" showLineNumbers
-        {
-          "created_at": 1561482670,
-          "store_id": "1025646",
-          "producer": "stores/{store_hash}",
-          "scope": "store/product/created",
-          "hash": "352e4afc6dd3fc85ea26bfdf3f91852604d57528",
-          "data": {
-            "type": "product",
-            "id": 205
-          }
-        }
-        ```
-
-      allOf:
-        - $ref: '#/components/schemas/webhook_callback_base'
-        - type: object
-          description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-          properties:
-            data:
-              type: object
-              description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-              properties:
-                type:
-                  type: string
-                  description: The type will always be `product`.
-                  default: product
-                  example: product
-                id:
-                  type: integer
-                  description: ID of the product.
-                  example: 205
-      x-tags:
-        - created
-      x-internal: false
-    store_product_updated:
-      title: store/product/updated
-      description: |-
-        Fires when product details are edited. 
-
-        Changes to the following fields trigger this event:
-        * Product Type
-        * Search Keywords
-        * Related Products
-        * Warranty Information
-        * Page Title
-        * Meta Description
-        * Gift Wrapping options
-        * Bin Picking Number (BPN)
-        * Fixed Shipping Price
-        * Free Shipping
-        * Open Graph Sharing Type
-        * Availability Text
-        * Purchasability
-        * Release Date
-        * Remove pre-order status on this date
-        * Preorder Message
-        * Inventory Stock
-        * Inventory Low Stock
-        * Track inventory
-        * Product UPC/EAN
-        * SKU
-        * Cost
-        * Tax Class
-        * Weight
-        * Width
-        * Height
-        * Depth
-        * Condition
-        * Show condition on storefront
-        * Brand
-        * Default Price
-        * Sale Price
-        * MSRP
-        * Product Name
-        * Description
-        * Visible on Storefront
-        * Sort Order
-        * Categories
-        * Product URL
-        * Set as a Featured Product on my Storefront
-
-        However, changes to the following fields donʼt trigger this event:
-
-        * Manufacturer Part Number (MPN)
-        * Global Trade Number (GTN)
-        * Tax Provider Tax Code
-        * Product Image
-        * Product Image Description
-        * Product Files
-        * Customs Information
-
-        ```json filename="Example callback object" showLineNumbers
-        {
-          "created_at": 1561482670,
-          "store_id": "1025646",
-          "producer": "stores/{store_hash}",
-          "scope": "store/product/updated",
-          "hash": "352e4afc6dd3fc85ea26bfdf3f91852604d57528",
-          "data": {
-            "type": "product",
-            "id": 205
-          }
-        }
-        ```
-
-      allOf:
-        - $ref: '#/components/schemas/webhook_callback_base'
-        - type: object
-          description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-          properties:
-            data:
-              type: object
-              description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-              properties:
-                type:
-                  type: string
-                  description: The type ill always be `product`.
-                  default: product
-                  example: product
-                id:
-                  type: integer
-                  description: ID of the product.
-                  example: 205
-      x-tags:
-        - created
-      x-internal: false
-    store_product_inventory_updated:
-      title: store/product/inventory/updated
-      description: |-
-        This webhook is triggered when product inventory is updated. 
-        
-        Changes to the following fields trigger this event: 
-        * Inventory Stock
-
-        However, changes to the following fields donʼt trigger this event:
-        * Track Inventory
-        * Inventory Low Stock
-
-
-        ```json filename="Example callback object" showLineNumbers
-        {
-          "created_at": 1561482670,
-          "store_id": "1025646",
-          "producer": "stores/{store_hash}",
-          "scope": "store/product/inventory/updated",
-          "hash": "352e4afc6dd3fc85ea26bfdf3f91852604d57528",
-          "data": {
-            "type": "product",
-            "id": 167,
-            "inventory": {
-              "product_id": 167,
-              "method": "absolute",
-              "value": 2
-            }
-          }
-        }
-        ```
-
-      allOf:
-        - $ref: '#/components/schemas/webhook_callback_base'
-        - type: object
-          description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-          properties:
-            data:
-              type: object
-              description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-              properties:
-                type:
-                  type: string
-                  description: The type will always be `product`.
-                  example: product
-                id:
-                  type: integer
-                  description: ID of the product.
-                  example: 167
-                inventory:
-                  type: object
-                  properties:
-                    product_id:
-                      type: integer
-                      description: ID of the product.
-                      example: 167
-                    method:
-                      type: string
-                      description: |-
-                        How the inventory was adjusted. Value will be one of the following:
-                        * `absolute` - inventory updated through the API or the control panel.
-                        * `relative` - inventory updated by an order.
-                      enum:
-                        - absolute
-                        - relative
-                    value:
-                      type: integer
-                      description: 'This value is the difference between an item’s inventory count before and after the inventory updates. This value is negative if an item’s inventory count decreases. For example, reducing inventory by three returns a value of `-3`. This value is positive if an item’s inventory count increases. For example, returning two items to the inventory returns a value of `2`.'
-                      example: 2
-      x-tags:
-        - created
-      x-internal: false
-    store_product_inventory_order_updated:
-      title: store/product/inventory/order/updated
-      description: |-
-        This webhook is triggered when a product’s inventory increases or decreases. 
-        
-        Changes to the following fields trigger this event: 
-        * Quantity
-
-        ```json filename="Example callback object" showLineNumbers
-        {
-          "created_at": 1561482670,
-          "store_id": "1025646",
-          "producer": "stores/{store_hash}",
-          "scope": "store/product/inventory/order/updated",
-          "hash": "352e4afc6dd3fc85ea26bfdf3f91852604d57528",
-          "data": {
-            "type": "product",
-            "id": 167,
-            "inventory": {
-              "product_id": 167,
-              "method": "absolute",
-              "value": 2
-            }
-          }
-        }
-        ```
-
-      allOf:
-        - $ref: '#/components/schemas/webhook_callback_base'
-        - type: object
-          description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-          properties:
-            data:
-              type: object
-              description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-              properties:
-                type:
-                  type: string
-                  description: Type will always be `product`.
-                  example: product
-                id:
-                  type: integer
-                  description: ID of the product.
-                  example: 167
-                inventory:
-                  type: object
-                  properties:
-                    product_id:
-                      type: integer
-                      description: ID of the product.
-                      example: 167
-                    method:
-                      type: string
-                      description: |-
-                        How the inventory was adjusted. Value will be one of the following:
-                        * `absolute` - inventory updated using the API or the control panel.
-                        * `relative` - inventory updated by an order.
-                      enum:
-                        - absolute
-                        - relative
-                    value:
-                      type: integer
-                      description: 'This value is the difference between an item’s inventory count before and after the inventory updates. This value is negative if an item’s inventory count decreases. For example, reducing inventory by three returns a value of `-3`. This value is positive if an item’s inventory count increases. For example, returning two items to the inventory returns a value of `2`.'
-                      example: 2
-      x-tags:
-        - created
-      x-internal: false
-    store_shipment_wildcard:
-      title: store/shipment/*
-      description: Fires for all `store/shipment` events.
-      x-internal: false
-    store_shipment_created:
-      title: store/shipment/created
-      description: |-
-        Fires when a shipment is created.
-
-        ```json filename="Example callback object" showLineNumbers
-        {
-          "created_at": 1561482670,
-          "store_id": "1025646",
-          "producer": "stores/{store_hash}",
-          "scope": "store/shipment/created",
-          "hash": "352e4afc6dd3fc85ea26bfdf3f91852604d57528",
-          "data": {
-            "type": "shipment",
-            "id": 12,
-            "orderId": 251
-          }
-        }
-        ```
-
-      allOf:
-        - $ref: '#/components/schemas/webhook_callback_base'
-        - type: object
-          description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-          properties:
-            data:
-              type: object
-              description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-              properties:
-                type:
-                  type: string
-                  description: The type will always be `shipment`.
-                  example: shipment
-                id:
-                  type: integer
-                  description: ID of the shipment.
-                  example: 12
-                orderId:
-                  type: integer
-                  description: ID of the order.
-                  example: 251
-      x-tags:
-        - created
-      x-internal: false
-    store_shipment_updated:
-      title: store/shipment/updated
-      description: |-
-        Fires when a shipment is updated.
-
-        Changes to the following fields trigger this event:
-        * Shipping Tracking Number
-
-        ```json filename="Example callback object" showLineNumbers
-        {
-          "created_at": 1561482670,
-          "store_id": "1025646",
-          "producer": "stores/{store_hash}",
-          "scope": "store/shipment/updated",
-          "hash": "352e4afc6dd3fc85ea26bfdf3f91852604d57528",
-          "data": {
-            "type": "shipment",
-            "id": 12,
-            "orderId": 251
-          }
-        }
-        ```
-
-      allOf:
-        - $ref: '#/components/schemas/webhook_callback_base'
-        - type: object
-          description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-          properties:
-            data:
-              type: object
-              description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-              properties:
-                type:
-                  type: string
-                  description: The type will always be `shipment`.
-                  example: shipment
-                id:
-                  type: integer
-                  description: ID of the shipment.
-                  example: 12
-                orderId:
-                  type: integer
-                  description: ID of the order.
-                  example: 251
-      x-tags:
-        - created
-      x-internal: false
-    store_shipment_deleted:
-      title: store/shipment/deleted
-      description: |-
-        This webhook is triggered when a shipment is deleted.
-
-        ```json filename="Example callback object" showLineNumbers
-        {
-          "created_at": 1561482670,
-          "store_id": "1025646",
-          "producer": "stores/{store_hash}",
-          "scope": "store/shipment/deleted",
-          "hash": "352e4afc6dd3fc85ea26bfdf3f91852604d57528",
-          "data": {
-            "type": "shipment",
-            "id": 12,
-            "orderId": 251
-          }
-        }
-        ```
-
-      allOf:
-        - $ref: '#/components/schemas/webhook_callback_base'
-        - type: object
-          description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-          properties:
-            data:
-              type: object
-              description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-              properties:
-                type:
-                  type: string
-                  description: The type will always be `shipment`.
-                  example: shipment
-                id:
-                  type: integer
-                  description: ID of the shipment.
-                  example: 12
-                orderId:
-                  type: integer
-                  description: ID of the order.
-                  example: 251
-      x-tags:
-        - created
-      x-internal: false
-    store_sku_wildcard:
-      title: store/sku/*
-      description: Fires for all `store/sku` events.
-      x-internal: false
-    store_sku_created:
-      title: store/sku/created
-      description: |-
-        This webhook is triggered when a new SKU is created.
-
-        ```json filename="Example callback object" showLineNumbers
-        {
-          "created_at": 1561482670,
-          "store_id": "1025646",
-          "producer": "stores/{store_hash}",
-          "scope": "store/sku/created",
-          "hash": "352e4afc6dd3fc85ea26bfdf3f91852604d57528",
-          "data": {
-            "type": "sku",
-            "id": 461,
-            "sku": {
-              "product_id": 206,
-              "variant_id": 509
-            }
-          }
-        }
-        ```
-
-      allOf:
-        - $ref: '#/components/schemas/webhook_callback_base'
-        - type: object
-          description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-          properties:
-            data:
-              type: object
-              description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-              properties:
-                type:
-                  type: string
-                  description: The type will always be `"sku"`.
-                  example: sku
-                id:
-                  type: integer
-                  description: ID of the SKU.
-                  example: 461
-                sku:
-                  type: object
-                  properties:
-                    product_id:
-                      type: integer
-                      description: ID of the product.
-                      example: 206
-                    variant_id:
-                      type: integer
-                      description: ID of the variant.
-                      example: 509
-      x-tags:
-        - created
-      x-internal: false
-    store_sku_updated:
-      title: store/sku/updated
-      description: |-
-        Fires when a SKU is updated.
-
-        ```json filename="Example callback object" showLineNumbers
-        {
-          "created_at": 1561482670,
-          "store_id": "1025646",
-          "producer": "stores/{store_hash}",
-          "scope": "store/sku/updated",
-          "hash": "352e4afc6dd3fc85ea26bfdf3f91852604d57528",
-          "data": {
-            "type": "sku",
-            "id": 461,
-            "sku": {
-              "product_id": 206,
-              "variant_id": 509
-            }
-          }
-        }
-        ```
-
-      allOf:
-        - $ref: '#/components/schemas/webhook_callback_base'
-        - type: object
-          description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-          properties:
-            data:
-              type: object
-              description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-              properties:
-                type:
-                  type: string
-                  description: The type will always be `"sku"`.
-                  example: sku
-                id:
-                  type: integer
-                  description: ID of the SKU.
-                  example: 461
-                sku:
-                  type: object
-                  properties:
-                    product_id:
-                      type: integer
-                      description: ID of the product.
-                      example: 206
-                    variant_id:
-                      type: integer
-                      description: ID of the variant.
-                      example: 509
-      x-tags:
-        - created
-      x-internal: false
-    store_sku_deleted:
-      title: store/sku/deleted
-      description: |-
-        Fires when a SKU is deleted.
-
-        ```json filename="Example callback object" showLineNumbers
-        {
-          "created_at": 1561482670,
-          "store_id": "1025646",
-          "producer": "stores/{store_hash}",
-          "scope": "store/sku/deleted",
-          "hash": "352e4afc6dd3fc85ea26bfdf3f91852604d57528",
-          "data": {
-            "type": "sku",
-            "id": 461,
-            "sku": {
-              "product_id": 206,
-              "variant_id": 509
-            }
-          }
-        }
-        ```
-
-      allOf:
-        - $ref: '#/components/schemas/webhook_callback_base'
-        - type: object
-          description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-          properties:
-            data:
-              type: object
-              description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-              properties:
-                type:
-                  type: string
-                  description: The type will always be `"sku"`.
-                  example: sku
-                id:
-                  type: integer
-                  description: ID of the SKU.
-                  example: 461
-                sku:
-                  type: object
-                  properties:
-                    product_id:
-                      type: integer
-                      description: ID of the product.
-                      example: 206
-                    variant_id:
-                      type: integer
-                      description: ID of the variant.
-                      example: 509
-      x-tags:
-        - created
-      x-internal: false
-    store_sku_inventory_updated:
-      title: store/sku/inventory/updated
-      description: |-
-        Fires when a SKU is updated.
-
-        ```json filename="Example callback object" showLineNumbers
-        {
-          "created_at": 1561482670,
-          "store_id": "1025646",
-          "producer": "stores/{store_hash}",
-          "scope": "store/sku/inventory/updated",
-          "hash": "352e4afc6dd3fc85ea26bfdf3f91852604d57528",
-          "data": {
-            "type": "sku",
-            "id": 461,
-            "inventory": {
-              "product_id": 167,
-              "method": "absolute",
-              "value": 2,
-              "variant_id": 509
-            }
-          }
-        }
-        ```
-
-      allOf:
-        - $ref: '#/components/schemas/webhook_callback_base'
-        - type: object
-          description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-          properties:
-            data:
-              type: object
-              description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-              properties:
-                type:
-                  type: string
-                  description: The type will always be `sku`.
-                  example: sku
-                id:
-                  type: integer
-                  description: ID of the SKU.
-                  example: 461
-                inventory:
-                  type: object
-                  properties:
-                    product_id:
-                      type: integer
-                      description: ID of the product.
-                      example: 167
-                    method:
-                      type: string
-                      description: |-
-                        How the inventory was adjusted. Value will be one of the following:
-                        * `absolute` - inventory updated by an order.
-                        * `relative` - inventory updated using the API or the control panel.
-                      enum:
-                        - absolute
-                        - relative
-                    value:
-                      type: integer
-                      description: 'The number of items that the inventory changed by. This can be negative if the inventory is decreased `-3` or positive if an item is returned to the inventory from an order, `2`.'
-                      example: 2
-                    variant_id:
-                      type: integer
-                      description: ID of the variant.
-                      example: 509
-      x-tags:
-        - created
-      x-internal: false
-    store_sku_inventory_order_updated:
-      title: store/sku/inventory/order/updated
-      description: |-
-        Fires when the inventory is updated.
-        
-        Changes to the following fields trigger this event:
-        * Quantity
-
-        ```json filename="Example callback object" showLineNumbers
-        {
-          "created_at": 1561482670,
-          "store_id": "1025646",
-          "producer": "stores/{store_hash}",
-          "scope": "store/sku/inventory/order/updated",
-          "hash": "352e4afc6dd3fc85ea26bfdf3f91852604d57528",
-          "data": {
-            "type": "sku",
-            "id": 461,
-            "inventory": {
-              "product_id": 167,
-              "method": "absolute",
-              "value": 2,
-              "variant_id": 509
-            }
-          }
-        }
-        ```
-
-      allOf:
-        - $ref: '#/components/schemas/webhook_callback_base'
-        - type: object
-          description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-          properties:
-            data:
-              type: object
-              description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-              properties:
-                type:
-                  type: string
-                  description: The type will always be `sku`.
-                  example: sku
-                id:
-                  type: integer
-                  description: ID of the SKU.
-                  example: 461
-                inventory:
-                  type: object
-                  properties:
-                    product_id:
-                      type: integer
-                      description: ID of the product.
-                      example: 167
-                    method:
-                      type: string
-                      description: |-
-                        How the inventory was adjusted. Value will be one of the following:
-                        * `absolute` - inventory updated by an order.
-                        * `relative` - inventory updated using the API or the control panel.
-                      enum:
-                        - absolute
-                        - relative
-                    value:
-                      type: integer
-                      description: 'The number of items that the inventory changed by. This can be negative if the inventory is decreased `-3` or positive if an item is returned to the inventory from an order, `2`.'
-                      example: 2
-                    variant_id:
-                      type: integer
-                      description: ID of the variant.
-                      example: 509
-      x-tags:
-        - created
-      x-internal: false
-    store_app_uninstalled:
-      title: store/app/uninstalled
-      description: |-
-        Fires when a client store is canceled and uninstalled from the platform.
-
-        ```json filename="Example callback object" showLineNumbers
-        {
-          "created_at": 1561482670,
-          "store_id": "1025646",
-          "producer": "stores/{store_hash}",
-          "scope": "store/app/uninstalled",
-          "hash": "352e4afc6dd3fc85ea26bfdf3f91852604d57528",
-          "data": {
-            "type": "store"
-          }
-        }
-        ```
-
-      allOf:
-        - $ref: '#/components/schemas/webhook_callback_base'
-        - type: object
-          description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-          properties:
-            data:
-              type: object
-              description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-              properties:
-                type:
-                  type: string
-                  description: The type will always be `store`.
-                  example: store
-      x-tags:
-        - created
-      x-internal: false
-    store_information_updated:
-      title: store/information/updated
-      description: |-
-        Fires when changes are made to store settings. 
-
-        Changes to the following fields trigger this event:
-        * Store Name
-        * Store Address
-        * Store Country
-        * Address Type
-        * Email
-        * Phone
-
-        ```json filename="Example callback object" showLineNumbers
-        {
-          "created_at": 1561482670,
-          "store_id": "1025646",
-          "producer": "stores/{store_hash}",
-          "scope": "store/information/updated",
-          "hash": "352e4afc6dd3fc85ea26bfdf3f91852604d57528",
-          "data": {
-            "type": "store"
-          }
-        }
-        ```
-
-      allOf:
-        - $ref: '#/components/schemas/webhook_callback_base'
-        - type: object
-          description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-          properties:
-            data:
-              type: object
-              description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-              properties:
-                type:
-                  type: string
-                  description: ''
-                  example: store
-      x-tags:
-        - created
-      x-internal: false
-    store_subscriber_wildcard:
-      title: store/subscriber/*
-      description: Fires for all `store/subscriber` events.
-      x-internal: false
-    store_subscriber_created:
-      title: store/subscriber/created
-      description: |-
-        Fires when a subscriber is created. 
-
-        ```json filename="Example callback object" showLineNumbers
-        {
-          "created_at": 1561482670,
-          "store_id": "1025646",
-          "producer": "stores/{store_hash}",
-          "scope": "store/subscriber/created",
-          "hash": "352e4afc6dd3fc85ea26bfdf3f91852604d57528",
-          "data": {
-            "type": "subscriber",
-            "id": 5
-          }
-        }
-        ```
-
-      allOf:
-        - $ref: '#/components/schemas/webhook_callback_base'
-        - type: object
-          description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-          properties:
-            data:
-              type: object
-              description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-              properties:
-                type:
-                  type: string
-                  description: Will always be `subscriber`
-                  example: subscriber
-                id:
-                  type: integer
-                  description: ID of the subscriber
-                  example: 5
-      x-tags:
-        - created
-      x-internal: false
-    store_subscriber_updated:
-      title: store/subscriber/updated
-      description: |-
-        The webhook fires when a subscriber is updated. 
-
-        ```json filename="Example callback object" showLineNumbers
-        {
-          "created_at": 1561482670,
-          "store_id": "1025646",
-          "producer": "stores/{store_hash}",
-          "scope": "store/subscriber/updated",
-          "hash": "352e4afc6dd3fc85ea26bfdf3f91852604d57528",
-          "data": {
-            "type": "subscriber",
-            "id": 5
-          }
-        }
-        ```
-
-      allOf:
-        - $ref: '#/components/schemas/webhook_callback_base'
-        - type: object
-          description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-          properties:
-            data:
-              type: object
-              description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-              properties:
-                type:
-                  type: string
-                  description: The type will always be `subscriber`.
-                  example: subscriber
-                id:
-                  type: integer
-                  description: ID of the subscriber.
-                  example: 5
-      x-tags:
-        - created
-      x-internal: false
-    store_subscriber_deleted:
-      title: store/subscriber/deleted
-      description: |-
-        This webhook is triggered when a subscriber is deleted.
-
-        ```json filename="Example callback object" showLineNumbers
-        {
-          "created_at": 1561482670,
-          "store_id": "1025646",
-          "producer": "stores/{store_hash}",
-          "scope": "store/subscriber/deleted",
-          "hash": "352e4afc6dd3fc85ea26bfdf3f91852604d57528",
-          "data": {
-            "type": "subscriber",
-            "id": 5
-          }
-        }
-        ```
-
-      allOf:
-        - $ref: '#/components/schemas/webhook_callback_base'
-        - type: object
-          description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-          properties:
-            data:
-              type: object
-              description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
-              properties:
-                type:
-                  type: string
-                  description: The type will always be `subscriber`.
-                  example: subscriber
-                id:
-                  type: integer
-                  description: ID of the subscriber.
-                  example: 5
-      x-tags:
-        - created
-      x-internal: false
     error_Full:
       type: object
       title: error_Full
@@ -2913,7 +690,8 @@ components:
           description: Typically a link to BigCommerce API Status codes
           type: string
         errors:
-          x-internal: false
+          type: object
+      x-internal: false
     webhook_Put:
       type: object
       title: webhook_Put
@@ -2921,7 +699,7 @@ components:
       properties:
         scope:
           type: string
-          example: store/order/*
+          example: store/order/created
           description: Event you subscribe to.
         destination:
           type: string
@@ -2931,6 +709,10 @@ components:
           type: boolean
           example: true
           description: Boolean value that indicates whether the webhook is active or not.
+        events_history_enabled:
+          type: boolean
+          example: true
+          description: Boolean value that identifies whether events are stored that could not be received.
         headers:
           type: object
           description: Headers used to validate that webhooks are active. You can pass in any number of custom headers to validate webhooks are being returned.
@@ -2945,7 +727,7 @@ components:
       properties:
         scope:
           type: string
-          example: store/order/*
+          example: store/order/created
           description: Event you subscribe to.
         destination:
           type: string
@@ -2955,6 +737,7 @@ components:
           type: boolean
           example: true
           description: Boolean value that indicates whether the webhook is active or not. A webhook subscription becomes deactivated after 90 days of inactivity.
+        
         headers:
           type: object
           description: Headers used to validate that webhooks are active. You can pass in any number of custom headers to validate webhooks are being returned.
@@ -2967,9 +750,7 @@ components:
         - destination
     webhook_Full:
       allOf:
-        - $ref: '#/components/schemas/webhook_Base'
         - title: webhook_Full
-          type: object
           properties:
             id:
               type: integer
@@ -2991,6 +772,29 @@ components:
               type: integer
               example: 1561488106
               description: The time the webhook was most recently updated, represented in UNIX epoch time.
+        - $ref: '#/components/schemas/webhook_Base'
+    HistoryEvent:
+      type: object
+      properties:
+        scope:
+          type: string
+          description: Alias where the event occurred.
+        store_id:
+          type: string
+          description: A numerical identifier that is unique to each store.
+        data:
+          type: object
+          description: A lightweight description of the event that triggered the webhook. Will vary depending on the event registered.
+        hash:
+          type: string
+          description: The payload data encoded in JSON format and then passed through SH1 encryption.
+        created_at:
+          type: integer
+          format: int64
+          description: UTC timestamp, in seconds, that the events was created.
+        producer:
+          type: string
+          description: Will always follow the pattern stores/store_hash. This is the store that created the webhook.
     Pagination:
       type: object
       description: |
@@ -3034,33 +838,35 @@ components:
           scope: store/cart/created
           hash: 352e4afc6dd3fc85ea26bfdf3f91852604d57528
       title: ''
+      allOf:
+        - properties:
+            created_at:
+              type: integer
+              example: 1561488106
+              description: The time the webhook was created, represented in UNIX epoch time.
+              readOnly: true
+            store_id:
+              type: string
+              minLength: 1
+              example: '1025646'
+              description: A numerical identifier that is unique to each store.
+            producer:
+              type: string
+              minLength: 1
+              example: 'stores/{store_hash}'
+              description: Will always follow the pattern `stores/store_hash`. This is the store that created the webhook.
+            scope:
+              type: string
+              minLength: 1
+              example: store/cart/created
+              description: The event registered when the webhook was created.
+            hash:
+              type: string
+              minLength: 1
+              example: 352e4afc6dd3fc85ea26bfdf3f91852604d57528
+              description: The payload data encoded in JSON format and then passed through SH1 encryption.
       type: object
-      properties:
-        created_at:
-          type: integer
-          example: 1561488106
-          description: The time the webhook was created, represented in UNIX epoch time.
-          readOnly: true
-        store_id:
-          type: string
-          minLength: 1
-          example: '1025646'
-          description: A numerical identifier that is unique to each store.
-        producer:
-          type: string
-          minLength: 1
-          example: 'stores/{store_hash}'
-          description: Will always follow the pattern `stores/store_hash`. This is the store that created the webhook.
-        scope:
-          type: string
-          minLength: 1
-          example: store/cart/created
-          description: The event registered when the webhook was created.
-        hash:
-          type: string
-          minLength: 1
-          example: 352e4afc6dd3fc85ea26bfdf3f91852604d57528
-          description: The payload data encoded in JSON format and then passed through SH1 encryption.
+      x-internal: false
     callback_category_data:
       title: callback_category_data
       type: object

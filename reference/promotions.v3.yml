@@ -34,7 +34,7 @@ paths:
     get:
       tags:
         - Promotions (Bulk)
-      summary: Get All Promotions 
+      summary: Get All Promotions
       description: |-
         Returns a list of *promotions*.
 
@@ -132,7 +132,7 @@ paths:
     get:
       tags:
         - Promotions (Single)
-      summary: Get Promotion 
+      summary: Get Promotion
       description: |-
         Returns a single *promotion*.
 
@@ -182,7 +182,7 @@ paths:
     delete:
       tags:
         - Promotions (Single)
-      summary: Delete Promotion 
+      summary: Delete Promotion
       description: |-
         Deletes a promotion.
 
@@ -201,7 +201,7 @@ paths:
     get:
       tags:
         - Coupon Codes (Bulk)
-      summary: Get Coupon Codes 
+      summary: Get Coupon Codes
       description: |-
         Get codes for a particular promotion.
 
@@ -210,13 +210,17 @@ paths:
       operationId: getPromotionCodes
       parameters:
         - $ref: '#/components/parameters/PromotionIdPath'
+        - $ref: '#/components/parameters/BeforeCursorQuery'
+        - $ref: '#/components/parameters/AfterCursorQuery'
+        - $ref: '#/components/parameters/DeprecatedPageQuery'
+        - $ref: '#/components/parameters/LimitQuery'
       responses:
         '200':
           $ref: '#/components/responses/PromotionCodesCollectionResponse'
     post:
       tags:
         - Coupon Codes (Single)
-      summary: Create A Coupon Code 
+      summary: Create A Coupon Code
       description: |-
         Create a new code for the promotion.
 
@@ -254,7 +258,7 @@ paths:
     delete:
       tags:
         - Coupon Codes (Bulk)
-      summary: Delete Multiple Coupon Codes 
+      summary: Delete Multiple Coupon Codes
       description: |-
         Deletes multiple coupon codes relating to the given promotion. Currently, batches are limited to 50 coupon codes.
 
@@ -316,6 +320,10 @@ components:
           type: string
           description: An internal name for this rule that the merchant can refer to.
           example: Buy Product X Get Free Shipping
+        display_name:
+          type: string
+          description: Customer-facing name for this rule, that the merchant want to display to customers.
+          example: WOW!!! FREE SHIPPING for Product X
         channels:
           type: array
           description: 'Channels that the promotion targets. Empty array [] means targeting all the channels. In POST request, if omitted, this field defaults to an empty array [] value.'
@@ -860,6 +868,19 @@ components:
         **Money**
         Represents a monetary value in the store’s default currency.
       example: '12.95'
+    OptionalCursorCollectionMeta:
+      title: Collection Meta
+      type: object
+      properties:
+        pagination:
+          $ref: '#/components/schemas/DeprecatedPagination'
+        cursor_pagination:
+          $ref: '#/components/schemas/CursorPagination'
+      description: >
+        Contains data about paginating the response via cursors.
+        If no pagination details are specified, then both properties will be present. 
+        When a 'before' or 'after' cursor is provided, only the 'cursor_pagination' property will be present.
+        When a 'page' parameter is provided, only the offset based 'pagination' property will be present.
     CollectionMeta:
       title: Collection Meta
       type: object
@@ -870,6 +891,40 @@ components:
     Pagination:
       title: Pagination
       type: object
+      properties:
+        total:
+          type: integer
+          description: Total number of items in the result set.
+        count:
+          type: integer
+          description: Total number of items in the collection response.
+        per_page:
+          type: integer
+          description: The amount of items returned in the collection per page, controlled by the limit of items per page parameter.
+        current_page:
+          type: integer
+          description: The page you are currently on within the collection.
+        total_pages:
+          type: integer
+          description: The total number of pages in the collection.
+        links:
+          type: object
+          properties:
+            previous:
+              type: string
+              description: Link to the previous page returned in the response.
+            current:
+              type: string
+              description: Link to the current page returned in the response.
+            next:
+              type: string
+              description: Link to the next page returned in the response.
+          description: Pagination links for the previous and next parts of the whole collection.
+      description: 'Data about the response, including pagination and collection totals.'
+    DeprecatedPagination:
+      title: Pagination
+      type: object
+      deprecated: true
       properties:
         total:
           type: integer
@@ -899,7 +954,58 @@ components:
               type: string
               description: Link to the next page returned in the response.
           description: Pagination links for the previous and next parts of the whole collection.
-      description: 'Data about the response, including pagination and collection totals.'
+      description: >
+        Data about the response, including pagination and collection totals.
+        This property has been deprecated and cursor_pagination should be used instead.
+    CursorPagination:
+      title: Cursor Pagination
+      type: object
+      required: [
+        count,
+        per_page,
+        links
+      ]
+      properties:
+        count:
+          type: integer
+          description: Total number of items in the result set.
+          example: 12
+        per_page:
+          type: integer
+          description: 'The amount of items returned in the collection per page, controlled by the limit of items per page parameter.'
+          example: 12
+        start_cursor:
+          type: string
+          description: >
+            The cursor to the first item in the result set.
+            Can be used with the "before" query parameter to paginate backwards.
+            This property is omitted when the result set is empty.
+          example: 'eyJpZCI6IjIzNzU1NyJ9'
+        end_cursor:
+          type: string
+          description: >
+            The cursor to the last item in the result set.
+            Can be used with the "after" query parameter to paginate forwards.
+            This property is omitted when the result set is empty.
+          example: 'eyJpZCI6IjIzNzU1NyJ9'
+        links:
+          type: object
+          properties:
+            previous:
+              type: string
+  
+              description: >
+                Link to the previous page returned in the response.
+                This property is omitted when the result set is empty or on the first page.
+              example: '?limit=5&before=eyJpZCI6IjIzNzU1NyJ9'
+            next:
+              type: string
+  
+              description: >
+                Link to the next page returned in the response.
+                This property is omitted when the result set is empty.
+              example: '?limit=5&after=eyJpZCI6IjIzNzU1NyJ9'
+      description: Contains data about paginating the response via cursors.
     ErrorResponse:
       title: Error Response
       type: object
@@ -971,9 +1077,9 @@ components:
           type: array
           description: Specifies where the notification message will be displayed.
           example:
-            - HOME_PAGE 
-            - PRODUCT_PAGE 
-            - CART_PAGE 
+            - HOME_PAGE
+            - PRODUCT_PAGE
+            - CART_PAGE
             - CHECKOUT_PAGE
           items:
               type: string
@@ -1381,7 +1487,7 @@ components:
               success: 0
               failed: 0
         422 - Error Deleting:
-          example: 
+          example:
             errors:
               - status: 422
                 title: Errors occurred in bulk delete action.
@@ -1429,7 +1535,7 @@ components:
                 items:
                   $ref: '#/components/schemas/CouponCode'
               meta:
-                $ref: '#/components/schemas/CollectionMeta'
+                $ref: '#/components/schemas/OptionalCursorCollectionMeta'
           examples:
             example-1:
               value:
@@ -1441,6 +1547,13 @@ components:
                     current_uses: 0
                     created: '2019-01-20T22:00:00+00:00'
                 meta:
+                  cursor_pagination:
+                    count: 1
+                    per_page: 50
+                    start_cursor: 'eyJpZCI6IjIzNzU1NyJ9'
+                    end_cursor: 'eyJpZCI6IjIzNzU1MyJ9'
+                    links:
+                      next: '?limit=5&after=eyJpZCI6IjIzNzU1NyJ9'
                   pagination:
                     total: 1
                     count: 1
@@ -1471,6 +1584,7 @@ components:
                   - id: 1
                     redemption_type: AUTOMATIC
                     name: Buy Product X Get Free Shipping
+                    display_name: WOW!!! FREE SHIPPING for Product X
                     channels:
                       - id: 1
                     customer:
@@ -1610,15 +1724,26 @@ components:
       schema:
         minimum: 1
         type: integer
+    DeprecatedPageQuery:
+      name: page
+      in: query
+      description: >
+        Query parameter that specifies the page number in a paginated list of resources.
+        This field is deprecated and the 'before' and 'after' cursor parameters should be used instead.
+      deprecated: true
+      schema:
+        minimum: 1
+        type: integer
     LimitQuery:
       name: limit
       in: query
-      description: Query parameter that limits the number of items displayed per page in a paginated list of resources.
+      description: >
+        Query parameter that limits the number of items displayed per page in a paginated list of resources.
+        When none is specified a default value of 50 is used.
       schema:
         maximum: 250
         minimum: 1
         type: integer
-      required: true
     NameQuery:
       name: name
       in: query
@@ -1680,6 +1805,29 @@ components:
       in: path
       description: The ID of the associated promotion.
       required: true
+      schema:
+        type: string
+    BeforeCursorQuery:
+      name: before
+      in: query
+      required: false
+      description: >
+        A cursor that can be used for backwards pagination.
+        Will fetch results before the position corresponding to the cursor.
+        Cannot be used with the 'page' query parameter.
+        Cannot be used with the 'after' query parameter.
+      schema:
+        type: string
+
+    AfterCursorQuery:
+      name: after
+      in: query
+      required: false
+      description: >
+        A cursor that can be used for forwards pagination.
+        Will fetch results after the position corresponding to the cursor.
+        Cannot be used with the 'page' query parameter.
+        Cannot be used with the 'before' query parameter.
       schema:
         type: string
     ChannelQuery:

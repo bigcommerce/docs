@@ -66,6 +66,7 @@ tags:
   - name: Order Messages
   - name: Order Shipping Addresses Quotes
   - name: Order Consignments
+  - name: Order Fees
 paths:
   '/orders/{order_id}':
     parameters:
@@ -78,6 +79,7 @@ paths:
         - Orders
       parameters:
         - $ref: '#/components/parameters/order_includes'
+        - $ref: '#/components/parameters/consignment_structure'
       responses:
         '200':
           $ref: '#/components/responses/order_Resp'
@@ -99,6 +101,14 @@ paths:
 
         After the update, the PUT request clears all discounts and promotions applied to the changed order line items. Since the order data syncs with other ERP systems, like Amazon or eBay, the updated order returns to the default setting, removing any applied discounts.
         
+        To update order fees, include the fee id in the request body along with all relevant fee fields. Fees not included will be deleted. Fees with an id will be updated, and fees without an id will be created as new.
+        
+        **Notes**
+        
+        * Sub-resources like products in the /v2/orders PUT request behave like PATCH, updating only the provided fields. Fees, however, follow standard PUT semantics and fees in the request body will fully replace existing ones. 
+        To retain an existing fee, include it in the body with its associated id. 
+        * The values for cost_ex_tax, cost_inc_tax and cost_tax in the fees payload should reflect the tax rate associated with the tax_class_id. For a 10% tax rate, the difference between cost_inc_tax and cost_ex_tax should be 10%. If no tax_class_id is provided, the store's default "tax class for fee" will apply. Incorrect data may lead to issues in downstream operations like refunds.
+        
         To learn more about creating or updating orders, see [Orders Overview](/docs/store-operations/orders).
       summary: Update an Order
       tags:
@@ -111,7 +121,7 @@ paths:
             schema:
               $ref: '#/components/schemas/order_Put'
             examples:
-              application/json:
+              Requests:
                 value:
                   status_id: 0
                   customer_id: 11
@@ -146,13 +156,27 @@ paths:
                       price_inc_tax: 50
                       price_ex_tax: 45
                     - product_id: 184
-                      quanity: 1
+                      quantity: 1
                       product_options:
                         - id: 200
                           value: '180'
                         - id: 230
                           value: '192'
                   customer_locale: en
+                  fees:
+                    - id: 1
+                      type: custom_fee
+                      display_name_customer: A Fee
+                      source: AA
+                      cost_ex_tax: 12.3000
+                      cost_inc_tax: 12.3000
+                      tax_class_id: 22
+                    - id: 2
+                      type: custom_fee
+                      display_name_customer: B Fee
+                      source: AA
+                      cost_ex_tax: 8.0000
+                      cost_inc_tax: 12.0000
               Adding an existing product to order:
                 value:
                   products:
@@ -182,7 +206,64 @@ paths:
                           value: 12
                       price_inc_tax: 12.45
                       price_ex_tax: 10.12
-        required: true
+              Adding a new fee (no ID) while retaining existing fees (with ID):
+                value:
+                  fees:
+                    - type: custom_fee
+                      display_name_customer: C Fee
+                      source: AA
+                      cost_ex_tax: '22.5000'
+                      cost_inc_tax: '25.0000'
+                    - id: 1
+                      type: custom_fee
+                      display_name_customer: A Fee
+                      source: AA
+                      cost_exc_tax: '12.3000'
+                      cost_inc_tax: '12.3000'
+                      tax_class_id: 22
+                    - id: 2
+                      type: custom_fee
+                      display_name_merchant: B Fee
+                      source: AA
+                      cost_ex_tax: '4.0000'
+                      cost_tax: '8.0000'
+                      tax_class_id: null
+              Updating order fees (all fees provided with IDs and attributes):
+                value:
+                  fees:
+                    - id: 3
+                      type: custom_fee
+                      display_name_customer: C Fee Updated
+                      source: AA
+                      cost_ex_tax: '20.0000'
+                      cost_inc_tax: '25.0000'
+                    - id: 1
+                      type: custom_fee
+                      display_name_customer: A Fee Updated
+                      source: AA
+                      cost_exc_tax: '10.0000'
+                      cost_inc_tax: '15.0000'
+                      tax_class_id: 1
+                    - id: 2
+                      type: custom_fee
+                      display_name_merchant: B Fee Updated
+                      source: AA
+                      cost_ex_tax: '5.0000'
+                      cost_tax: '8.0000'
+                      tax_class_id: 2
+              Deleting a fee from the order (fee missing from the payload will be deleted):
+                value:
+                  fees:
+                    - id: 3
+                      type: custom_fee
+                      display_name_customer: C Fee Updated
+                      source: AA
+                      cost_ex_tax: '20.0000'
+                      cost_inc_tax: '25.0000'
+              Deleting all fees from the order:
+                value:
+                  fees: []
+
       responses:
         '200':
           $ref: '#/components/responses/order_Resp'
@@ -256,6 +337,7 @@ paths:
         - $ref: '#/components/parameters/sort'
         - $ref: '#/components/parameters/channel_id'
         - $ref: '#/components/parameters/order_includes'
+        - $ref: '#/components/parameters/consignment_structure'
         - $ref: '#/components/parameters/external_order_id'
       responses:
         '200':
@@ -286,15 +368,22 @@ paths:
         This means that if the `consignments` array is present in the request, then _none_ of the following may be present and vice-versa:
         - `shipping_addresses`
         - `products`
+        
+        Include the `fees` object along with all its attributes in the request to create order-level fees for the newly created order.
+        
+        **Notes**
+        
+        * The values for cost_ex_tax, cost_inc_tax and cost_tax in the fees payload should reflect the tax rate associated with the tax_class_id. For a 10% tax rate, the difference between cost_inc_tax and cost_ex_tax should be 10%. If no tax_class_id is provided, the store's default "tax class for fee" will apply. Incorrect data may lead to issues in downstream operations like refunds.
 
         The V2 Orders API will not trigger the typical [Order Email](https://support.bigcommerce.com/s/article/Customizing-Emails?language=en_US) when creating orders. To create an order that does trigger this email, you can instead [create a cart](/docs/rest-management/carts/carts-single#create-a-cart) and [convert that cart into an order](/docs/rest-management/checkouts/checkout-orders#create-an-order).
-        
+
       summary: Create an Order
       tags:
         - Orders
       parameters:
         - $ref: '#/components/parameters/ContentType'
         - $ref: '#/components/parameters/order_includes'
+        - $ref: '#/components/parameters/consignment_structure'
       requestBody:
         content:
           application/json:
@@ -444,6 +533,26 @@ paths:
                           value: '180'
                         - id: 230
                           value: '192'
+              Create an order with fees (include the fees object as shown with rest of the payload):
+                value:
+                  fees:
+                    - type: custom_fee
+                      display_name_customer: D Fee
+                      source: AA
+                      cost_ex_tax: '22.5000'
+                      cost_inc_tax: '25.0000'
+                      tax_class_id: 22
+                    - type: custom_fee
+                      display_name_customer: E Fee
+                      source: AA
+                      cost_exc_tax: '12.3000'
+                      cost_inc_tax: '12.3000'
+                      tax_class_id: null
+                    - type: custom_fee
+                      display_name_merchant: F Fee
+                      source: AA
+                      cost_ex_tax: '4.0000'
+                      cost_tax: '8.0000'
         required: true
       responses:
         '200':
@@ -1058,6 +1167,48 @@ paths:
       parameters:
         - $ref: '#/components/parameters/order_id_path'
         - $ref: '#/components/parameters/shipping_consignment_id'
+  '/orders/{order_id}/fees':
+    get:
+      summary: Get Fees
+      tags:
+        - Order Fees
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/orderFees_Resp'
+              examples:
+                response:
+                  value:
+                    fees:
+                      - id: 1
+                        type: custom_fee
+                        display_name_customer: A Fee
+                        display_name_merchant: A Fee
+                        source: AA
+                        base_cost: '12.3000'
+                        cost_exc_tax: '12.3000'
+                        cost_inc_tax: '12.3000'
+                        cost_tax: '0.0000'
+                        tax_class_id: 22
+                      - id: 2
+                        type: custom_fee
+                        display_name_customer: B Fee
+                        display_name_merchant: B Fee
+                        source: AA
+                        base_cost: '4.0000'
+                        cost_ex_tax: '4.0000'
+                        cost_inc_tax: '12.0000'
+                        cost_tax: '8.0000'
+                        tax_class_id: null
+        '404':
+          $ref: '#/components/responses/404_Resp'
+      operationId: getOrderFees
+      description: 'Get all fees for an order. '
+      parameters:
+        - $ref: '#/components/parameters/order_id_path'
 components:
   parameters:
     Accept:
@@ -1271,13 +1422,21 @@ components:
       description: Shipping consignment ID.
       schema:
         type: integer
+    consignment_structure:
+      name: consignment_structure
+      in: query
+      schema:
+        type: string
+        enum:
+          - object
+      description: Should be specified along with `include=consignments` or `include=consignments.line_items` to return consignments in the supported object structure. The default array structure provided is legacy and may not be supported in the future.
     order_includes:
       name: include
       in: query
       description: |-
-        * `consignments` - include the response returned from the request to the `/orders/{order_id}/consignments` endpoint.
-        
-        * `consignments.line_items` - include the response returned from the request to the `/orders/{order_id}/products` endpoint in consignments. This implies `include=consignments`.
+        * `consignments` - include the response returned from the request to the `/orders/{order_id}/consignments` endpoint. You should also specify `consignment_structure=object` as a request parameter when including consignments. The default array structure provided is legacy and may not be supported in the future.
+        * `consignments.line_items` - include the response returned from the request to the `/orders/{order_id}/products` endpoint in consignments. This implies `include=consignments`. You should also specify `consignment_structure=object` as a request parameter when including consignments. The default array structure provided is legacy and will be removed in the future.
+        * `fees` - include the response returned from the request to the `/orders/{order_id}/fees` endpoint.
       style: form
       explode: false
       schema:
@@ -1287,6 +1446,7 @@ components:
           enum:
             - consignments
             - consignments.line_items
+            - fees
   responses:
     orderStatusCollection_Resp:
       description: Get All Order Status Collection Response.
@@ -1628,7 +1788,7 @@ components:
           schema:
             $ref: '#/components/schemas/order_Resp'
           examples:
-            response:
+            Response:
               value:
                 id: 218
                 customer_id: 11
@@ -1722,6 +1882,27 @@ components:
                 custom_status: Awaiting Payment
                 customer_locale: en
                 external_order_id: external-order-id
+                fees:
+                  - id: 1
+                    type: custom_fee
+                    display_name_customer: A Fee
+                    display_name_merchant: A Fee
+                    source: AA
+                    base_cost: '12.3000'
+                    cost_exc_tax: '12.3000'
+                    cost_inc_tax: '12.3000'
+                    cost_tax: '0.0000'
+                    tax_class_id: 22
+                  - id: 2
+                    type: custom_fee
+                    display_name_customer: B Fee
+                    display_name_merchant: B Fee
+                    source: AA
+                    base_cost: '4.0000'
+                    cost_ex_tax: '4.0000'
+                    cost_inc_tax: '12.0000'
+                    cost_tax: '8.0000'
+                    tax_class_id: null
             'Multiple Items':
               value:
                 id: 247
@@ -2899,15 +3080,15 @@ components:
           oneOf:
             - type: number
             - type: string
-        width: 
+        width:
           description: Product width. The value can't be negative.
           type: string
           example: "1.0000"
-        height: 
+        height:
           description: Product height. The value can't be negative.
           type: string
           example: "1.0000"
-        depth: 
+        depth:
           description: Product depth. The value can't be negative.
           type: string
           example: "1.0000"
@@ -2934,7 +3115,7 @@ components:
           description: Numeric ID for the refund.
           example: 0
           type: number
-        wrapping_id: 
+        wrapping_id:
           description: ID of the gift wrapping option.
           example: 0
           type: integer
@@ -3022,7 +3203,7 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/orderProductOptions'
-        configurable_fields: 
+        configurable_fields:
           type: array
           description: Available for only [Catalog V2 stores](/docs/store-operations/catalog/migration).
           items:
@@ -3182,9 +3363,10 @@ components:
           type: integer
         tax_class_id:
           description: |-
-            The unique numeric identifier of the tax class object. NOTE: Will be 0 if automatic tax was enabled, or if the default tax class was used.
+            A unique numeric identifier for the tax class. If not provided or null, the default fee tax class from the control panel is used.
           example: 0
           type: integer
+          nullable: true
         name:
           description: The name of the tax class object.
           example: "State Tax"
@@ -3653,7 +3835,7 @@ components:
           description: The custom tracking link supplied on POST or PUT shipments. For the link to one of our integrated providers or Aftership tracking link see the `generated_tracking_link` property.
           example: https://www.mycustomtrackinglink.com/tracking
           maxLength: 500
-        merchant_shipping_cost: 
+        merchant_shipping_cost:
           type: string
           description: Shipping cost for the merchant.
           example: "1.0000"
@@ -3703,7 +3885,7 @@ components:
           description: Tracking number of the shipment.
           example: w4se4b6ASFEW4T
           type: string
-        merchant_shipping_cost: 
+        merchant_shipping_cost:
           type: string
           description: Shipping cost for the merchant.
           example: "1.0000"
@@ -3902,11 +4084,17 @@ components:
           example: '0.0000'
           type: string
         shipping_cost_ex_tax:
-          description: The value of shipping cost, excluding tax. The value can't be negative. (Float, Float-As-String, Integer)
+          description: >
+            The value of shipping cost, excluding tax.
+            When specified in a POST or PUT request, the field `shipping_cost_inc_tax` is also required.
+            The value can't be negative (Float, Float-As-String, Integer)
           example: '0.0000'
           type: string
         shipping_cost_inc_tax:
-          description: The value of shipping cost, including tax. The value can't be negative. (Float, Float-As-String, Integer)
+          description: >
+            The value of shipping cost, including tax.
+            When specified in a POST or PUT request, the field `shipping_cost_ex_tax` is also required.
+            The value can't be negative. (Float, Float-As-String, Integer)
           example: '0.0000'
           type: string
         staff_notes:
@@ -4196,6 +4384,10 @@ components:
           description: The status ID of the order.
         billing_address:
           $ref: '#/components/schemas/billingAddress_Resp'
+        fees:
+          type: array
+          items:
+            $ref: '#/components/schemas/orderFees_Resp'
     orderCustomProduct_Put:
       type: object
       title: Custom product
@@ -4662,6 +4854,10 @@ components:
               description: The value of the wrapping cost, including tax. The value can't be negative. (Float, Float-As-String, Integer)
               example: '0.0000'
               type: string
+            fees:
+              type: array
+              items:
+                $ref: '#/components/schemas/orderFees_Put'
     order_Post:
       title: order_Post
       description: Products and Billing address only required for POST operation.
@@ -4692,6 +4888,11 @@ components:
                         example: Free Shipping
             consignments:
               $ref: '#/components/schemas/orderConsignment_Post'
+            fees:
+              type: array
+              items:
+                allOf:
+                  - $ref: '#/components/schemas/orderFees_Post'
         - $ref: '#/components/schemas/order_Shared'
       x-internal: false
     shippingAddress_Put:
@@ -5415,3 +5616,154 @@ components:
           line_items:
             - url: 'https://api.bigcommerce.com/stores/{store_hash}/v2/orders/129/products/12'
               resource: /orders/129/products/12
+    orderFees_Resp:
+      title: orderFees_Resp
+      type: object
+      properties:
+        id:
+          description: The unique numeric identifier of the fees object.
+          example: 1
+          type: integer
+        type:
+          description: The type of the fee.
+          type: string
+          enum:
+            - custom_fee
+        display_name_customer:
+          description: The display name of the fee targeting customers.
+          example: Package Protection Insurance
+          type: string
+        display_name_merchant:
+          description: The display name of the fee targeting shoppers.
+          example: Package Protection Fee
+          type: string
+        source:
+          description: The source of the request.
+          example: "v2"
+          type: string
+        base_cost:
+          description: |-
+            The base fee cost value. (Float, Float-As-String, Integer)
+          example: 8.5000
+          oneOf:
+            - type: string
+            - type: number
+        cost_ex_tax:
+          description: The fee cost value excluding tax. (Float, Float-As-String, Integer)
+          example: 8.5000
+          oneOf:
+            - type: string
+            - type: number
+        cost_inc_tax:
+          description: The fee cost value including tax. (Float, Float-As-String, Integer)
+          example: 10.0000
+          oneOf:
+            - type: string
+            - type: number
+        cost_tax:
+          description: The tax amount on the fee cost. (Float, Float-As-String, Integer)
+          example: 1.5000
+          oneOf:
+            - type: string
+            - type: number
+        tax_class_id:
+          description: A unique numeric identifier for the tax class. If not persisted or null, the default fee tax class from the control panel is used.
+          example: 0
+          type: integer
+          nullable: true
+    orderFees_Post:
+      title: orderFees_Post
+      type: object
+      properties:
+        type:
+          description: The type of the fee.
+          type: string
+          enum:
+            - custom_fee
+        display_name_customer:
+          description: The display name of the fee targeting customers.
+          example: Package Protection Insurance
+          type: string
+        display_name_merchant:
+          description: The display name of the fee targeting shoppers.
+            NOTE - At least one of the following fields (display_name_customer, display_name_merchant) must be included in the request.
+          example: Package Protection Fee
+          type: string
+        source:
+          description: The source of the request.
+          example: "v2"
+          type: string
+        cost_ex_tax:
+          description: The fee cost value excluding tax. (Float, Float-As-String, Integer)
+          example: 8.5000
+          oneOf:
+            - type: string
+            - type: number
+        cost_inc_tax:
+          description: The fee cost value including tax. (Float, Float-As-String, Integer)
+          example: 10.0000
+          oneOf:
+            - type: string
+            - type: number
+        cost_tax:
+          description: The tax amount on the fee cost. (Float, Float-As-String, Integer)
+            NOTE - At least two of the following fields (cost_ex_tax, cost_inc_tax, and cost_tax) must be included in the request.
+          example: 1.5000
+          oneOf:
+            - type: string
+            - type: number
+        tax_class_id:
+          description: A unique numeric identifier for the tax class. If not provided or null, the default fee tax class from the control panel is used.
+          example: 1
+          type: integer
+          nullable: true
+    orderFees_Put:
+      title: orderFees_Put
+      type: object
+      properties:
+        id:
+          description: The unique numeric identifier of the fees object.
+          example: 1
+          type: integer
+        type:
+          description: The type of the fee.
+          type: string
+          enum:
+            - custom_fee
+        display_name_customer:
+          description: The display name of the fee targeting customers.
+          example: Package Protection Insurance
+          type: string
+        display_name_merchant:
+          description: The display name of the fee targeting shoppers.
+            NOTE - At least one of the following fields (display_name_customer, display_name_merchant) must be included in the request.
+          example: Package Protection Fee
+          type: string
+        source:
+          description: The source of the request.
+          example: "v2"
+          type: string
+        cost_ex_tax:
+          description: The fee cost value excluding tax. (Float, Float-As-String, Integer)
+          example: 8.5000
+          oneOf:
+            - type: string
+            - type: number
+        cost_inc_tax:
+          description: The fee cost value including tax. (Float, Float-As-String, Integer)
+          example: 10.0000
+          oneOf:
+            - type: string
+            - type: number
+        cost_tax:
+          description: The tax amount on the fee cost. (Float, Float-As-String, Integer)
+            NOTE - At least two of the following fields (cost_ex_tax, cost_inc_tax, and cost_tax) must be included in the request.
+          example: 1.5000
+          oneOf:
+            - type: string
+            - type: number
+        tax_class_id:
+          description: A unique numeric identifier for the tax class. If not provided or null, the default fee tax class from the control panel is used.
+          example: 2
+          type: integer
+          nullable: true

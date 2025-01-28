@@ -52,7 +52,7 @@ paths:
       parameters:
         - name: page
           in: query
-          description: Page number. `page=1`
+          description: Page number (`page` will be ignored if you provide `before` or `after` in the request). For example `page=1`.
           schema:
             type: integer
         - in: query
@@ -208,9 +208,19 @@ paths:
               - 'last_name:desc'
               - 'date_modified:asc'
               - 'date_modified:desc'
+        - name: after
+          in: query
+          description: 'The cursor reference of the last entry for the previous page. Use the `end_cursor` value from the last response to get the next page (`end_cursor` is only returned on the first page or when the request contains query parameter `before` or `after`). For example `after=eyJpZCI6MjA0fQ`. '
+          schema:
+            type: string
+        - name: before
+          in: query
+          description: 'The cursor reference of the first entry for the next page. Use the `start_cursor` value from the last response to get the previous page (`start_cursor` is only returned on the first page or when the request contains query parameter `before` or `after`). For example `before=eyJpZCI6MjA1fQ`.'
+          schema:
+            type: string
       responses:
         '200':
-          $ref: '#/components/responses/CustomerCollectionResponse'
+          $ref: '#/components/responses/GetCustomerCollectionResponse'
         '422':
           description: |
             The optional filter parameter was not valid. This is the result of missing required fields, or of invalid data. See the response for more details.
@@ -1452,7 +1462,7 @@ paths:
             default: application/json
         - name: page
           in: query
-          description: Page number. `page=1`
+          description: Page number (`page` will be ignored if you provide `before` or `after` in the request). For example `page=1`.
           schema:
             type: integer
         - in: query
@@ -1498,6 +1508,16 @@ paths:
               - radiobuttons
               - text
               - picklist
+        - name: after
+          in: query
+          description: 'The cursor reference of the last entry for the previous page. Use the `end_cursor` value from the last response to get the next page (`end_cursor` is only returned on the first page or when the request contains query parameter `before` or `after`). For example `after=eyJzZXNzaW9uSWQiOjM4LCJmaWVsZElkIjo0MH0`. '
+          schema:
+            type: string
+        - name: before
+          in: query
+          description: 'The cursor reference of the first entry for the next page. Use the `start_cursor` value from the last response to get the previous page (`start_cursor` is only returned on the first page or when the request contains query parameter `before` or `after`). For example `before=eyJzZXNzaW9uSWQiOjgsImZpZWxkSWQiOjMxfQ`.'
+          schema:
+            type: string
     put:
       responses:
         '200':
@@ -2233,7 +2253,55 @@ components:
                 items:
                   $ref: '#/components/schemas/customer_Full'
               meta:
-                $ref: '#/components/schemas/_metaCollection'
+                  $ref: '#/components/schemas/MetaOpen'
+          examples:
+            example-1:
+              value:
+                data:
+                  - email: string@example.com
+                    first_name: string
+                    last_name: string
+                    company: string
+                    phone: string
+                    notes: string
+                    tax_exempt_category: string
+                    customer_group_id: 0
+                    addresses: 
+                      - first_name: string
+                        last_name: string
+                        address1: Addr1
+                        address2: ''
+                        city: string
+                        state_or_province: string
+                        postal_code: string
+                        country_code: st
+                        phone: string
+                        address_type: residential
+                        customer_id: 0
+                        id: 0
+                        country: string 
+                    store_credit_amounts:
+                      - amount: 43.15
+                    accepts_product_review_abandoned_cart_emails: true
+                    channel_ids:
+                      - 1
+                    shopper_profile_id: "82511e54-4040-40fe-b742-2b25655f205b"
+                    segment_ids: 
+                      - "5bb733a9-5491-47b3-9451-9ae8d6a6bc6b"
+                meta: {}
+    GetCustomerCollectionResponse:
+      description: Get Customer Collection Response
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                type: array
+                items:
+                  $ref: '#/components/schemas/customer_Full'
+              meta:
+                $ref: '#/components/schemas/_metaCollectionWithCursorPagination'
           examples:
             example-1:
               value:
@@ -2278,6 +2346,14 @@ components:
                     links:
                       previous: string
                       current: string
+                      next: string
+                  cursor_pagination:
+                    count: 0
+                    per_page: 0
+                    start_cursor: string
+                    end_cursor: string
+                    links:
+                      previous: string
                       next: string
     AddressCollectionResponse:
       description: ''
@@ -2840,49 +2916,7 @@ components:
                       title: Customer Address Form Field Value
                   title: 'Form Field Value '
               meta:
-                title: Collection Meta
-                description: Data about the response, including pagination and collection totals.
-                type: object
-                properties:
-                  pagination:
-                    title: Pagination
-                    description: Data about the response, including pagination and collection totals.
-                    type: object
-                    properties:
-                      total:
-                        description: Total number of items in the result set.
-                        type: integer
-                        format: int32
-                      count:
-                        description: Total number of items in the collection response.
-                        type: integer
-                        format: int32
-                      per_page:
-                        description: 'The amount of items returned in the collection per page, controlled by the limit parameter.'
-                        type: integer
-                        format: int32
-                      current_page:
-                        description: The page you are currently on within the collection.
-                        type: integer
-                        format: int32
-                      total_pages:
-                        description: The total number of pages in the collection.
-                        type: integer
-                        format: int32
-                      links:
-                        title: Links
-                        description: Pagination links for the previous and next parts of the whole collection.
-                        type: object
-                        properties:
-                          previous:
-                            description: Link to the previous page returned in the response.
-                            type: string
-                          current:
-                            description: Link to the current page returned in the response.
-                            type: string
-                          next:
-                            description: Link to the next page returned in the response.
-                            type: string
+                $ref: '#/components/schemas/_metaCollectionWithCursorPagination'
           examples:
             Customer and Customer Address Form Fields example:
               value:
@@ -2939,6 +2973,14 @@ components:
                     per_page: 50
                     total: 15
                     total_pages: 1
+                  cursor_pagination:
+                    count: 0
+                    per_page: 0
+                    start_cursor: string
+                    end_cursor: string
+                    links:
+                      previous: string
+                      next: string
             Customer Form Fields example:
               value:
                 data:
@@ -2958,6 +3000,14 @@ components:
                     per_page: 50
                     total: 3
                     total_pages: 1
+                  cursor_pagination:
+                    count: 0
+                    per_page: 0
+                    start_cursor: string
+                    end_cursor: string
+                    links:
+                      previous: string
+                      next: string
             Customer Address Form Fields example:
               value:
                 data:
@@ -2971,6 +3021,14 @@ components:
                     per_page: 50
                     total: 1
                     total_pages: 1
+                  cursor_pagination:
+                    count: 0
+                    per_page: 0
+                    start_cursor: string
+                    end_cursor: string
+                    links:
+                      previous: string
+                      next: string
     FormFieldValuesResponse:
       description: ''
       content:
@@ -3226,6 +3284,28 @@ components:
         links:
           $ref: '#/components/schemas/Links'
       x-internal: false
+    CursorPagination:
+      title: Cursor Pagination
+      description: Data about cursor pagination.
+      type: object
+      properties:
+        count:
+          description: Total number of items in the collection response.
+          type: integer
+          format: int32
+        per_page:
+          description: The amount of items returned in the collection per page, controlled by the limit parameter.
+          type: integer
+          format: int32
+        start_cursor:
+          description: A string representing the starting point of the current page in the collection
+          type: string
+        end_cursor:
+          description: A string representing the ending point of the current page in the collection.
+          type: string
+        links:
+          $ref: '#/components/schemas/Links'
+      x-internal: false
     _metaCollection:
       title: _metaCollection
       description: Data about the response, including pagination and collection totals.
@@ -3233,6 +3313,16 @@ components:
       properties:
         pagination:
           $ref: '#/components/schemas/Pagination'
+      x-internal: false
+    _metaCollectionWithCursorPagination:
+      title: _metaCollection
+      description: Data about the response, including pagination and collection totals. Both `pagination` and `cursor_pagination` would be returned in the first page. Only `pagination` would be returned when page is greater than 1. Only `cursor_pagination` would be returned when `before` or `after` is provided in the request.
+      type: object
+      properties:
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+        cursor_pagination:
+          $ref: '#/components/schemas/CursorPagination'
       x-internal: false
     MetaOpen:
       title: Response meta

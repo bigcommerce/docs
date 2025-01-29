@@ -340,6 +340,108 @@ query brands {
 
 If `first` is not specified, a query returns only 10 items by default.
 
+### GraphQL bi-directional pagination
+
+The GraphQL Storefront API supports bi-directional pagination, enabling both forward and backward navigation through data. The following pagination options are available:
+
+* Base query: Fetching the initial set of data.
+* Forward pagination: Moving forward in the dataset.
+* Backward pagination: Moving backward through the dataset.
+
+**Base Query**: 
+
+The base query provides the first page of results. You can use this query as the starting point for the next pagination queries. The example below demonstrates how to query the first 50 products.
+
+```graphql filename="Example base query" showLineNumbers copy
+ query {
+  site {
+    products(first: 50) {
+      pageInfo {
+        startCursor
+        endCursor
+        hasNextPage
+        hasPreviousPage
+      }
+      edges {
+        cursor
+        node {
+          entityId
+          name
+        }
+      }
+    }
+  }
+}
+```
+In this query:
+* `first: 50`: Retrieves the first 50 products.
+* pageInfo: Contains pagination metadata:
+  * `startCursor`: The cursor for the first product.
+  * `endCursor`: The cursor for the last product.
+  * `hasNextPage`: Indicates if there are more products after the current page.
+  * `hasPreviousPage`: Indicates if there are products before the current page.
+
+**Forward pagination**: 
+
+For forward pagination, you can use the `hasNextPage=true` and `hasPreviousPage=false` flags. This allows you to load the next set of results. The example below queries the first 5 products.
+
+```graphql filename="Example of forward pagination" showLineNumbers copy
+ query {
+  site {
+    products(first: 5) {
+      pageInfo {
+        startCursor
+        endCursor
+        hasNextPage
+        hasPreviousPage
+      }
+      edges {
+        cursor
+        node {
+          entityId
+          name
+        }
+      }
+    }
+  }
+}
+```
+
+In this query:
+* `first: 5`: Retrieves the first 5 products.
+* The `pageInfo` object provides information about whether there are additional pages to fetch in the forward direction (`hasNextPage`).
+
+**Backward pagination**: 
+
+To paginate backwards, you can use the `hasNextPage=false` and `hasPreviousPage=true` flags. The flags are helpful for retrieving data from previous pages. The example below shows how to query the last 5 products.
+
+```graphql filename="Example of forward pagination" showLineNumbers copy
+  query {
+  site {
+    products(last: 5, before: "YXJyYXljb25uZWN0aW9uOjU=") {
+      pageInfo {
+        startCursor
+        endCursor
+        hasNextPage
+        hasPreviousPage
+      }
+      edges {
+        cursor
+        node {
+          entityId
+          name
+        }
+      }
+    }
+  }
+}
+```
+In this query:
+* `last: 5`: Fetches the first 5 products.
+* `before: "YXJyYXljb25uZWN0aW9uOjU="`: A cursor from a previous result, indicating where the backward pagination should begin.
+
+The `pageInfo` will tell you if there are more products in the backward direction (via `hasPreviousPage`) and if there are pages ahead (via `hasNextPage`).
+
 ## Complexity limits
 
 Complexity scores estimate the load that a single GraphQL request may generate. BigCommerce calculates the complexity score using an algorithm before executing the call, based on the provided query.

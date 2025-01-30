@@ -1,0 +1,44 @@
+# Authentication options
+
+## Stable tokens
+
+### Stable tokens authentication methods
+| Authentication Type | API Description | Authentication Method | Example Request/Reference | Notes |
+|:----------------|:-------------------|:-----------------|:----------------|:---------------|
+| Access Tokens | Most REST and GraphQL Admin APIs | `X-Auth-Token` header with access token | `GET https://api.bigcommerce.com/stores/{{STORE_HASH}}/...` | OAuth-based authentication. Access tokens are required for most requests. |
+| Client ID | Current Customer API | Mutual authentication (API account’s client ID) | `GET /customer/current.jwt?app_client_id={{apiAccountClientId}}` | Used to securely identify and return a JWT. |
+
+## Dynamic tokens
+
+### Dynamic tokens authentication methods
+| Authentication Type | API Description | Authentication Method| Example Request/Reference  | Notes |
+|:----------------|:-------------------|:-----------------|:----------------|:---------------|
+| BigCommerce-generated JWTs | GraphQL Storefront API, Payment processing | `Authorization` header with Bearer token | `POST https://api.bigcommerce.com/stores/{{STORE_HASH}}/some-token-generating-endpoint` | JWT is concatenated with "Bearer" in the header for authentication. |
+| User-generated JWTs | Customer Login API | Custom-generated JWT | `GET /login/token/{{yourJwt}}` | JWT contains the request payload and authenticates the request. |
+| BigCommerce-encrypted Payload JWTs | Apps (installation, loading, etc.) | BigCommerce-generated JWT with encrypted payload | Various app events | Used for app callback events. The app decrypts and validates the payload. |
+
+## CORS authentication
+
+### CORS authentication methods
+| Authentication Type | API Description | Authentication Method| Example Request/Reference  | Notes |
+|:----------------|:-------------------|:-----------------|:----------------|:---------------|
+| Same-origin CORS Authentication | REST Storefront API | No token required| `GET /api/storefront/carts?include=lineItems.physicalItems.options` | No tokens are needed; relies on browser context (same-origin).|
+
+## Developer-configured authentication 
+
+### REST Provider APIs
+| API Description | API Reference | Configuration Reference | Associated API Account  | Authentication Method |
+|:----------------|:-------------------|:-----------------|:----------------|:---------------|
+| Shipping Provider API | Shipping Provider Reference | Configure during registration | App | Developer-defined request body keys |
+| Tax Provider API | Tax Provider Reference | Update a tax provider connection | App | `Authorization: Basic {{base64encode(username:password)}}` |
+
+## Storefront GraphQL API
+
+| Authentication Method | Description | Example Request  | Security Considerations |
+|:----------------|:-------------------|:-----------------|:----------------|
+| Storefront Tokens | Best for browser and server-to-server requests that don't involve customer data. Allows querying information from an anonymous shopper's perspective. | `POST https://your_store.example.com/graphql`<br></br>`Authorization: Bearer {token}`<br></br> `Accept: application/json`<br></br> `Content-Type: application/json` | Safe to expose in web browsers. Token should be scoped to specific CORS origins. Rotate periodically for security.|
+| Customer Impersonation Tokens | Used for server-to-server communications when you need to impersonate a customer. This method is not suitable for client-side (browser) requests. | `POST https://api.bigcommerce.com/stores/{{STORE_HASH}}/v3/storefront/api-token-customer-impersonation` <br></br> `X-Auth-Token: {{access_token}}` <br></br> `Content-Type: application/json` <br></br> | Sensitive token—never expose publicly. Store securely, similar to API keys. | 
+| Customer Access Tokens | Tied to a specific customer account and used for accessing customer data in GraphQL requests. Can only be used in server-to-server contexts. | `POST https://{{store.Domain}}/graphql` <br></br>`Authorization: Bearer {Storefront token}`<br></br> `X-Bc-Customer-Access-Token: {Customer access token}` <br></br> Accept: application/json`<br></br> | Tied directly to the customer. Becomes invalid upon logout.Must be kept secure and should not be exposed in client-side code.|
+| Auto-generated Tokens (Stencil) | Automatically generated for Stencil storefronts to be passed to client-side code for a 24-48 hour period. Rotates before expiration. | `{{settings.storefront_api.token}}` (Handlebars property) | Automatically managed. Token expires every 24-48 hours and rotates.|
+| Customer Login Mutation | Used to authenticate a customer using their email and password to create a session and generate a customer access token for server-to-server use. |  `mutation Login($email: String!, $pass: String!) {...}`<br></br> `Authorization: Bearer {Storefront token}`| Security best practice to use variables for email and password in the query to avoid exposing sensitive data in logs.|
+| Customer Logout Mutation | Used to log a customer out and revert the session to a "guest" version.	mutation Logout { logout { result } } | `mutation Logout { logout { result } }` | Logs out the customer and reverts to an anonymous session, ensuring future requests are from a guest shopper.|

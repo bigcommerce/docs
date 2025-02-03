@@ -87,6 +87,39 @@ Query all products by not including an argument for `products`.
 
 You can also query for featured products, related products, and more. See the [GraphQL Storefront Playground](https://developer.bigcommerce.com/graphql-storefront/playground) for full schema documentation.
 
+### Get a product and account for redirects
+
+Query a list of products by matching the `Redirect` type. The `Redirect` node on the `route` node will always return the redirect details if they exist for a given path. If no redirect exists, it will return `null`.
+
+The `route` node has a redirect enum argument with a default value of `IGNORE`. The `route` node is backward compatible.
+
+The possible values for this enum are:
+
+IGNORE: The Storefront GraphQl API does not consider redirects and only uses custom URLs. If you configure both a redirect and an entity URL for the same path, both the `redirect` node and the `node` node will return their respective non-null values.
+
+FOLLOW: 
+
+* If you configure a dynamic/association redirect, the `node` node will return the entity (e.g., category, product) to which the redirect points.
+* If you configure a static/manual redirect, the `node` node will return `null` (since there's no associated entity), but the redirect node will still return the redirect details.
+
+```graphql filename="Get a product with the `Redirect` type" showLineNumbers copy
+# Query using the `node`.
+
+query {
+  site {
+    route(path: "/laura-ashley-duck-egg-paint/113699-master/", redirect: [FOLLOW|IGNORE] = IGNORE) {
+      redirect # <--- new redirect node of a type Redirect
+      node {
+        id
+        ... on Product {
+          name
+        }
+      }
+    }
+  }
+}
+```
+
 ## Get product identifiers
 
 Query basic information for products. The following query retrieves both product identifiers and basic information for the specified product:

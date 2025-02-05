@@ -1,0 +1,66 @@
+# Routes with the GraphQL Storefront API
+
+BigCommerce's GraphQL Storefront API lets you retrieve routes from each storefront channel. By accessing routes and product URLs, you can easily build headless storefront applications using BigCommerce's built-in content.
+
+The `LookUpUrl` capability supports redirects, helping you determine which pages to display. The `Redirect` node within the `route` node will return redirect details if they exist for a given path. If no redirect is configured, it will return `null`.
+
+The `route` node includes a redirect argument with a default value of `IGNORE`. This makes the `route` node backward-compatible with previous API versions.
+
+## Redirect enum values
+
+The redirect argument supports the following values:
+
+* **IGNORE**: The Storefront GraphQL API ignores redirects and uses custom URLs. If both a redirect and an entity URL are configured for the same path, both the `redirect` and `node` nodes will return non-null values for their respective URLs.
+
+* **FOLLOW**: 
+
+    * For dynamic or association redirects, the `node` node will return the entity (e.g., category, product) to which the redirect points.
+    * For static/manual redirects, the `node` node will return null (since there’s no associated entity), but the `redirect` node will still return the redirect details.
+
+## Example query
+
+Here is an example query for retrieving a product with the redirect type:
+
+```graphql filename="Get a product with the `Redirect` type" showLineNumbers copy
+
+ query LookUpUrl(
+   $urlPath: String!
+   # Use GraphQL Query Variables to provide a path
+ ) {
+   site {
+     route(path: $urlPath) {
+       node {
+         __typename
+         id
+         # A different response is returned based on which type of object was matched
+         ... on Category {
+           name
+           description
+         }
+         ... on Brand {
+           name
+           defaultImage {
+             url(width: 200)
+           }
+         }
+         ... on Product {
+           name
+           description
+           images {
+             edges {
+               node {
+                 url(width: 500, height: 500)
+               }
+             }
+           }
+         }
+         ... on Redirect {
+           # all redirect attributes
+           toUrl
+         }
+       }
+     }
+   }
+ }
+```
+

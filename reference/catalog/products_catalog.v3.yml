@@ -3411,9 +3411,7 @@ paths:
                             type: integer
                             description: Unique ID of the *Bulk Pricing Rule*. Read-Only.
                             readOnly: true
-                        required:
-                          - id
-                      - $ref: '#/components/schemas/bulkPricingRule_Full'
+                      - $ref: '#/components/schemas/bulkPricingRule_Response'
                   meta:
                     $ref: '#/components/schemas/metaEmpty_Full'
               example:
@@ -3424,6 +3422,51 @@ paths:
                   type: price
                   amount: 1
                 meta: {}
+    get:
+      tags:
+        - Bulk pricing rules
+      summary: Get all Bulk Pricing Rules
+      description: Returns all *Bulk Pricing Rules*. Optional parameters can be passed in.
+      operationId: getAllBulkPricingRules
+      parameters:
+        - $ref: '#/components/parameters/IncludeFieldsBulkPricingParam'
+        - $ref: '#/components/parameters/ExcludeFieldsParam'
+      responses:
+         '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                title: 'Get All Bulk Pricing Rules Response'
+                type: object
+                properties:
+                  data:
+                    allOf:
+                      - type: object
+                        properties:
+                          id:
+                            type: integer
+                            description: Unique ID of the *Bulk Pricing Rule*. Read-Only.
+                            readOnly: true
+                      - $ref: '#/components/schemas/bulkPricingRule_Response'
+                  meta:
+                    $ref: '#/components/schemas/metaCollection_Full'
+              example:
+                data:
+                  id: 83
+                  quantity_min: 1
+                  quantity_max: 3
+                  type: price
+                  amount: 1
+                meta:
+                  pagination:
+                    total: 2
+                    count: 2
+                    per_page: 50
+                    current_page: 1
+                    total_pages: 1
+                    links:
+                      current: '?page=1&limit=50'
   '/catalog/products/{product_id}/bulk-pricing-rules/{bulk_pricing_rule_id}':
     get:
       tags:
@@ -3432,7 +3475,7 @@ paths:
       description: Returns a single *Bulk Pricing Rule*. Optional parameters can be passed in.
       operationId: getBulkPricingRule
       parameters:
-        - $ref: '#/components/parameters/IncludeFieldsParam'
+        - $ref: '#/components/parameters/IncludeFieldsBulkPricingParam'
         - $ref: '#/components/parameters/ExcludeFieldsParam'
       responses:
         '200':
@@ -3453,7 +3496,7 @@ paths:
                             readOnly: true
                         required:
                           - id
-                      - $ref: '#/components/schemas/bulkPricingRule_Full'
+                      - $ref: '#/components/schemas/bulkPricingRule_Response'
                   meta:
                     $ref: '#/components/schemas/metaEmpty_Full'
               example:
@@ -3532,9 +3575,7 @@ paths:
                             type: integer
                             description: Unique ID of the *Bulk Pricing Rule*. Read-Only.
                             readOnly: true
-                        required:
-                          - id
-                      - $ref: '#/components/schemas/bulkPricingRule_Full'
+                      - $ref: '#/components/schemas/bulkPricingRule_Response'
                   meta:
                     $ref: '#/components/schemas/metaEmpty_Full'
               example:
@@ -4642,7 +4683,12 @@ paths:
                     $ref: '#/components/schemas/MetaPaginationObject'
     put:
       summary: Create Products Channel Assignments
-      description: Creates products channel assignments.
+      description: |
+        Creates products channel assignments.
+
+        Notes:
+         * Avoid parallel assignment requests if possible.
+         * Do not make parallel assignment requests with the same product IDs.
       operationId: createProductsChannelAssignments
       parameters:
         - $ref: '#/components/parameters/ContentType'
@@ -5678,12 +5724,6 @@ components:
       title: productImage_Base
       type: object
       properties:
-        image_url:
-          type: string
-          description: |
-            The URL for an image displayed on the storefront when the conditions are applied. Limit of 8MB per file.
-
-            Cannot be used with `image_file`.
         is_thumbnail:
           type: boolean
           description: |
@@ -5716,6 +5756,13 @@ components:
               type: integer
               description: |
                 The unique numeric identifier for the product with which the image is associated.
+            image_url:
+              maxLength: 255
+              type: string
+              description: |
+                The URL for an image displayed on the storefront when the conditions are applied. Limit of 8MB per file.
+
+                Cannot be used with `image_file`.
           description: Common ProductImage properties.
         - $ref: '#/components/schemas/productImage_Base'
       x-internal: false
@@ -6055,6 +6102,43 @@ components:
             Optional field. This field automatically creates a dynamic 301 redirect when a product URL change occurs with a PUT request. Existing dynamic redirects will automatically update to a new URL to avoid a loop.
       description: The custom URL for the product on the storefront. If not provided in the POST request, the URL will be autogenerated from the product name.
       x-internal: false
+    bulkPricingRule_Response:
+      title: bulkPricingRule_Response
+      type: object
+      properties:
+        quantity_min:
+          minimum: 0
+          type: integer
+          description: |
+            The minimum inclusive quantity of a product to satisfy this rule. Must be greater than or equal to zero. For `fixed` rules, the minimum quantity canʼt be less than two.
+            Required in /POST.
+          example: 10
+        quantity_max:
+          minimum: 0
+          type: integer
+          description: |-
+            The maximum inclusive quantity of a product to satisfy this rule. Must be greater than the `quantity_min` value – unless this field has a value of 0 (zero), in which case there will be no maximum bound for this rule.
+            Required in /POST.
+          example: 50
+        type:
+          type: string
+          description: |-
+            The type of adjustment that is made. Values: `price` - the adjustment amount per product; `percent` - the adjustment as a percentage of the original price; `fixed` - the adjusted absolute price of the product.
+            Required in /POST.
+          example: price
+          enum:
+            - price
+            - percent
+            - fixed
+        amount:
+          oneOf:
+            - type: number
+              example: 10
+            - type: string
+              example: '.10'
+          description: |-
+            You can express the adjustment type as either a fixed dollar amount or a percentage. Send a number; the response will return a number for `price` and `fixed` adjustments.
+            Divide the adjustment percentage by 100 and send the result in string format. For example, represent 10% as “.10”. The response will return a float value for both `price` and `percentage` adjustments. 
     bulkPricingRule_Full:
       title: bulkPricingRule_Full
       type: object
@@ -6434,6 +6518,12 @@ components:
               type: integer
               description: |
                 The unique numeric identifier for the product with which the image is associated.
+            image_url:
+              type: string
+              description: |
+                The URL for an image displayed on the storefront when the conditions are applied. Limit of 8MB per file.
+
+                Cannot be used with `image_file`.
             url_zoom:
               readOnly: true
               type: string
@@ -9351,6 +9441,21 @@ components:
           - inventory_level
           - is_visible
           - total_sold
+    IncludeFieldsBulkPricingParam:
+      name: include_fields
+      in: query
+      description: Fields to include, in a comma-separated list. The ID and the specified fields will be returned.
+      style: form
+      explode: false
+      schema:
+        type: array
+        items:
+          type: string
+          enum:
+          - quantity_min
+          - quantity_max
+          - type
+          - amount
     IncludeFieldsParam:
       name: include_fields
       in: query

@@ -1,66 +1,204 @@
 # Routes with the GraphQL Storefront API
 
-BigCommerce's GraphQL Storefront API lets you retrieve routes from each storefront channel. By accessing routes and product URLs, you can easily build headless storefront applications using BigCommerce's built-in content.
+Routes define specific URL paths for fetching or updating data. The BigCommerce GraphQL Storefront API allows you to retrieve routes for each storefront channel, making it easier to build headless storefront applications using BigCommerce's built-in content. 
 
-The `LookUpUrl` capability supports redirects, helping you determine which pages to display. The `Redirect` node within the `route` node will return redirect details if they exist for a given path. If no redirect is configured, it will return `null`.
+When querying a `route`, the response may include the following node types:
 
-The `route` node includes a redirect argument with a default value of `IGNORE`. This makes the `route` node backward-compatible with previous API versions.
+* Product
+* Category
+* Brand
+* NormalPage
+* ContactPage
+* RawHtmlPage
+* Blog
+* BlogPost
+
+## Enhanced redirect support
+
+The new `LookUpUrl` capability now supports redirects, helping you determine the appropriate page to display. If a redirect exists for a given path, the `Redirect` node within the `route` query returns the redirect details. Otherwise, it returns `null`.
 
 ## Redirect enum values
 
-The redirect argument supports the following values:
+The `redirectBehavior` argument supports two values:
 
-* **IGNORE**: The Storefront GraphQL API ignores redirects and uses custom URLs. If both a redirect and an entity URL are configured for the same path, both the `redirect` and `node` nodes will return non-null values for their respective URLs.
+* **IGNORE**(default): 
+
+   * The Storefront GraphQL API disregards redirects and prioritizes custom URLs. 
+   * If both a redirect and an entity URL exist for the same path, both the `redirect` and `node` nodes return non-null values. 
+   * This behavior ensures backward-compatiblity.
 
 * **FOLLOW**: 
 
-    * For dynamic or association redirects, the `node` node will return the entity (e.g., category, product) to which the redirect points.
-    * For static/manual redirects, the `node` node will return null (since there’s no associated entity), but the `redirect` node will still return the redirect details.
+  * For dynamic or association redirects, the `node` node returns the target entity (e.g., category, product, blog, etc.). 
+  * For static/manual redirects, the `node` node returns `null` (since there’s no associated entity), while the `redirect` node provides the redirect details.
 
-## Example query
+## Example queries
 
-Here is an example query for retrieving a product with the redirect type:
+### Query: Fetching route details
 
-```graphql filename="Get a product with the redirect type" showLineNumbers copy
+This example retrieves details about an object (e.g., Product, Brand, or Category) based on a given URL path.
 
- query LookUpUrl(
-   $urlPath: String!
-   # Use GraphQL Query Variables to provide a path
- ) {
-   site {
-     route(path: $urlPath) {
-       node {
-         __typename
-         id
-         # A different response is returned based on which type of object was matched
-         ... on Category {
-           name
-           description
-         }
-         ... on Brand {
-           name
-           defaultImage {
-             url(width: 200)
-           }
-         }
-         ... on Product {
-           name
-           description
-           images {
-             edges {
-               node {
-                 url(width: 500, height: 500)
+<Tabs items={['Request', 'Response']}>
+  <Tab>
+    ```graphql filename="Query route details" showLineNumbers copy
+
+     query LookUpUrl(
+       $urlPath: String!
+       # Use GraphQL Query Variables to provide a path
+     ) {
+       site {
+         route(path: $urlPath) {
+           node {
+             __typename
+             id
+             # A different response is returned based on which type of object was matched
+             ... on Category {
+               name
+               description
+             }
+             ... on Brand {
+               name
+               defaultImage {
+                 url(width: 200)
                }
+             }
+             ... on Product {
+               name
+               description
+               images {
+                 edges {
+                   node {
+                     url(width: 500, height: 500)
+                   }
+                 }
+               }
+             }
+             ... on Redirect {
+               # all redirect attributes
+               toUrl
              }
            }
          }
-         ... on Redirect {
-           # all redirect attributes
-           toUrl
-         }
        }
      }
-   }
- }
 ```
+```json filename="GraphQL variables" showLineNumbers copy 
+    {
+      "urlPath": "/blog/"
+    }
+```
+  </Tab>
+  <Tab>
+    ```json filename="Example response" showLineNumbers copy
+     {
+        "data": {
+          "site": {
+            "route": {
+              "node": {
+                "__typename": "Blog",
+                "id": "QmxvZzoz"
+              }
+            }
+          }
+        }
+      }
+   ```
+</Tab>
+</Tabs>
 
+### Query: Using `IGNORE` redirect behavior
+
+In this example query, the `node` value is "null" because the redirect is ignored.
+
+<Tabs items={['Request', 'Response']}>
+  <Tab>
+   ```graphql filename="Query using IGNORE redirect behavior" showLineNumbers copy
+
+    query {
+      site {
+         route(path: "/mug" redirectBehavior: IGNORE) {
+           redirect {__typename to {__typename ...on ProductRedirect{entityId path}} toUrl} 
+           node {
+             id
+             ... on Product {
+               name
+               }
+              }
+             }
+           }
+         }
+      ```
+</Tab>
+  <Tab>
+  ```json filename="Example response" showLineNumbers copy
+     {
+  "data": {
+    "site": {
+      "route": {
+        "redirect": {
+          "__typename": "Redirect",
+          "to": {
+            "__typename": "ProductRedirect",
+            "entityId": 132,
+            "path": "/austin-coffee-cup/"
+          },
+          "toUrl": "https://store.mybigcommerce.com/austin-coffee-cup/"
+        },
+        "node": null
+      }
+    }
+  }
+}
+```
+</Tab>
+</Tabs>
+
+### Query: Using `FOLLOW` redirect behavior
+
+In this example, the `node` returns the target entity, in this case a product.
+
+<Tabs items={['Request', 'Response']}>
+  <Tab>
+   ```graphql filename="Query using FOLLOW redirect behavior" showLineNumbers copy
+
+    query {
+      site {
+         route(path: "/mug" redirectBehavior: FOLLOW) {
+           redirect {__typename to {__typename ...on ProductRedirect{entityId path}} toUrl} 
+           node {
+             id
+             ... on Product {
+               name
+               }
+              }
+             }
+           }
+         }
+      ```
+</Tab>
+  <Tab>
+  ```json filename="Example response" showLineNumbers copy
+     {
+  "data": {
+    "site": {
+      "route": {
+        "redirect": {
+          "__typename": "Redirect",
+          "to": {
+            "__typename": "ProductRedirect",
+            "entityId": 132,
+            "path": "/austin-coffee-cup/"
+          },
+          "toUrl": "https://store.mybigcommerce.com/austin-coffee-cup/"
+        },
+        "node": {
+            "id": "UHJvZHVjdDoxMzI=",
+            "name": "Austin Coffee Cup"
+        }
+      }
+    }
+  }
+}
+   ```
+</Tab>
+</Tabs>

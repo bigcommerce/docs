@@ -54,6 +54,51 @@ Accept: application/json
   * The V2 Orders API will not trigger the typical [Order Email](https://support.bigcommerce.com/s/article/Customizing-Emails?language=en_US) when creating orders. To create an order that does trigger this email, you can instead [create a cart](/docs/rest-management/carts/carts-single#create-a-cart) and [convert that cart into an order](/docs/rest-management/checkouts/checkout-orders#create-an-order).
 </Callout>
 
+## Creating order shipments
+
+Once an order has products, a billing address, and a shipping address, you can create an order shipment.
+
+To [create an order shipment](/docs/rest-management/orders/order-shipments#create-order-shipment), send a `POST` request to `/stores/{{STORE_HASH}}/v2/orders/{{order_id}}/shipments`.
+
+```http filename="Example request: Create an order shipment" showLineNumbers copy
+POST https://api.bigcommerce.com/stores/{{STORE_HASH}}}/v2/orders/{{order_id}}/shipments
+X-Auth-Token: {{ACCESS_TOKEN}}
+Content-Type: application/json
+Accept: application/json
+
+  "tracking_number": "EJ958083578UK",
+  "comments": "Janes Order",
+  "order_address_id": "128",
+  "shipping_provider": "",
+  "items": [
+    {
+      "order_product_id": 194,
+      "quantity": 1
+    },
+    {
+      "order_product_id": 195,
+      "quantity": 1
+    }
+  ]
+}
+```
+
+|Property|Description|
+|-|-|
+|`tracking_number`|Shipping provider tracking number; used to generate tracking link|
+|`comments`|Optional comments|
+|`order_address_id`| Obtain with [Get Order Shipping Address](/docs/rest-management/orders/order-shipping-addresses#get-order-shipping-addresses)|
+|`shipping_provider`| Optional; used to create tracking link; see [Create Order Shipment](/docs/rest-management/orders/order-shipments#create-order-shipment) for accepted values|
+|`items.order_product_id`|Obtain with [Get Order Products](/docs/rest-management/orders/order-products). For non-variant products, use the `id`.|
+
+<Callout type= "info">
+  * Create multiple shipments by specifying a subset of products and quantities in each `POST` request.
+  * Create an order shipment with product variants by using the `id` returned in each `GET` request.
+  * Creating order shipments triggers email notifications; adjust [Order Notification](https://support.bigcommerce.com/s/article/Customer-Order-Notifications#enable) settings in the [control panel](https://login.bigcommerce.com/deep-links/manage) to change this behavior.
+  * Deleting a shipment does **not** move the order out of `shipped` status.
+</Callout>
+
+
 ## Changing order status
 
 Specify [order status](/docs/rest-management/orders/order-status#get-all-order-statuses) by including the `status_id` property in the [create order](/docs/rest-management/orders#create-an-order) request. To [update an order](/docs/rest-management/orders#update-an-order) and change its status, send a `PUT` request to `/v2/orders/{{order_id}}`.
@@ -254,51 +299,6 @@ Accept: application/json
   * Marketing promotions currently do not apply to orders created with the Orders API.
   * If you override `price_ex_tax` or `price_inc_tax`, override both; otherwise, order totals will not calculate correctly.
   * Overriding `price_inc_tax` or `price_ex_tax` does not change variant pricing.
-</Callout>
-
-
-## Creating order shipments
-
-Once an order has products, a billing address, and a shipping address, you can create an order shipment.
-
-To [create an order shipment](/docs/rest-management/orders/order-shipments#create-order-shipment), send a `POST` request to `/stores/{{STORE_HASH}}/v2/orders/{{order_id}}/shipments`.
-
-```http filename="Example request: Create an order shipment" showLineNumbers copy
-POST https://api.bigcommerce.com/stores/{{STORE_HASH}}}/v2/orders/{{order_id}}/shipments
-X-Auth-Token: {{ACCESS_TOKEN}}
-Content-Type: application/json
-Accept: application/json
-
-  "tracking_number": "EJ958083578UK",
-  "comments": "Janes Order",
-  "order_address_id": "128",
-  "shipping_provider": "",
-  "items": [
-    {
-      "order_product_id": 194,
-      "quantity": 1
-    },
-    {
-      "order_product_id": 195,
-      "quantity": 1
-    }
-  ]
-}
-```
-
-|Property|Description|
-|-|-|
-|`tracking_number`|Shipping provider tracking number; used to generate tracking link|
-|`comments`|Optional comments|
-|`order_address_id`| Obtain with [Get Order Shipping Address](/docs/rest-management/orders/order-shipping-addresses#get-order-shipping-addresses)|
-|`shipping_provider`| Optional; used to create tracking link; see [Create Order Shipment](/docs/rest-management/orders/order-shipments#create-order-shipment) for accepted values|
-|`items.order_product_id`|Obtain with [Get Order Products](/docs/rest-management/orders/order-products). For non-variant products, use the `id`.|
-
-<Callout type= "info">
-  * Create multiple shipments by specifying a subset of products and quantities in each `POST` request.
-  * Create an order shipment with product variants by using the `id` returned in each `GET` request.
-  * Creating order shipments triggers email notifications; adjust [Order Notification](https://support.bigcommerce.com/s/article/Customer-Order-Notifications#enable) settings in the [control panel](https://login.bigcommerce.com/deep-links/manage) to change this behavior.
-  * Deleting a shipment does **not** move the order out of `shipped` status.
 </Callout>
 
 ## Shipping to multiple locations

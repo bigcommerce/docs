@@ -1,0 +1,75 @@
+# Configuring Open Checkout to comply with PCI DSS 4.0 Section 6.4.3
+If you’re using a custom checkout based on a fork of the [checkout-js](https://github.com/bigcommerce/checkout-js) repository, you will need to make changes in order  to meet PCI DSS 4.0 compliance requirements. This guide outlines the steps and actions you need to perform.
+
+## Step 1 - Upgrade checkout-js
+The version of your custom checkout needs to be based on checkout-js version “1.548.2” or greater to support the steps outlined in this guide.
+
+As a result, you need to update (rebase) to at least version 1.548.2. Otherwise, you’ll need to implement your own SRI hash implementation.
+
+## Step 2 - Add a Subresource Integrity (SRI) hash
+### Generate a SRI hash value
+The hash value begins with at least one string, with each string including a prefix indicating a particular hash algorithm (currently the allowed prefixes are sha256, sha384, and sha512), followed by a dash, and ending with the actual base64-encoded hash.
+
+Example SRI with base64-encoded sha256 hash:
+```
+sha256-UBTNJgpQN2JFDVDfkWo2E8YjORLhYFMs3J8OJEfXbeg
+```
+
+You’ll need to generate a SRI hash for your custom checkout’s entry file.
+
+Example command line to generate the SRI with base64-encoded sha256 hash:
+```
+openssl dgst -sha256 -binary autoloader.js | openssl base64 -A
+```
+### Add the SRI hash to the entry file of the custom checkout
+In the Control Panel, navigate to *Settings > Checkout*, select *Custom Checkout*. Enter your generated SRI hash value in the provided field for custom checkout.
+
+![Custom checkout settings](https://storage.googleapis.com/bigcommerce-production-dev-center/images/checkout-sri-settings.png)
+
+By adding the SRI this way, BigCommerce will automatically set integrity on the custom checkout script tag.
+```
+<script src=”http://127.0.0.1:8080/autoloader.js” integrity=”sha256-UBTNJgpQN2JFDVDfkWo2E8YjORLhYFMs3J8OJEfXbeg” crossorigin=”anonymous”>
+</script>
+```
+<Callout type="info">
+ If you are using a multi-storefront setup and have a channel specific custom checkout, navigate to <em>Channel Manager > Storefronts > Edit settings > Checkout</em> instead.
+ </Callout>
+ 
+### Add the SRI hash to the entry file of the custom order confirmation page
+If you use a custom order confirmation with a different script URL than the custom checkout, you’ll need to generate a SRI hash specifically for the order confirmation. In the Control Panel, navigate to *Settings > Checkout*, select Custom Checkout. Enter your generated SRI hash value in the provided field for the custom order confirmation.
+
+![Custom order confirmation settings](https://storage.googleapis.com/bigcommerce-production-dev-center/images/order-confirmation-sri-settings.png)
+## Step 3 - Step 3 - Add the nonce handlebar for custom scripts
+For any custom scripts you have injected into the Stencil theme files, you will need to manually add the nonce handlebar called `{{nonce}}` to your script tags. This handlebar will always resolve to the value that matches the nonce generated from the CSP header.
+
+Example of the nonce handlebar added to a custom script:
+
+```
+<script nonce=”{{nonce}}”>console.log(“this is a sample nonce”); </script>
+```
+
+[Cornerstone PR  Example](https://github.com/bigcommerce/cornerstone/pull/2525/commits/2b0aeddbebe2900b040d918e6ced58ea70f520d3)
+## Step 4 - Enable the Nonce-Based Script Authorization
+
+Go to *Settings > Security & Privacy* and enable Nonce-based Script Authorization
+
+## Troubleshooting Tips
+If your checkout page does not load, it is likely due to bad integrity. Ensure the SRI hash has been generated based on your custom checkout’s entry file. You’ll need to update the hash each time the script is updated.
+
+**What will happen if I don’t add a SRI hash?**
+
+The custom checkout will continue to work. However, it won’t be PCI DSS 4.0 compliant. PCI DSS 4.0 requires that all scripts have a method implemented to ensure the integrity of the script. The SRI is our recommended method to meet this compliance requirement. 
+
+
+**If checkout-js version is not updated to 1.548.2, can I continue without adding SRI?**
+
+You can continue using an older version of checkout-js. Older versions of checkout-js won’t recognize the SRI hash entered in the Control Panel.
+
+**What if I change the contents of my script?**
+You will also need to update your SRI hash. The integrity hash is based on the contents of the script so if the updated contents do not match, the script will not execute.
+## Useful References
+- [Preparing Your Store for PCI DSS 4.0](https://www.bigcommerce.com.au/blog/preparing-your-store-for-pci-dss-4-0/)
+- [Security and Privacy Settings](https://support.bigcommerce.com/s/article/Security-and-Privacy-Settings)
+- [Subresource Integrity](https://developer.mozilla.org/en-US/docs/Web/Security/Subresource_Integrity)
+- [nonce](https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/nonce)
+- [Unsafe-eval Expressions](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/script-src#unsafe_eval_expressions)

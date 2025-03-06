@@ -1,0 +1,287 @@
+# Google Cloud Platform (GCP) Pub/Sub Webhooks Overview
+
+Google Cloud Pub/Sub is a fully managed, asynchronous messaging service that enables seamless communication between distributed systems through the exchange of event data. It allows applications to publish messages to a topic, which other services can then subscribe to, ensuring that important events are delivered reliably and at scale.
+
+In an eCommerce ecosystem, where merchants and applications often need to coordinate real-time updates (such as order status, inventory changes, or customer events), Pub/Sub can serve as a critical backbone for communication by decoupling the publisher (e.g., BigCommerce) from subscribers (e.g., merchant systems, third-party apps), this architecture ensures that:
+
+* Applications can react to import events ---- like new orders, product updates, or payment confirmations --- without direct dependencies
+* Scalability is inherent, allowing merchants to handle sudden spikes in demand (e.g., during holiday sales) without service degradation
+* Messages are durable and persist until delivered, reducing the risk of lost information during outages and processing delays
+* Filtering capabilities ensure that subscribers receive only relevant events, improving efficiency
+* Storage and retry mechanisms guarantee reliable delivery, even when subscribers' applications experience temporary downtime
+* By leveraging Google Cloud Pub/Sub, merchants and app developers can build more resilient, responsive, and scalable systems --- delivering a better experience to end customers while simplifying backend complexity
+
+**Key benefits**
+
+* **Decoupled Architects**: BigCommerce, merchants, and apps can operate independently, enhancing system flexibility and maintainability
+* **Scalability**: Automatically manages the load, accommodating high-throughput scenarios without manual intervention
+* **Reliably**: Ensures message delivery with built-in acknowledgment and retry mechanisms, reducing the risk of data loss
+* **Real-Time processing**: Enables immediate reaction to events, facilitating timely updates and actions
+
+**Real-world examples**
+
+**Example 1**: Product updates
+
+|  Product updates       | Description |
+|:----------------------:|:----------------:|
+|**Scenario**            | A merchant updates the prices of a product in their BigCommerce store.|
+|**BigCommerce Event**   | `/store/product/updated` webhook fires upon product modification. |
+|**Pub/Sub integration** | This event is published to a Pub/Sub topic. Subscriber applications such as inventory management systems or marketing platforms, receive the update and adjust their records accordingly, ensuring consistency across the ecosystem. |
+
+**Example 2**: Order creation
+
+| Product updates         | Description     |
+|:-----------------------:|:---------------:|
+| **Scenario**            | A customer places a new order on the merchant’s website. |
+| **BigCommerce Event**   |  `store/order/created` webhook triggers when a new order is placed. |
+| **Pub/Sub Integration** | The order creation event is sent to a Pub/Sub topic. Fulfillment centers, accounting systems, and customer relationship management (CRM) tools subscribed to this topic are immediately notified, allowing for prompt order processing, inventory adjustment, and customer follow-up.|
+
+**Example 3**: Channel management
+
+| Product updates         |  Description    |
+|:-----------------------:|:---------------:|
+| **Scenario**            | A merchant adds a new sales channel, such as a marketplace or a physical storefont. |
+| **BigCommerce Event**   | `store/channel/created` webhook fires when a new channel is established.
+| **Pub/Sub Integration** | The new channel event is published to a Pub/Sub topic. Systems responsible for synchronizing product listings, pricing, and promotions across channels received the event and initiate the necessary configurations, ensuring the new channel is integrated seamlessly into the existing ecosystem.|
+
+**Example 4**: Multi-vendor order fulfillment
+
+| Product updates             |  Description    |
+|:---------------------------:|:---------------:|
+| **Scenario**                | A customer places an order containing products from multiple vendors (e.g., Vendor A, Vendor B, and Vendor C). Each vendor needs to receive notifications only from the products they are responsible for fulfilling, while the merchant needs a centralized view of the entire order. |
+| **Leveraging Events**       | * `store/order/created` <br></br> * `store/order/updated` <br></br> * `store/shipment/created` <br></br> * `store/shipment/updated` |
+| **Creating Pub/Sub Topics** | Creating topics and adding filters for specific metafields associated with the vendor fulfillment. |
+
+
+## Prerequisites
+
+* Google Cloud Platform account
+* Billing enabled for the GCP
+* Necessary IAM roles (Pub/Sub admin)
+* For app partners, access to the GCP project or service account credential is provided
+
+Helpful
+* gCloud CLI 
+* Pub/Sub API enabled 
+
+## BigCommerce
+
+### Initiate your app
+
+You can initiate your app with Google Pub/Sub to allow for sending and receiving webhook traffic by following the procedure below.
+
+1. Navigate to your store’s control panel, and go to **Settings** > **Store-level API accounts**.
+2. [Create a new API account](https://support.bigcommerce.com/s/article/Store-API-Accounts?language=en_US) or use an existing one.
+	- Click on the API Account name > **Event subscriptions** tab. 
+	- In the **Google Cloud Pub/Sub** panel, copy the BigCommerce service account (webhook-deliveries@bigcommerce-platform.iam.gserviceaccount.com).
+
+## Google Cloud Pub/Sub
+
+The following steps discuss how to manage projects, topics, and subscriptions using the Google Cloud console. You can use the Google Cloud CLI, methods, and/or APIs to perform the same tasks. For additional guidance, see the [Google Cloud Pub/Sub](https://cloud.google.com/pubsub/docs/pubsub-basics) documentation.
+
+### Creating a project
+
+To create a project, you must have the `resourcemanager.projects.create` permission. This permission is included in roles like the Project Creator role (roles/resourcemanager.projectCreator). The Project Creator role is granted by default to the entire domain of a new organization resource and to free trial users.
+
+<Callout type="info">
+For information on how to grant individuals the role and limit organization-resource wide access, see the [Managing Default Organization Roles](https://cloud.google.com/resource-manager/docs/default-access-control) page. If you don't specify the parent resource, a parent resource is selected automatically if applicable, based on the user account's domain.
+</Callout>
+
+To create a new project go to the [**Manage resources**](https://console.cloud.google.com/cloud-resource-manager?walkthrough_id=resource-manager--create-project&start_index=1#step_index=1) page in the Google Cloud console.
+
+In the Google Cloud console, perform the following steps:
+
+1. If you do not have a free trial, you must first select the organization resource from the **Select organization** drop-down list. 
+2. Click **Create Project**. 
+3. In the **New Project** window, enter a project name and select a billing account if required. The project name must be between 4 and 30 characters and can include letters, numbers, single quotes, hyphens, spaces, or exclamation points.
+4. In the **Location** box, specify the parent organization or folder resource that will serve as the hierarchical parent of the new project. If the option **No organization** is available, you can select it to create the project at the top level of its own resource hierarchy
+5. Click **Create**.
+
+For more details on how to create a project see, the [Console](https://cloud.google.com/resource-manager/docs/creating-managing-projects#console) instructions.
+
+
+### Creating a topic
+
+Topics can represent different events such as order created, inventory updated, etc. You must create a topic before you can publish or subscribe to it.
+
+To create a topic, follow these steps:
+
+1. In the Google Cloud console, go to the Pub/Sub [Topics](https://console.cloud.google.com/cloudpubsub/topic/list) page.
+2. Click **Create topic**.
+3. In the **Topic ID** field, enter an ID for your topic.
+4. Ensure **Add a default subscription** is enabled. 
+5. Click **Create topic**.
+
+For more details on how to create a topic see, [Create a topic](https://cloud.google.com/pubsub/docs/create-topic).
+
+Once you create a topic, add BigCommerce as a principal.
+
+![Add BigCommerce as Principal](https://storage.googleapis.com/bigcommerce-production-dev-center/images/add_bigcommerce_principal.png)
+
+You can subscribe to webhook subscriptions after integrating your app with Google Cloud Pub/Sub. See the following GraphQL example:
+
+<Callout type="info">
+GraphQL Admin API endpoints use the X-Auth-Token header to authenticate to BigCommerce servers. To make a call to the Admin GraphQL, use an API client tool such as Postman.
+</Callout>
+
+<Tabs items={['Request', 'Response']}>
+<Tab>
+
+```graphql filename="Example mutation: Subscribe to a webhook" showLineNumbers copy
+POST https://api.bigcommerce.com/stores/{{STORE_HASH}}/graphql
+
+mutation Webhook {
+  webhook {
+    createPubSubWebhook(
+        input: {
+            destination: "projects/projectName/topics/webhookName"
+            isActive: true
+            scope: "store/metafield/created"
+        }
+    ) {
+        errors {
+            ... on AlreadyExistsError {
+                message
+            }
+            ... on ValidationError {
+                message
+            }
+            ... on PubSubTopicNotFoundError {
+                topic
+                message
+            }
+
+        }
+        webhook {
+            destination
+            clientId
+            createdAt
+            id
+            scope
+            status
+            updatedAt
+                 }
+          }
+     }
+}
+```
+</Tab>
+<Tab>
+
+```json filename="Example mutation: Subscribe to a webhook" showLineNumber copy
+{
+  "data": {
+        "webhook": {
+            "createPubSubWebhook": {
+                "errors": [],
+                "webhook": {
+                    "destination": "projects/projectName/topics/webhookName",
+                    "clientId": "a32wjpnre83zastlhhq0w0mqkygq7vt",
+                    "createdAt": "2025-02-19T16:05:22Z",
+                    "id": "bc/store/webhook/29098403",
+                    "scope": "store/metafield/created",
+                    "status": "ACTIVE",
+                    "updatedAt": "2025-02-19T16:05:22Z"
+                }
+            }
+        }
+    }
+}
+```
+</Tab>
+</Tabs>
+
+For a complete reference of all BigCommerce webhook events and their callback payloads, see [Webhook Events](/docs/integrations/webhooks/events).
+
+### Creating a subscription
+
+By default, subscriptions use pull delivery, unless you explicitly set a push configuration. A push configuration grants BigCommerce access to publish webhooks to your Google Pub/Sub topic. The following section describes how to create a push subscription.
+
+#### Creating a push subscription
+
+To create a push subscription, complete the following steps:
+
+1. In Google Cloud console, go to the [**Subscriptions**](https://console.cloud.google.com/cloudpubsub/subscription) page.
+2. Click **Create subscription**.
+3. For the **Subscription ID** field, enter a name.
+4. Choose or create a topic from the drop-down menu.
+5. Select the **Delivery type** as **Push**.
+6. Specify an endpoint URL.
+7. Retain all other default values.
+8. Click **Create**.
+
+You can also create a subscription from the [**Topics**](https://console.cloud.google.com/cloudpubsub/topic) section. This shortcut is useful for associating topics with subscriptions.
+
+1. In the Google Cloud console, go to the [**Topics**](https://console.cloud.google.com/cloudpubsub/topic) page.
+2. Click the three dots next to the topic and select **Create subscription**.
+3. Enter the **Subscription ID**. For information on how to name a subscription, see [Guidelines to name a topic or a subscription](https://cloud.google.com/pubsub/docs/admin#resource_names).
+5. Select the **Delivery type** as **Push**.
+6. Specify an endpoint URL.
+7. Retain all other default values.
+8. Click **Create**.
+
+For more details on how to create a push subscription see, [Create push subscriptions](https://cloud.google.com/pubsub/docs/create-push-subscription).
+
+### Deleting a subscription
+
+If you try to create a subscription with the same name as the one that you just deleted, expect an error for a brief period.
+
+To delete a subscription, complete the following steps:
+
+1. In the Google Cloud Console, got to the [**Subscriptions**](https://cloud.google.com/pubsub/docs/delete-subscriptions#console) page.
+2. Select the subscription to delete.
+3. Click **Delete**.
+
+For more details on how to delete a subscription, see [Delete subscriptions](https://cloud.google.com/pubsub/docs/delete-subscriptions).
+
+## Managing project access control
+
+You can use the Google Cloud console to manage access control for your topics and projects.
+
+To set access controls at the project level, complete the steps below:
+
+1. In the Google Cloud Console, got to the [**IAM**](https://console.cloud.google.com/project/_/iam-admin/iam) page.
+2. Select your project.
+3. Click **Add**.
+4. Type in one or more principal names.
+5. In the **Select a role** list, select the role you want to grant.
+6. Click **Save**.
+7. Verify that the principal is listed with the role that you granted.
+
+To set access controls for topics and subscriptions, follow the steps below:
+
+1. You can use the Google Cloud console, go to the Pub/Sub [**Topics**](https://console.cloud.google.com/cloudpubsub/topic/list) list.
+2. If needed, select your Pub/Sub-enabled project.
+3. Perform one of the following steps:
+   - To set roles for one or more topics, select the topics
+   - To set roles for a subscription attached to a topic, click the topic ID. In the **Topic details** page, click the subscription ID. The **Subscription details** page appears.
+4. If the info panel is hidden, click the **Show info** panel.
+5. In the **Permissions** tab, click **Add principal**.
+6. Type in one or more principal names.
+7. In the **Select a role** list, select the role you want to grant.
+8. Click **Save**.  
+
+## View metrics
+
+To view a single Pub/Sub metric by using the Google Cloud console, perform the following steps:
+
+1. In the Google Cloud Console, go to the [**Monitoring**](https://console.cloud.google.com/monitoring) page.
+2. In the navigation pane, select **Metrics explorer**.
+3. In the **Configuration** section, click **Select a metric**.
+4. In the filter, enter `Pub/Sub`.
+5. In **Active resources**, select **Pub/Sub Subscription** or **Pub/Sub Topic**.
+6. Drill down to a specific metric and click **Apply**.
+
+For more details on monitoring the dashboard see [Cloud monitoring](https://cloud.google.com/monitoring/docs).
+
+To see what metrics Pub/Sub reports to Cloud Monitoring, see the [**Pub/Sub metrics list**](https://cloud.google.com/monitoring/api/metrics_gcp#gcp-pubsub) in the Cloud Monitoring documentation.
+
+To see the details for the `pubsub_topic`, `pubsub_subscription`, or `pubsub_snapshot` monitored resource types, see [**Monitored resource**](https://cloud.google.com/monitoring/api/resources) types in the Cloud Monitoring documentation.
+
+## Resources
+* [Google Cloud Pub/Sub Documentation](https://cloud.google.com/pubsub/docs/pubsub-basics)
+* [GCP CLI](https://cloud.google.com/pubsub/docs/publish-receive-messages-gcloud)
+* [Webhook Events](/docs/integrations/webhooks/events)
+
+
+

@@ -1,14 +1,103 @@
 openapi: 3.0.1
 info:
-  title: Company
+  title: Company Management
   description: |-
-    A company in B2B Edition corresponds one-to-one with a customer group in BigCommerce. You can do the mapping through the `bc_group_id` field. Once established, you cannot change this corresponding relationship. You can only delete it. Note that you cannot merge BigCommerce customer groups or B2B Edition companies.
+    ## Introduction
+    
+    A Company in B2B Edition is the business account for B2B clients, which connects buyers in the business within its instance of the Buyer Portal.
 
-    This diagram details the relation between customer groups and companies:
+    BigCommerce customer groups determine the products and pricing that a Company’s buyers see. Assign Company accounts to these groups as needed. Multiple Companies may share the same customer group, or remain unassigned to access the default catalog and pricing. The `customerGroupId` field maps Companies to customer groups.
 
-    ![Company entity diagram](https://user-images.githubusercontent.com/81215728/124566045-424fd480-de75-11eb-8268-a15ae40fb579.jpg)
+    **NOTE:** If your store uses legacy Dependent Companies behavior, each Company account has a one-to-one relationship with a BigCommerce customer group. Once created, you cannot reassign the Company to another customer group; you can only delete it. See [Companies and Customer Groups in B2B Edition (Help Center)](https://support.bigcommerce.com/s/article/Companies-and-Customer-Groups) to learn more about how Independent and Dependent Company behaviors work.
 
-    The best practice for using these Company APIs is to maintain unidirectional data flow, with B2B Edition endpoints as the primary touchpoint. By default B2B Edition's company operations handle modifying linked BigCommerce customer group data (add, update, and delete).
+    ### Available Resources
+    | Resource | Description |
+    | --- | --- |
+    | [Companies](https://developer.bigcommerce.com/b2b-edition/apis/rest-management/company/companies) | Account details, settings, and attachments for B2B Edition Companies |
+    | [Company Roles and Permissions](https://developer.bigcommerce.com/b2b-edition/apis/rest-management/company/company-roles-and-permissions) | User roles and permissions for B2B buyers associated with a Company account |
+    | [Account Hierarchies](https://developer.bigcommerce.com/b2b-edition/apis/rest-management/company/account-hierarchies) | Parent-child relationships between companies in a hierarchy |
+    
+    ### Company Status Codes
+    The `companyStatus` object indicates the activity status of a particular Company account in the response body of the following endpoints:
+
+    * Get All Companies (can also be used as a parameter in the query)
+    * Get Company Details
+    * Update a Company’s Status
+
+    This is expressed as a `string` or `integer`, with numeric values that correspond to a possible status. See the table below for more information:
+
+    | Value | Company Status | Description |
+    | --- | --- | --- |
+    | 0 | Pending | A buyer has applied for a Company account, but the application has not been processed. |
+    | 1 | Approved | The Company account is active. |
+    | 2 | Rejected | The application has been rejected and the Company account cannot be used. |
+    | 3 | Inactive | The Company account does not have any buyers assigned to it. |
+
+    ### Company Account Hierarchy
+    Account Hierarchy functionality establishes parent-child relationships between multiple Company accounts belonging to a single client business. Buyers assigned to Companies on higher layers can access the Buyer Portal for their subsidiaries. This functionality allows you to support clients with complex businesses, such as chain stores, franchises, and global corporations.
+    
+    ![Graphic explainer for company account hierarchies](https://storage.googleapis.com/bigcommerce-production-dev-center/images/account-hierarchies-examples.png)
+
+    **NOTE:** This functionality is available upon request for stores using the Buyer Portal experience and Independent Companies behavior. You can request Account Hierarchy by contacting our support team.
+
+    Account Hierarchy adds support for the following endpoints:
+
+    * Get Company Subsidiaries — View all accounts in lower layers of Account Hierarchy compared to a particular Company account.
+    * Delete Company Subsidiary — Removes the parent-child relationship between a specified subsidiary account and its parent Company.
+    * Attach a Company as the Parent of a Current Company — Assigns one Company account to the hierarchy layer directly above another Company.
+    * Get Company Hierarchy — View all accounts in the same hierarchical structure as a particular Company.
+
+    You can create up to **5 layers** of hierarchy for a given organization, and each hierarchy can have a maximum of **500 Companies** assigned to it.
+
+    ### Company Roles and Permissions
+      Buyers in a Company account, or *Company users*, are assigned a role that determines what they can view and configure within the Buyer Portal. B2B Edition includes predefined Company user roles, but you can also create custom roles with a unique set of permissions.
+
+    Additionally, you can use the Company Roles and Permissions API to create custom permissions for more complex role-based access control. Note that custom permissions are **not** configurable from the B2B Edition control panel.
+
+    #### Permission Codes
+    When creating or updating Company user roles, you must specify the permissions that are enabled for the role and their scopes. The `code` field accepts the following default permission code strings, but you can also add the `code` value for custom permissions.
+    | Permission Code | Permission Name | Description | Supported Permission Levels |
+    | --- | --- | --- | --- |
+    | `get_addresses` | Get addresses | View the Addresses area of the Buyer Portal | 2 (Company), 3 (Company and subsidiaries) |
+    | `get_address_detail` | Get address detail | View the details of specific addresses | 2 (Company), 3 (Company and subsidiaries) |
+    | `get_default_shipping` | Get default shipping address | Set the default shipping address for the Company | 2 (Company), 3 (Company and subsidiaries) |
+    | `get_default_billing` | Get default billing address | Set the default billing address for the Company | 2 (Company), 3 (Company and subsidiaries) |
+    | `create_address` | Create address | Create a new Company address | 2 (Company), 3 (Company and subsidiaries) |
+    | `update_address` | Update address | Edit an existing Company address | 2 (Company), 3 (Company and subsidiaries) |
+    | `delete_address` | Delete address | Delete an existing Company address | 2 (Company), 3 (Company and subsidiaries) |
+    | `get_invoices` | Get invoices | View the Invoices area of the Buyer Portal | 2 (Company), 3 (Company and subsidiaries) |
+    | `get_invoice_detail` | Get invoice detail | View the details of specific invoices | 2 (Company), 3 (Company and subsidiaries) |
+    | `export_invoices` | Export invoices | Export invoices to a CSV file | 2 (Company), 3 (Company and subsidiaries) |
+    | `get_invoice_pdf` | Get invoice pdf | Print or download invoice PDFs | 2 (Company), 3 (Company and subsidiaries) |
+    | `get_invoice_payments_history` | Get invoice payments history | View a log of partial payments on a particular invoice | 2 (Company), 3 (Company and subsidiaries) |
+    | `pay_invoice` | Pay invoice | Make a full or partial invoice payment | 2 (Company), 3 (Company and subsidiaries) |
+    | `get_orders` | Get orders | View the My orders and Company orders area of the Buyer Portal, depending on the permission level | 1 (User), 2 (Company), 3 (Company and subsidiaries) |
+    | `get_order_detail` | Get order detail | View the details of specific orders | 1 (User), 2 (Company), 3 (Company and subsidiaries) |
+    | `get_quotes` | Get quotes | View the Quotes area of the Buyer Portal | 1 (User), 2 (Company), 3 (Company and subsidiaries) |
+    | `get_quote_detail` | Get quote detail | View the details of specific quotes | 1 (User), 2 (Company), 3 (Company and subsidiaries) |
+    | `create_quote` | Create quote | Request a quote from the Buyer Portal | 1 (User), 3 (Company and subsidiaries) |
+    | `update_quote_message` | Update quote message | Submit a message on an existing quote | 1 (User), 2 (Company), 3 (Company and subsidiaries) |
+    | `checkout_with_quote` | Checkout with quote | Purchase a finalized quote | 1 (User), 2 (Company), 3 (Company and subsidiaries) |
+    | `get_quote_pdf` | Get quote pdf | Print or download quote PDFs | 1 (User), 2 (Company), 3 (Company and subsidiaries) |
+    | `get_shopping_lists` | Get shopping lists | View the Shopping lists area of the Buyer Portal | 1 (User), 2 (Company), 3 (Company and subsidiaries) |
+    | `get_shopping_list_detail` | Get shopping list detail | View the details of specific Shopping Lists | 1 (User), 2 (Company), 3 (Company and subsidiaries) |
+    | `create_shopping_list` | Create shopping list | Create a new Shopping List | 1 (User), 2 (Company), 3 (Company and subsidiaries) |
+    | `deplicate_shopping_list` | Deplicate shopping list | Make a copy of an existing Shopping List | 1 (User), 2 (Company), 3 (Company and subsidiaries) |
+    | `update_shopping_list` | Update shopping list | Edit the details of an existing Shopping List | 1 (User), 2 (Company), 3 (Company and subsidiaries) |
+    | `submit_shopping_list_for_approval` | Submit shopping list for approval | Submit a Shopping List to a user with approval permissions | 1 (User), 3 (Company and subsidiaries) |
+    | `approve_draft_shopping_list` | Approve draft shopping list | Approve a pending Shopping List for purchase | 2 (Company), 3 (Company and subsidiaries) |
+    | `delete_shopping_list` | Delete shopping list | Delete an existing Shopping List | 1 (User), 2 (Company), 3 (Company and subsidiaries) |
+    | `create_shopping_list_item` | Create shopping list item | Add products to a Shopping List | 1 (User), 2 (Company), 3 (Company and subsidiaries) |
+    | `update_shopping_list_item` | Update shopping list item | Update product information in a Shopping List | 1 (User), 2 (Company), 3 (Company and subsidiaries) |
+    | `delete_shopping_list_item` | Delete shopping list item | Delete products from a Shopping List | 1 (User), 2 (Company), 3 (Company and subsidiaries) |
+    | `get_users` | Get users | View the User management area of the Buyer Portal | 2 (Company), 3 (Company and subsidiaries) |
+    | `get_user_detail` | Get user detail | View a Company user’s role and contact information | 2 (Company), 3 (Company and subsidiaries) |
+    | `create_user` | Create user | Create a new Company user | 2 (Company), 3 (Company and subsidiaries) |
+    | `update_user` | Update user | Edit an existing Company user | 2 (Company), 3 (Company and subsidiaries) |
+    | `delete_user` | Delete user | Delete an existing Company user | 2 (Company), 3 (Company and subsidiaries) |
+    | `get_roles` | Get roles | View available Company user roles | 2 (Company), 3 (Company and subsidiaries) |
+    | `purchase_enable` | Purchase Enable | Allow the user to complete checkout | 2 (Company), 3 (Company and subsidiaries) |
+    | `get_company_subsidiaries` | Get company subsidiaries | View the Company hierarchy area of the Buyer Portal | 3 (Company and subsidiaries) |
   contact: {}
   version: v3
 servers:
@@ -16,57 +105,56 @@ servers:
 security:
   - authToken: []
 tags:
-  - name: Company
+  - name: Companies
   - name: Company Roles and Permissions
+  - name: Account Hierarchies
+
 paths:
   /companies:
+    parameters: []
     get:
       tags:
-        - Company
+        - Companies
       summary: Get All Companies
-      description: Get a list of all companies.
       operationId: get-companies
+      description: "Returns a list of all Company accounts, sorted by `companyId` from highest to lowest by default. Pass optional parameters to modify the results."
       parameters:
-        - name: limit
-          in: query
-          description: Pagination limit
-          schema:
-            type: integer
-            default: 10
-        - name: offset
-          in: query
-          description: Pagination offset
-          schema:
-            type: integer
-            default: 0
+        - $ref: "#/components/parameters/paginationLimit"
+        - $ref: "#/components/parameters/paginationOffset"
         - name: minModified
           in: query
-          description: Minimum modified timestamp
           allowEmptyValue: true
           schema:
             type: number
             format: time
+          description: "The earliest [Unix timestamp](https://www.unixtimestamp.com/)  that can be returned for a modified Company account."
+          example: 1618794615
         - name: maxModified
           in: query
-          description: Maximum modified timestamp
           allowEmptyValue: true
           schema:
             type: number
+            format: time
+          description: "The latest [Unix timestamp](https://www.unixtimestamp.com/)  that can be returned for a modified Company account."
+          example: 1618794615
         - name: minCreated
           in: query
-          description: Minimum created timestamp
           allowEmptyValue: true
           schema:
             type: number
+            format: time
+          description: "The earliest [Unix timestamp](https://www.unixtimestamp.com/)  that can be returned for a modified Company account."
+          example: 1618794615
         - name: maxCreated
           in: query
-          description: Maximum created timestamp
           allowEmptyValue: true
           schema:
             type: number
+            format: time
+          description: "The latest [Unix timestamp](https://www.unixtimestamp.com/)  that can be returned for a modified Company account."
+          example: 1618794615
         - name: sortBy
           in: query
-          description: Sort the result by a specific company field.
           schema:
             type: string
             default: updatedAt
@@ -74,9 +162,9 @@ paths:
               - companyName
               - updatedAt
             example: updatedAt
+          description: "Sorts results by Company name or last updated date, defaulting to the last updated date if no parameter is provided."
         - name: orderBy
           in: query
-          description: "Allow: 'DESC', 'ASC'"
           schema:
             type: string
             default: DESC
@@ -84,34 +172,39 @@ paths:
               - ASC
               - DESC
             example: DESC
+          description: "Establish a descending or ascending order of results. The order defaults to descending if the parameter is not included."
         - name: isIncludeExtraFields
           in: query
-          description: Whether the response will include extra fields.
           schema:
             type: string
             default: "0"
             enum:
               - "0"
               - "1"
+          description: |-
+            Indicates whether or not the response will include Company extra fields. If the parameter is not included, the response will exclude extra fields by default.
+
+            A value of `0` will exclude extra fields, while a value of `1` will include them.
+          example: "0"
         - name: companyStatus
           in: query
-          description: "0: PENDING 1: APPROVED 2: REJECTED 3: INACTIVE"
           schema:
             type: integer
+            example: 1
             enum:
               - 0
               - 1
               - 2
               - 3
+          description: "The Company’s activity status. See [Company Status Codes](https://developer.bigcommerce.com/b2b-edition/apis/rest-management/company/) to learn about their corresponding statuses."
         - name: q
           in: query
-          description: Company query string
           schema:
             type: string
+          description: "Enter a Company name to return partial and exact matches."
+          example: "Great Buys"
         - name: extraFields
           in: query
-          description: |-
-            Filter by extra fields.
           style: form
           explode: false
           schema:
@@ -119,37 +212,48 @@ paths:
             items:
               type: string
           example: 
-            - externalID:a
-        - schema:
+            - Customer Tax Code:G
+            - FinTech Enabled:Yes
+          description: "Use this array to filter results by an extra field name-value pair."
+        - name: bcOrderId
+          in: query
+          schema:
             type: integer
-            example: 2
+            example: 102
+          description: "The ID of a BigCommerce order placed by a particular Company account."
+        - name: orderId
           in: query
-          name: bcOrderId
-          description: "A company purchases a BigCommerce order ID, which allows you to find the company by BigCommerce order ID."
-        - schema:
+          schema:
             type: string
+          description: "The ID of a BigCommerce order placed by a particular Company account."
+          example: "102"
+        - name: bcGroupId
           in: query
-          name: orderId
-          description: Company purchase order ID
-        - schema:
+          schema:
             type: string
+          description: "The ID of the BigCommerce customer group assigned to the Company account."
+          example: 123
+        - name: customerId
           in: query
-          name: bcGroupId
-          description: BigCommerce customer group ID
-        - schema:
+          schema:
             type: integer
+          description: "The ID of a BigCommerce customer account with a corresponding Company user account."
+          example: 123456
+        - name: extraFieldFilterType
           in: query
-          name: customerId
-          description: "BigCommerce customer ID. This customer should be a B2B company user."
-        - schema:
+          schema:
             type: string
             enum:
               - search
               - exact-match
             default: search
-          in: query
-          name: extraFieldFilterType
-          description: "Extra field filter type. The search filter type allows for partial matches, while the exact-match filter type only returns results that exactly match the specified criteria."
+          description: |-
+            Establishes how results are filtered when using the `extraFields` parameter. The `search` filter type allows for partial matches, while the `exact-match` filter type only returns results that exactly match the specified criteria.
+
+            The filter type defaults to `search` when no parameter is provided.
+          example: "exact-match"
+      security:
+        - authToken: []
       responses:
         "200":
           description: OK
@@ -161,126 +265,18 @@ paths:
                   code:
                     type: number
                   data:
-                    minItems: 0
-                    uniqueItems: true
                     type: array
+                    minItems : 0
+                    uniqueItems : true
                     items:
-                      type: object
-                      properties:
-                        companyId:
-                          minLength: 1
-                          type: string
-                        companyName:
-                          minLength: 1
-                          type: string
-                        bcGroupName:
-                          minLength: 1
-                          type: string
-                        companyStatus:
-                          minLength: 1
-                          type: string
-                          enum:
-                            - "0"
-                            - "1"
-                            - "2"
-                            - "3"
-                          description: Status of a company
-                        companyEmail:
-                          type: string
-                          description: The email of the company
-                          format: email
-                        companyPhone:
-                          type: string
-                          description: The phone number of the company
-                          format: phone
-                        uuid:
-                          type: string
-                        catalogId:
-                          type: string
-                          description: The company catalog ID
-                        catalogName:
-                          type: string
-                          description: The company catalog name
-                        updatedAt:
-                          minLength: 1
-                          type: string
-                        createdAt:
-                          minLength: 1
-                          type: string
-                        extraFields:
-                          type: array
-                          description: Controlled by isIncludeExtraFields params
-                          items:
-                            type: object
-                            properties:
-                              fieldName:
-                                type: string
-                              fieldValue:
-                                type: string
-                              labelName:
-                                type: string
-                                description: Field label name
-                              isRequired:
-                                type: string
-                                description: "Is field required or not, 0=not required, 1=required"
-                                enum:
-                                  - "0"
-                                  - "1"
-                              dataType:
-                                type: string
-                                description: "Field data type, 0=text, 1=number, 2=textarea, 3=dropdown"
-                                enum:
-                                  - "0"
-                                  - "1"
-                                  - "2"
-                                  - "3"
-                              fieldType:
-                                type: number
-                                description: "Field data type, 0=text, 1=number, 2=textarea, 3=dropdown"
-                                enum:
-                                  - 0
-                                  - 1
-                                  - 2
-                                  - 3
-                            required:
-                              - fieldName
-                              - fieldValue
-                              - labelName
-                              - isRequired
-                              - dataType
-                              - fieldType
-                        bcGroupId:
-                          type: integer
-                        priceListAssign:
-                          type: array
-                          items:
-                            type: object
-                            properties:
-                              channelId:
-                                type: integer
-                                description: BigCommerce channel ID
-                              priceListId:
-                                type: integer
-                                description: BigCommerce price list ID
-                              priceListName:
-                                type: string
-                                description: BigCommerce price list name
-                              channelName:
-                                type: string
-                                description: Store Channel name
-                      required:
-                        - companyId
-                        - companyName
-                        - bcGroupName
-                        - companyStatus
-                        - companyEmail
-                        - companyPhone
-                        - uuid
-                        - catalogId
-                        - catalogName
-                        - updatedAt
-                        - createdAt
-                        - bcGroupId
+                      allOf:
+                        - $ref: "#/components/schemas/companyData_RESPONSE"
+                        - type: object
+                          properties:
+                            bcGroupId:
+                              type: integer
+                              description: "The ID of the BigCommerce customer group assigned to the Company account. This field is read-only; use customerGroupID for POST/PUT requests."
+                              example: "123"
                   meta:
                     allOf:
                       - type: object
@@ -288,119 +284,29 @@ paths:
                           message:
                             minLength: 1
                             type: string
-                        required:
-                          - message
                       - $ref: https://raw.githubusercontent.com/bigcommerce/docs/main/docs/b2b-edition/models/utils/pagination.yaml
-                required:
-                  - code
-                  - data
-                  - meta
-              examples:
-                include extra fields:
-                  value:
-                    code: 200
-                    data:
-                      - companyId: "147340"
-                        companyName: Glam Squad Hair and Makeup Artistry
-                        bcGroupName: Glam Squad Hair and Makeup Artistry
-                        companyEmail: support@bundleb2b.net
-                        companyPhone: "123456789"
-                        companyStatus: "1"
-                        uuid: ""
-                        catalogId: ""
-                        catalogName: ""
-                        updatedAt: "1618794615"
-                        createdAt: "1618787774"
-                        extraFields:
-                          - dataType: "2"
-                            fieldType: 2
-                            fieldName: extraStr1
-                            fieldValue: extra_text
-                            isRequired: "0"
-                            labelName: Enter your license
-                        bcGroupId: 0
-                    meta:
-                      message: SUCCESS
-                      pagination:
-                        limit: 4
-                        offset: 1
-                        totalCount: 989
-                standard response:
-                  value:
-                    code: 200
-                    data:
-                      - companyId: "147340"
-                        companyName: Glam Squad Hair and Makeup Artistry
-                        bcGroupName: Glam Squad Hair and Makeup Artistry
-                        companyEmail: support@bundleb2b.net
-                        companyPhone: "123456789"
-                        companyStatus: "1"
-                        uuid: ""
-                        catalogId: ""
-                        catalogName: ""
-                        updatedAt: "1618794615"
-                        createdAt: "1618787774"
-                        bcGroupId: 0
-                    meta:
-                      message: SUCCESS
-                      pagination:
-                        limit: 10
-                        offset: 1
-                        totalCount: 989
-            200-Response-IncludeExtraFields:
-              example:
-                code: 200
-                data:
-                  - companyId: "147340"
-                    companyName: Glam Squad Hair and Makeup Artistry
-                    companyStatus: "1"
-                    uuid: ""
-                    catalogId: ""
-                    catalogName: ""
-                    updatedAt: "1618794615"
-                    createdAt: "1618787774"
-                    extraFields:
-                      - dataType: "2"
-                        fieldName: extraStr1
-                        fieldValue: extra_text
-                        isRequired: "0"
-                        labelName: Enter your license
-                meta:
-                  message: SUCCESS
-                  pagination:
-                    limit: 1
-                    offset: 1
-                    totalCount: 989
-            200-Standard Response:
-              example:
-                code: 200
-                data:
-                  - companyId: "147340"
-                    companyName: Glam Squad Hair and Makeup Artistry
-                    companyStatus: "1"
-                    uuid: ""
-                    catalogId: ""
-                    catalogName: ""
-                    updatedAt: "1618794615"
-                    createdAt: "1618787774"
-                meta:
-                  message: SUCCESS
-                  pagination:
-                    limit: 1
-                    offset: 1
-                    totalCount: 989
-      security:
-        - authToken: []
     post:
       tags:
-        - Company
+        - Companies
       summary: Create a Company
-      description: |-
-        Create a company.
-        * When the `independent company behavior` is enabled, the system will not automatically create a dedicated customer group for each new Company account. Instead, you can assign a customer group to a Company account as needed using the `customerGroupId` field. If the `customerGroupId` field is not provided, the B2B company will be associated with your configured default customer group. If you have not configured a default customer group or set the value of `customerGroupId` to 0, the B2B company will not be associated with any customer group, and the company users within the company will have their corresponding customer record assigned to "No Group" in BigCommerce.
-        
-        * When the `independent company behavior` is turned off, a new customer group will be automatically created and associated with each new Company account. In this case, you will not use the `customerGroupId` field.
       operationId: post-companies
+      description: |-
+        Creates a new Company account. This endpoint also creates a Company user account for the administrator of the business.
+
+        If you have configured required information fields in your store’s Extra Fields settings for Company accounts or Company users, you must include the field’s name and value in the `extraFields` array of the request body. For more information on extra fields, see [B2B Edition Settings](https://support.bigcommerce.com/s/article/B2B-Edition-Settings) in the Help Center.
+
+        After you have created a new Company account, you can configure all of its features and settings by using the [Update a Company](#update-a-company) endpoint.
+
+        ### Independent vs Dependent Companies Behavior
+
+        When [Independent Company behavior](https://support.bigcommerce.com/s/article/Companies-and-Customer-Groups) is enabled on your store, the system will not automatically create a dedicated customer group for each new Company account. Instead, you can assign a customer group to a Company account as needed using the `customerGroupId` field. If the `customerGroupId` field is not included in the request body, the Company account will be assigned to your configured default customer group.
+
+        If you have not configured a default customer group or set the value of `customerGroupId` to `0`, the Company account will not be associated with any customer group, and its users will use your storefront’s default catalog visibility and pricing.
+
+        If your store is using legacy Dependent Company behavior, a new customer group will be automatically created and associated with each new Company account. In this case, you will not use the `customerGroupId` field.
+      parameters: []
+      security:
+        - authToken: []
       requestBody:
         content:
           application/json:
@@ -408,6 +314,8 @@ paths:
               allOf:
                 - $ref: https://raw.githubusercontent.com/bigcommerce/docs/main/docs/b2b-edition/models/extra_fields/extra_field_values.yaml
                 - $ref: https://raw.githubusercontent.com/bigcommerce/docs/main/docs/b2b-edition/models/extra_fields/user_extra_field_values.yaml
+                - $ref: "#/components/schemas/companyData_REQUEST"
+                - $ref: "#/components/schemas/companyAdmin_POST"
                 - type: object
                   required:
                     - companyName
@@ -420,73 +328,32 @@ paths:
                   properties:
                     companyName:
                       minLength: 1
-                      type: string
-                      description: The company name, if you want to specify it.
-                    companyPhone:
-                      type: string
-                    companyEmail:
-                      type: string
-                      minLength: 1
-                      format: email
-                    addressLine1:
-                      type: string
-                    addressLine2:
-                      type: string
-                    city:
-                      minLength: 1
-                      type: string
-                    state:
-                      minLength: 1
-                      type: string
-                    country:
-                      minLength: 1
-                      type: string
-                      description: |-
-                        Country full name or ISO2 country code. For Example:
-
-                        A Country full name: Afghanistan
-
-                        ISO2 Country code: AF
-                    zipCode:
-                      type: string
-                    adminFirstName:
-                      minLength: 1
-                      type: string
-                      description: The company first admin user first name
-                    adminLastName:
-                      minLength: 1
-                      type: string
-                      description: The company first admin user's last name
-                    adminEmail:
-                      type: string
-                      minLength: 1
-                      description: The company first admin user email
-                      format: email
-                    adminPhoneNumber:
-                      minLength: 1
-                      type: string
-                      description: The company first admin user phone number
-                    catalogId:
-                      minLength: 1
-                      type: integer
-                      description: BigCommerce price list ID that company related
-                    acceptCreationEmail:
-                      type: boolean
-                      description: "True: Sends an email notification about the company creation to the admin user; False: Does not send the notification."
-                      default: false
-                    channelIds:
-                      type: array
-                      description: BigCommerce channel ID list
-                      items:
-                        type: integer
                     originChannelId:
                       type: integer
-                      description: "BigCommerce channel ID, used for BigCommerce customer origin channel ID. This field takes effect only when you do not configure the store default B2B channel."
-                    customerGroupId:
-                      type: integer
-                      description: BigCommerce Customer Group ID. Used to associate a BigCommerce Customer Group to a B2B company when the independent company behavior is enabled.
+                      description: "The storefront channel ID designated as the origin for the Company administrator. Use `1` for your store’s default storefront channel."
+                      example: 1
+                    channelIds:
+                      type: array
+                      description: "The storefront channel IDs in which buyers can access their Company’s Buyer Portal. Use `1` for your store’s default storefront channel."
+                      items:
+                        type: integer
+                      example:
+                        - 1
+                        - 10001234
+                    catalogId:
+                      $ref: "#/components/schemas/catalogId_integer"
+                    acceptCreationEmail:
+                      type: boolean
+                      default: false
+                      description: |-
+                        Indicates whether or not the administrator receives a welcome email when the Company account is created.
+
+                        `true`: Sends the welcome email to the admin user
+
+                        `false`: Does not send the email
+                      example: true
             examples:
-              example-1:
+              Create a Company:
                 value:
                   companyName: string
                   companyPhone: string
@@ -524,31 +391,21 @@ paths:
                     type: integer
                   data:
                     type: object
-                    required:
-                      - companyId
-                      - customerId
-                      - customerGroupId
                     properties:
                       companyId:
-                        type: integer
+                        $ref: "#/components/schemas/companyId_integer"
                       customerId:
                         type: integer
+                        description: Id of the customer
                       customerGroupId:
-                        type: integer
+                        $ref: "#/components/schemas/customerGroupId"
                   meta:
                     type: object
-                    required:
-                      - message
                     properties:
                       message:
                         type: string
-                        minLength: 1
-                required:
-                  - code
-                  - data
-                  - meta
               examples:
-                example-1:
+                200 - Created:
                   value:
                     code: 200
                     data:
@@ -571,25 +428,19 @@ paths:
                     type: object
                     properties:
                       companyId:
-                        type: integer
+                        $ref: "#/components/schemas/companyId_integer"
                       customerId:
                         type: integer
                       customerGroupId:
-                        type: integer
+                        $ref: "#/components/schemas/customerGroupId"
                   meta:
                     type: object
-                    required:
-                      - message
                     properties:
                       message:
                         type: string
                         minLength: 1
-                required:
-                  - code
-                  - data
-                  - meta
               examples:
-                example-1:
+                400 - Bad Request Error:
                   value:
                     code: 400
                     data: {}
@@ -609,46 +460,37 @@ paths:
                     type: object
                     properties:
                       companyId:
-                        type: integer
+                        $ref: "#/components/schemas/companyId_integer"
                       customerId:
                         type: integer
                       customerGroupId:
-                        type: integer
+                        $ref: "#/components/schemas/customerGroupId"
                   meta:
                     type: object
-                    required:
-                      - message
                     properties:
                       message:
                         type: string
                         minLength: 1
-                required:
-                  - code
-                  - data
-                  - meta
               examples:
-                example-1:
+                422 - Invalid Data Error:
                   value:
                     code: 422
                     data: {}
                     meta:
                       message: The company name is required.
-      security:
-        - authToken: []
       x-codegen-request-body-name: body
-  "/companies/{companyId}":
+  /companies/{companyId}:
+    parameters:
+      - $ref: "#/components/parameters/companyId"
     get:
       tags:
-        - Company
-      summary: Get a Company Detail
-      description: Get details about a specific company.
+        - Companies
+      summary: Get Company Details
       operationId: get-companies-companyId
-      parameters:
-        - name: companyId
-          in: path
-          required: true
-          schema:
-            type: string
+      description: Returns detailed information for a specific Company account.
+      parameters: []
+      security:
+        - authToken: []
       responses:
         "200":
           description: OK
@@ -660,399 +502,108 @@ paths:
                   code:
                     type: number
                   data:
-                    type: object
-                    required:
-                      - companyId
-                      - companyName
-                      - bcGroupName
-                      - companyStatus
-                      - companyEmail
-                      - companyPhone
-                      - uuid
-                      - catalogId
-                      - catalogName
-                      - updatedAt
-                      - createdAt
-                      - extraFields
-                    properties:
-                      companyId:
-                        type: string
-                        minLength: 1
-                      companyName:
-                        type: string
-                        minLength: 1
-                      bcGroupName:
-                        type: string
-                        minLength: 1
-                      companyStatus:
-                        type: string
-                        minLength: 1
-                      companyEmail:
-                        type: string
-                        minLength: 1
-                      companyPhone:
-                        type: string
-                        minLength: 1
-                      uuid:
-                        type: string
-                      catalogId:
-                        type: string
-                      catalogName:
-                        type: string
-                      updatedAt:
-                        type: string
-                        minLength: 1
-                      createdAt:
-                        type: string
-                        minLength: 1
-                      extraFields:
-                        type: array
-                        uniqueItems: true
-                        minItems: 1
-                        items:
-                          type: object
-                          properties:
-                            dataType:
-                              type: string
-                              minLength: 1
-                            fieldName:
-                              type: string
-                              minLength: 1
-                            fieldValue:
-                              type: string
-                              minLength: 1
-                            isRequired:
-                              type: string
-                              minLength: 1
-                            labelName:
-                              type: string
-                              minLength: 1
-                          required:
-                            - dataType
-                            - fieldName
-                            - fieldValue
-                            - isRequired
-                            - labelName
-                      priceListAssign:
-                        type: array
-                        items:
-                          type: object
-                          properties:
-                            channelId:
-                              type: integer
-                              description: BigCommerce channel ID
-                            priceListId:
-                              type: integer
-                              description: BigCommerce price list ID
-                            priceListName:
-                              type: string
-                              description: BigCommerce price list name
-                            channelName:
-                              type: string
-                              description: Store Channel name
-                      bcGroupId:
-                        type: string
-                        description: BigCommerce customer group ID
+                    allOf:
+                      - $ref: "#/components/schemas/companyData_RESPONSE"
+                      - type: object
+                        properties:
+                          bcGroupId:
+                            type: string
+                            description: "The ID of the BigCommerce customer group assigned to the Company account. This field is read-only; use customerGroupID for POST/PUT requests."
+                            example: "123"
                   meta:
                     type: object
-                    required:
-                      - message
                     properties:
                       message:
                         type: string
                         minLength: 1
-                required:
-                  - code
-                  - data
-                  - meta
-              examples:
-                example-1:
-                  value:
-                    code: 200
-                    data:
-                      companyId: "147340"
-                      companyName: Glam Squad Hair and Makeup Artistry
-                      companyEmail: support@bundleb2b.net
-                      companyPhone: "123456789"
-                      companyStatus: "1"
-                      uuid: ""
-                      catalogId: ""
-                      catalogName: ""
-                      updatedAt: "1618794615"
-                      createdAt: "1618787774"
-                      extraFields:
-                        - dataType: "2"
-                          fieldName: extraStr1
-                          fieldValue: extra_text
-                          isRequired: "0"
-                          labelName: Enter your license
-                      bcGroupId: "1"
-                      bcGroupName: salons
-                    meta:
-                      message: SUCCESS
         "404":
-          description: Not Found
-          content:
-            application/json:
-              schema:
-                required:
-                  - code
-                  - data
-                  - meta
-                type: object
-                properties:
-                  code:
-                    type: number
-                  data:
-                    type: object
-                    properties: {}
-                  meta:
-                    required:
-                      - message
-                    type: object
-                    properties:
-                      message:
-                        minLength: 1
-                        type: string
-                description: ""
-              examples:
-                example-1:
-                  value:
-                    code: 0
-                    data: {}
-                    meta:
-                      message: string
-            example-1:
-              example:
-                code: 404
-                data: {}
-                meta:
-                  message: This resource is not found
-      security:
-        - authToken: []
+          $ref: "#/components/responses/ERROR_404_Data"
     put:
       tags:
-        - Company
+        - Companies
       summary: Update a Company
-      description: |
-        Update a company's attributes.
-        * When you enable `independent company behavior`, you can assign a customer group to a Company using the `customerGroupId` field. Once assigned, the customer group will be associated with all users within that Company. If `customerGroupId` is set to 0, the customer group association will be removed from the Company, and all users within the Company will no longer have a group assigned. The `priceListAssign` field will not take effect; please configure the price list for the customer group directly in the BigCommerce control panel.
-        
-        * When you turn off `independent company behavior`, the `customerGroupId` field will not take effect. You cannot change the association between B2B companies and BigCommerce customer groups. You will use the `priceListAssign` field to configure the price list assigned to the Company.
       operationId: put-companies-companyId
-      parameters:
-        - name: companyId
-          in: path
-          required: true
-          schema:
-            type: string
+      description: |-
+        Updates a Company’s attributes.
+
+        If you have configured required information fields in your store’s Extra Fields settings for Company accounts or Company users, you must include the field’s name and value in the `extraFields` array of the request body. For more information on extra fields, see [B2B Edition Settings](https://support.bigcommerce.com/s/article/B2B-Edition-Settings) in the Help Center.
+
+        ### Independent vs. Dependent Companies Behavior
+
+        This endpoint applies the same rules to the `customerGroupId` field as [Create a Company](#create-a-company), based on the Company behavior used in your store. Additionally, the `priceListAssign` field is not compatible with Independent Companies behavior because a Company’s price list is configured from its assigned customer group.
+
+        If your store is using Dependent Companies behavior, use the `priceListAssign` field to assign a price list to the Company account.
+      parameters: []
+      security:
+        - authToken: []
       requestBody:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                companyName:
-                  minLength: 1
-                  type: string
-                companyPhone:
-                  type: string
-                companyEmail:
-                  minLength: 1
-                  type: string
-                addressLine1:
-                  type: string
-                addressLine2:
-                  type: string
-                city:
-                  minLength: 1
-                  type: string
-                state:
-                  minLength: 1
-                  type: string
-                country:
-                  minLength: 1
-                  type: string
-                  description: |-
-                    Country full name or ISO2 country code. For Example:
+              allOf:
+                - $ref: "#/components/schemas/companyData_REQUEST"
+                - type: object
+                  properties:
+                    uuid:
+                      type: string
+                      format: uuid
+                      description: "An external ID assigned to the Company account in a third-party system, such as an ERP. Leave this field blank if you do not have an external system."
+                      example: "497f6eca-6276-4993-bfeb-53cbbbba6f08"
+                    priceListAssign:
+                      $ref: "#/components/schemas/priceListAssign_REQUEST"
+                    extraFields:
+                      minItems: 1
+                      uniqueItems: true
+                      type: array
+                      description: |-
+                        To use customized extra fields with field names you need to first add company extra fields in Settings > Extra fields inside B2B edition.
 
-                    A Country full name: Afghanistan
-
-                    ISO2 Country code: AF
-                zipCode:
-                  type: string
-                extraFields:
-                  minItems: 1
-                  uniqueItems: true
-                  type: array
-                  description: |-
-                    To use customized extra fields with field names you need to first add company extra fields in Settings > Extra fields inside B2B edition.
-
-                    e.g., If you want to create a new company with an extra integer field named licenseNO, you can use this structure [{'fieldName': 'LicenseNO', 'fieldValue': 10342340323}] in the request body.
-                  items:
-                    type: object
-                    properties:
-                      fieldName:
-                        minLength: 1
-                        type: string
-                        description: Field name that config in you store by the B3 team
-                      fieldValue:
-                        minLength: 1
-                        type: string
-                        description: Field value that you want to add
-                uuid:
-                  type: string
-                  description: Company UUID indicates external ID
-                priceListAssign:
-                  type: array
-                  description: This field is only enable for MSF store
-                  items:
-                    type: object
-                    properties:
-                      channelId:
-                        type: integer
-                        description: BigCommerce channel ID
-                      priceListId:
-                        type: integer
-                        description: BigCommerce price list ID
-                customerGroupId:
-                  type: integer
-                  description: |
-                    BigCommerce Customer Group ID. Used to associate a BigCommerce Customer Group to a B2B company when the independent company behavior is enabled.
+                        e.g., If you want to create a new company with an extra integer field named licenseNO, you can use this structure [{'fieldName': 'LicenseNO', 'fieldValue': 10342340323}] in the request body.
+                      items:
+                        type: object
+                        properties:
+                          fieldName:
+                            minLength: 1
+                            type: string
+                            description: "The name of the Company extra field."
+                            example: "Company Tax Code"
+                          fieldValue:
+                            minLength: 1
+                            type: string
+                            description: "The value of the Company extra field."
+                            example: "Code G"
         required: false
       responses:
         "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                description: ""
-                type: object
-                properties:
-                  code:
-                    type: number
-                  meta:
-                    type: object
-                    properties:
-                      message:
-                        type: string
-                        example: Success
-                  data:
-                    description: Return company ID.
-                    type: object
-                    properties:
-                      companyId:
-                        type: integer
-                        example: 1
-                required:
-                  - code
-                  - meta
-                  - data
-              examples:
-                example-1:
-                  value:
-                    code: 200
-                    data:
-                      companyId: 12
-                    meta:
-                      message: SUCCESS
+          $ref: "#/components/responses/RESPONSE_200_UPDATE"
         "404":
-          description: Not Found
-          content:
-            application/json:
-              schema:
-                required:
-                  - code
-                  - data
-                  - meta
-                type: object
-                properties:
-                  code:
-                    type: number
-                  data:
-                    type: object
-                    properties: {}
-                  meta:
-                    required:
-                      - message
-                    type: object
-                    properties:
-                      message:
-                        minLength: 1
-                        type: string
-                description: ""
-              examples:
-                example-1:
-                  value:
-                    code: 0
-                    data: {}
-                    meta:
-                      message: string
-            example-1:
-              example:
-                code: 404
-                data: {}
-                meta:
-                  message: This resource is not found
-            application/xml:
-              schema:
-                type: object
-                properties: {}
-      security:
-        - authToken: []
+          $ref: "#/components/responses/ERROR_404_Data"
       x-codegen-request-body-name: body
     delete:
       tags:
-        - Company
+        - Companies
       summary: Delete a Company
-      description: |-
-        Delete A Company.
-        * When you turn off `independent company behavior`. Deleting a company will also delete the corresponding BigCommerce Customer Group.
-        
-        * When you enable `independent company behavior`. Deleting a company will not affect the customer group associated with the company.
       operationId: delete-companies-companyId
-      parameters:
-        - name: companyId
-          in: path
-          required: true
-          schema:
-            type: string
+      description: |-
+        Deletes a Company account.
+
+        ### Independent vs. Dependent Companies Behavior
+
+        If your store is using Independent Companies behavior, deleting a Company account has no effect on its assigned customer group.
+
+        With Dependent Companies behavior, Company accounts and BigCommerce customer groups have a one-to-one relationship. Deleting a Company will also delete the corresponding customer group.
+      parameters: []
+      security:
+        - authToken: []
       responses:
         "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                description: ""
-                type: object
-                properties:
-                  code:
-                    type: integer
-                  data:
-                    type: object
-                    properties: {}
-                  meta:
-                    required:
-                      - message
-                    type: object
-                    properties:
-                      message:
-                        minLength: 1
-                        type: string
-              examples:
-                example-1:
-                  value:
-                    code: 200
-                    data: {}
-                    meta:
-                      message: SUCCESS
+          $ref: "#/components/responses/RESPONSE_200_Base"
         "404":
           description: Not Found
           content:
             application/json:
               schema:
                 type: object
-                description: ""
                 properties:
                   code:
                     type: integer
@@ -1060,112 +611,55 @@ paths:
                     type: object
                     properties:
                       companyId:
-                        type: integer
+                        $ref: "#/components/schemas/companyId_integer"
                       customerId:
                         type: integer
                       customerGroupId:
-                        type: integer
+                        $ref: "#/components/schemas/customerGroupId"
                   meta:
                     type: object
-                    required:
-                      - message
                     properties:
                       message:
-                        minLength: 1
                         type: string
-                required:
-                  - code
-                  - data
-                  - meta
               examples:
-                example-1:
+                404 - Not Found Error:
                   value:
                     code: 404
                     data: {}
                     meta:
-                      message: string
-            example-1:
-              example:
-                code: 404
-                data: {}
-                meta:
-                  message: This resource is not found
-      security:
-        - authToken: []
-    parameters:
-      - $ref: "#/components/parameters/companyId"
-  "/customer-groups/{customerGroupId}/companies":
+                      message: This resource is not found.
+  /customer-groups/{customerGroupId}/companies:
+    parameters: 
+      - name: customerGroupId
+        in: path
+        required: true
+        schema:
+          type: string
+        description: "The BigCommerce customer group ID associated with the Company account."
+        example: "123"
     post:
       tags:
-        - Company
-      summary: Convert from BigCommerce CustomerGroup into Company
-      description: |-
-        Create company from a BigCommerce customer group. 
-        * This API is turned off for the MSF store.
-        * This API is turned off when the independent company feature is enabled.
+        - Companies
+      summary: Convert a BigCommerce Customer Group into a Company
       operationId: post-companies-conversion-customerGroups
-      parameters:
-        - name: customerGroupId
-          in: path
-          required: true
-          schema:
-            type: string
+      description: |-
+        Creates a Company account that is automatically assigned to a BigCommerce customer group. You cannot create a Company from a customer group that already has an assigned Company account.
+        
+        Note that this endpoint **is not supported** if your store:
+
+        * Has Multi-Storefront enabled
+        * Is using Independent Companies behavior
+
+        If you have configured required information fields in your store’s Extra Fields settings for Company accounts or Company users, you must include the field’s name and value in the extraFields array of the request body. For more information on extra fields, see [B2B Edition Settings](https://support.bigcommerce.com/s/article/B2B-Edition-Settings) in the Help Center.
+      parameters: []
+      security:
+        - authToken: []
       requestBody:
         content:
           application/json:
             schema:
               allOf:
                 - type: object
-                  properties:
-                    companyName:
-                      type: string
-                      minLength: 1
-                      description: Company name
-                    companyPhone:
-                      type: string
-                      minLength: 1
-                      description: Company phone number
-                    companyEmail:
-                      type: string
-                      minLength: 1
-                      description: Company email
-                    addressLine1:
-                      type: string
-                      minLength: 1
-                    addressLine2:
-                      type: string
-                      minLength: 1
-                    city:
-                      type: string
-                      minLength: 1
-                    state:
-                      type: string
-                      minLength: 1
-                    country:
-                      type: string
-                      minLength: 1
-                    zipCode:
-                      type: string
-                      minLength: 1
-                    adminFirstName:
-                      type: string
-                      minLength: 1
-                    adminLastName:
-                      type: string
-                      minLength: 1
-                    adminEmail:
-                      type: string
-                      minLength: 1
-                    adminPhoneNumber:
-                      type: string
-                      minLength: 1
-                    catalogId:
-                      type: integer
-                      description: The company catalog ID
-                    acceptCreationEmail:
-                      type: boolean
-                      description: If the company creation can accept email
-                      default: false
                   required:
                     - companyName
                     - companyPhone
@@ -1173,10 +667,38 @@ paths:
                     - country
                     - adminEmail
                     - adminPhoneNumber
+                  properties:
+                    companyName:
+                      $ref: "#/components/schemas/companyName"
+                    companyPhone:
+                      type: string
+                      maxLength: 50
+                      description: "The primary phone number for the Company account."
+                      example: 8001234567
+                    companyEmail:
+                      type: string
+                      maxLength: 200
+                      format: email
+                      description: "The primary email address for the Company account."
+                      example: "admin@greatbuys.com"
+                    catalogId:
+                      $ref: "#/components/schemas/catalogId_string"
+                    acceptCreationEmail:
+                      type: boolean
+                      default: false
+                      description: |-
+                        Indicates whether or not the administrator receives a welcome email when the Company account is created.
+
+                        `true`: Sends the welcome email to the admin user
+
+                        `false`: Does not send the email
+                      example: true
+                - $ref: "#/components/schemas/companyAddress_REQUEST"
+                - $ref: "#/components/schemas/companyAdmin_POST"
                 - $ref: https://raw.githubusercontent.com/bigcommerce/docs/main/docs/b2b-edition/models/extra_fields/extra_field_values.yaml
                 - $ref: https://raw.githubusercontent.com/bigcommerce/docs/main/docs/b2b-edition/models/extra_fields/user_extra_field_values.yaml
             examples:
-              example-1:
+              CONVERT GROUP:
                 value:
                   companyName: string
                   companyPhone: string
@@ -1203,168 +725,146 @@ paths:
           content:
             application/json:
               schema:
-                required:
-                  - code
-                  - data
-                  - meta
                 type: object
                 properties:
                   code:
                     type: integer
                   data:
-                    required:
-                      - companyId
                     type: object
                     properties:
                       companyId:
-                        minLength: 1
-                        type: string
+                        $ref: "#/components/schemas/companyId_string"
                   meta:
-                    required:
-                      - message
                     type: object
                     properties:
                       message:
-                        minLength: 1
                         type: string
-                description: ""
               examples:
-                example-1:
+                200 - CREATED:
                   value:
                     code: 200
                     data:
-                      companyId: "12"
+                      companyId: "147340"
                     meta:
                       message: SUCCESS
-            example-1:
-              example:
-                code: 200
-                data:
-                  companyId: "147340"
-                meta:
-                  message: SUCCESS
         "400":
           description: Bad Request
           content:
             application/json:
               schema:
-                required:
-                  - code
-                  - data
-                  - meta
                 type: object
                 properties:
                   code:
                     type: number
                   data:
-                    required:
-                      - companyId
                     type: object
                     properties:
                       companyId:
-                        minLength: 1
-                        type: string
+                        $ref: "#/components/schemas/companyId_string"
                   meta:
-                    required:
-                      - message
                     type: object
                     properties:
                       message:
-                        minLength: 1
                         type: string
                 description: ""
               examples:
-                example-1:
+                400 - BAD REQUEST ERROR:
                   value:
-                    code: 200
-                    data:
-                      companyId: "12"
-                    meta:
-                      message: SUCCESS
-            example-1:
-              example:
-                code: 400
-                data: {}
-                meta:
-                  message: Convert failed for the API call.
+                   code: 400
+                   data: {}
+                   meta:
+                     message: Convert failed for the API call.
         "404":
-          description: Not Found
-          content:
-            application/json:
-              schema:
-                required:
-                  - code
-                  - data
-                  - meta
-                type: object
-                properties:
-                  code:
-                    type: number
-                  data:
-                    type: object
-                    properties: {}
-                  meta:
-                    required:
-                      - message
-                    type: object
-                    properties:
-                      message:
-                        minLength: 1
-                        type: string
-                description: ""
-              examples:
-                example-1:
-                  value:
-                    code: 0
-                    data: {}
-                    meta:
-                      message: string
-            example-1:
-              example:
-                code: 404
-                data: {}
-                meta:
-                  message: This resource is not found
-      security:
-        - authToken: []
+          $ref: "#/components/responses/ERROR_404_Data"
   /companies/bulk:
     parameters: []
     post:
+      tags:
+        - Companies
       summary: Bulk Create Companies
       operationId: post-companies-bulk
+      description: |-
+        Creates multiple Company accounts at once. You can create up to `10` Companies in a single request.
+
+        See [Create a Company](#create-a-company) for recommendations on formatting individual Companies in the array.
+      parameters: []
+      security:
+        - authToken: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              title: bulkCompanyData
+              items:
+                allOf:
+                  - $ref: https://raw.githubusercontent.com/bigcommerce/docs/main/docs/b2b-edition/models/company/company_bulk_create.yaml
+                  - $ref: https://raw.githubusercontent.com/bigcommerce/docs/main/docs/b2b-edition/models/extra_fields/user_extra_field_values.yaml
+                  - type: object
+                    title: companyFields
+                    required:
+                      - companyName
+                      - companyPhone
+                      - companyEmail
+                      - country
+                      - adminFirstName
+                      - adminLastName
+                      - adminEmail
+                    properties:
+                      acceptWelcomeEmail:
+                        type: boolean
+                        description: "If user accepts, the system sends a welcome email."
+                        example: false
+                      extraFields:
+                        type: object
+                        description: "Extra fields you want to add to the company fields."
+                        properties:
+                          fieldName:
+                            type: string
+                            description: "The name of the Company extra field."
+                            example: "Company Tax Code"
+                          fieldValue:
+                            type: string
+                            description: "The value of the Company extra field."
+                            example: "Code G"
+                      channelIds:
+                        type: array
+                        description: "The storefront channel IDs in which buyers can access their Company’s Buyer Portal. Use `1` for your store’s default storefront channel."
+                        items:
+                          type: integer
+                        example:
+                          - 1
+                          - 10001234
+                      originChannelId:
+                        type: integer
+                        description: "The storefront channel ID designated as the origin for the Company administrator. Use 1 for your store’s default storefront channel."
+                        example: 1
+                      customerGroupId:
+                        $ref: "#/components/schemas/customerGroupId"
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                description: ""
                 type: object
                 properties:
                   code:
                     type: integer
-                    example: 200
                   meta:
                     type: array
                     items:
                       type: object
                       properties:
                         companyId:
-                          type: integer
-                          example: 1
+                          $ref: "#/components/schemas/companyId_integer"
                   data:
                     type: object
                     properties:
                       id:
                         type: string
-                        description: Unique numeric ID of this Address.
-                    required:
-                      - id
-                required:
-                  - code
-                  - meta
               examples:
-                example-1:
+                200 - SUCCESS:
                   value:
                     code: 200
                     meta:
@@ -1372,415 +872,174 @@ paths:
                     data:
                       id: string
         "400":
-          description: "Bad Request, some companies created failed."
+          description: Bad Request; creation failed for some Companies
           content:
             application/json:
               schema:
-                description: ""
                 type: object
-                x-examples:
-                  example-1:
-                    code: 0
-                    data: {}
-                    meta:
-                      message: string
                 properties:
                   code:
                     type: number
                   data:
                     type: object
-                    required:
-                      - errors
                     properties:
                       errors:
-                        minItems: 1
                         uniqueItems: true
                         type: array
                         items:
                           type: object
                           properties:
                             id:
-                              minLength: 1
                               type: string
                             _detail:
                               type: string
-                          required:
-                            - id
-                            - _detail
                   meta:
                     type: object
-                    required:
-                      - message
                     properties:
                       message:
                         type: string
-                        minLength: 1
-                        example: Success
-                required:
-                  - code
-                  - meta
               examples:
-                example-1:
+                400 - BAD REQUEST ERROR:
                   value:
-                    code: 0
+                    code: 400
                     data:
                       errors:
-                        - id: string
-                          _detail: string
+                        - id: "42"
+                          _detail: ""
                     meta:
-                      message: string
-            example-1:
-              example:
-                code: 400
-                data:
-                  errors:
-                    - id: "42"
-                      detail: ""
-                meta:
-                  message: "Some companies updated failed, you can see these in errors."
+                      message: "Some companies updated failed, you can see these in errors."
         "409":
-          description: "Company was in conflict with another company. This is the result of duplicate unique values; A missing or invalid `companyEmail`, `phoneNumber` or other extraFields."
+          description: The Company was in conflict with another Company. This is the result of duplicate unique values, or missing or invalid `companyEmail`, `phoneNumber` or required `extraFields`.
           content:
             application/json:
               schema:
                 type: object
-                description: ""
                 properties:
                   code:
                     type: number
                   data:
                     type: object
-                    required:
-                      - errors
                     properties:
                       errors:
-                        minItems: 1
                         uniqueItems: true
                         type: array
                         items:
                           type: object
                           properties:
                             id:
-                              minLength: 1
                               type: string
                             _detail:
                               type: string
-                          required:
-                            - id
-                            - _detail
                   meta:
                     type: object
-                    required:
-                      - message
                     properties:
                       message:
-                        minLength: 1
                         type: string
-                required:
-                  - code
-                  - data
-                  - meta
               examples:
-                example-1:
+                409 - COMPANY CONFLICT ERROR:
                   value:
-                    code: 0
+                    code: 409
                     data:
                       errors:
-                        - id: string
+                        - id: "42"
                           _detail: string
                     meta:
-                      message: string
-            example-1:
-              example:
-                code: 409
-                data:
-                  errors:
-                    - id: "42"
-                      detail: ""
-                meta:
-                  message: Company was in conflict with another company
+                      message: Company was in conflict with another company.
         "413":
-          description: "Request Entity Too Large. In normal conditions, the bulk create or update method supports 10 entities in one request."
-          content:
-            application/json:
-              schema:
-                $ref: https://raw.githubusercontent.com/bigcommerce/docs/main/docs/b2b-edition/models/utils/response-413.yaml
-              examples:
-                example-1:
-                  value:
-                    code: 413
-                    meta:
-                      message: Request Entity Too Large
-                    data: {}
+          $ref: "#/components/responses/ERROR_413"
         "422":
           description: Company was not valid. This is the result of missing required fields or invalid data. See the response for more details.
           content:
             application/json:
               schema:
-                description: ""
                 type: object
                 properties:
                   code:
                     type: number
                   data:
                     type: object
-                    required:
-                      - errors
                     properties:
                       errors:
                         type: array
                         uniqueItems: true
-                        minItems: 1
                         items:
                           allOf:
                             - type: object
                               properties:
                                 id:
                                   type: string
-                                  minLength: 1
                                 _detail:
                                   type: string
-                                  minLength: 1
-                              required:
-                                - id
-                                - _detail
                   meta:
                     type: object
-                    required:
-                      - message
                     properties:
                       message:
                         type: string
-                        minLength: 1
-                required:
-                  - code
-                  - data
-                  - meta
               examples:
-                example-1:
+                422 - INVALID DATA ERROR:
                   value:
-                    code: 0
+                    code: 422
                     data:
                       errors:
-                        - id: string
+                        - id: "12"
                           _detail: string
                     meta:
                       message: string
-      description: |-
-        Bulk create companies
-        * When the `independent company behavior` is enabled, the system will not automatically create a dedicated customer group for each new Company account. Instead, you can assign a customer group to a Company account as needed using the `customerGroupId` field. If the `customerGroupId` field is not provided, the B2B company will be associated with the configured default customer group. If you have not configured a default customer group, the B2B company will not be associated with any customer group, and the company users within the company will have their corresponding customer record assigned to "No Group" in BigCommerce.
-        * When the `independent company behavior` is turned off, a new customer group will be automatically created and associated with each new Company account. In this case, you will not use the `customerGroupId` field.
+    put:
+      tags:
+        - Companies
+      summary: Update Companies (Batch)
+      operationId: put-companies
+      description: "Updates up to `10` Company accounts at once. See [Update a Company](#update-a-company) for recommendations on formatting individual Companies in the array."
+      parameters: []
       security:
         - authToken: []
       requestBody:
         content:
           application/json:
             schema:
-              type: array
-              items:
-                allOf:
-                  - $ref: https://raw.githubusercontent.com/bigcommerce/docs/main/docs/b2b-edition/models/company/company_bulk_create.yaml
-                  - type: object
-                    properties:
-                      acceptWelcomeEmail:
-                        type: boolean
-                        description: If user accepts, the system sends a welcome email.
-                        example: false
-                      extraFields:
+              allOf:
+                - type: object
+                  required:
+                    - companyId
+                  properties:
+                    companyId:
+                      $ref: "#/components/schemas/companyId_string"
+                - $ref: "#/components/schemas/companyData_REQUEST"
+                - type: object
+                  properties:
+                    priceListAssign:
+                      $ref: "#/components/schemas/priceListAssign_REQUEST"
+                    extraFields:
+                      minItems: 1
+                      uniqueItems: true
+                      type: array
+                      description: |-
+                        To use customized extra fields with field names you need to first add company extra fields in Settings > Extra fields inside B2B edition.
+
+                        e.g., If you want to create a new company with an extra integer field named licenseNO, you can use this structure [{'fieldName': 'LicenseNO', 'fieldValue': 10342340323}] in the request body.
+                      items:
                         type: object
-                        description: Extra fields you want to add to the company fields.
                         properties:
                           fieldName:
+                            minLength: 1
                             type: string
+                            description: "The name of the Company extra field."
+                            example: "Company Tax Code"
                           fieldValue:
+                            minLength: 1
                             type: string
-                      channelIds:
-                        type: array
-                        description: BigCommerce channel ID list
-                        items:
-                          type: integer
-                      originChannelId:
-                        type: integer
-                        description: "BigCommerce channel ID, used for BigCommerce customer origin channel ID. This field takes effect only when you do not configure the store default B2B channel."
-                      customerGroupId:
-                        type: integer
-                        description: |
-                          BigCommerce Customer Group ID. Used to associate a BigCommerce Customer Group to a B2B company when the independent company behavior is enabled.
-                  - $ref: https://raw.githubusercontent.com/bigcommerce/docs/main/docs/b2b-edition/models/extra_fields/user_extra_field_values.yaml
-            examples:
-              example-1:
-                value:
-                  - companyName: string
-                    companyPhone: string
-                    companyEmail: string@gmail.com
-                    addressLine1: string
-                    addressLine2: string
-                    city: string
-                    state: string
-                    country: string
-                    zipCode: string
-                    adminFirstName: string
-                    adminLastName: string
-                    adminEmail: string
-                    adminPhoneNumber: string
-                    catalogId: string
-                    uuid: string
-                    acceptWelcomeEmail: false
-                    channelIds:
-                      - 1
-                      - 2
-                    originChannelId: 1
-        description: Bulk create companies request body
-      tags:
-        - Company
-    put:
-      tags:
-        - Company
-      summary: Update Companies (Batch)
-      description: |
-        Batch update companies.
-        * When the `independent company behavior` is enabled, you can assign a customer group to a company using the `customerGroupId` field. Once assigned, the customer group will be associated with all users within that company. If `customerGroupId` is set to 0, the customer group association will be removed from the company, and all users within the company will no longer have a group assigned. The `priceListAssign` field will not take effect; please configure the price list for the customer group directly in the BigCommerce control panel.
-        
-        * When the `independent company behavior` is turned off, the `customerGroupId` field will not take effect. You cannot change the association between B2B companies and BigCommerce customer groups. You will use the `priceListAssign` field to configure the price list assigned to the company.
-      operationId: put-companies
-      requestBody:
-        content:
-          application/json:
-            schema:
-              minItems: 1
-              type: array
-              description: The bulk update companies list
-              items:
-                type: object
-                properties:
-                  companyId:
-                    minLength: 1
-                    type: string
-                  companyName:
-                    minLength: 1
-                    type: string
-                  companyPhone:
-                    type: string
-                  companyEmail:
-                    minLength: 1
-                    type: string
-                  addressLine1:
-                    type: string
-                  addressLine2:
-                    type: string
-                  city:
-                    minLength: 1
-                    type: string
-                  state:
-                    minLength: 1
-                    type: string
-                  country:
-                    minLength: 1
-                    type: string
-                  zipCode:
-                    type: string
-                  extraFields:
-                    minItems: 1
-                    uniqueItems: true
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        fieldName:
-                          minLength: 1
-                          type: string
-                        fieldValue:
-                          minLength: 1
-                          type: string
-                  priceListAssign:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        channelId:
-                          type: integer
-                          description: BigCommerce channel ID
-                        priceListId:
-                          type: integer
-                          description: BigCommerce price list ID
-                  customerGroupId:
-                    type: integer
-                    description: |
-                      BigCommerce Customer Group ID. Used to associate a BigCommerce Customer Group to a B2B company when the independent company behavior is enabled.
-                required:
-                  - companyId
-            examples:
-              example-1:
-                value:
-                  - companyId: string
-                    companyName: string
-                    companyPhone: string
-                    companyEmail: string
-                    addressLine1: string
-                    addressLine2: string
-                    city: string
-                    state: string
-                    country: string
-                    zipCode: string
-                    extraFields:
-                      - fieldName: string
-                        fieldValue: string
+                            description: "The value of the Company extra field."
+                            example: "Code G"
         required: false
       responses:
         "200":
-          description: Company Update Success
-          content:
-            application/json:
-              schema:
-                required:
-                  - code
-                  - data
-                  - meta
-                type: object
-                properties:
-                  code:
-                    type: number
-                  data:
-                    required:
-                      - companyId
-                    type: object
-                    properties:
-                      companyId:
-                        minLength: 1
-                        type: string
-                  meta:
-                    required:
-                      - message
-                    type: object
-                    properties:
-                      message:
-                        minLength: 1
-                        type: string
-                description: ""
-              examples:
-                example-1:
-                  value:
-                    code: 0
-                    data:
-                      companyId: string
-                    meta:
-                      message: string
-            example-1:
-              example:
-                code: 200
-                data:
-                  companyId: "147340"
-                meta:
-                  message: SUCCESS
+          $ref: "#/components/responses/RESPONSE_200_UPDATE"
         "400":
           description: Bad Request
           content:
             application/json:
               schema:
-                required:
-                  - code
-                  - data
-                  - meta
                 type: object
                 properties:
                   code:
@@ -1789,187 +1048,60 @@ paths:
                     type: object
                     properties: {}
                   meta:
-                    required:
-                      - message
                     type: object
                     properties:
                       message:
-                        minLength: 1
                         type: string
                 description: ""
               examples:
-                example-1:
+                400 - BAD REQUEST ERROR:
                   value:
-                    code: 0
+                    code: 400
                     data: {}
                     meta:
-                      message: string
-            example-1:
-              example:
-                code: 400
-                data: {}
-                meta:
-                  message: Convert failed for the API call.
+                      message: Convert failed for the API call.
         "404":
-          description: Not Found
-          content:
-            application/json:
-              schema:
-                required:
-                  - code
-                  - data
-                  - meta
-                type: object
-                properties:
-                  code:
-                    type: number
-                  data:
-                    type: object
-                    properties: {}
-                  meta:
-                    required:
-                      - message
-                    type: object
-                    properties:
-                      message:
-                        minLength: 1
-                        type: string
-                description: ""
-              examples:
-                example-1:
-                  value:
-                    code: 0
-                    data: {}
-                    meta:
-                      message: string
-            example-1:
-              example:
-                code: 404
-                data: {}
-                meta:
-                  message: This resource is not found
+          $ref: "#/components/responses/ERROR_404_Data"
         "413":
-          description: Request Entity Too Large
-          content:
-            application/json:
-              schema:
-                $ref: https://raw.githubusercontent.com/bigcommerce/docs/main/docs/b2b-edition/models/utils/response-413.yaml
-      security:
-        - authToken: []
+          $ref: "#/components/responses/ERROR_413"
       x-codegen-request-body-name: body
-  "/companies/{companyId}/catalogs":
-    parameters:
+  /companies/{companyId}/catalogs:
+    parameters: 
       - $ref: "#/components/parameters/companyId"
     put:
-      summary: Update a Company Catalog
+      tags:
+        - Companies
+      summary: Update a Company's Catalog
       operationId: put-companies-companyId-catalog
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                description: ""
-                type: object
-                properties:
-                  code:
-                    type: number
-                  data:
-                    type: object
-                    properties:
-                      companyId:
-                        type: string
-                        minLength: 1
-                    required:
-                      - companyId
-                  meta:
-                    type: object
-                    properties:
-                      message:
-                        type: string
-                        minLength: 1
-                    required:
-                      - message
-                required:
-                  - code
-                  - data
-                  - meta
-              examples:
-                example-1:
-                  value:
-                    code: 200
-                    data:
-                      companyId: "147340"
-                    meta:
-                      message: SUCCESS
+      description: "Updates the price list assigned to the Company account. This endpoint **is not supported** for stores using Independent Companies behavior."
+      parameters: []
       security:
         - authToken: []
       requestBody:
         content:
           application/json:
             schema:
-              description: ""
               type: object
               properties:
                 catalogId:
-                  type: string
-                  minLength: 1
-                  description: The catalog ID you want to update
+                  $ref: "#/components/schemas/catalogId_string"
               required:
                 - catalogId
-            examples:
-              example-1:
-                value:
-                  catalogId: string
-        description: ""
-      description: Update a company catalog.
-      tags:
-        - Company
-  "/companies/{companyId}/status":
+      responses:
+        "200":
+          $ref: "#/components/responses/RESPONSE_200_UPDATE"
+        "405":
+          description: "Not Allowed; occurs if the store is using Independent Companies behavior"
+  /companies/{companyId}/status:
     parameters:
       - $ref: "#/components/parameters/companyId"
     put:
-      summary: Update a Company Status
+      tags:
+        - Companies
+      summary: Update a Company's Status
       operationId: put-companies-companyId-status
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                description: ""
-                type: object
-                properties:
-                  code:
-                    type: number
-                  data:
-                    type: object
-                    properties:
-                      companyId:
-                        type: string
-                        minLength: 1
-                    required:
-                      - companyId
-                  meta:
-                    type: object
-                    properties:
-                      message:
-                        type: string
-                        minLength: 1
-                    required:
-                      - message
-                required:
-                  - code
-                  - data
-                  - meta
-              examples:
-                example-1:
-                  value:
-                    code: 200
-                    data:
-                      companyId: "147340"
-                    meta:
-                      message: SUCCESS
+      description: "Updates a Company’s account status. See [Company Status Codes](#company-status-codes) for a description of the available statuses."
+      parameters: []
       security:
         - authToken: []
       requestBody:
@@ -1980,24 +1112,29 @@ paths:
               type: object
               properties:
                 companyStatus:
-                  type: number
-                  description: |-
-                    Company status you want to set
-                    0: PENDING 1: APPROVED 2: REJECTED 3: INACTIVE 4: DELETED
+                  $ref: "#/components/schemas/companyStatus_integer"
               required:
                 - companyStatus
             examples:
               example-1:
                 value:
                   companyStatus: 1
-      description: Update a company's status
-      tags:
-        - Company
+      responses:
+        "200":
+          $ref: "#/components/responses/RESPONSE_200_UPDATE"
   /companies/extra-fields:
+    parameters: []
     get:
-      summary: Get Company Extra Field Configs
       tags:
-        - Company
+        - Companies
+      summary: Get Company Extra Field Configs
+      operationId: get-companies-extra-fields
+      description: Returns a list of available extra fields configs for Company accounts.
+      parameters:
+        - $ref: "#/components/parameters/paginationLimit"
+        - $ref: "#/components/parameters/paginationOffset"
+      security:
+        - authToken: []
       responses:
         "200":
           description: OK
@@ -2005,9 +1142,9 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - title: response-object
+                  - type: object
                     description: Response for successful request
-                    type: object
+                    title: response-object
                     properties:
                       code:
                         type: integer
@@ -2062,93 +1199,102 @@ paths:
                           properties:
                             id:
                               type: number
-                              description: Unique id
+                              description: "The unique identifier for a Company extra field."
+                              example: 123456
                             uuid:
                               type: string
-                              description: UUID of the extra field
+                              format: uuid
+                              description: "An external ID assigned to the Company extra field in a third-party system, such as an ERP. Leave this field blank if you do not have an external system."
+                              example: "123456"
                             fieldName:
                               type: string
-                              description: Field name that config in you store
+                              description: "The name of the Company extra field."
+                              example: "Customer Tax Code"
                             fieldType:
                               type: number
-                              description: >-
-                                Field type of the extra field.0 means text type. 1 means
-                                textarea type. 2 means number type. 3 means dropdown.
-                                type.
+                              description: |-
+                                The type of data that can be added as the extra field’s value.
+              
+                                | Value | Type |
+                                | --- | ---|
+                                | `0` | text |
+                                | `1` | multi-line text |
+                                | `2` | numbers |
+                                | `3` | dropdown |
                               enum:
                                 - 0
                                 - 1
                                 - 2
                                 - 3
+                              example: 1
                             isRequired:
                               type: boolean
-                              description: Is this field is required
+                              description: |-
+                                Indicates whether or not the extra field must be filled out in order to create a Company account.
+
+                                If `true`, the extra field is required. If `false`, the extra field is optional.
                             isUnique:
                               type: boolean
-                              description: Is the value of this field is unique
+                              description: "Indicates whether or not unique values are required for the extra field. Specifically if `true`, no two companies may have the same value for the field."
                             visibleToEnduser:
                               type: boolean
-                              description: Is this field visible to end-user
+                              description: |-
+                                Indicates whether or not the extra field is visible on the storefront.
+
+                                If `true`, the extra field is visible on the storefront. If `false`, the extra field is only visible in the B2B Edition control panel.
                             configType:
                               type: number
-                              description: >-
-                                Extra field config type.1 means built in. 2 means user
-                                defined.
+                              description: |-
+                                Indicates whether an extra field is built-in or user-defined.
+
+                                If the value is `1`, the extra field is built-in. If the value is `2`, the extra field is user-defined.
                               enum:
                                 - 1
                                 - 2
+                              example: 1
                             defaultValue:
                               type: string
-                              description: Default value of this field.
+                              description: "The default value configured for the extra field."
+                              example: "Code G"
                             maximumLength:
                               type: string
-                              description: >-
-                                The maximum length of the value of this field. fieldType
-                                == 0
+                              description: "The maximum character length of the value entered for the extra field. This only applies to extra fields with a `fieldType` of `0` (text)."
+                              example: "100"
                             numberOfRows:
                               type: string
-                              description: >-
-                                The maximum number of rows of the value of this field.
-                                fieldType == 1
+                              description: "The maximum number or text rows for the value entered for the extra field. This only applies to extra fields with a `fieldType` of `1` (multi-line text)."
+                              example: "5"
                             maximumValue:
                               type: string
-                              description: Maximum value of the field value. fieldType == 2
+                              description: "The maximum numeric value that can be entered for the extra field. This only applies to extra fields with a `fieldType` of `2` (number)."
+                              example: "1000"
                             listOfValue:
                               type: array
-                              description: >-
-                                List of all optional values for the field value.
-                                fieldType == 3
+                              description: "The available options that can be selected for the extra field. This only applies to extra fields with a `fieldType` of `3` (dropdown)."
                               items:
                                 type: string
+                              example:
+                                - Retail
+                                - Automotive
+                                - Manufacturing
                           x-internal: false
-      operationId: get-companies-extra-fields
-      description: Get company extra field configs
-      parameters:
-        - schema:
-            type: number
-          in: query
-          name: offset
-          description: "Pagination offset default: 0"
-        - schema:
-            type: string
-          in: query
-          description: "Pagination limit default: 10"
-          name: limit
-      security:
-        - authToken: []
   /companies/permissions:
+    parameters: []
     get:
       tags:
         - Company Roles and Permissions
       summary: Get All Company Permissions
-      description: Get all company permissions
       operationId: get-stores-companies-permissions
+      description: Returns a list of all predefined and custom Company permissions.
       parameters:
         - name: q
           in: query
           schema:
             type: string
-          description: search by permission name
+          description: "Enter a Company permission name to return partial and exact matches."
+          example: Get addresses
+      security:
+        - authToken: []
       responses:
         "200":
           description: OK
@@ -2159,29 +1305,10 @@ paths:
                 properties:
                   code:
                     type: integer
-                    default: 200
                   data:
                     type: array
                     items:
-                      type: object
-                      properties:
-                        id:
-                          type: integer
-                        name:
-                          type: string
-                          description: The permission name
-                        description:
-                          type: string
-                          description: The permission description
-                        code:
-                          type: string
-                          description: The permission code
-                        isCustom:
-                          type: boolean
-                          description: Whether the permission is custom
-                        moduleName:
-                          type: string
-                          description: The name of the module to which the permission belongs
+                      $ref: "#/components/schemas/permission_RESPONSE"
                   meta:
                     type: object
                     properties:
@@ -2189,7 +1316,7 @@ paths:
                         type: string
                         default: SUCCESS
               examples:
-                Example 1:
+                200 - SUCCESS:
                   value:
                     code: 200
                     data:
@@ -2201,92 +1328,24 @@ paths:
                         moduleName: address
                     meta:
                       message: SUCCESS
-      security:
-        - authToken: []
       x-internal: false
-    parameters: []
     post:
-      summary: Create Company Permission
+      tags:
+        - Company Roles and Permissions
+      summary: Create a Company Permission
       operationId: post-stores-companies-permissions
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  code:
-                    type: integer
-                    default: 200
-                  data:
-                    type: object
-                    properties:
-                      id:
-                        type: integer
-                      name:
-                        type: string
-                        description: The permission name
-                      code:
-                        type: string
-                        description: The permission code
-                      description:
-                        type: string
-                        description: The permission description
-                      isCustom:
-                        type: boolean
-                        description: Whether the permission is custom
-                      moduleName:
-                        type: string
-                        description: The name of the module to which the permission belongs
-                  meta:
-                    type: object
-                    properties:
-                      message:
-                        type: string
-                        default: SUCCESS
-              examples:
-                Example 1:
-                  value:
-                    code: 200
-                    data:
-                      id: 1
-                      name: Get addresses
-                      description: Get addresses
-                      code: get_addresses
-                      isCustom: false
-                      moduleName: address
-                    meta:
-                      message: SUCCESS
-      description: Create company permission
+      description: |-
+        Create a custom Company permission.
+
+        Note that the permission’s `name` and `code` values cannot match an existing permission.
+      parameters: []
       security:
         - authToken: []
       requestBody:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                name:
-                  type: string
-                  maxLength: 200
-                  description: The permission name
-                code:
-                  type: string
-                  maxLength: 50
-                  description: The permission code
-                description:
-                  type: string
-                  maxLength: 512
-                  description: The permission description
-                moduleName:
-                  type: string
-                  maxLength: 50
-                  description: The permission module name
-              required:
-                - name
-                - code
-                - description
+              $ref: "#/components/schemas/permission_REQUEST"
             examples:
               Example 1:
                 value:
@@ -2294,21 +1353,6 @@ paths:
                   description: Get addresses
                   code: get_addresses
                   moduleName: address
-        description: "name, code is unique in the same store."
-      parameters: []
-      tags:
-        - Company Roles and Permissions
-      x-internal: false
-  "/companies/permissions/{permissionId}":
-    parameters:
-      - schema:
-          type: integer
-        name: permissionId
-        in: path
-        required: true
-    put:
-      summary: Update Company Permission
-      operationId: put-stores-companies-permissions-permissionId
       responses:
         "200":
           description: OK
@@ -2321,25 +1365,7 @@ paths:
                     type: integer
                     default: 200
                   data:
-                    type: object
-                    properties:
-                      id:
-                        type: integer
-                      name:
-                        type: string
-                        description: The permission name
-                      code:
-                        type: string
-                        description: The permission code
-                      description:
-                        type: string
-                        description: The permission description
-                      isCustom:
-                        type: boolean
-                        description: Whether the permission is custom
-                      moduleName:
-                        type: string
-                        description: The name of the module to which the permission belongs
+                    $ref: "#/components/schemas/permission_RESPONSE"
                   meta:
                     type: object
                     properties:
@@ -2347,7 +1373,7 @@ paths:
                         type: string
                         default: SUCCESS
               examples:
-                Example 1:
+                200 - SUCCESS:
                   value:
                     code: 200
                     data:
@@ -2359,37 +1385,33 @@ paths:
                       moduleName: address
                     meta:
                       message: SUCCESS
+      x-internal: false
+  /companies/permissions/{permissionId}:
+    parameters:
+      - name: permissionId
+        in: path
+        required: true
+        schema:
+          type: integer
+        description: "The unique identifier for a Company permission."
+        example: 123456
+    put:
+      tags:
+        - Company Roles and Permissions
+      summary: Update a Company Permission
+      operationId: put-stores-companies-permissions-permissionId
       description: |-
-        Update company permission.
-
+        Updates an existing custom Company permission.
+        
         Predefined permissions cannot be updated.
+      parameters: []
       security:
         - authToken: []
       requestBody:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                name:
-                  type: string
-                  maxLength: 200
-                  description: The permission name
-                code:
-                  type: string
-                  maxLength: 50
-                  description: The permission code
-                description:
-                  type: string
-                  maxLength: 512
-                  description: The permission description
-                moduleName:
-                  type: string
-                  maxLength: 50
-              required:
-                - name
-                - code
-                - description
+              $ref: "#/components/schemas/permission_REQUEST"
             examples:
               Example 1:
                 value:
@@ -2398,12 +1420,6 @@ paths:
                   code: get_addresses
                   moduleName: address
         description: "The name and code are unique within the same store."
-      tags:
-        - Company Roles and Permissions
-      x-internal: false
-    delete:
-      summary: Delete Company Permission
-      operationId: delete-stores-companies-permissions-permissionId
       responses:
         "200":
           description: OK
@@ -2412,86 +1428,90 @@ paths:
               schema:
                 type: object
                 properties:
-                  data: {}
                   code:
                     type: integer
+                    default: 200
+                  data:
+                    $ref: "#/components/schemas/permission_RESPONSE"
                   meta:
                     type: object
                     properties:
                       message:
                         type: string
+                        default: SUCCESS
               examples:
                 Example 1:
                   value:
                     code: 200
-                    data: {}
+                    data:
+                      id: 1
+                      name: Get addresses
+                      description: Get addresses
+                      code: get_addresses
+                      isCustom: false
+                      moduleName: address
                     meta:
                       message: SUCCESS
+      x-internal: false
+    delete:
+      tags:
+        - Company Roles and Permissions
+      summary: Delete Company Permission
+      operationId: delete-stores-companies-permissions-permissionId
       description: |-
-        Delete company permission.
+        Deletes a custom Company permission.
 
         Predefined permissions cannot be deleted.
+      parameters: []
       security:
         - authToken: []
-      tags:
-        - Company Roles and Permissions
+      responses:
+        "200":
+          $ref: "#/components/responses/RESPONSE_200_Base"
       x-internal: false
   /companies/roles:
+    parameters: []
     get:
-      summary: Get Company Roles
       tags:
         - Company Roles and Permissions
+      summary: Get Company Roles
+      operationId: get-stores-companies-roles
+      description: "Returns a list of Company user roles."
+      parameters:
+        - name: q
+          in: query
+          schema:
+            type: string
+          description: "Enter a Company role name to return partial and exact matches."
+          example: "Procurement Manager"
+        - $ref: "#/components/parameters/paginationOffset"
+        - $ref: "#/components/parameters/paginationLimit"
+      security:
+        - authToken: []
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  code:
-                    type: integer
-                  data:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        id:
-                          type: integer
-                          description: The role ID
-                        name:
-                          type: string
-                          description: The role name
-                        roleType:
-                          type: integer
-                          enum:
-                            - 1 
-                            - 2 
-                          description: The role type. (1 - predefined, 2 - custom)
-                        roleLevel:
-                          type: integer
-                          enum:
-                            - 1 
-                          description: The role level. (1 - store level)
-                      required:
-                        - id
-                        - name
-                        - roleType
-                        - roleLevel
-                  meta:
-                    type: object
+                allOf:
+                  - $ref: "#/components/schemas/role_RESPONSE"
+                  - type: object
                     properties:
-                      message:
-                        type: string
-                      pagination:
+                      meta:
                         type: object
                         properties:
-                          totalCount:
-                            type: integer
-                          limit:
-                            type: integer
-                          offset:
-                            type: integer
+                          message:
+                            type: string
+                          pagination:
+                            type: object
+                            properties:
+                              totalCount:
+                                type: integer
+                              limit:
+                                type: integer
+                              offset:
+                                type: integer
               examples:
                 Example 1:
                   value:
@@ -2507,133 +1527,26 @@ paths:
                         totalCount: 1
                         limit: 10
                         offset: 0
-      operationId: get-stores-companies-roles
-      description: Get company roles
-      security:
-        - authToken: []
-      parameters:
-        - schema:
-            type: string
-          in: query
-          name: q
-          description: Search by company role name
-        - schema:
-            type: integer
-            default: 0
-          in: query
-          name: offset
-          description: Pagination offset
-        - schema:
-            type: integer
-            default: 10
-          in: query
-          name: limit
-          description: Pagination limit
       x-internal: false
     post:
-      summary: Create Company Role
+      tags:
+        - Company Roles and Permissions
+      summary: Create a Company Role
       operationId: post-stores-companies-roles
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  code:
-                    type: integer
-                  data:
-                    type: object
-                    properties:
-                      id:
-                        type: integer
-                        description: The role id
-                      name:
-                        type: string
-                        description: The role name
-                      roleType:
-                        type: integer
-                        description: The role type. (1 = predefined, 2 = custom)
-                        enum:
-                          - 1 
-                          - 2 
-                      roleLevel:
-                        type: integer
-                        description: The role level, 1 - store level
-                        enum:
-                          - 1 
-                      permissions:
-                        type: array
-                        items:
-                          type: object
-                          properties:
-                            id:
-                              type: integer
-                              description: The permission id
-                            code:
-                              type: string
-                              description: The permission code
-                            permissionLevel:
-                              type: integer
-                              description: The permission level. (1 - user level, 2 - company level)
-                              enum:
-                                - 1 
-                                - 2 
-                  meta:
-                    type: object
-                    properties:
-                      message:
-                        type: string
-              examples:
-                Example 1:
-                  value:
-                    code: 200
-                    data:
-                      id: 1
-                      name: io test
-                      roleType: 2
-                      roleLevel: 1
-                      permissions:
-                        - id: 1
-                          code: get_addresses
-                          permissionLevel: 2
-                    meta:
-                      message: SUCCESS
-      description: |
-        Create company role
+      description: |-
+        Create a custom Company user role.
+
+        When adding predefined Company permissions to a user role, refer to [Permission Codes](https://developer.bigcommerce.com/b2b-edition/apis/rest-management/company/#permission-codes) for their `name` and `code` values.
+
+        Some permissions require prerequisites that must also be enabled in the role, and assigned to the same or higher permission level. See [B2B Edition Buyer Roles and Permissions](https://support.bigcommerce.com/s/article/Buyer-Roles-and-Permissions) in the Help Center to learn more.
+      parameters: []
       security:
         - authToken: []
       requestBody:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                name:
-                  type: string
-                  description: The role name
-                  maxLength: 200
-                permissions:
-                  type: array
-                  items:
-                    type: object
-                    properties:
-                      code:
-                        type: string
-                        description: The permission code
-                      permissionLevel:
-                        type: integer
-                        description: The permission level. (1 - user level, 2 - company level)
-                        enum:
-                          - 1 
-                          - 2 
-                    required:
-                      - code
-                      - permissionLevel
-              required:
-                - name
-                - permissions
+              $ref: "#/components/schemas/role_REQUEST"
             examples:
               Example 1:
                 value:
@@ -2641,73 +1554,14 @@ paths:
                   permissions:
                     - code: get_addresses
                       permissionLevel: 2
-      tags:
-        - Company Roles and Permissions
-      x-internal: false
-    parameters: []
-  "/companies/roles/{roleId}":
-    parameters:
-      - schema:
-          type: integer
-        name: roleId
-        in: path
-        required: true
-    get:
-      summary: Get Company Role Detail
-      tags:
-        - Company Roles and Permissions
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  code:
-                    type: integer
-                  data:
-                    type: object
-                    properties:
-                      id:
-                        type: integer
-                        description: The role id
-                      name:
-                        type: string
-                        description: The role name
-                      roleType:
-                        type: integer
-                        description: The role type. (1 - predefined, 2 - custom)
-                        enum:
-                          - 1 
-                          - 2
-                      roleLevel:
-                        type: integer
-                        enum:
-                          - 1 
-                        description: The role level. (1 - store level)
-                      permissions:
-                        type: array
-                        items:
-                          type: object
-                          properties:
-                            id:
-                              type: integer
-                              description: The permission ID
-                            code:
-                              type: string
-                              description: The permission code
-                            permissionLevel:
-                              type: integer
-                              description: The permission level. (1 - user level, 2 - company level)
-                              enum:
-                                - 1 
-                                - 2
-                  meta:
-                    type: object
-                    properties:
-                      message:
-                        type: string
+                allOf:
+                  - $ref: "#/components/schemas/roleDetail_RESPONSE"
               examples:
                 Example 1:
                   value:
@@ -2723,74 +1577,86 @@ paths:
                           permissionLevel: 2
                     meta:
                       message: SUCCESS
+      x-internal: false
+  /companies/roles/{roleId}:
+    parameters: 
+      - name: roleId
+        in: path
+        required: true
+        schema:
+          type: integer
+        description: "The unique identifier for a Company user role."
+        example: 123456
+    get:
+      tags:
+        - Company Roles and Permissions
+      summary: Get Company Role Details
       operationId: "get-stores-companies-roles-int:roleId"
-      description: Get company role detail
+      description: Returns the details for a specific Company user role.
+      parameters: []
       security:
         - authToken: []
-      parameters: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/roleDetail_RESPONSE"
+              examples:
+                Example 1:
+                  value:
+                    code: 200
+                    data:
+                      id: 1
+                      name: io test
+                      roleType: 2
+                      roleLevel: 1
+                      permissions:
+                        - id: 1
+                          code: get_addresses
+                          permissionLevel: 2
+                    meta:
+                      message: SUCCESS
       x-internal: false
     put:
+      tags:
+        - Company Roles and Permissions
       summary: Update Company Role
       operationId: put-stores-companies-roles-roleId
+      description: |-
+        Updates the name and permissions of a custom Company user role. You cannot update predefined roles.
+
+        When formatting the request body, you must add all permissions that you wish to keep in the role, including its existing permissions. See [Permission Codes](https://developer.bigcommerce.com/b2b-edition/apis/rest-management/company/#permission-codes) for a list of predefined permission `name` and `code` values.
+      parameters: []
+      security:
+        - authToken: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/role_REQUEST"
+            examples:
+              Example 1:
+                value:
+                  name: io test
+                  permissions:
+                    - code: get_addresses
+                      permissionLevel: 2
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  code:
-                    type: integer
-                  data:
-                    type: object
-                    properties:
-                      id:
-                        type: integer
-                        description: The role ID
-                      name:
-                        type: string
-                        description: The role name
-                      roleType:
-                        type: integer
-                        description: The role type. (1 - predefined, 2 - custom )
-                        enum:
-                          - 1 
-                          - 2
-                      roleLevel:
-                        type: integer
-                        enum:
-                          - 1
-                        description: The role level. (1 - store level)
-                      permissions:
-                        type: array
-                        items:
-                          type: object
-                          properties:
-                            id:
-                              type: integer
-                              description: The permission ID
-                            code:
-                              type: string
-                              description: The permission code
-                            permissionLevel:
-                              type: integer
-                              description: The permission level. (1 - user level, 2 - company level)
-                              enum:
-                                - 1 
-                                - 2
-                  meta:
-                    type: object
-                    properties:
-                      message:
-                        type: string
+                $ref: "#/components/schemas/roleDetail_RESPONSE"
               examples:
                 Example 1:
                   value:
                     code: 200
                     data:
                       id: 1
-                      name: io test
+                      name: "Procurement Manager"
                       roleType: 2
                       roleLevel: 1
                       permissions:
@@ -2799,192 +1665,55 @@ paths:
                           permissionLevel: 2
                     meta:
                       message: SUCCESS
-      description: |-
-        Update company role
-
-        - Predefined roles cannot be updated.
-        - Permissions only support full updates. Please provide all the permission codes required for the role.
-      security:
-        - authToken: []
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                name:
-                  type: string
-                  maxLength: 200
-                permissions:
-                  type: array
-                  description: permission only support full update
-                  items:
-                    type: object
-                    properties:
-                      code:
-                        type: string
-                        description: The permission code
-                      permissionLevel:
-                        type: integer
-                        description: The permission level. (1 - user level, 2 - company level)
-                        enum:
-                          - 1 
-                          - 2
-                    required:
-                      - code
-                      - permissionLevel
-              required:
-                - name
-                - permissions
-            examples:
-              Example 1:
-                value:
-                  name: io test
-                  permissions:
-                    - code: get_addresses
-                      permissionLevel: 2
-      tags:
-        - Company Roles and Permissions
       x-internal: false
     delete:
-      summary: Delete Company Role
-      operationId: delete-stores-companies-roles-roleId
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  code:
-                    type: integer
-                  data:
-                    type: object
-                    properties: {}
-                  meta:
-                    type: object
-                    properties:
-                      message:
-                        type: string
-              examples:
-                Example 1:
-                  value:
-                    code: 200
-                    data: {}
-                    meta:
-                      message: SUCCESS
-      description: |-
-        Delete company role
-
-        - Predefined roles cannot be deleted.
-        - Roles associated with users cannot be deleted.
-      security:
-        - authToken: []
-      parameters: []
       tags:
         - Company Roles and Permissions
-      x-internal: false
-  "/companies/{companyId}/attachments":
-    parameters:
-      - schema:
-          type: number
-        name: companyId
-        in: path
-        required: true
-        description: company Id
-    get:
-      summary: Get Company Attachments
-      tags:
-        - Company
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  code:
-                    type: number
-                    example: 200
-                  data:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        id:
-                          type: string
-                          format: uuid
-                        attachmentUrl:
-                          type: string
-                  meta:
-                    type: object
-                    properties:
-                      message:
-                        type: string
-                        default: SUCCESS
-              examples:
-                Example 1:
-                  value:
-                    code: 200
-                    data:
-                      - id: f593d7c8-078e-4bb6-af6b-688ef8df1a12
-                        attachmentUrl: "https://xxx.com/xxx.csv"
-                    meta:
-                      message: SUCCESS
-      operationId: get-companies-companyId-attachments
-      description: Get company attachments
+      summary: Delete a Company Role
+      operationId: delete-stores-companies-roles-roleId
+      description: Deletes a custom Company user role. You cannot delete predefined Company roles, or custom roles that are currently assigned to a Company user.
+      parameters: []
       security:
         - authToken: []
-    post:
-      summary: Add Company Attachment
-      operationId: post-companies-companyId-attachments
       responses:
         "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  code:
-                    type: number
-                    default: 200
-                  data:
-                    type: object
-                    properties:
-                      id:
-                        type: string
-                        format: uuid
-                      attachmentFile:
-                        type: string
-                  meta:
-                    type: object
-                    properties:
-                      message:
-                        type: string
-                        default: SUCCESS
-              examples:
-                Example 1:
-                  value:
-                    code: 200
-                    data:
-                      id: 497f6eca-6276-4993-bfeb-53cbbbba6f08
-                      attachmentFile: "https://xxx.com/xxx.csv"
-                    meta:
-                      message: SUCCESS
+          $ref: "#/components/responses/RESPONSE_200_Base"
+      x-internal: false
+  /companies/{companyId}/attachments:
+    parameters:
+      - $ref: "#/components/parameters/companyId"
+    get:
+      tags:
+        - Companies
+      summary: Get Company Attachments
+      operationId: get-companies-companyId-attachments
+      description: Returns files uploaded to the Company account.
+      parameters: []
+      security:
+        - authToken: []
+      responses:
+        "200":
+          $ref: "#/components/responses/RESPONSE_200_ATTACHMENT"
+    post:
+      tags:
+        - Companies
+      summary: Add a Company Attachment
+      operationId: post-companies-companyId-attachments
       description: |-
-        Each company can upload a maximum of 10 attachments.
+        Attaches a file to a Company account.
 
-        The API rate limit is 15/min per store.
+        The default rate limit for this endpoint is `15` calls/min per store.
 
-        The attachments support the following file types:
-        * Images, including bmp, gif, ico, jpeg, jpg, png, svg, tif, tiff, webp, wbmp, xbm.
-        * PDF
-        * DOC, DOCX
-        * XLS, XLSX
-        * CSV
+        Each Company can have a maximum of `10` attachments. The following file types are supported:
+
+        ```
+        - Image files (BMP, GIF, ICO, JPG/JPEG, PNG, SVG, TIF, TIFF, WEBP, WBMP, XBM)
+        - PDF
+        - DOC, DOCX
+        - XLS, XLSX
+        - CSV
+        ```
+      parameters: []
       security:
         - authToken: []
       requestBody:
@@ -2996,31 +1725,272 @@ paths:
                 attachmentFile:
                   type: string
                   format: binary
-                  description: The size of each attachment must not exceed 10MB.
+                  description: Attaches a file to the Company account. The file must be a supported type and not exceed 10MB.
               required:
                 - attachmentFile
         description: ""
-      tags:
-        - Company
-  "/companies/{companyId}/attachments/{attachmentId}":
+      responses:
+        "200":
+          $ref: "#/components/responses/RESPONSE_200_ATTACHMENT"
+  /companies/{companyId}/attachments/{attachmentId}:
     parameters:
-      - schema:
-          type: number
-        name: companyId
+      - $ref: "#/components/parameters/companyId"
+      - name: attachmentId
         in: path
         required: true
-        description: company ID
-      - schema:
+        schema:
           type: string
           format: uuid
-        name: attachmentId
+        description: The ID of a file attached to a Company account.
+    delete:
+      tags:
+        - Companies
+      summary: Delete a Company Attachment
+      operationId: delete-companies-companyId-attachments-attachmentId
+      description: Deletes an attached file from a Company account.
+      parameters: []
+      security:
+        - authToken: []
+      responses:
+        "200":
+          $ref: "#/components/responses/RESPONSE_200_Base"
+  /companies/{companyId}/subsidiaries:
+    parameters:
+      - $ref: "#/components/parameters/companyId"
+    get:
+      tags:
+        - Account Hierarchies
+      summary: Get Company Subsidiaries
+      operationId: get-companies-companyId-subsidiaries
+      description: "Returns all subsidiary accounts on lower hierarchy layers, based on the Company account specified."
+      parameters:
+        - $ref: "#/components/parameters/paginationOffset"
+        - $ref: "#/components/parameters/paginationLimit"
+      security:
+        - authToken: []
+      responses:
+        "200":
+          description: |-
+            OK
+            
+            The `subsidiaries` array in the response includes nested `subsidiaries` arrays if a child account has its own subsidiaries.
+
+            The array also includes nested `subsidiaries` arrays for each Company with its own subsidiaries. For example, if the Company in question is above 2 layers of Account Hierarchy, its direct subsidiaries will also include `subsidiaries` arrays for their child accounts.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      allOf:
+                        - $ref: "#/components/schemas/hierarchyCompany"
+                        - type: object
+                          properties:
+                            subsidiaries:
+                              allOf:
+                                - $ref: "#/components/schemas/subsidiaries"
+                                - type: array
+                                - items:
+                                    allOf:
+                                      - $ref: "#/components/schemas/hierarchyCompany"
+                  meta:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        default: SUCCESS
+                      pagination:
+                        type: object
+                        properties:
+                          totalCount:
+                            type: integer
+                          limit:
+                            type: integer
+                          offset:
+                            type: integer
+              examples:
+                Example 1:
+                  value:
+                    data: 
+                      - companyStatus: 1
+                        companyId: 123
+                        companyName: "Company"
+                      - companyStatus: 1
+                        companyId: 321
+                        companyName: "Also Company"
+                    meta:
+                      message: SUCCESS
+                      pagination:
+                        totalCount: 10
+                        limit: 10
+                        offset: 0
+                Example 2:
+                  value:
+                    data: 
+                      - companyStatus: 1
+                        companyId: 123
+                        companyName: "Company"
+                        subsidiaries:
+                          - companyStatus: 3
+                            companyId: 321
+                            companyName: "Also Company"
+                    meta:
+                      message: SUCCESS
+                      pagination:
+                        totalCount: 10
+                        limit: 10
+                        offset: 0
+        "404":
+          $ref: "#/components/responses/ERROR_404_Parameter"
+  /companies/{companyId}/subsidiaries/{childCompanyId}:
+    parameters:
+      - $ref: "#/components/parameters/companyId"
+      - name: childCompanyId
         in: path
         required: true
-        description: attachment ID
+        schema:
+          type: integer
+        description: The ID of a Company account assigned as a subsidiary to the Company in question.
+        example: 654321
     delete:
-      summary: Delete Company Attachment
-      operationId: delete-companies-companyId-attachments-attachmentId
-      description: 'Delete company attachment'
+      tags:
+        - Account Hierarchies
+      summary: Delete Company Subsidiary
+      operationId: delete-companies-companyId-subsidiary
+      description: |-
+        Removes the parent-child relationship between a specified subsidiary account and its parent Company.
+
+        If the deleted subsidiary has its own subsidiary companies, this request will create a separate hierarchy with the deleted subsidiary at the top.
+      parameters: []
+      security:
+        - authToken: []
+      responses:
+        "204":
+          description: Success
+        "400":
+                    description: Parameter error.
+                    content:
+                      application/json:
+                        schema:
+                          type: object
+                          properties:
+                            status:
+                              type: number
+                            title:                          
+                              type: string
+                            errors:
+                              type: object
+                              properties:
+                                index:
+                                  type: string
+                        examples:
+                          400 - PARAMETER ERROR:
+                            value:
+                              status: 400
+                              title: Parameter error.
+                              errors: 
+                                "1": Invalid child company ID.
+  /companies/{companyId}/parent:
+    parameters:
+      - $ref: "#/components/parameters/companyId"
+    post:
+      tags:
+        - Account Hierarchies
+      summary: Attach a Company as the Parent of a Current Company
+      operationId: post-companies-companyId-parents
+      description: |- 
+        Assigns the Company account as the parent of a specific Company. Note that you **cannot** assign a Company as the parent of another Company which is already in a higher hierarchy level.
+
+        For example, if you have a client with local, national, and regional branches, their Company Account Hierarchy might look like this:
+
+        ```
+        - Americas
+         |- North America
+         | |- Canada
+         | |- United States
+         |- South America
+         | |- Brazil
+        ```
+
+        You cannot assign *United States* as a parent of *North America*, since the parent Company for *United States* is also a subsidiary of *North America*.
+      parameters: []
+      security:
+        - authToken: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                parentCompanyId:
+                  type: integer
+                  description: Unique numeric ID of the parent Company account. This is a read-only field; do not set or modify its value in a POST or PUT request.
+                  example: 654321
+              required:
+                - parentCompanyId
+      responses:
+        "201":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  meta:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        default: SUCCESS
+              examples:
+                success:
+                  value:
+                    data: []
+                    meta:
+                      message: SUCCESS
+        "400":
+          description: Parameter error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: number
+                  title:
+                    type: string
+                  errors:
+                    type: object
+                    properties:
+                      index:
+                        type: string
+              examples:
+                400 - PARAMETER ERROR:
+                  value:
+                    status: 400
+                    title: Parameter Error.
+                    errors:
+                      "1": The parent company has reached the maximum layer.
+  /companies/{companyId}/hierarchy:
+    parameters:
+      - $ref: "#/components/parameters/companyId"
+      - $ref: "#/components/parameters/paginationOffset"
+      - $ref: "#/components/parameters/paginationLimit"
+    get:
+      tags:
+        - Account Hierarchies
+      summary: Get Company Hierarchy
+      operationId: get-companies-companyId-hierarchy
+      description: |-
+        Returns all parent and child accounts in the hierarchy of a particular Company.
+
+        The default rate limit for this endpoint is `15` calls/min per store.
+
+      parameters: []
+      security:
+        - authToken: []
       responses:
         "200":
           description: OK
@@ -3029,41 +1999,721 @@ paths:
               schema:
                 type: object
                 properties:
-                  code:
-                    type: number
-                    default: 200
                   data:
-                    type: object
-                    properties: {}
+                    type: array
+                    items:
+                      allOf:
+                        - $ref: "#/components/schemas/hierarchyCompany"
+                        - type: object
+                          properties:
+                            subsidiaries:
+                              allOf:
+                                - $ref: "#/components/schemas/subsidiaries"
+                                - type: array
+                                - items:
+                                    allOf:
+                                      - $ref: "#/components/schemas/hierarchyCompany"
+                                      - type: object
+                                        properties:
+                                          subsidiaries:
+                                            allOf:
+                                              - $ref: "#/components/schemas/subsidiaries"
+                                              - type: array
+                                                items:
+                                                  $ref: "#/components/schemas/hierarchyCompany"
                   meta:
                     type: object
                     properties:
                       message:
                         type: string
                         default: SUCCESS
+                      pagination:
+                        type: object
+                        properties:
+                          totalCount:
+                            type: integer
+                            description: Total number of subsidiaries of current company.
+                          limit:
+                            type: integer
+                          offset:
+                            type: integer
               examples:
-                Example 1:
+                Examples 1:
                   value:
+                    data: 
+                      - companyId: 1
+                        companyName: "Company A"
+                        companyStatus: 1
+                        subsidiaries: 
+                          - companyId: 2
+                            companyName: "Company B"
+                            companyStatus: 1
+                            subsidiaries: 
+                              - companyId: 4
+                                companyName: "Company D"
+                                companyStatus: 1
+                                subsidiaries:
+                                - companyId: 5
+                                  companyName: "Company E"
+                                  companyStatus: 1
+                                  subsidiaries:
+                                  - companyId: 6
+                                    companyName: "Company F"
+                                    companyStatus: 1
+                          - companyId: 3
+                            companyName: "Company C"
+                            companyStatus: 1
+                            
+                    meta:
+                      message: SUCCESS
+                      pagination:
+                        totalCount: 2
+                        limit: 10
+                        offset: 0
+        "404":
+          $ref: "#/components/responses/ERROR_404_Parameter"
+
+components:
+  schemas:
+    subsidiaries:
+      type: array
+      description: |-
+        Displays information about the Company’s subsidiary accounts in its hierarchy. The array includes the `companyId`, `companyName`, and `companyStatus` fields for each subsidiary Company.
+
+        The array can include nested `subsidiaries` arrays for each Company with its own subsidiaries.
+      items:
+        type: object
+    companyStatus_integer:
+      type: integer
+      description: 'See [Company Status Codes](https://developer.bigcommerce.com/b2b-edition/apis/rest-management/company/) to learn about their corresponding statuses.'
+      example: 1
+      enum:
+        - 0
+        - 1
+        - 2
+        - 3
+    companyStatus_string:
+      type: string
+      description: 'See [Company Status Codes](https://developer.bigcommerce.com/b2b-edition/apis/rest-management/company/) to learn about their corresponding statuses.'
+      example: '1'
+      enum:
+        - '0'
+        - '1'
+        - '2'
+        - '3'
+    customerGroupId:
+      type: integer
+      description: "The ID of the BigCommerce customer group assigned to the Company account. This field can be static or configurable depending on whether or not your store uses Independent Companies behavior. See [Independent Companies Behavior](https://developer.bigcommerce.com/b2b-edition/apis/rest-management/company/companies/#independent-vs-dependent-companies-behavior) for more information."
+      example: 123
+    companyName:
+      type: string
+      maxLength: 200
+      description: "The name of the business associated with the Company account."
+      example: "Great Buys Inc."
+    catalogId_string:
+      type: string
+      description: |-
+        The ID of the price list assigned to the Company account. This field is read-only for stores using [Independent Companies Behavior](https://developer.bigcommerce.com/b2b-edition/apis/rest-management/company/companies/#independent-vs-dependent-companies-behavior).
+
+        If your store uses legacy Dependent Companies behavior **and** it does not have Multi-Storefront enabled, this field is **required** for creating new Company accounts. If your store has Multi-Storefront enabled, use the `priceListAssign` array instead.
+      example: '123456'
+    catalogId_integer:
+      type: integer
+      description: |-
+        The ID of the price list assigned to the Company account. This field is read-only for stores using [Independent Companies Behavior](https://developer.bigcommerce.com/b2b-edition/apis/rest-management/company/companies/#independent-vs-dependent-companies-behavior).
+
+        If your store uses legacy Dependent Companies behavior **and** it does not have Multi-Storefront enabled, this field is **required** for creating new Company accounts. If your store has Multi-Storefront enabled, use the `priceListAssign` array instead.
+      example: 123456
+    companyId_string:
+      type: integer
+      description: |-
+        Unique numeric ID of the Company account. This is a **read-only** field; do not set or modify its value in a `POST` or `PUT` request.
+      example: '123456'
+    companyId_integer:
+      type: integer
+      description: |-
+        Unique numeric ID of the Company account. This is a **read-only** field; do not set or modify its value in a `POST` or `PUT` request.
+      example: 123456
+    role_REQUEST:
+      required:
+        - name
+        - permissions
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 200
+          description: "The name of the Company user role. This name is visible to system users and Company users."
+          example: "Sales Manager"
+        permissions:
+          type: array
+          items:
+            type: object
+            properties:
+              code:
+                type: string
+                description: "The [code string](https://developer.bigcommerce.com/b2b-edition/apis/rest-management/company/companies/#permission-code) for the permission."
+                example: "get-addresses"
+              permissionLevel:
+                type: integer
+                description: The scope level for permission.
+                enum:
+                  - 1 
+                  - 2 
+            required:
+              - code
+              - permissionLevel
+    role_RESPONSE:
+      type: object
+      properties:
+        code:
+          type: integer
+        data:
+          type: object
+          properties:
+            id:
+              type: integer
+              description: "The unique identifier for the Company user role."
+              example: 123456
+            name:
+              type: string
+              maxLength: 200
+              description: "The name of the Company user role. This name is visible to system users and Company users."
+              example: "Sales Manager"
+            roleType:
+              type: integer
+              enum:
+                - 1 
+                - 2 
+              description: |-
+                Indicates whether a Company user role is predefined or custom.
+
+                If this value is `1`, the role is predefined. If this value is `2`, the role is custom.
+              example: 1
+            roleLevel:
+              type: integer
+              enum:
+                - 1 
+              description: "Indicates how many Company accounts can view and assign the role to users. Currently, all Company roles are available at the store level, which has a value of `1`."
+              example: 1
+    roleDetail_RESPONSE:
+      allOf:
+        - $ref: "#/components/schemas/role_RESPONSE"
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                permissions:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        description: "The unique identifier for the Company user role."
+                        example: 123456
+                      code:
+                        type: string
+                        description: "The [code string](https://developer.bigcommerce.com/b2b-edition/apis/rest-management/company/companies/#permission-code) for the permission."
+                        example: "get-addresses"
+                      permissionLevel:
+                        type: integer
+                        enum:
+                          - 1
+                          - 2
+                        description: The scope level for permission.
+            meta:
+              type: object
+              properties:
+                message:
+                  type: string
+    permission_BASE:
+      type: object
+      properties:
+        name:
+          type: string
+          description: "The name of the Company permission."
+          example: "Get addresses"
+        description:
+          type: string
+          description: "The simple description for the Company permission. See [Permission Codes](https://developer.bigcommerce.com/b2b-edition/apis/rest-management/company/companies/#permission-code) for a more detailed description of each predefined Company permission."
+          example: "Get addresses"
+        code:
+          type: string
+          description: "The [code string](https://developer.bigcommerce.com/b2b-edition/apis/rest-management/company/companies/#permission-code) of the Company permission."
+          example: get_addresses
+        moduleName:
+          type: string
+          description: "The name of the module to which the permission belongs. This corresponds to the organizational section containing the permission when managing Company roles from the B2B Edition control panel."
+          example: "address"
+    permission_REQUEST:
+      allOf:
+        - $ref: "#/components/schemas/permission_BASE"
+        - type: object
+          required:
+            - name
+            - code
+            - description
+          properties:
+            name:
+              maxLength: 200
+            description:
+              maxLength: 512
+            code:
+              maxLength: 50
+            moduleName:
+              maxLength: 50
+    permission_RESPONSE:
+      allOf:
+        - $ref: "#/components/schemas/permission_BASE"
+        - type: object
+          properties:
+            id:
+              type: integer
+            isCustom:
+              type: boolean
+              description: "Indicates whether a Company permission is predefined or custom. If `true`, the permission is custom. If `false`, it is predefined."
+    companyAdmin_POST:
+      type: object
+      properties:
+        adminFirstName:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: "The first name of the Company account administrator."
+          example: "Marie"
+        adminLastName:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: "The last name of the Company account administrator."
+          example: "Curie"
+        adminEmail:
+          type: string
+          minLength: 1
+          maxLength: 100
+          format: email
+          description: "The email address of the Company account administrator. If an existing BigCommerce customer account uses this email address, it is automatically linked to the administrator’s Company user account."
+          example: "m.curie@greatbuys.com"
+        adminPhoneNumber:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: "The phone number of the Company account administrator."
+          example: "8001234567"
+    companyData_REQUEST:
+      allOf:
+        - $ref: "#/components/schemas/companyData_BASE"
+        - type: object
+          properties:
+            companyName:
+              minLength: 1
+            companyEmail:
+              minLength: 1
+            customerGroupId:
+              $ref: "#/components/schemas/customerGroupId"
+        - $ref: "#/components/schemas/companyAddress_REQUEST"
+    companyData_RESPONSE:
+      allOf:
+        - $ref: "#/components/schemas/companyData_BASE"
+        - type: object
+          properties:
+            companyId:
+              $ref: "#/components/schemas/companyId_string"
+            catalogId:
+              $ref: "#/components/schemas/catalogId_string"
+            catalogName:
+              type: string
+              description: Catalog name
+            bcGroupName:
+              type: string
+              description: "The internal name of the BigCommerce customer group assigned to the Company account. This field is read-only."
+              example: "Tier 3 B2B Clients"
+            companyStatus:
+              $ref: "#/components/schemas/companyStatus_string"
+            parentCompany:
+              $ref: "#/components/schemas/parentCompany"
+            priceListAssign:
+              $ref: "#/components/schemas/priceListAssign_RESPONSE"
+            extraFields:
+              $ref: "#/components/schemas/extraFields_RESPONSE"
+            uuid:
+              type: string
+              format: uuid
+              description: "An external ID assigned to the Company account in a third-party system, such as an ERP. Leave this field blank if you do not have an external system."
+              example: "497f6eca-6276-4993-bfeb-53cbbbba6f08"
+            updatedAt:
+              type: string
+              format: time
+              description: "The [Unix timestamp](https://www.unixtimestamp.com/) for when the Company account was last updated. This is a read-only field."
+              example: "1618794615"
+            createdAt:
+              type: string
+              format: time
+              description: "The [Unix timestamp](https://www.unixtimestamp.com/) for when the Company account was created. This is a read-only field."
+              example: "1618794615"
+    companyData_BASE:
+      type: object
+      properties:
+        companyName:
+          $ref: "#/components/schemas/companyName"
+        companyEmail:
+          type: string
+          maxLength: 200
+          format: email
+          description: "The primary email address for the Company account."
+          example: "admin@greatbuys.com"
+        companyPhone:
+          type: string
+          maxLength: 50
+          description: "The primary phone number for the Company account."
+          example: 8001234567
+    priceListAssign_REQUEST:
+      type: array
+      description: |-
+        Use this array to assign a price list to a Company account if your store uses legacy Dependent Companies behavior *and* it has Multi-Storefront enabled. Use catalogId to assign price lists if you have not enabled Multi-Storefront.
+
+        This field is read-only for stores using Independent Companies behavior. See [Independent Companies Behavior](https://developer.bigcommerce.com/b2b-edition/apis/rest-management/company/companies/#independent-vs-dependent-companies-behavior) for more information.
+      items:
+        type: object
+        properties:
+          channelId:
+            type: integer
+            description: "The ID of the storefront channel where the price list is applied to the Company. Use 1 for your store’s default storefront channel."
+            example: 10001234
+          priceListId:
+            type: integer
+            description: "The ID of the price list assigned to the Company account."
+            example: 123456
+    priceListAssign_RESPONSE:
+      type: array
+      description: |-
+        Use this array to assign a price list to a Company account if your store uses legacy Dependent Companies behavior *and* it has Multi-Storefront enabled. Use `catalogId` to assign price lists if you have not enabled Multi-Storefront.
+
+        This field is read-only for stores using Independent Companies behavior. See [Independent Companies Behavior](https://developer.bigcommerce.com/b2b-edition/apis/rest-management/company/companies/#independent-vs-dependent-companies-behavior) for more information.
+      items:
+        type: object
+        properties:
+          channelId:
+            type: integer
+            description: "The ID of the storefront channel where the price list is applied to the Company. Use 1 for your store’s default storefront channel."
+            example: 10001234
+          priceListId:
+            type: integer
+            description: "The ID of the price list assigned to the Company account."
+            example: 123456
+          priceListName:
+            type: string
+            description: "The internal name of the price list assigned to the Company account."
+            example: "Tier 3 B2B Pricing"
+          channelName:
+            type: string
+            description: "The name of the storefront channel where the price list is applied to the Company."
+            example: "My BigCommerce Store"
+    extraFields_RESPONSE:
+      type: array
+      description: Controlled by isIncludeExtraFields params
+      items:
+        type: object
+        properties:
+          fieldName:
+            type: string
+            description: "The name of the Company extra field."
+            example: "Customer Tax Code"
+          fieldValue:
+            type: string
+            description: "The value of the Company extra field."
+            example: "Code G"
+          labelName:
+            type: string
+            description: "The label name of the Company extra field. This value matches the value of `fieldName`."
+            example: "Customer Tax Code"
+          isRequired:
+            type: string
+            description: |-
+              Indicates whether or not the extra field must be filled out in order to create a Company account.
+              
+              `0`=not required, `1`=required
+            enum:
+              - "0"
+              - "1"
+          dataType:
+            type: string
+            description: |-
+              The type of data that can be added as the extra field’s value. This shares the same value as the `fieldType`
+              
+              | Value | Type |
+              | --- | ---|
+              | `0` | text |
+              | `1` | multi-line text |
+              | `2` | numbers |
+              | `3` | dropdown |
+            enum:
+              - "0"
+              - "1"
+              - "2"
+              - "3"
+          fieldType:
+            type: number
+            description: |-
+              The type of data that can be added as the extra field’s value.
+              
+              | Value | Type |
+              | --- | ---|
+              | `0` | text |
+              | `1` | multi-line text |
+              | `2` | numbers |
+              | `3` | dropdown |
+            enum:
+              - 0
+              - 1
+              - 2
+              - 3
+            example: 1
+    companyAddress_REQUEST:
+      allOf:
+        - $ref: "#/components/schemas/companyAddress"
+        - type: object
+          properties:
+            city:
+              minLength: 1
+            state:
+              minLength: 1
+            country:
+              minLength: 1
+    companyAddress:
+      type: object
+      properties:
+        addressLine1:
+          type: string
+          maxLength: 200
+          description: "The first line of the primary address for the Company account."
+          example: "123 Main Street"
+        addressLine2:
+          type: string
+          maxLength: 200
+          description: "The second line of the primary address for the Company account."
+          example: "Building 100"
+        city:
+          type: string
+          maxLength: 100
+          description: "The city of the primary address for the Company account."
+          example: "Austin"
+        state:
+          type: string
+          maxLength: 50
+          description: "The state of the primary address for the Company account, if applicable. This must be the full name and not an abbreviation."
+          example: "Texas"
+        country:
+          type: string
+          maxLength: 200
+          description: "The country of the primary address for the Company account. This must be either the full name or the ISO2 country code."
+          example: "`United States` or `US`"
+        zipCode:
+          type: string
+          maxLength: 50
+          description: "The postal code of the primary address for the Company account."
+          example: "78726"
+    hierarchyCompany:
+      type: object
+      properties:
+        companyId:
+          $ref: "#/components/schemas/companyId_integer"
+        companyName:
+          $ref: "#/components/schemas/companyName"
+        companyStatus:
+          $ref: "#/components/schemas/companyStatus_integer"
+    parentCompany:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: "The ID of the Company’s parent account in its hierarchy."
+          example: 123456
+        name:
+          type: string
+          description: "The name of the Company’s parent account in its hierarchy."
+          example: "Great Buys Inc"
+      description: "The name and ID of a Company account assigned as the parent of the Company in question. Leave these fields blank if the Company is at the top layer of its hierarchy."
+  responses:
+    ERROR_404_Parameter:
+      description: Not found error
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              status:
+                type: number
+              title:
+                type: string
+              errors:
+                type: object
+                properties:
+                  index:
+                    type: string
+          examples:
+            404 - Parameter Error:
+              value:
+                status: 404
+                title: Parameter Error.
+                errors:
+                  "1": Company does not exist.
+    ERROR_404_Data:
+      description: Not Found
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              code:
+                type: number
+              data:
+                type: object
+                properties: {}
+              meta:
+                type: object
+                properties:
+                  message:
+                    type: string
+            description: ""
+          examples:
+            404 - Not Found Error:
+              value:
+                code: 404
+                data: {}
+                meta:
+                  message: This resource is not found.
+    ERROR_413:
+      description: "Request Entity Too Large. In normal conditions, the bulk create or update method supports 10 entities in one request."
+      content:
+        application/json:
+          schema:
+            $ref: https://raw.githubusercontent.com/bigcommerce/docs/main/docs/b2b-edition/models/utils/response-413.yaml
+          examples:
+            413 - Request too Large Error:
+              value:
+                code: 413
+                meta:
+                  message: Request Entity Too Large
+                data: {}
+    RESPONSE_200_Base:
+      description: OK
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              code:
+                type: integer
+              data:
+                type: object
+              meta:
+                type: object
+                properties:
+                  message:
+                    type: string
+          examples:
+            200 - SUCCESS:
+              value:
                     code: 200
                     data: {}
                     meta:
                       message: SUCCESS
-      security:
-        - authToken: []
-      tags:
-        - Company
-components:
-  securitySchemes:
-    authToken:
-      type: apiKey
-      name: authToken
-      description: Required to authenticate requests. Include the token in a header parameter called `authToken`.
-      in: header
+    RESPONSE_200_UPDATE:
+      description: OK
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              code:
+                type: number
+              meta:
+                type: object
+                properties:
+                  message:
+                    type: string
+              data:
+                type: object
+                properties:
+                  companyId:
+                    $ref: "#/components/schemas/companyId_integer"
+          examples:
+            200 - UPDATED:
+              value:
+                code: 200
+                data:
+                  companyId: 12
+                meta:
+                  message: SUCCESS
+    RESPONSE_200_ATTACHMENT:
+      description: OK
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              code:
+                type: number
+                default: 200
+              data:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                    description: ""
+                    example: "497f6eca-6276-4993-bfeb-53cbbbba6f08"
+                  attachmentFile:
+                    type: string
+                    format: url
+                    description: The file attached to the Company account.
+                    example: "https://abc.com/xyz.pdf"
+              meta:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    default: SUCCESS
+          examples:
+            Example 1:
+              value:
+                code: 200
+                data:
+                  id: 497f6eca-6276-4993-bfeb-53cbbbba6f08
+                  attachmentFile: "https://example.com/example.csv"
+                meta:
+                  message: SUCCESS
   parameters:
+    paginationLimit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        default: 10
+      description: Determines the number of records to return per page. If left blank, this defaults to `10`.
+      example: 10
+    paginationOffset:
+      name: offset
+      in: query
+      schema:
+        type: integer
+        default: 0
+      description: The number of results to skip before returning the first result. If left blank, this defaults to `0`.
+      example: 3
     companyId:
       name: companyId
       in: path
       required: true
       schema:
         type: integer
-      description: Unique ID of company entity
+      description: Unique numeric ID of the Company account.
+      example: 123456
+  securitySchemes:
+    authToken:
+      name: authToken
+      in: header
+      type: apiKey
+      description: Required to authenticate requests. Include the token in a header parameter called `authToken`.

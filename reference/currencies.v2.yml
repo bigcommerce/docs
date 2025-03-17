@@ -9,8 +9,8 @@ info:
     | Name | Description |
     | -- | -- |
     | Default Currency | Storeʼs default currency is the one from which any auto-conversion of pricing (product, tax, shipping, promotions) will happen.|
-    | Display Currency | Currency that is displayed on the storefront. This might or might not mean that shopper can actually transact in that currency. Display currency is also often called "presentment currency" in the payments industry. |
-    | Transactional Currency | Transactional currency is what currency and amount BigCommerce passes to the payment provider and the currency/amount that the shopper will be charged to their bank account. If thereʼs a discrepancy between the storefront display currency and the transactional currency, a shopper has to pay a conversion fee and the conversion rate that will be used will be outside of BigCommerceʼs purview. |
+    | Active Currency | Shopper selected currency on the storefront. This might or might not mean that shopper can actually transact in that currency. Active currency is also often called "presentment currency" in the payments industry. |
+    | Transactional Currency | Transactional currency is what currency and amount BigCommerce passes to the payment provider and the currency/amount that the shopper will be charged to their bank account. If thereʼs a discrepancy between the storefront active currency and the transactional currency, a shopper has to pay a conversion fee and the conversion rate that will be used will be outside of BigCommerceʼs purview. |
     | Settlement Currency | This is the currency in which the merchant gets paid out to their bank account. If thereʼs a discrepancy between the currency that shopper transacts in and the currency in which merchant settles, merchant has to pay a conversion fee and the conversion rate used will be outside of BigCommerceʼs purview. Merchant is able to set their settlement currency through their payment provider. |
     |BigCommerce Conversion Rate | Any conversion rate set on BigCommerce used to convert product’s default currency pricing into a new non-default currency. Conversion rate could be static or dynamic. |
     | Static Conversion Rate | One of the two auto-converted pricing options. If a merchant manually enters a static conversion rate, then the conversion rate will remain the same until/unless merchant updates their currency settings to use a different conversion rate. The advantage of using this method is to avoid constantly fluctuating price in non-default currencies. |
@@ -80,7 +80,6 @@ paths:
         Creates *Currency*.
 
         **Required Fields** 
-
         * name
         * currency_code
         * currency_exchange_rate
@@ -92,8 +91,7 @@ paths:
 
         **Read-Only Fields**
         * id
-        * date_created
-        * date_modified
+        * last_updated
 
 
         The `is_default` property can only be set to true. The value of `is_default` cannot be unset, only overridden. To change the storeʼs default currency in the BigCommerce control panel, please see [Managing Currencies (Help Center)](https://support.bigcommerce.com/s/article/Managing-Currencies-Beta).
@@ -154,8 +152,7 @@ paths:
         **Read-Only Fields**
 
         * id
-        * date_created
-        * date_modified
+        * last_updated
         * currency_code
 
 
@@ -198,10 +195,8 @@ paths:
 components:
   schemas:
     currency_Post:
-      $ref: '#/components/schemas/currency_Base'
-    currency_Base:
-      title: currency_Base
-      required:
+     title: currency_Post
+     required:
         - currency_code
         - currency_exchange_rate
         - decimal_places
@@ -210,8 +205,8 @@ components:
         - thousands_token
         - token
         - token_location
-      type: object
-      properties:
+     type: object
+     properties:
         is_default:
           type: boolean
           description: Specifies the store’s default currency display format. For
@@ -271,6 +266,161 @@ components:
           description: Indicates if the currency is set as transactional or not. False
             means display only currency
           example: false
+     description: Currency Object
+     example:
+        is_default: false
+        country_iso2: EU
+        currency_code: EUR
+        currency_exchange_rate: '0.849'
+        auto_update: true
+        token_location: left
+        token: €
+        decimal_token: "."
+        thousands_token: ','
+        decimal_places: 2
+        name: Euro
+        enabled: false
+    currency_Put:
+     title: currency_Put
+     type: object
+     properties:
+        is_default:
+          type: boolean
+          description: Specifies the store’s default currency display format. For
+            write operations, only true value is accepted. When set to true, it cannot
+            be unset, only overridden.
+          example: false
+        country_iso2:
+          type: string
+          description: 2-letter ISO Alpha-2 code for this currency’s country.
+          example: EU
+        currency_exchange_rate:
+          type: string
+          description: Amount of this currency that is equivalent to one U.S. dollar.(Float,
+            Float as String, Integer)
+          example: "0.849"
+        auto_update:
+          type: boolean
+          description: Specifies whether to use the Open Exchange Rates service to
+            update the currency conversion. A value of false specifies a static conversion
+            value. auto_update only applies to non-transactional currencies.
+          example: true
+        token_location:
+          type: string
+          description: Specifies whether this currency’s symbol appears to the “left”
+            or “right” of the numeric amount.
+          example: left
+        token:
+          type: string
+          description: Symbol for this currency.
+          example: €
+        decimal_token:
+          type: string
+          description: Symbol used as the decimal separator in this currency.
+          example: "."
+        thousands_token:
+          type: string
+          description: Symbol used as the thousands separator in this currency.
+          example: ','
+        decimal_places:
+          type: integer
+          description: Number of decimal places to show for this currency.
+          example: 2
+        name:
+          type: string
+          description: Name of the currency.
+          example: Euro
+        enabled:
+          type: boolean
+          description: If the currency is active on the store.
+          example: false
+        is_transactional:
+          type: boolean
+          description: Indicates if the currency is set as transactional or not. False
+            means display only currency
+          example: false
+     description: Currency Object
+     example:
+        currency_exchange_rate: "0.849"
+        token_location: left
+        token: €
+        decimal_token: "."
+        thousands_token: ','
+        decimal_places: 2
+        name: Euro
+    currency_Base:
+      title: currency_Base
+      type: object
+      properties:
+        is_default:
+          type: boolean
+          description: Specifies the store’s default currency display format. For
+            write operations, only true value is accepted. When set to true, it cannot
+            be unset, only overridden.
+          example: false
+        country_iso2:
+          type: string
+          description: 2-letter ISO Alpha-2 code for this currency’s country.
+          example: EU
+        default_for_country_codes:
+          type: array
+          items:
+            type: string
+          description: Default 3-letter ISO 4217 code for this currency.
+          example: [EU]
+        currency_code:
+          type: string
+          description: 3-letter ISO 4217 code for this currency.
+          example: EUR
+        currency_exchange_rate:
+          type: string
+          description: Amount of this currency that is equivalent to one U.S. dollar.(Float,
+            Float as String, Integer)
+          example: "0.849"
+        auto_update:
+          type: boolean
+          description: Specifies whether to use the Open Exchange Rates service to
+            update the currency conversion. A value of false specifies a static conversion
+            value. auto_update only applies to non-transactional currencies.
+          example: true
+        token_location:
+          type: string
+          description: Specifies whether this currency’s symbol appears to the “left”
+            or “right” of the numeric amount.
+          example: left
+        token:
+          type: string
+          description: Symbol for this currency.
+          example: €
+        decimal_token:
+          type: string
+          description: Symbol used as the decimal separator in this currency.
+          example: "."
+        thousands_token:
+          type: string
+          description: Symbol used as the thousands separator in this currency.
+          example: ','
+        decimal_places:
+          type: integer
+          description: Number of decimal places to show for this currency.
+          example: 2
+        name:
+          type: string
+          description: Name of the currency.
+          example: Euro
+        enabled:
+          type: boolean
+          description: If the currency is active on the store.
+          example: false
+        is_transactional:
+          type: boolean
+          description: Indicates if the currency is set as transactional or not. False
+            means display only currency
+          example: true
+        use_default_name:
+          type: boolean
+          description: Default currency name
+          example: false
       description: Currency Object
       example:
         id: 2
@@ -306,8 +456,6 @@ components:
             last_updated: 2018-06-12T14:41:56.000Z
             enabled: false
       x-internal: false
-    currency_Put:
-      $ref: '#/components/schemas/currency_Post'
     currency_Full:
       title: currency_Full
       allOf:
@@ -323,6 +471,7 @@ components:
             type: string
             description: Date the currency was last updated, created or modified.
             format: date-time
+            readOnly: true
       x-internal: false
   responses:
     currencyCollection_Resp:

@@ -1,0 +1,194 @@
+# Data Events API in the GraphQL Storefront API
+
+<Callout type="info">
+The Data Events API is available on stencil and headless storefronts.
+</Callout>
+
+This article explains how to enable storefronts to use native analytics. The BigCommerce analytics system runs on data events. These are event objects that capture when a particular action has occurred (product added to a cart, shopper visited a website, an order was placed). All of the BigCommerce analytics features are based on event data being sent to our data pipeline.
+
+For merchants running a store on our stencil framework, BigCommerce automatically generates the necessary events to provide all of the BigCommerce analytics capabilities. For merchants running headless storefronts, this API is particularly helpful for analytical metrics such as “Visits” and the "Visit to Order Conversion rate".
+
+
+## Introduction
+
+**Data Events**
+
+The events to power the various data products are below:
+
+| Event   | Analytics features | What does it triggers? |
+|:--------|:-----------|:----------|
+| SHOPPER_CART_UPDATED | Used in purchase funnel and various cart reports | Anytime a cart is updated. | 
+| SHOPPER_ORDER_UPDATED | Used to calculate count of orders, sum of revenue, etc.  | Anytime an order is updated. |
+| SHOPPER_VISIT_STARTED | Conversion rates and purchase funnel data  | On stencil stores when a shopper starts a session. Sessions (visits) expire after 30 minutes of inactivity. |
+| PRODUCT_PAGE_VIEWED | Used in purchase funnel and product specific conversion rate metrics  | On stencil stores when a shopper views a page.  | 
+
+**Metrics**
+
+**Visit/Session id** - Sessions (visits) expire after 30 minutes of inactivity.
+**Visitor id** - Visitor id management expire after 1 or 2 years.
+
+## GraphQL schema
+
+## VisitStartedEvent
+
+<Tabs items={['Request', 'Response']}>
+  <Tab>
+
+  ```http filename="Example query: VisitStartedEvent" showLineNumbers copy
+  POST https://api.bigcommerce.com/stores/{{STORE_HASH}}/graphql
+  X-Auth-Token: {{ACCESS_TOKEN}}
+  Content-Type: application/json
+  Accept: application/json
+
+  mutation VisitStartedEvent {
+    analytics {
+        visitStartedEvent(input: {
+            commonInput: {
+                eventId:"284434d0-ece1-4613-9602-98d4220bca53",
+                initiator: {
+                    visitId: "Visit Id",
+                    visitorId: "Visitor Id"
+                },
+                request: {
+                    url: "www.bigcommerce.com",
+                    userAgent: "PostmanRuntime"
+                },
+                consent: {
+                    targeting: true,
+                    analytics: true,
+                    functional: true
+                }
+            }
+        }) {
+            executed
+        }
+    }
+}
+  ```
+  </Tab>
+  <Tab>
+
+  ```json filename="Example query: Get data layer enabled flag" showLineNumbers copy
+  {
+    "data": {
+      "analytics": {
+        "visitStartedEvent": {
+          "executed": true
+          }
+        }
+      }
+    }
+  ```
+  </Tab>
+</Tabs>
+
+## PageViewedEvent
+
+<Tabs items={['Request', 'Response']}>
+  <Tab>
+
+  ```http filename="Example query: PageViewedEvent" showLineNumbers copy
+  POST https://api.bigcommerce.com/stores/{{STORE_HASH}}/graphql
+  X-Auth-Token: {{ACCESS_TOKEN}}
+  Content-Type: application/json
+  Accept: application/json
+
+  mutation PageViewedEvent {
+    analytics {
+        pageViewedEvent(input: {
+            commonInput: {
+                eventId:"284434d0-ece1-4613-9602-98d4220bca53",
+                initiator: {
+                    visitId: "Visit Id",
+                    visitorId: "Visitor Id"
+                },
+                request: {
+                    url: "www.bigcommerce.com",
+                    userAgent: "PostmanRuntime"
+                },
+                consent: {
+                    targeting: true,
+                    analytics: true,
+                    functional: true
+                }
+            }
+        }) {
+            executed
+        }
+    }
+}
+  ```
+  </Tab>
+  <Tab>
+
+  ```json filename="Example query: PageViewedEvent" showLineNumbers copy
+  {
+    "data": {
+      "analytics": {
+        "PageViewedEvent": {
+          "executed": true
+          }
+        }
+      }
+    }
+  ```
+  </Tab>
+</Tabs>
+
+
+## ProductViewedEvent
+
+<Tabs items={['Request', 'Response']}>
+  <Tab>
+
+  ```http filename="Example query: ProductViewedEvent" showLineNumbers copy
+  POST https://api.bigcommerce.com/stores/{{STORE_HASH}}/graphql
+  X-Auth-Token: {{ACCESS_TOKEN}}
+  Content-Type: application/json
+  Accept: application/json
+
+  mutation ProductViewedEvent {
+    analytics {
+        productViewedEvent(input: {
+            commonInput: {
+                eventId:"284434d0-ece1-4613-9602-98d4220bca53",
+                initiator: {
+                    visitId: "Visit Id",
+                    visitorId: "Visitor Id"
+                },
+                request: {
+                    url: "www.bigcommerce.com",
+                    userAgent: "PostmanRuntime"
+                },
+                consent: {
+                    targeting: true,
+                    analytics: true,
+                    functional: true
+                }
+            },
+            productInput: {
+                productEntityId: 88,
+                searchKeyword: "test"
+            }
+        }) {
+            executed
+        }
+    }
+}
+  ```
+  </Tab>
+  <Tab>
+
+  ```json filename="Example query: ProductViewedEvent" showLineNumbers copy
+  {
+    "data": {
+      "analytics": {
+        "productViewedEvent": {
+          "executed": true
+          }
+        }
+      }
+    }
+  ```
+  </Tab>
+</Tabs>

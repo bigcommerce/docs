@@ -1,35 +1,18 @@
 # Data Events API in the GraphQL Storefront API
 
-<Callout type="info">
-The Data Events API is available on stencil and headless storefronts.
-</Callout>
+This article explains how to enable headless storefronts to use native analytics. The BigCommerce analytics system runs on data events. These are event objects that capture when a particular action has occurred (product added to a cart, shopper visited a website, an order was placed). All of the BigCommerce analytics features are based on event data being sent to our data pipeline.
 
-This article explains how to enable storefronts to use native analytics. The BigCommerce analytics system runs on data events. These are event objects that capture when a particular action has occurred (product added to a cart, shopper visited a website, an order was placed). All of the BigCommerce analytics features are based on event data being sent to our data pipeline.
-
-For merchants running a store on our stencil framework, BigCommerce automatically generates the necessary events to provide all of the BigCommerce analytics capabilities. For merchants running headless storefronts, this API is particularly helpful for analytical metrics such as “Visits” and the "Visit to Order Conversion rate".
-
+This API is particularly helpful for analytical metrics such as Visits and the Product Views.
 
 ## Introduction
 
-**Data Events**
+One of the key concepts in BigCommerce analytics is the concept of a visit or session. When sending events to BigCommerce it is important to send us a `visitId` and `visitorId` in UUID format. You can use the [UUID Generator](https://www.uuidgenerator.net/version4) to generate the parameters.
 
-The events to power the various data products are below:
+## Examples
 
-| Event   | Analytics features | What does it triggers? |
-|:--------|:-----------|:----------|
-| SHOPPER_CART_UPDATED | Used in purchase funnel and various cart reports | Anytime a cart is updated. | 
-| SHOPPER_ORDER_UPDATED | Used to calculate count of orders, sum of revenue, etc.  | Anytime an order is updated. |
-| SHOPPER_VISIT_STARTED | Conversion rates and purchase funnel data  | On stencil stores when a shopper starts a session. Sessions (visits) expire after 30 minutes of inactivity. |
-| PRODUCT_PAGE_VIEWED | Used in purchase funnel and product specific conversion rate metrics  | On stencil stores when a shopper views a page.  | 
+### VisitStartedEvent mutation.
 
-**Metrics**
-
-**Visit/Session id** - Sessions (visits) expire after 30 minutes of inactivity.
-**Visitor id** - Visitor id management expire after 1 or 2 years.
-
-## GraphQL schema
-
-## VisitStartedEvent
+Use `visitId` and `visitorId` (UUID format) in the `initiator` input. Specify `refererUrl: "https://google.com"` in the `request` input.
 
 <Tabs items={['Request', 'Response']}>
   <Tab>
@@ -82,61 +65,10 @@ The events to power the various data products are below:
   </Tab>
 </Tabs>
 
-## PageViewedEvent
-
-<Tabs items={['Request', 'Response']}>
-  <Tab>
-
-  ```http filename="Example query: PageViewedEvent" showLineNumbers copy
-  POST https://api.bigcommerce.com/stores/{{STORE_HASH}}/graphql
-  X-Auth-Token: {{ACCESS_TOKEN}}
-  Content-Type: application/json
-  Accept: application/json
-
-  mutation PageViewedEvent {
-    analytics {
-        pageViewedEvent(input: {
-            commonInput: {
-                eventId:"284434d0-ece1-4613-9602-98d4220bca53",
-                initiator: {
-                    visitId: "Visit Id",
-                    visitorId: "Visitor Id"
-                },
-                request: {
-                    url: "www.bigcommerce.com",
-                    userAgent: "PostmanRuntime"
-                },
-                consent: {
-                    targeting: true,
-                    analytics: true,
-                    functional: true
-                }
-            }
-        }) {
-            executed
-        }
-    }
-}
-  ```
-  </Tab>
-  <Tab>
-
-  ```json filename="Example query: PageViewedEvent" showLineNumbers copy
-  {
-    "data": {
-      "analytics": {
-        "PageViewedEvent": {
-          "executed": true
-          }
-        }
-      }
-    }
-  ```
-  </Tab>
-</Tabs>
-
 
 ## ProductViewedEvent
+
+Use the same `visitId` and `visitorId` as in the `VisitStartedEvent`.
 
 <Tabs items={['Request', 'Response']}>
   <Tab>
@@ -185,6 +117,57 @@ The events to power the various data products are below:
       "analytics": {
         "productViewedEvent": {
           "executed": true
+          }
+        }
+      }
+    }
+  ```
+  </Tab>
+</Tabs>
+
+## Redirect mutation
+
+After added a product to cart and obtaining a `cart_id`, execute the `redirect` mutation. Use the same `visitId` and `visitorId` as in the `VisitStartedEvent` and the `cart_id`. You will generate a `redirectedCheckoutUrl`. Proceed through checkout and create an order.
+
+<Tabs items={['Request', 'Response']}>
+  <Tab>
+
+  ```http filename="Example query: Redirect" showLineNumbers copy
+  POST https://api.bigcommerce.com/stores/{{STORE_HASH}}/graphql
+  X-Auth-Token: {{ACCESS_TOKEN}}
+  Content-Type: application/json
+  Accept: application/json
+
+  mutation redirect {
+    cart {
+        createCartRedirectUrls (input: {
+            cartEntityId: "2c0b561a-1288-4d21-b5b1-4009b75e38e2",
+            visitId: "Visit Id",
+            visitorId: "Visitor Id"
+        }) {
+            redirectUrls {
+              redirectedCheckoutUrl,
+              embeddedCheckoutUrl
+        }
+          errors {
+            ... on Error {
+                  message
+          }
+        }
+      }
+    }
+}
+ ```
+  </Tab>
+  <Tab>
+
+  ```json filename="Example query: Redirect" showLineNumbers copy
+  {
+    "data": {
+      "cart": {
+        "createCartRedirectUrls": {
+          "redirectUrls": {
+              "redirectedCheckoutUrl": 
           }
         }
       }

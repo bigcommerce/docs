@@ -1934,7 +1934,7 @@ components:
                 wrapping_cost_tax_class_id: 0
                 total_ex_tax: '931.86'
                 total_inc_tax: '1008.74'
-                total_tax: 76.88
+                total_tax: '76.88'
                 is_tax_inclusive_pricing: false
                 items_total: 11
                 items_shipped: 0
@@ -3509,6 +3509,21 @@ components:
           readOnly: true
           example: /orders/101/consignments
           type: string
+    orderFees_Resource:
+      title: orderFees_Resource
+      type: object
+      readOnly: true
+      properties:
+        url:
+          description: URL where you can use a GET request to get the order fees.
+          readOnly: true
+          example: 'https://api.bigcommerce.com/stores/{store_hash}/v2/orders/101/fees'
+          type: string
+        resource:
+          description: Path where you can use a GET request to get the order fees.
+          readOnly: true
+          example: /orders/101/fees
+          type: string
     products_Resource:
       title: products_Resource
       type: object
@@ -4307,6 +4322,7 @@ components:
             - refunded
             - void
             - void pending
+            - ''
         store_credit_amount:
           description: Represents the store credit that the shopper has redeemed on this individual order. This is a read-only value. Do not pass in a POST or PUT request. (Float, Float-As-String, Integer)
           example: '0.0000'
@@ -4354,6 +4370,10 @@ components:
           description: Indicates whether the order is deleted/archived. When set to true in a PUT request, it has the same result as the DELETE an order request.
           example: false
           type: boolean
+        total_tax:
+          description: Total tax amount for the order
+          example: '25.0000'
+          type: string
         is_tax_inclusive_pricing:
           description: |-
             Indicate whether the order's base prices include tax.
@@ -4387,9 +4407,11 @@ components:
         billing_address:
           $ref: '#/components/schemas/billingAddress_Resp'
         fees:
-          type: array
-          items:
-            $ref: '#/components/schemas/orderFees_Resp'
+          oneOf:
+            - $ref: '#/components/schemas/orderFees_Resource'
+            - type: array
+              items:
+                $ref: '#/components/schemas/orderFees_Resp'
     orderCustomProduct_Put:
       type: object
       title: Custom product

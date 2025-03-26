@@ -106,9 +106,19 @@ paths:
             type: integer
         - name: limit
           in: query
-          description: Controls the number of items per page in a limited (paginated) list of products.
+          description: Controls the number of items per page in a limited (paginated) list of products. If you provide only a limit, the API returns both paginations while applying that limit.
           schema:
             type: integer
+        - name: before
+          in: query
+          description: A cursor that can be used for backwards pagination. Will fetch results before the position corresponding to the cursor. Cannot be used with the 'page' query parameter. Cannot be used with the 'after' query parameter.
+          schema:
+            type: string
+        - name: after
+          in: query
+          description: A cursor that can be used for forwards pagination. Will fetch results after the position corresponding to the cursor. Cannot be used with the 'page' query parameter. Cannot be used with the 'before' query parameter.
+          schema:
+            type: string
         - name: 'id:in'
           in: query
           style: form
@@ -221,7 +231,40 @@ paths:
                               The total number of pages in the collection.
                             example: 1
                         description: 'Data related to the response, including pagination and collection totals.'
-                    description: 'Data related to the response, including pagination and collection totals.'
+                      cursor_pagination:
+                        title: Cursor Pagination
+                        type: object
+                        properties:
+                          count:
+                            description: Total number of items in the collection response.
+                            type: integer
+                            format: int32
+                          per_page:
+                            description: The number of items that can be returned per page, determined by the limit parameter—whether explicitly set, defaulted, or capped at the maximum limit.
+                            type: integer
+                            format: int32
+                          start_cursor:
+                            description: A string representing the starting point of the current page in the collection.
+                            type: string
+                          end_cursor:
+                            description: A string representing the ending point of the current page in the collection.
+                            type: string
+                          links: 
+                            title: links
+                            description: Pagination links for the previous and next parts of the whole collection.
+                            type: object
+                            properties:
+                              previous:
+                                description: Link to the previous page returned in the response.
+                                type: string
+                              current:
+                                description: Link to the current page returned in the response.
+                                type: string
+                              next:
+                                description: Link to the next page returned in the response.
+                                type: string
+                    description: |-
+                     'Contains data about paginating the response via cursors. If no pagination details are specified or if you only provide a limit, then both properties will be present. When a 'before' or 'after' cursor is provided, only the 'cursor_pagination' property will be present. When a 'page' parameter is provided, only the offset based 'pagination' property will be present.'
                 description: Get All PriceLists.
               example:
                 data:
@@ -247,6 +290,12 @@ paths:
                     per_page: 50
                     current_page: 1
                     total_pages: 1
+                  cursor_pagination:
+                    count: 8
+                    per_page: 50
+                    start_cursor: "Nw=="
+                    end_cursor: "MTQ="
+                    links: {}
     post:
       tags:
         - Price Lists
@@ -796,9 +845,19 @@ paths:
             type: integer
         - name: limit
           in: query
-          description: Controls the number of items per page in a limited (paginated) list of products.
+          description: Controls the number of items per page in a limited (paginated) list of products. If you provide only a limit, the API returns both paginations while applying that limit.
           schema:
             type: integer
+        - name: before
+          in: query
+          description: A cursor that can be used for backwards pagination. Will fetch results before the position corresponding to the cursor. Cannot be used with the 'page' query parameter. Cannot be used with the 'after' query parameter.
+          schema:
+            type: string
+        - name: after
+          in: query
+          description: A cursor that can be used for forwards pagination. Will fetch results after the position corresponding to the cursor. Cannot be used with the 'page' query parameter. Cannot be used with the 'before' query parameter.
+          schema:
+            type: string
         - name: include
           in: query
           description: |
@@ -1097,7 +1156,40 @@ paths:
                               The total number of pages in the collection.
                             example: 1
                         description: 'Data about the response, including pagination and collection totals.'
-                    description: 'Data about the response, including pagination and collection totals.'
+                      cursor_pagination:
+                        title: Cursor Pagination
+                        type: object
+                        properties:
+                          count:
+                            description: Total number of items in the collection response.
+                            type: integer
+                            format: int32
+                          per_page:
+                            description: The number of items that can be returned per page, determined by the limit parameter—whether explicitly set, defaulted, or capped at the maximum limit.
+                            type: integer
+                            format: int32
+                          start_cursor:
+                            description: A string representing the starting point of the current page in the collection.
+                            type: string
+                          end_cursor:
+                            description: A string representing the ending point of the current page in the collection.
+                            type: string
+                          links: 
+                            title: links
+                            description: Pagination links for the previous and next parts of the whole collection.
+                            type: object
+                            properties:
+                              previous:
+                                description: Link to the previous page returned in the response.
+                                type: string
+                              current:
+                                description: Link to the current page returned in the response.
+                                type: string
+                              next:
+                                description: Link to the next page returned in the response.
+                                type: string
+                    description: |-
+                      'Contains data about paginating the response via cursors. If no pagination details are specified or if you only provide a limit, then both properties will be present. When a 'before' or 'after' cursor is provided, only the 'cursor_pagination' property will be present. When a 'page' parameter is provided, only the offset based 'pagination' property will be present.'
                 description: |-
                   PriceRecord Collection Response returns for:
                   * Get All PriceList Records
@@ -1339,6 +1431,12 @@ paths:
                     per_page: 50
                     current_page: 1
                     total_pages: 1
+                  cursor_pagination:
+                    count: 1
+                    per_page: 50
+                    start_cursor: "MTUsMjEx"
+                    end_cursor: "MTUsMjEx"
+                    links: {}
         '429':
           description: |
             Allowed number of requests exceeded.
@@ -1653,6 +1751,26 @@ paths:
               enum:
                 - bulk_pricing_tiers
                 - sku
+        - name: page
+          in: query
+          description: Specifies the page number in a limited (paginated) list of products.
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          description: Controls the number of items per page in a limited (paginated) list of products. If you provide only a limit, the API returns both paginations while applying that limit.
+          schema:
+            type: integer
+        - name: before
+          in: query
+          description: A cursor that can be used for backwards pagination. Will fetch results before the position corresponding to the cursor. Cannot be used with the 'page' query parameter. Cannot be used with the 'after' query parameter.
+          schema:
+            type: string
+        - name: after
+          in: query
+          description: A cursor that can be used for forwards pagination. Will fetch results after the position corresponding to the cursor. Cannot be used with the 'page' query parameter. Cannot be used with the 'before' query parameter.
+          schema:
+            type: string
       responses:
         '200':
           description: ''
@@ -1794,7 +1912,8 @@ paths:
                   meta:
                     title: Collection Meta
                     type: object
-                    description: 'Data related to the response, including pagination and collection totals.'
+                    description: |-
+                      'Contains data about paginating the response via cursors. If no pagination details are specified or if you only provide a limit, then both properties will be present. When a 'before' or 'after' cursor is provided, only the 'cursor_pagination' property will be present. When a 'page' parameter is provided, only the offset based 'pagination' property will be present.'
                     properties:
                       pagination:
                         title: Pagination
@@ -1826,6 +1945,39 @@ paths:
                             description: |
                               The total number of pages in the collection.
                             example: 1
+                      cursor_pagination:
+                        title: Cursor Pagination
+                        description: Data about cursor pagination.
+                        type: object
+                        properties:
+                          count:
+                            description: Total number of items in the collection response.
+                            type: integer
+                            format: int32
+                          per_page:
+                            description: The number of items that can be returned per page, determined by the limit parameter—whether explicitly set, defaulted, or capped at the maximum limit.
+                            type: integer
+                            format: int32
+                          start_cursor:
+                            description: A string representing the starting point of the current page in the collection.
+                            type: string
+                          end_cursor:
+                            description: A string representing the ending point of the current page in the collection.
+                            type: string
+                          links:
+                            title: links
+                            description: Pagination links for the previous and next parts of the whole collection.
+                            type: object
+                            properties:
+                              previous:
+                                description: Link to the previous page returned in the response.
+                                type: string
+                              current:
+                                description: Link to the current page returned in the response.
+                                type: string
+                              next:
+                                description: Link to the next page returned in the response.
+                                type: string
         '429':
           description: |
             Allowed number of requests exceeded.
@@ -2032,13 +2184,6 @@ paths:
                   date_modified: '2022-09-18T13:18:15Z'
                   currency: eur
                   product_id: 185
-                meta:
-                  pagination:
-                    total: 1
-                    count: 1
-                    per_page: 50
-                    current_page: 1
-                    total_pages: 1
         '429':
           description: |
             Allowed number of requests exceeded.
@@ -2490,14 +2635,24 @@ paths:
               type: integer
         - name: page
           in: query
-          description: Specifies the page number in a limited (paginated) list of products.
+          description: Specifies the page number in a limited (paginated) list of products. 
           schema:
             type: integer
         - name: limit
           in: query
-          description: Controls the number of items per page in a limited (paginated) list of products.
+          description: Controls the number of items per page in a limited (paginated) list of products. If you provide only a limit, the API returns both paginations while applying that limit.
           schema:
             type: integer
+        - name: before
+          in: query
+          description: A cursor that can be used for backwards pagination. Will fetch results before the position corresponding to the cursor. Cannot be used with the 'page' query parameter. Cannot be used with the 'after' query parameter.
+          schema:
+            type: string
+        - name: after
+          in: query
+          description: A cursor that can be used for forwards pagination. Will fetch results after the position corresponding to the cursor. Cannot be used with the 'page' query parameter. Cannot be used with the 'before' query parameter.
+          schema:
+            type: string
       responses:
         '200':
           description: An array of price list assignments and metadata.
@@ -2886,7 +3041,8 @@ components:
       x-internal: false
     CollectionMeta:
       type: object
-      description: 'Data related the response, including pagination and collection totals.'
+      description: |-
+        'Contains data about paginating the response via cursors. If no pagination details are specified or if you only provide a limit, then both properties will be present. When a 'before' or 'after' cursor is provided, only the 'cursor_pagination' property will be present. When a 'page' parameter is provided, only the offset based 'pagination' property will be present.'
       properties:
         pagination:
           type: object
@@ -2918,6 +3074,38 @@ components:
               description: |
                 The total number of pages in the collection.
               example: 1
+        cursor_pagination:
+          title: Cursor Pagination
+          type: object
+          properties:
+            count:
+              description: Total number of items in the collection response.
+              type: integer
+              format: int32
+            per_page:
+              description: The number of items that can be returned per page, determined by the limit parameter—whether explicitly set, defaulted, or capped at the maximum limit.
+              type: integer
+              format: int32
+            start_cursor:
+              description: A string representing the starting point of the current page in the collection.
+              type: string
+            end_cursor:
+              description: A string representing the ending point of the current page in the collection.
+              type: string
+            links: 
+              title: links
+              description: Pagination links for the previous and next parts of the whole collection.
+              type: object
+              properties:
+                  previous:
+                    description: Link to the previous page returned in the response.
+                    type: string
+                  current:
+                    description: Link to the current page returned in the response.
+                    type: string
+                  next:
+                    description: Link to the next page returned in the response.
+                    type: string
       title: Collection Meta
       x-internal: false
     Meta:

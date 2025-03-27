@@ -35,22 +35,13 @@ Navigate into the root Cornerstone theme folder, then install the following npm 
 cd ~/path/to/theme/dir
 
 # install dependencies
-npm install --save-dev @material-ui/core react react-dom @babel/plugin-transform-object-assign @babel/preset-react
+npm install react react-dom @mui/material @mui/styles @emotion/react @emotion/styled
+npm install --save-dev @babel/preset-react
 ```
 
 ### Update webpack.common.js
 
-Update` webpack.common.js` with the new presets and plugins.
-
-```js filename="Example 1: New presets and plugins" showLineNumbers copy
-...
-plugins: [
-  ...
-   '@babel/plugin-transform-object-assign',
- ],
-```
-
-&nbsp;
+Update` webpack.common.js` with the react preset.
 
 ```js filename="Example 2: New presets and plugins" showLineNumbers copy
 ...
@@ -73,8 +64,9 @@ In the following steps, we'll be adding React components to assemble our coupon 
 
 ```js filename="CouponDrawer.js" showLineNumbers copy
 import React from 'react';
-import Drawer from '@material-ui/core/Drawer';
-import Button from '@material-ui/core/Button';
+import Drawer from '@mui/material/Drawer';
+import Button from '@mui/material/Button';
+import Box from '@mui/material/Box';
 import VerticalStepper from './VerticalStepper';
 
 export default function CouponDrawer() {
@@ -82,81 +74,81 @@ export default function CouponDrawer() {
     right: false,
   });
 
-  const toggleDrawer = (side, open) => event => {
-    if (event.type === 'keydown' && (event.key === 'Tab' || event.key === 'Shift')) {
+  const toggleDrawer = (side, open) => (event) => {
+    if (
+      event.type === 'keydown' &&
+      (event.key === 'Tab' || event.key === 'Shift')
+    ) {
       return;
     }
 
-    setState({ ...state, [side]: open });
+    setState((prevState) => ({ ...prevState, [side]: open }));
   };
 
   return (
     <div>
-      <Button color="secondary" variant="contained" onClick={toggleDrawer('right', true)}>Click Here For A Coupon</Button>
-      <Drawer anchor="right" open={state.right} onClose={toggleDrawer('right', false)}>
-        <VerticalStepper />
+      <Button
+        color="secondary"
+        variant="contained"
+        onClick={toggleDrawer('right', true)}
+        aria-label="Open coupon drawer"
+      >
+        Click Here For A Coupon
+      </Button>
+      <Drawer
+        anchor="right"
+        open={state.right}
+        onClose={toggleDrawer('right', false)}
+      >
+        <Box sx={{ width: 320, p: 2 }}>
+          <VerticalStepper />
+        </Box>
       </Drawer>
     </div>
   );
 }
+
 ```
 
 6. In the same `/components` folder, create a `VerticalStepper.js` file.
 7. Copy the following code into the file:
 
 ```js filename="VerticalStepper.js" showLineNumbers copy
-import React from 'react';
-import { makeStyles } from '@material-ui/core/styles';
-import Stepper from '@material-ui/core/Stepper';
-import Step from '@material-ui/core/Step';
-import StepLabel from '@material-ui/core/StepLabel';
-import StepContent from '@material-ui/core/StepContent';
-import Button from '@material-ui/core/Button';
-import Typography from '@material-ui/core/Typography';
-import TextField from './TextField';
-
-const useStyles = makeStyles(theme => ({
-  root: {
-    width: '100%',
-  },
-  button: {
-    marginTop: theme.spacing(1),
-    marginRight: theme.spacing(1),
-  },
-  actionsContainer: {
-    marginBottom: theme.spacing(2),
-  },
-  resetContainer: {
-    padding: theme.spacing(3),
-  },
-}));
+import React from "react";
+import Stepper from "@mui/material/Stepper";
+import Step from "@mui/material/Step";
+import StepLabel from "@mui/material/StepLabel";
+import StepContent from "@mui/material/StepContent";
+import Button from "@mui/material/Button";
+import Typography from "@mui/material/Typography";
+import Box from "@mui/material/Box";
+import TextField from "./TextField";
 
 function getSteps() {
-  return ['Provide your email', 'Receive your coupon!'];
+  return ["Provide your email", "Receive your coupon!"];
 }
 
 function getStepContent(step) {
   switch (step) {
     case 0:
-      return `Please enter your email address:`;
+      return "Please enter your email address:";
     case 1:
-      return `We have sent a coupon code to your email address.`;
+      return "We have sent a coupon code to your email address.";
     default:
-      return `Unknown step`;
+      return "Unknown step";
   }
 }
 
 export default function VerticalLinearStepper() {
-  const classes = useStyles();
   const [activeStep, setActiveStep] = React.useState(0);
   const steps = getSteps();
 
   const handleNext = () => {
-    setActiveStep(prevActiveStep => prevActiveStep + 1);
+    setActiveStep((prevActiveStep) => prevActiveStep + 1);
   };
 
   return (
-    <div className={classes.root}>
+    <Box sx={{ width: "100%" }}>
       <Stepper activeStep={activeStep} orientation="vertical">
         {steps.map((label, index) => (
           <Step key={label}>
@@ -164,25 +156,25 @@ export default function VerticalLinearStepper() {
             <StepContent>
               <Typography>{getStepContent(index)}</Typography>
               {activeStep === 0 ? <TextField /> : null}
-              <div className={classes.actionsContainer}>
+              <Box sx={{ mb: 2 }}>
                 {activeStep === 0 && (
                   <div>
                     <Button
                       variant="contained"
                       color="primary"
                       onClick={handleNext}
-                      className={classes.button}
+                      sx={{ mt: 1, mr: 1 }}
                     >
                       Submit
                     </Button>
                   </div>
                 )}
-              </div>
+              </Box>
             </StepContent>
           </Step>
         ))}
       </Stepper>
-    </div>
+    </Box>
   );
 }
 ```
@@ -192,46 +184,74 @@ export default function VerticalLinearStepper() {
 
 ```js filename="TextField.js" showLineNumbers copy
 import React from 'react';
-import { makeStyles } from '@material-ui/core/styles';
-import TextField from '@material-ui/core/TextField';
-
-const useStyles = makeStyles(theme => ({
-  root: {
-    '& > *': {
-      margin: theme.spacing(1),
-      width: 200,
-    },
-  },
-}));
+import TextField from '@mui/material/TextField';
+import Box from '@mui/material/Box';
 
 export default function BasicTextFields() {
-  const classes = useStyles();
-
   return (
-    <form className={classes.root} noValidate autoComplete="off">
-      <TextField id="standard-basic" label="you@example.com" />
-    </form>
+    <Box
+      component="form"
+      sx={{
+        '& > *': {
+          m: 1,
+          width: '200px',
+        },
+      }}
+      noValidate
+      autoComplete="off"
+    >
+      <TextField
+        id="standard-basic"
+        label="you@example.com"
+        variant="standard"
+      />
+    </Box>
   );
 }
+
 ```
 
 ### Import dependencies
 
-1. Import the React dependencies and  the new CouponDrawer component we've created into `assets/js/app.js`:
+1. Import the React dependencies and the new CouponDrawer component we've created into `assets/js/app.js` while also creating a theme instance for Material UI:
 
 ```js filename="assets/js/app.js" showLineNumbers copy
 __webpack_public_path__ = window.__webpack_public_path__; // eslint-disable-line
 
-import Global from './theme/global';
-import React from 'react';
-import ReactDOM from 'react-dom';
-import CouponDrawer from './components/CouponDrawer';
+import Global from "./theme/global";
+import React from "react";
+import { createRoot } from "react-dom/client";
+import { ThemeProvider, createTheme } from "@mui/material/styles";
+import CssBaseline from "@mui/material/CssBaseline";
+import CouponDrawer from "./components/CouponDrawer";
+
+const theme = createTheme({
+    palette: {
+        primary: {
+            main: "#555555", // Customize to match your brand
+        },
+        secondary: {
+            main: "#f44336", // Customize to match your brand
+        },
+    },
+});
 ```
 
 2. At the bottom of the file, render the `CouponDrawer` component and assign it an id.
 
 ```js filename="Render CouponDrawer component" showLineNumbers copy
-ReactDOM.render(<CouponDrawer />, document.querySelector('#coupondrawer'));
+
+const couponContainer = document.querySelector("#coupondrawer");
+
+if (couponContainer) {
+  const root = createRoot(couponContainer);
+  root.render(
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <CouponDrawer />
+      </ThemeProvider>
+  );
+}
 ```
 
 ### Add the CouponDrawer div to base.html
@@ -243,19 +263,12 @@ ReactDOM.render(<CouponDrawer />, document.querySelector('#coupondrawer'));
 <body>
   ...
   <div id="coupondrawer"></div>
-
+  
   {{> components/common/header }}
   {{> components/common/body }}
   {{> components/common/footer }}
 
-  <script>window.__webpack_public_path__ = "{{cdn 'assets/dist/'}}";</script>
-  <script src="{{cdn 'assets/dist/theme-bundle.main.js'}}"></script>
-  <script>
-    {{!-- Exported in app.js --}}
-    window.stencilBootstrap("{{page_type}}", {{jsContext}}).load();
-  </script>
-
-  {{{footer.scripts}}}
+  ...
 </body>
 ```
 

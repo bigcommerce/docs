@@ -1,205 +1,159 @@
 openapi: 3.0.0
 info:
   title: Authentication
-  version: '1.0'
-  description: Storefront authentication for the BigCommerce B2B Edition API
+  description: "Description. Goes above all endpoint data. Also serves as landing page"
   contact:
     name: BigCommerce
     url: 'https://www.bigcommerce.com'
     email: support@bigcommerce.com
+  version: v2
 servers:
-  - url: 'https://api-b2b.bigcommerce.com/api'
+  - url: 'https://api-b2b.bigcommerce.com/api/v2'
+tags:
+  - name: Authentication
+
 paths:
   /v2/login:
+    parameters: []
     post:
-      summary: Get Storefront authToken within Stencil
+      tags:
+        - Authentication
+      summary: "Short-Description"
       operationId: post-login
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                description: ''
-                type: object
-                properties:
-                  code:
-                    type: number
-                  message:
-                    type: string
-                    minLength: 1
-                  data:
-                    type: object
-                    properties:
-                      token:
-                        type: string
-                        minLength: 1
-                    required:
-                      - token
-                required:
-                  - code
-                  - message
-                  - data
-                x-examples:
-                  example-1:
-                    code: 200
-                    message: SUCCESS
-                    data:
-                      token: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6ImxldmkudHVvQHNpbGtzb2Z0d2FyZS5jb20iLCJzdG9yZV9oYXNoIjoiMWk2enB4cGUzZyIsImRiIjoiZGVmYXVsdCJ9.ETkUWT7Rw4eOBq6UMqq2EyWtFkhceogNyWVpr34Qwgw
-              examples:
-                example-1:
-                  value:
-                    code: 200
-                    message: SUCCESS
-                    data:
-                      token: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6InRlc3RfYjJjX29yZGVyX2ltcG9ydEBxcS5jb21tIiwic3RvcmVfaGFzaCI6ImYyb3N4ampueGoiLCJkYiI6ImRlZmF1bHQifQ
-      description: |-
-        Get a storefront authToken. You need a [BigCommerce Current Customer JWT](https://developer.bigcommerce.com/docs/storefront-auth/current-customer) to make the request. See the B2B Edition [Authentication article](/b2b-edition/docs/authentication) for more details.
-        
-        Equivalent Storefront GraphQL API Mutation: `authorization`. For more information, see the [GraphQL Playground](https://api-b2b.bigcommerce.com/graphql/playground).
+      description: "extended-description"
+      parameters: []
       requestBody:
         content:
           application/json:
             schema:
+              required:
+                - bcToken
               type: object
               properties:
                 bcToken:
                   type: string
                   description: BigCommerce JWT token
+                storeHash:
+                  $ref: "#/components/schemas/storeHash"
+                channelId:
+                  $ref: "#/components/schemas/channelId"
                 customerId:
                   type: integer
                   description: Customer ID
-                storeHash:
-                  type: string
-                  description: Store Hash
-                channelId:
-                  type: integer
-                  description: BigCommerce channel ID
-              required:
-                - bcToken
-            examples:
-              example-1:
-                value:
-                  bcToken: string
-                  customerId: 1234
-                  storeHash: string
-      tags:
-        - Authentication
-    parameters: []
-  /io/auth/customers:
-    post:
-      summary: Get a Storefront authToken for a Specific Customer
-      operationId: post-auth-customer
+                  example: 123
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
               schema:
-                description: ''
-                type: object
-                properties:
-                  code:
-                    type: number
-                  data:
-                    type: object
-                    properties:
-                      name:
-                        type: string
-                        minLength: 1
-                      token:
-                        type: string
-                        minLength: 1
-                    required:
-                      - name
-                      - token
-                  meta:
-                    type: object
+                allOf:
+                  - $ref: "#/components/schemas/responseBASE"
+                  - type: object
                     properties:
                       message:
                         type: string
-                        minLength: 1
-                    required:
-                      - message
-                required:
-                  - code
-                  - data
-                  - meta
-                x-examples:
-                  example-1:
-                    code: 200
-                    data:
-                      name: test9
-                      token: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6ImtpZG8yNzZAc25hcG1haWwuY2MiLCJzdG9yZV9oYXNoIjoiMWk2enB4cGUzZyIsImRiIjoiZGVmYXVsdCIsIm5hbWUiOiJ0ZXN0OSIsImNoYW5uZWxfaWRzIjpbMV0sInRva2VuX3R5cGUiOjMsIm5iZiI6MTAwMCwiZXhwIjoyMDAxfQ.EiR__LVAlBVNYtFCZPWJYoPv6UfGiXtULxhK-BCQZjY
-                    meta:
-                      message: SUCCESS
-              examples:
-                example-1:
-                  value:
-                    code: 200
-                    data:
-                      name: test9
-                      token: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6ImtpZG8yNzZAc25hcG1haWwuY2MiLCJzdG9yZV9oYXNoIjoiMWk2enB4cGUzZyIsImRiIjoiZGVmYXVsdCIsIm5hbWUiOiJ0ZXN0OSIsImNoYW5uZWxfaWRzIjpbMV0sInRva2VuX3R5cGUiOjMsIm5iZiI6MTAwMCwiZXhwIjoyMDAxfQ.EiR__LVAlBVNYtFCZPWJYoPv6UfGiXtULxhK-BCQZjY
-                    meta:
-                      message: SUCCESS
+                        example: "SUCCESS"
+  /io/auth/customers:
+    parameters: []
+    post:
+      tags:
+        - Authentication
+      summary: "short-description"
+      operationId: post-auth-customer
+      description: "extended-description"
+      parameters: []
       requestBody:
         content:
           application/json:
             schema:
-              description: ''
               type: object
-              x-examples:
-                example-1:
-                  storeHash: '{{store_hash}}'
-                  email: kido276@snapmail.cc
-                  password: test12345
-                  channelId: 1
-                  name: test9
-                  beginAt: 1000
-                  endAt: 2001
               properties:
                 storeHash:
+                  $ref: "#/components/schemas/storeHash"
+                channelId:
+                  $ref: "#/components/schemas/channelId"
+                name:
                   type: string
                   minLength: 1
                 email:
                   type: string
                   minLength: 1
+                  format: email
                   description: BigCommerce customer email
                 password:
                   type: string
                   minLength: 1
+                  format: password
                   description: BigCommerce customer password
-                channelId:
-                  type: number
-                  description: Store channel ID
-                name:
-                  type: string
-                  minLength: 1
-              required:
-                - storeHash
-                - email
-                - password
-                - channelId
-                - name
-            examples:
-              example-1:
-                value:
-                  storeHash: string
-                  email: axe@snapmail.cc
-                  password: test12345
-                  channelId: 1
-                  name: test
-                  beginAt: 1000
-                  endAt: 1721930486
-        description: ''
-      description: |-
-        Get an authentication token for a specific BigCommerce customer.
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/responseBASE"
+                  - type: object
+                    properties:
+                      data:
+                        properties:
+                          name:
+                            type: string
+                            example: "Marie Curie"
+                      meta:
+                        type: object
+                        properties:
+                          message:
+                            type: string
+                            example: "SUCCESS"
+        "400":
+          $ref: "#/components/responses/authFailed"
 
-        Equivalent Storefront GraphQL API Mutation: `login`. For more information, see the [GraphQL Playground](https://api-b2b.bigcommerce.com/graphql/playground).
-      tags:
-        - Authentication
-    parameters: []
 components:
-  schemas: {}
-tags:
-  - name: Authentication
+  schemas:
+    storeHash:
+      type: string
+      description: Unique BigCommerce store hash.
+      example: abc123
+    channelId:
+      type: number
+      description: Storefront channel ID.
+      default: 1
+      example: 123456
+    responseBASE:
+      type: object
+      properties:
+        code:
+          type: number
+          default: 200
+        data:
+          type: object
+          properties:
+            token:
+              type: string
+              description: Storefront customer token.
+              example: "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6ImxldmkudHVvQHNpbGtzb2Z0d2FyZS5jb20iLCJzdG9yZV9oYXNoIjoiMWk2enB4cGUzZyIsImRiIjoiZGVmYXVsdCJ9.ETkUWT7Rw4eOBq6UMqq2EyWtFkhceogNyWVpr34Qwgw"
+  responses:
+    authFailed:
+      description: 400 - Auth Failed
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              code:
+                type: number
+                example: 400
+              data:
+                type: object
+                properties:
+                  errMsg:
+                    type: string
+                    example: "Customer auth failed"
+              meta:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Calling BC API failed"

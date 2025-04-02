@@ -79,12 +79,17 @@ It’s likely that your app or integration is already compatible with Catalyst i
 
 ## How will users know my app is Catalyst-compatible?
 
-- We are working on an official verification process.
-- Once certified, your app will receive a "Catalyst Compatible" badge in the BigCommerce App Marketplace.
+We are currently working to solidify the official verification process and will update this guide when we have it set in stone. 
+
+For now, if you believe your app is compatible and you have completed all updates necessary, please reach out to your Partner Manager and they will connect you with the right team to begin your verification process. 
+
+Once your app is certified, it will get a badge in your app’s detail page in our App Marketplace indicating Catalyst Compatibility - similar to the one you have for MSF compatibility. Below is a mockup of what that will look like: 
+
 
 ![](./hypa-apps.png)
 
 Category Merchandiser by Hypa has been verified as a Catalyst Compatible app, which you can see on the right hand side under the heading “Compatible With”. All apps can expect to see the same UI on their app detail page once compatibility is verified. 
+
 ---
 
 ## Leverage our BigCommerce Developer ecosystem to learn more

@@ -1,623 +1,474 @@
-openapi: '3.0.0'
+openapi: 3.0.1
 info:
   title: Authentication
-  version: '3.0'
-  description: API auth manage
+  description: "Description. Goes above all endpoint data. Also serves as 'landing page' data."
   contact:
     name: BigCommerce
     url: 'https://www.bigcommerce.com'
     email: support@bigcommerce.com
+  version: v3
 servers:
-  - url: 'https://api-b2b.bigcommerce.com/api/io'
+  - url: "https://api-b2b.bigcommerce.com/api/v3/io"
+security:
+  - authToken: []
 tags:
   - name: Authentication
-    description: ''
+
 paths:
   /auth/backend:
     parameters: []
     post:
-      summary: Get Server to Server Tokens
-      operationId: post-auth-backend
       tags:
         - Authentication
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                description: ''
-                type: object
-                properties:
-                  code:
-                    type: number
-                  data:
-                    type: array
-                    uniqueItems: true
-                    minItems: 1
-                    items:
-                      type: object
-                      properties:
-                        name:
-                          type: string
-                          minLength: 1
-                          description: Token name
-                        token:
-                          type: string
-                          minLength: 1
-                          description: Your token
-                      required:
-                        - name
-                        - token
-                  meta:
-                    type: object
-                    required:
-                      - message
-                    properties:
-                      message:
-                        type: string
-                        minLength: 1
-                required:
-                  - code
-                  - data
-                  - meta
-              examples:
-                example-1:
-                  value:
-                    code: 200
-                    data:
-                      - name: fullPermsToken
-                        token: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6InRlc3RfYjJjX29yZGVyX2ltcG9ydEBxcS5jb21tIiwic3RvcmVfaGFzaCI6ImYyb3N4ampueGoiLCJkYiI6ImRlZmF1bHQifQ.L_u_enljWoYBbPPskmYEQVHldHIaTcWMIB-SdFah850
-                    meta:
-                      message: SUCCESS
-        '400':
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  code:
-                    type: number
-                  data:
-                    type: object
-                    properties:
-                      errMsg:
-                        type: string
-                        description: Error message
-                  meta:
-                    type: object
-                    properties:
-                      message:
-                        type: string
-              examples:
-                example-1:
-                  value:
-                    code: 400
-                    data:
-                      errMsg: The email or password you have entered is incorrect. Please try again.
-                    meta:
-                      message: API logic error
+      summary: "short-description"
+      operationId: post-auth-backend
+      description: "extended-description"
+      parameters: []
+      security: []
       requestBody:
         content:
           application/json:
             schema:
-              description: ''
               type: object
-              properties:
-                storeHash:
-                  type: string
-                  minLength: 1
-                  description: Your store unique store_hash
-                email:
-                  type: string
-                  minLength: 1
-                  description: 'You can use the backend user email to log into the B2B Edition APP.'
-                password:
-                  type: string
-                  minLength: 1
-                  description: 'You can use the backend user password to log into the B2B Edition APP.'
-                name:
-                  type: string
-                  description: The token name, if you want to specify it.
               required:
                 - storeHash
                 - email
                 - password
                 - name
-            examples:
-              example-1:
-                value:
-                  storeHash: string
-                  email: string
-                  password: string
-                  name: test
-          application/xml:
-            schema:
-              description: ''
-              type: object
               properties:
                 storeHash:
-                  type: string
-                  minLength: 1
+                  $ref: "#/components/schemas/storeHash"
                 email:
-                  type: string
-                  minLength: 1
+                  $ref: "#/components/schemas/email"
                 password:
-                  type: string
-                  minLength: 1
-              required:
-                - storeHash
-                - email
-                - password
-            examples:
-              example-1:
-                value:
-                  storeHash: 1i5ypxdlj
-                  email: dev.test@bundleb2b.net
-                  password: 1mdsafu3nf9x
-        description: ''
-      description: |-
-        Get Server to Server Tokens.
-
-        Administrators are the only role allowed to create API tokens.
-      security: []
-    delete:
-      summary: Delete Backend API Tokens
-      operationId: delete-auth-backend
+                  $ref: "#/components/schemas/password"
+                name:
+                  $ref: "#/components/schemas/tokenName"
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: https://raw.githubusercontent.com/bigcommerce/docs/main/docs/b2b-edition/models/utils/response-object.yaml
+                  - $ref: "#/components/schemas/responseArray"
                   - type: object
                     properties:
+                      code:
+                        default: 200
                       data:
-                        type: array
-                        items: {}
-              examples:
-                example-1:
-                  value:
-                    code: 200
-                    data: []
-                    meta:
-                      message: SUCCESS
-        '404':
-          description: Not Found
+                        items:
+                          properties:
+                            name:
+                              $ref: "#/components/schemas/tokenName"
+                            token:
+                              $ref: "#/components/schemas/tokenValue"
+                      meta:
+                        properties:
+                          message:
+                            example: "SUCCESS"
+        "400":
+          description: BAD REQUEST
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  code:
-                    type: integer
-                  data:
-                    type: object
+                allOf:
+                  - $ref: "#/components/schemas/responseObject"
+                  - type: object
                     properties:
-                      errMsg:
-                        type: string
-                  meta:
-                    type: object
-                    properties:
-                      message:
-                        type: string
-                x-examples:
-                  example-1:
-                    code: 404
-                    data:
-                      errMsg: No matching token
-                    meta:
-                      message: Not Found Error
-              examples:
-                example-1:
-                  value:
-                    code: 404
-                    data:
-                      errMsg: No matching token was found
-                    meta:
-                      message: Not Found Error
-      description: Delete backend API tokens.
-      security:
-        - authToken: []
+                      code:
+                        default: 400
+                      data:
+                        properties:
+                          errMsg:
+                            allOf:
+                              - $ref: "#/components/schemas/errMsg"
+                              - type: string
+                                example: "The email or password you have entered is incorrect. Please try again."
+                      meta:
+                        properties:
+                          message:
+                            example: "API logic error"
+    delete:
+      tags:
+        - Authentication
+      summary: "short-description"
+      operationId: delete-auth-backend
+      description: "extended-description"
+      parameters: []
+      security: []
       requestBody:
         content:
           application/json:
             schema:
               type: object
-              properties:
-                email:
-                  type: string
-                  description: |
-                    The backend user email is the credential you use to log into the B2B Edition APP, which will be used as a query parameter.
-                  minLength: 1
-                name:
-                  type: string
-                  description: 'The token name, which will be used as a query parameter.'
-                id:
-                  type: integer
-                  description: Token ID
               required:
                 - id
-      tags:
-        - Authentication
-  /backend/tokens:
-    get:
-      summary: Get All Server to Server Tokens
-      tags:
-        - Authentication
+              properties:
+                email:
+                  $ref: "#/components/schemas/email"
+                name:
+                  $ref: "#/components/schemas/tokenName"
+                id:
+                  $ref: "#/components/schemas/tokenId"
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  code:
-                    type: integer
-                  data:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        id:
-                          type: integer
-                          description: Token ID
-                        name:
-                          type: string
-                          description: Token name
-                        email:
-                          type: string
-                          description: Token email
-                        storeHash:
-                          type: string
-                          description: Token store hash
-                        token:
-                          type: string
-                          description: Token
-                        eventChannel:
-                          type: string
-                          description: 'The channel of the token created from an app, admin or API.'
-                  meta:
-                    type: object
+                allOf:
+                  - $ref: "#/components/schemas/responseArray"
+                  - type: object
                     properties:
-                      pagination:
-                        type: object
+                      code:
+                        default: 200
+                      meta:
                         properties:
-                          totalCount:
-                            type: integer
-                            description: The total number of the all data
-                          offset:
-                            type: integer
-                            description: 'Pagination offset default: 0'
-                            minimum: 0
-                            exclusiveMinimum: false
-                            default: 0
-                          limit:
-                            type: integer
-                            description: 'Pagination limit default: 10'
-                            minimum: 1
-                            maximum: 250
-                            example: 10
-                            default: 10
-                      message:
-                        type: string
-              examples:
-                example-1:
-                  value:
-                    code: 0
-                    data:
-                      - id: 0
-                        name: string
-                        email: string
-                        storeHash: string
-                        token: string
-                        eventChannel: string
-                    meta:
-                      pagination:
-                        totalCount: 0
-                        offset: 0
-                        limit: 10
-                      message: string
-            application/xml:
+                          message:
+                            example: "SUCCESS"
+        "404":
+          description: NOT FOUND
+          content:
+            application/json:
               schema:
-                type: object
-                properties: {}
-              examples:
-                example-1:
-                  value: {}
-      operationId: get-backend-tokens
-      description: Get all Server to Server tokens
-      parameters:
-        - schema:
-            type: integer
-            default: 10
-          in: query
-          name: limit
-          description: Pagination limit
-        - schema:
-            type: integer
-            default: 0
-          in: query
-          name: offset
-          description: Pagination offset
-  /auth/storefront:
-    get:
-      summary: Get a Storefront API authToken
+                allOf:
+                  - $ref: "#/components/schemas/responseObject"
+                  - type: object
+                    properties:
+                      code:
+                        default: 404
+                      data:
+                        properties:
+                          errMsg:
+                            allOf:
+                              - $ref: "#/components/schemas/errMsg"
+                              - type: string
+                                example: "No matching token was found."
+                      meta:
+                        properties:
+                          message:
+                            example: "Not Found Error"
+  /auth/customers:
+    parameters: []
+    post:
       tags:
         - Authentication
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                description: ''
-                type: object
-                properties:
-                  code:
-                    type: number
-                  data:
-                    type: object
-                    required:
-                      - token
-                    properties:
-                      token:
-                        type: string
-                        minLength: 1
-                        description: Your storefront token
-                  meta:
-                    type: object
-                    required:
-                      - message
-                    properties:
-                      message:
-                        type: string
-                        minLength: 1
-                required:
-                  - code
-                  - data
-                  - meta
-              examples:
-                example-1:
-                  value:
-                    code: 200
-                    data:
-                      token: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6InRlc3RfYjJjX29yZGVyX2ltcG9ydEBxcS5jb21tIiwic3RvcmVfaGFzaCI6ImYyb3N4ampueGoiLCJkYiI6ImRlZmF1bHQifQ.L_u_enljWoYBbPPskmYEQVHldHIaTcWMIB-SdFah850
-                    meta:
-                      message: SUCCESS
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  code:
-                    type: number
-                  data:
-                    type: object
-                    properties:
-                      errMsg:
-                        type: string
-                  meta:
-                    type: object
-                    properties:
-                      message:
-                        type: string
-              examples:
-                example-1:
-                  value:
-                    code: 401
-                    data:
-                      errMsg: Invalid token header. No credentials provided.
-                    meta:
-                      message: Invalid token header. No credentials provided.
-      operationId: get-auth-storefront
-      description: Get a storefront API authToken
-      parameters:
-        - schema:
-            type: string
-          in: query
-          name: jwtToken
-          description: BC JWT token
-          required: true
-        - schema:
-            type: string
-          in: query
-          name: channelId
-          description: The BigCommerce channel ID. Do not use this parameter if you do not have an opened multi-storefront.
-      security: []
-  /auth/customers:
-    post:
-      summary: Get Storefront authToken with Credentials
+      summary: "short-description"
       operationId: post-auth-customer
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                description: ''
-                type: object
-                x-examples:
-                  example-1:
-                    code: 200
-                    data:
-                      name: test9
-                      token: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6ImtpZG8yNzZAc25hcG1haWwuY2MiLCJzdG9yZV9oYXNoIjoiMWk2enB4cGUzZyIsImRiIjoiZGVmYXVsdCIsIm5hbWUiOiJ0ZXN0OSIsImNoYW5uZWxfaWRzIjpbMV0sInRva2VuX3R5cGUiOjMsIm5iZiI6MTAwMCwiZXhwIjoyMDAxfQ.EiR__LVAlBVNYtFCZPWJYoPv6UfGiXtULxhK-BCQZjY
-                    meta:
-                      message: SUCCESS
-                properties:
-                  code:
-                    type: number
-                  data:
-                    type: object
-                    required:
-                      - name
-                      - token
-                    properties:
-                      name:
-                        type: string
-                        minLength: 1
-                        description: The token name
-                      token:
-                        type: string
-                        minLength: 1
-                        description: Your token
-                  meta:
-                    type: object
-                    required:
-                      - message
-                    properties:
-                      message:
-                        type: string
-                        minLength: 1
-                required:
-                  - code
-                  - data
-                  - meta
-              examples:
-                example-1:
-                  value:
-                    code: 200
-                    data:
-                      name: test9
-                      token: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6ImtpZG8yNzZAc25hcG1haWwuY2MiLCJzdG9yZV9oYXNoIjoiMWk2enB4cGUzZyIsImRiIjoiZGVmYXVsdCIsIm5hbWUiOiJ0ZXN0OSIsImNoYW5uZWxfaWRzIjpbMV0sInRva2VuX3R5cGUiOjMsIm5iZiI6MTAwMCwiZXhwIjoyMDAxfQ.EiR__LVAlBVNYtFCZPWJYoPv6UfGiXtULxhK-BCQZjY
-                    meta:
-                      message: SUCCESS
+      description: "extended-description"
+      parameters: []
+      security: []
       requestBody:
         content:
           application/json:
             schema:
-              description: ''
               type: object
-              x-examples:
-                example-1:
-                  storeHash: '{{store_hash}}'
-                  email: kido276@snapmail.cc
-                  password: test12345
-                  channelId: 1
-                  name: test9
-                  beginAt: 1000
-                  endAt: 2001
-              properties:
-                storeHash:
-                  type: string
-                  minLength: 1
-                  description: Your store unique store_hash
-                email:
-                  type: string
-                  minLength: 1
-                  description: BC customer email
-                password:
-                  type: string
-                  minLength: 1
-                  description: BC customer password
-                channelId:
-                  type: number
-                  description: BigCommerce channel ID
-                name:
-                  type: string
-                  minLength: 1
-                  description: The token name, if you want to specify it.
               required:
                 - storeHash
                 - email
                 - password
                 - channelId
                 - name
-            examples:
-              example-1:
-                value:
-                  storeHash: string
-                  email: axe@snapmail.cc
-                  password: test12345
-                  channelId: 1
-                  name: test
-                  beginAt: 1000
-                  endAt: 1721930486
-        description: ''
-      description: BigCommerce customer gets an authentication token
-      tags:
-        - Authentication
-      security: []
-    parameters: []
-  /auth/customers/storefront:
-    post:
-      summary: Get a B2B Storefront Token
-      operationId: post-auth-customers-storefront
+              properties:
+                storeHash:
+                  $ref: "#/components/schemas/storeHash"
+                email:
+                  $ref: "#/components/schemas/email"
+                password:
+                  $ref: "#/components/schemas/password"
+                channelId:
+                  $ref: "#/components/schemas/channelId"
+                name:
+                  $ref: "#/components/schemas/tokenName"
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  code:
-                    type: number
-                  data:
-                    type: object
+                allOf:
+                  - $ref: "#/components/schemas/responseObject"
+                  - type: object
                     properties:
-                      token:
-                        type: array
-                        items:
-                          type: string
-                  meta:
-                    type: object
-                    properties:
-                      message:
-                        type: string
-              examples:
-                Example 1:
-                  value:
-                    code: 200
-                    data:
-                      token: [
-                        "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6IjEyM0AxMi5jb20iLCJiY19jdXN0b21lcl9pZCI6MzEzLCJzdG9yZV9oYXNoIjoiaW1rOHp6N2ppcCIsImRiIjoiZGVmYXVsdCIsImJjX2NoYW5uZWxfaWQiOjEsImV4cCI6MTY5MDg1NDI5Mn0.97rY-1aGDFKtLbIePR5g202AHZJ0x2kDjmyzGVGK45"
-                      ]
-                    meta:
-                      message: success
-      description: Get B2B storefront token by v3 io token
+                      code:
+                        default: 200
+                      data:
+                        properties:
+                          name:
+                            $ref: "#/components/schemas/tokenName"
+                          token:
+                            $ref: "#/components/schemas/tokenValue"
+                      meta:
+                        properties:
+                          message:
+                            example: "SUCCESS"
+  /auth/customers/storefront:
+    parameters: []
+    post:
+      tags:
+        - Authentication
+      summary: "short-description"
+      operationId: post-auth-customers-storefront
+      description: "extended-description"
+      parameters: []
+      security: []
       requestBody:
         content:
           application/json:
             schema:
               type: object
-              properties:
-                customerId:
-                  type: integer
-                  description: BigCommerce customer ID
-                channelId:
-                  type: integer
-                  description: BigCommerce channel ID
-                customerAccessToken:
-                  type: object
-                  properties:
-                    expires_at:
-                      type: string
-                      description: An ISO format date
-                    value:
-                      type: string
-                  description: BigCommerce Customer Access Token
               required:
                 - customerId
-            examples:
-              Example 1:
-                value:
-                  customerId: 999
-                  channelId: 1
-                  customerAccessToken:
-                    value: sometoken
-                    expires_at: 2024-12-31T00:00:00.0Z
+              properties:
+                customerId:
+                  $ref: "#/components/schemas/customerId"
+                channelId:
+                  $ref: "#/components/schemas/channelId"
+                customerAccessToken:
+                  $ref: "#/components/schemas/customerAccessToken"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/responseObject"
+                  - type: object
+                    properties:
+                      code:
+                        default: 200
+                      data:
+                        properties:
+                          token:
+                            type: array
+                            items:
+                              type: string
+                              example: "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6IjEyM0AxMi5jb20iLCJiY19jdXN0b21lcl9pZCI6MzEzLCJzdG9yZV9oYXNoIjoiaW1rOHp6N2ppcCIsImRiIjoiZGVmYXVsdCIsImJjX2NoYW5uZWxfaWQiOjEsImV4cCI6MTY5MDg1NDI5Mn0.97rY-1aGDFKtLbIePR5g202AHZJ0x2kDjmyzGVGK45"
+                      meta:
+                        properties:
+                          message:
+                            example: "SUCCESS"
+  /auth/storefront:
+    parameters: []
+    get:
       tags:
         - Authentication
+      summary: "short-description"
+      operationId: get-auth-storefront
+      description: "extended-description"
+      parameters:
+        - name: jwtToken
+          in: query
+          required: true
+          schema:
+            type: string
+          description: "BC JWT token"
+        - name: channelId
+          in: query
+          schema:
+            type: string
+          description: "The BigCommerce channel ID. Do not use this parameter if you do not have an opened multi-storefront."
+          example: "123456"
+      security: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/responseObject"
+                  - type: object
+                    properties:
+                      code:
+                        default: 200
+                      data:
+                        properties:
+                          token:
+                            $ref: "#/components/schemas/tokenValue"
+                      meta:
+                        properties:
+                          message:
+                            example: "SUCCESS"
+        "401":
+          description: UNAUTHORIZED
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/responseObject"
+                  - type: object
+                    properties:
+                      code:
+                        default: 401
+                      data:
+                        properties:
+                          errMsg:
+                            allOf:
+                              - $ref: "#/components/schemas/errMsg"
+                              - type: string
+                                example: "Invalid token header. No credentials provided."
+                      meta:
+                        properties:
+                          message:
+                            example: "Invalid token header. No credentials provided."
+  /backend/tokens:
+    parameters: []
+    get:
+      tags:
+        - Authentication
+      summary: "short-description"
+      operationId: get-backend-tokens
+      description: "extended-description"
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+          description: "Pagination limit"
+          example: 10
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+          description: "Pagination offset"
+          example: 10
+      security: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/responseArray"
+                  - type: object
+                    properties:
+                      code:
+                        default: 200
+                      data:
+                        items:
+                          properties:
+                            id:
+                              $ref: "#/components/schemas/tokenId"
+                            name:
+                              $ref: "#/components/schemas/tokenName"
+                            email:
+                              $ref: "#/components/schemas/email"
+                            storeHash:
+                              $ref: "#/components/schemas/storeHash"
+                            token:
+                              $ref: "#/components/schemas/tokenValue"
+                            eventChannel:
+                              type: string
+                              description: 'The channel of the token created from an app, admin or API.'
+                      meta:
+                        properties:
+                          message:
+                            example: "SUCCESS"
+                          pagination:
+                            $ref: "#/components/schemas/responsePagination"
+
 components:
-  schemas: {}
+  schemas:
+    channelId:
+      type: number
+      description: "The unique ID for the token's storefront channel."
+      default: 1
+      example: 123456
+    customerAccessToken:
+      type: object
+      properties:
+        expires_at:
+          type: string
+          format: date
+          description: "ISO formatted date when the token expires."
+          example: "2024-12-31T00:00:00.0Z"
+        value:
+          $ref: "#/components/schemas/tokenValue"
+    customerId:
+      type: integer
+      description: "The BigCommerce Customer ID."
+      example: 456
+    email:
+      type: string
+      format: email
+      minLength: 1
+      description: "The email address associated with a BigCommerce customer account."
+      example: "marie.curie@example.com"
+    password:
+      type: string
+      format: password
+      minLength: 1
+      description: "The password associated with the BigCommerce customer account."
+    storeHash:
+      type: string
+      minLength: 1
+      description: "The unique hash ID for the BigCommerce store."
+      example: "abc123"
+    tokenName:
+      type: string
+      description: "The name of the token, if provided."
+      example: "temporaryTokenA"
+    tokenId:
+      type: integer
+      description: "The ID of the token."
+      example: 123
+    tokenValue:
+      type: string
+      description: "Access Token"
+      example: "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6InRlc3RfYjJjX29yZGVyX2ltcG9ydEBxcS5jb21tIiwic3RvcmVfaGFzaCI6ImYyb3N4ampueGoiLCJkYiI6ImRlZmF1bHQifQ.L_u_enljWoYBbPPskmYEQVHldHIaTcWMIB-SdFah850"
+# The following are response-only schema. Everything above can be either body or response.
+    errMsg:
+      type: string
+      description: "Message associated with the error."
+    responsePagination:
+      type: object
+      properties:
+        totalCount:
+          type: integer
+          description: "The total number of the all data"
+          example: 750
+        limit:
+          type: integer
+          description: 'Pagination limit default: 10'
+          default: 10
+        offset:
+          type: integer
+          description: 'Pagination offset default: 0'
+          default: 0
+    responseObject:
+      type: object
+      properties:
+        code:
+          type: integer
+          description: "The HTTP Status code of the response."
+        data:
+          type: object
+        meta:
+          type: object
+          properties:
+            message:
+              type: string
+    responseArray:
+      type: object
+      properties:
+        code:
+          type: integer
+          description: "The HTTP Status code of the response."
+        data:
+          type: array
+          items: {}
+        meta:
+          type: object
+          properties:
+            message:
+              type: string
+
   securitySchemes:
     authToken:
       name: authToken
@@ -625,5 +476,3 @@ components:
         Required to authenticate requests. Include the token in a header parameter called `authToken`.
       type: apiKey
       in: header
-security:
-  - authToken: []

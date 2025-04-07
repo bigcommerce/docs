@@ -1,0 +1,189 @@
+# Data Events in the GraphQL Storefront API
+
+This article explains how to enable headless storefronts to utilize native analytics. The BigCommerce analytics system operates on data events. These are event objects that capture specific user actions such as adding a product to a cart, visiting a website, or placing an order. All of the BigCommerce analytics features rely on event data being transmitted to our data pipeline.
+
+This API is particularly useful for tracking analytical metrics, including visits and product views.
+
+## Introduction
+
+A fundamental concept in BigCommerce analytics is the visit details. When sending events to BigCommerce, you must include a `visitId` and `visitorId`, each formatted as a UUID. The `visitId` represents a session within the data pipeline, while the `visitorId` identifies a visitor or shopper. The `visitId` is typically stored in a short-lived cookie. In Stencil, its default time-to-live (TTL) is 30 minutes and we recommend using the same TTL for headless stores. In contrast, the `vistorId` is assigned to a shopper and has a TTL of one year in Stencil. You can generate these values using the [UUID Generator](https://www.uuidgenerator.net/version4). Below, we outline the steps for enabling a headless storefront, along with an example implementation.
+
+## Enabling a headless storefront
+
+<Steps> 
+### Initiate a visit using the `VisitStartedEvent` mutation.
+
+Execute the `VisitStartedEvent` mutation at the start of a shopper's session. You must provide the `visitId` and `visitorId` (in UUID format) in the `initiator` input. This action registers a new visit in the data pipeline. Use the same `visitId` for all further events within the session to ensure they are linked to the same visit.
+
+<Tabs items={['Request', 'Response']}>
+  <Tab>
+
+  ```http filename="Example query: VisitStartedEvent" showLineNumbers copy
+  POST https://api.bigcommerce.com/stores/{{STORE_HASH}}/graphql
+  X-Auth-Token: {{ACCESS_TOKEN}}
+  Content-Type: application/json
+  Accept: application/json
+
+  mutation VisitStartedEvent {
+    analytics {
+        visitStartedEvent(input: {
+            commonInput: {
+                initiator: {
+                    visitId: "5acfce80-0d45-47b9-adca-d2d894e60444",
+                    visitorId: "a1711d5c-59a1-4b67-8880-cff92d591444"
+                },
+                request: {
+                    url: "www.bigcommerce.com",
+                    userAgent: "PostmanRuntime"
+                },
+                consent: {
+                    targeting: true,
+                    analytics: true,
+                    functional: true
+                }
+            }
+        }) {
+            executed
+        }
+    }
+}
+  ```
+  </Tab>
+  <Tab>
+
+  ```json filename="Example query: Get data layer enabled flag" showLineNumbers copy
+  {
+    "data": {
+      "analytics": {
+        "visitStartedEvent": {
+          "executed": true
+          }
+        }
+      }
+    }
+  ```
+  </Tab>
+</Tabs>
+
+
+### Track product views with the `ProductViewedEvent` mutation
+
+Execute the `ProductViewedEvent` mutation whenever a shopper views product details. Use the same `visitId` and `visitorId` as in the `VisitStartedEvent`. This step registers a product view in the data pipeline and links the product view to the session.
+
+<Tabs items={['Request', 'Response']}>
+  <Tab>
+
+  ```http filename="Example query: ProductViewedEvent" showLineNumbers copy
+  POST https://api.bigcommerce.com/stores/{{STORE_HASH}}/graphql
+  X-Auth-Token: {{ACCESS_TOKEN}}
+  Content-Type: application/json
+  Accept: application/json
+
+  mutation ProductViewedEvent {
+    analytics {
+        productViewedEvent(input: {
+            commonInput: {
+                initiator: {
+                    visitId: "5acfce80-0d45-47b9-adca-d2d894e60444",
+                    visitorId: "a1711d5c-59a1-4b67-8880-cff92d591444"
+                },
+                request: {
+                    url: "www.bigcommerce.com",
+                    userAgent: "PostmanRuntime"
+                },
+                consent: {
+                    targeting: true,
+                    analytics: true,
+                    functional: true
+                }
+            },
+            productInput: {
+                productEntityId: 88,
+                searchKeyword: "test"
+            }
+        }) {
+            executed
+        }
+    }
+}
+  ```
+  </Tab>
+  <Tab>
+
+  ```json filename="Example query: ProductViewedEvent" showLineNumbers copy
+  {
+    "data": {
+      "analytics": {
+        "productViewedEvent": {
+          "executed": true
+          }
+        }
+      }
+    }
+  ```
+  </Tab>
+</Tabs>
+
+### Redirect to checkout with the `Redirect` mutation
+
+After adding a product to a cart and obtaining a `cart_id`, execute the `redirect` mutation. Use the same `visitId` and `visitorId` as in the `VisitStartedEvent` and specify the `cart_id`. This step generates a `redirectedCheckoutUrl`. 
+
+<Tabs items={['Request', 'Response']}>
+  <Tab>
+
+  ```http filename="Example query: Redirect" showLineNumbers copy
+  POST https://api.bigcommerce.com/stores/{{STORE_HASH}}/graphql
+  X-Auth-Token: {{ACCESS_TOKEN}}
+  Content-Type: application/json
+  Accept: application/json
+
+  mutation redirect {
+    cart {
+        createCartRedirectUrls (input: {
+            cartEntityId: "2c0b561a-1288-4d21-b5b1-4009b75e38e2",
+            visitId: "5acfce80-0d45-47b9-adca-d2d894e60444",
+            visitorId: "a1711d5c-59a1-4b67-8880-cff92d591444"
+        }) {
+            redirectUrls {
+              redirectedCheckoutUrl,
+              embeddedCheckoutUrl
+        }
+          errors {
+            ... on Error {
+                  message
+          }
+        }
+      }
+    }
+}
+ ```
+  </Tab>
+  <Tab>
+
+  ```json filename="Example query: Redirect" showLineNumbers copy
+  {
+    "data": {
+      "cart": {
+        "createCartRedirectUrls": {
+          "redirectUrls": {
+              "redirectedCheckoutUrl": 
+          }
+        }
+      }
+    }
+  ```
+  </Tab>
+</Tabs>
+
+### Complete the order
+
+Navigate to the `redirectedCheckoutUrl` returned in the previous step, proceed through checkout, and create an order. At this point, the `Bigcommerce app` sends `Checkout` and `Order` related events to the data pipeline. Navigating to the above `redirectedCheckoutUrl` ensures the BigCommerce app links all further events to the same visit within the session.
+</Steps>
+
+By following these steps, you ensure that your headless storefront properly captures analytics events and sends relevant data to the BigCommerce analytics system.
+
+## Verification
+
+In the control panel, go to **Analytics** > **Marketing** and select the `Direct` origin from the table to view the origins.
+
+Also, navigate to **Analytics** > **Purchase funnel** and observe the `Shopped` metric, which represents product views.

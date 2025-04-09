@@ -1,7 +1,18 @@
 openapi: 3.0.1
 info:
   title: Authentication
-  description: "Description. Goes above all endpoint data. Also serves as 'landing page' data."
+  description: |-
+    ## Introduction
+    Authentication tokens validate API requests made by individuals or integrations to the server. All Server to Server API requests require an `authToken` in the header of the request.
+
+    Using authentication endpoints, you can:
+
+    - Create Server to Server API tokens outside of the B2B Edition control panel.
+    - View and delete existing API tokens.
+    - Arrange for your integration to log in a storefront user and gather tokens for future GraphQL requests in the context of a particular Company and user.
+    - Validate a storefront user’s credentials in order to generate a GQL token.
+
+    The Authentication API allows you to create V3 Server to Server and storefront authTokens, but you cannot create tokens for the deprecated V2 Server to Server API. You can create V2 tokens using the [API Account settings](https://support.bigcommerce.com/s/article/B2B-Edition-Settings) in the B2B Edition control panel; however, it is not recommended to use V2 endpoints.
   contact:
     name: BigCommerce
     url: 'https://www.bigcommerce.com'
@@ -20,9 +31,12 @@ paths:
     post:
       tags:
         - Authentication
-      summary: "short-description"
+      summary: "Get a Server to Server Token"
       operationId: post-auth-backend
-      description: "extended-description"
+      description: |-
+        Creates a Server to Server API account with a token to validate future requests made to B2B’s Server to Server APIs.
+
+        This endpoint does not require an existing authToken, but you must validate the request with the login credentials of your backend B2B Edition user account. Only users with the pre-built Administrator or Store Owner role are allowed to create API tokens with this endpoint; custom user roles with API account permissions are **not** supported.
       parameters: []
       security: []
       requestBody:
@@ -58,11 +72,14 @@ paths:
                         default: 200
                       data:
                         items:
+                          type: object
                           properties:
                             name:
                               $ref: "#/components/schemas/tokenName"
                             token:
-                              $ref: "#/components/schemas/tokenValue"
+                              allOf:
+                                - $ref: "#/components/schemas/tokenValue"
+                                - description: "The token value used to authenticate requests."
                       meta:
                         properties:
                           message:
@@ -89,12 +106,30 @@ paths:
                         properties:
                           message:
                             example: "API logic error"
+              examples:
+                Invalid login credentials:
+                  value:
+                    code: 400
+                    data:
+                      errMsg: "The email or password you have entered is incorrect. Please try again."
+                    meta:
+                      message: "API logic error"
+                Unsupported user role:
+                  value:
+                    code: 400
+                    data:
+                      errMsg: "role forbidden"
+                    meta:
+                      message: "API logic error"
     delete:
       tags:
         - Authentication
-      summary: "short-description"
+      summary: "Delete Backend API Tokens"
       operationId: delete-auth-backend
-      description: "extended-description"
+      description: |-
+        Deletes an existing Server to Server API token by specifying its ID. You can get a token’s ID using the [Get All Server to Server Tokens](#get-all-server-to-server-tokens) endpoint.
+
+        **Note:**  Unlike most DELETE requests, the `id` value must be added to the request body instead of the parameters.
       parameters: []
       security: []
       requestBody:
@@ -154,9 +189,12 @@ paths:
     post:
       tags:
         - Authentication
-      summary: "short-description"
+      summary: "Get Storefront authToken with Credentials"
       operationId: post-auth-customer
-      description: "extended-description"
+      description: |-
+        Uses the login credentials of a storefront customer or a Company user to generate a storefront authToken to validate requests to the B2B Storefront GraphQL API. Unlike the Get a Storefront API authToken endpoint, this request does not rely on a JWT from an active storefront session.
+
+        By default, the resulting storefront authToken is valid for **1 day**. However, you can adjust its validity period with the `beginAt` and `endAt` fields in the request body.
       parameters: []
       security: []
       requestBody:
@@ -181,6 +219,14 @@ paths:
                   $ref: "#/components/schemas/channelId"
                 name:
                   $ref: "#/components/schemas/tokenName"
+                beginAt:
+                  type: integer
+                  description: "The [Unix timestamp](https://www.unixtimestamp.com/) indicating when the storefront authToken starts being valid."
+                  example: 1721900486
+                endAt:
+                  type: integer
+                  description: "The [Unix timestamp](https://www.unixtimestamp.com/) indicating when the storefront authToken is no longer valid."
+                  example: 1721900486
       responses:
         "200":
           description: OK
@@ -198,7 +244,9 @@ paths:
                           name:
                             $ref: "#/components/schemas/tokenName"
                           token:
-                            $ref: "#/components/schemas/tokenValue"
+                            allOf:
+                              - $ref: "#/components/schemas/tokenValue"
+                              - description: "The token value used to authenticate requests."
                       meta:
                         properties:
                           message:
@@ -208,9 +256,14 @@ paths:
     post:
       tags:
         - Authentication
-      summary: "short-description"
+      summary: "Get a B2B Storefront Token"
       operationId: post-auth-customers-storefront
-      description: "extended-description"
+      description: |-
+        Generates a storefront authToken based on the supplied `customerId` of a storefront customer or Company user. You can use [Get Users](https://developer.bigcommerce.com/b2b-edition/apis/rest-management/user#get-users) to retrieve the IDs of Company users, or you can use [Get All Customers](https://developer.bigcommerce.com/docs/rest-management/customers#get-all-customers) to retrieve IDs for B2C customers and B2B buyers alike.
+
+        You can also use the [BigCommerce Storefront GraphQL API](https://developer.bigcommerce.com/docs/start/authentication/graphql-storefront#login-mutation) to generate a Customer Access Token (CAT) and include it in the request, but this is not required for a successful response.
+
+        The storefront authToken obtained from this endpoint is valid for **1 day**.
       parameters: []
       security: []
       requestBody:
@@ -246,6 +299,7 @@ paths:
                             items:
                               type: string
                               example: "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6IjEyM0AxMi5jb20iLCJiY19jdXN0b21lcl9pZCI6MzEzLCJzdG9yZV9oYXNoIjoiaW1rOHp6N2ppcCIsImRiIjoiZGVmYXVsdCIsImJjX2NoYW5uZWxfaWQiOjEsImV4cCI6MTY5MDg1NDI5Mn0.97rY-1aGDFKtLbIePR5g202AHZJ0x2kDjmyzGVGK45"
+                            description: "The token value used to authenticate requests."
                       meta:
                         properties:
                           message:
@@ -255,22 +309,31 @@ paths:
     get:
       tags:
         - Authentication
-      summary: "short-description"
+      summary: "Get a Storefront API authToken"
       operationId: get-auth-storefront
-      description: "extended-description"
+      description: |-
+        Returns an existing storefront authToken from an existing JSON Web Token (JWT). You can obtain a JWT using a request to the Current Customer API. See [Authentication for hosted storefronts](https://developer.bigcommerce.com/b2b-edition/docs/authentication#rest-storefront-api) for instructions.
+
+        The `channelId` field is optional for stores with multiple storefronts, since the JWT is tied to a specific storefront session. Including it does enforce strict adherence of token-related activity to channel-specific rules and behaviors. However, it is not necessary at all for single-storefront stores because there is only one storefront channel.
+
+        The storefront authToken obtained from this endpoint is valid for **1 day**.
       parameters:
         - name: jwtToken
           in: query
           required: true
           schema:
             type: string
-          description: "BC JWT token"
+          description: "The JSON Web Token (JWT) obtained from a signed-in Company user. See [Current Customer API](https://developer.bigcommerce.com/docs/rest-authentication/current-customer) to learn how to request a JWT."
+          example: "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6ImtpZG8yNzZAc25hcG1haWwuY2MiLCJzdG9yZV9oYXNoIjoiMWk2enB4cGUzZyIsImRiIjoiZGVmYXVsdCIsIm5hbWUiOiJ0ZXN0OSIsImNoYW5uZWxfaWRzIjpbMV0sInRva2VuX3R5cGUiOjMsIm5iZiI6MTAwMCwiZXhwIjoyMDAxfQ.EiR__LVAlBVNYtFCZPWJYoPv6UfGiXtULxhK-BCQZjY"
         - name: channelId
           in: query
           schema:
             type: string
-          description: "The BigCommerce channel ID. Do not use this parameter if you do not have an opened multi-storefront."
-          example: "123456"
+          description: |-
+            The storefront channel ID associated with the storefront login session. Use 1 for your store’s default storefront channel. In a multi-storefront environment, this parameter enforces strict adherence of token-related activity to channel-specific rules and behaviors.
+
+            **Note:** Inclusion of this parameter in single-storefront environments will result in unpredictable behavior.
+          example: "1000234"
       security: []
       responses:
         "200":
@@ -287,7 +350,9 @@ paths:
                       data:
                         properties:
                           token:
-                            $ref: "#/components/schemas/tokenValue"
+                            allOf:
+                              - $ref: "#/components/schemas/tokenValue"
+                              - description: "The token value used to authenticate requests."
                       meta:
                         properties:
                           message:
@@ -319,23 +384,26 @@ paths:
     get:
       tags:
         - Authentication
-      summary: "short-description"
+      summary: "Get All Server to Server Tokens"
       operationId: get-backend-tokens
-      description: "extended-description"
+      description: "Retrieves all B2B S2S API tokens associated with your store. You can use the token’s ID in the response to delete it via the Delete Backend API Tokens endpoint, or you can recover existing token values for further Server to Server requests."
       parameters:
         - name: limit
           in: query
           schema:
             type: integer
             default: 10
-          description: "Pagination limit"
+            minimum: 1
+            maximum: 250
+          description: "The maximum number of results that can be in the response."
           example: 10
         - name: offset
           in: query
           schema:
             type: integer
             default: 0
-          description: "Pagination offset"
+            minimum: 0
+          description: "The number of results that should be skipped in the response."
           example: 10
       security: []
       responses:
@@ -352,6 +420,7 @@ paths:
                         default: 200
                       data:
                         items:
+                          type: object
                           properties:
                             id:
                               $ref: "#/components/schemas/tokenId"
@@ -362,10 +431,16 @@ paths:
                             storeHash:
                               $ref: "#/components/schemas/storeHash"
                             token:
-                              $ref: "#/components/schemas/tokenValue"
+                              allOf:
+                                - $ref: "#/components/schemas/tokenValue"
+                                - description: "The token value used to authenticate requests."
                             eventChannel:
                               type: string
-                              description: 'The channel of the token created from an app, admin or API.'
+                              description: 'This field indicates whether the token was created in the B2B Edition control panel (`app`), the admin (`admin`), or the API (`api`).'
+                              enum:
+                                - "app"
+                                - "admin"
+                                - "api"
                       meta:
                         properties:
                           message:
@@ -377,19 +452,21 @@ components:
   schemas:
     channelId:
       type: number
-      description: "The unique ID for the token's storefront channel."
+      description: "The storefront channel ID associated with the storefront login session. Use 1 for your store’s default storefront channel."
       default: 1
-      example: 123456
+      example: 1000234
     customerAccessToken:
       type: object
       properties:
         expires_at:
           type: string
-          format: date
-          description: "ISO formatted date when the token expires."
+          description: "The expiration date of the CAT, in [ISO format](https://www.iso.org/iso-8601-date-and-time-format.html)."
           example: "2024-12-31T00:00:00.0Z"
         value:
-          $ref: "#/components/schemas/tokenValue"
+          allOf:
+            - $ref: "#/components/schemas/tokenValue"
+            - description: "The CAT value."
+      description: "This object contains information related to the Customer Access Token (CAT) being associated with the storefront authToken."
     customerId:
       type: integer
       description: "The BigCommerce Customer ID."
@@ -398,29 +475,29 @@ components:
       type: string
       format: email
       minLength: 1
-      description: "The email address associated with a BigCommerce customer account."
-      example: "marie.curie@example.com"
+      description: "The email address associated with the user's account."
+      example: "user@example.com"
     password:
       type: string
       format: password
       minLength: 1
-      description: "The password associated with the BigCommerce customer account."
+      description: "The password associated with the user's account."
+      example: "MyPassword123"
     storeHash:
       type: string
       minLength: 1
-      description: "The unique hash ID for the BigCommerce store."
-      example: "abc123"
+      description: "The unique store hash for the BigCommerce store."
+      example: "1234abcd"
     tokenName:
       type: string
-      description: "The name of the token, if provided."
-      example: "temporaryTokenA"
+      description: "The internal name assigned to the generated API token."
+      example: "customer storefront token"
     tokenId:
       type: integer
-      description: "The ID of the token."
+      description: "The internal ID for the API token."
       example: 123
     tokenValue:
       type: string
-      description: "Access Token"
       example: "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6InRlc3RfYjJjX29yZGVyX2ltcG9ydEBxcS5jb21tIiwic3RvcmVfaGFzaCI6ImYyb3N4ampueGoiLCJkYiI6ImRlZmF1bHQifQ.L_u_enljWoYBbPPskmYEQVHldHIaTcWMIB-SdFah850"
 # The following are response-only schema. Everything above can be either body or response.
     errMsg:
@@ -431,16 +508,19 @@ components:
       properties:
         totalCount:
           type: integer
-          description: "The total number of the all data"
-          example: 750
+          description: "The total number of results in the response."
+          example: 25
         limit:
           type: integer
-          description: 'Pagination limit default: 10'
+          description: "The maximum number of results that can be in the response, based on the limit in the request parameters."
           default: 10
+          minimum: 1
+          maximum: 250
         offset:
           type: integer
-          description: 'Pagination offset default: 0'
+          description: "The number of results that were skipped in the response, based on the offset in the request parameters."
           default: 0
+          minimum: 0
     responseObject:
       type: object
       properties:

@@ -1,0 +1,228 @@
+# Translations for Locations (Beta)
+
+<Callout type="info">
+The Translations Admin GraphQL API is currently available on Catalyst storefronts only.
+</Callout>
+
+
+The locations translatable fields are:
+
+* Name
+* Address 1
+* Address 2
+* Description
+* City
+* State (optional)
+* Meta Keywords
+* Name (Special hours)
+
+
+## Examples
+
+Below are examples of GraphQL queries and mutations for retrieving and managing translation settings for locations.
+
+### Query translations
+
+This query returns a paginated list of translations by resourceType, channel, and locale with a maximum of 50 results per request.
+
+<Tabs items={['Request', 'Response']}>
+  <Tab>
+    ```json filename="Example mutation: Query a translation" showLineNumbers copy
+        GRAPHQL {{host}}/stores/{{store_hash}}/graphql
+        X-Auth-Token: {{token}}
+
+      query {
+          store {
+              translations(filters: {
+                  resourceType: INVENTORY_LOCATIONS,
+                  channelId: "bc/store/channel/1",
+                  localeId: "bc/store/locale/en"
+              } first: 50) {
+                  edges {
+                      node {
+                            resourceId
+                              fields {
+                                  fieldName
+                                  original
+                                  translation
+                              }
+                          }
+                      cursor
+                  }
+              }
+          }
+      }
+    ```
+  </Tab>
+<Tab>
+```json filename="Example query: Query a translation" showLineNumbers copy
+  {
+    "data": {
+        "store": {
+            "translations": {
+                "edges": [
+                    {
+                        "node": {
+                            "resourceId": "bc/store/inventoryLocation/1",
+                            "fields": [
+                                {
+                                    "fieldName": "city",
+                                    "original": "AUSTIN",
+                                    "translation": "Ville (OVR) TEST EN"
+                                },
+                                {
+                                    "fieldName": "state",
+                                    "original": "TX",
+                                    "translation": "État (OVR) TEST EN"
+                                },
+                                {
+                                    "fieldName": "description",
+                                    "original": "",
+                                    "translation": null
+                                },
+                                {
+                                    "fieldName": "label",
+                                    "original": "LOCATION 1",
+                                    "translation": null
+                                },
+                                {
+                                    "fieldName": "address2",
+                                    "original": "apt 111",
+                                    "translation": null
+                                }
+                            ]
+                        },
+                        "cursor": "eyJpZCI6IjEifQ=="
+                    }
+                ]
+            }
+        }
+    }
+}
+```
+</Tab>
+</Tabs>
+
+### Update a translation
+
+This mutation updates a translation.
+
+<Tabs items={['Request', 'Response']}>
+  <Tab>
+    ```json filename="Example mutation: Update a translation" showLineNumbers copy
+        GRAPHQL {{host}}/stores/{{store_hash}}/graphql
+        X-Auth-Token: {{token}}
+
+      mutation {
+        translation {
+            updateTranslations(input: {
+                resourceType: INVENTORY_LOCATIONS,
+                channelId: "bc/store/channel/1",
+                localeId: "bc/store/locale/es",
+                entities: [
+                {
+                    resourceId: "bc/store/inventoryLocation/1",
+                    fields: [
+                        {
+                            fieldName: "city",
+                            value: "Ville (OVR) TEST ES"
+                        },
+                        {
+                            fieldName: "state",
+                            value: "État (OVR) TEST ES"
+                        }
+                    ]
+                },
+                {
+                    resourceId: "bc/store/inventoryLocation/2",
+                    fields: [
+                        {
+                            fieldName: "city",
+                            value: "Ville (OVR) TEST ES"
+                        },
+                        {
+                            fieldName: "state",
+                            value: "État (OVR) TEST ES"
+                        }
+                    ]
+                }
+            ]
+        }) {
+            __typename
+            errors {
+                __typename
+                ... on Error {
+                    message
+                }
+            }
+        }
+    }
+}
+```
+  </Tab>
+<Tab>
+```json filename="Example mutation: Update a translation" showLineNumbers copy
+ {
+    "data": {
+      "translation": {
+        "updateTranslations": {
+          "__typename": "UpdateTranslationsResult",
+          "errors": []
+        }
+      }
+    }
+  }
+```
+</Tab>
+</Tabs>
+
+### Delete a translation
+
+The following mutation deletes a translation.
+
+<Tabs items={['Request', 'Response']}>
+  <Tab>
+    ```json filename="Example mutation: Delete a translation" showLineNumbers copy
+        GRAPHQL {{host}}/stores/{{store_hash}}/graphql
+        X-Auth-Token: {{token}}
+
+      mutation {
+        translation {
+          deleteTranslations(input: {
+            resourceType: INVENTORY_LOCATIONS,
+            channelId: "bc/store/channel/1",
+            localeId: "bc/store/locale/en",
+            resources: [
+                {
+                    resourceId: "bc/store/inventoryLocation/2",
+                    fields: ["city", "state"],
+                }
+            ]
+        }) {
+            __typename
+            errors {
+                __typename
+                ... on Error {
+                    message
+                }
+            }
+        }
+    }
+    }
+```
+  </Tab>
+<Tab>
+```json filename="Example mutation: Delete a translation" showLineNumbers copy
+ {
+  "data": {
+    "translation": {
+      "deleteTranslations": {
+        "__typename": "DeleteTranslationsResult",
+        "errors": []
+      }
+    }
+  }
+}
+```
+</Tab>
+</Tabs>

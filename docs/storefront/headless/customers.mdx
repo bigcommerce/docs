@@ -69,13 +69,66 @@ The session sync token is a JWT (JSON Web Token) designed to seamlessly synchron
 
 The token enables secure, transparent, and optional sharing of session-related data, including:
 
-* `customer_id`
-* `cart_id`
-* `visitor_id`
-* Checkout redirection
+* customer login data
+* cart data
+* visit data for analytics
 
-One key use of the session sync token is to enable smooth redirection to the checkout page. This works for both logged-in customers and anonymous shoppers. To support this, the token can include a `redirect_to` field in its payload. After validating the token, this field is used to redirect the shopper to the appropriate page (e.g., checkout), carrying over all necessary session context.
+One key use of the session sync token is to enable smooth redirection to any page. This works for both logged-in customers and anonymous shoppers. To support this, the token can include a `redirect_to` field in its payload. After validating the token, this field is used to redirect the shopper to the appropriate page (e.g., checkout), carrying over all necessary session context.
 
+<Tabs items={['Request', 'Response']}>
+<Tab>
+
+```http filename="Example request: generateSessionSyncJwt" showLineNumbers copy
+POST https://api.bigcommerce.com/stores/{store_hash}/graphql
+Accept: application/json
+Content-Type: application/json
+X-Auth-Token: {{ACCESS_TOKEN}}
+
+mutation generateSessionSyncJwt(
+  $redirectTo: String!,
+  $cartId: String,
+  $visitorId: UUID,
+  $ipAddress: IpAddress,
+  $paymentWalletData: PaymentWalletDataInput,
+  $visitId: UUID
+) {
+  generateSessionSyncJwt(
+    redirectTo: $redirectTo,
+    cartId: $cartId,
+    visitorId: $visitorId,
+    ipAddress: $ipAddress,
+    paymentWalletData: $paymentWalletData,
+    visitId: $visitId
+  ) {
+    result {
+      ...GenerateSessionSyncTokenDataFragment
+    }
+    errors {
+      ... on GenerateSessionSyncTokenCartNotFound {
+        ...GenerateSessionSyncTokenCartNotFoundFragment
+      }
+    }
+  }
+}
+```
+```http filename="Variables" showLineNumbers copy
+{
+  "redirectTo": "xyz789",
+  "cartId": "abc123",
+  "visitorId": "3d077ee5-373a-42aa-91d2-dd43dc87dde9",
+  "ipAddress": IpAddress,
+  "paymentWalletData": PaymentWalletDataInput,
+  "visitId": "3d077ee5-373a-42aa-91d2-dd43dc87dde9"
+}
+```
+</Tab>
+<Tab>
+
+```json filename="Example response: " showLineNumbers copy
+
+```
+</Tab>
+</Tabs>
 
 ## Surfacing customer group pricing
 

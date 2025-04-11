@@ -114,6 +114,8 @@ Helpers that are used to define and render templates.
 | [moment](#moment)                         | date      | Use [momentjs](https://momentjs.com/) to format and calculate dates. |
 | [encodeHtmlEntities](#encodehtmlentities) | html      | Encodes HTML entities.                                               |
 | [nl2br](#nl2br)                           | html      | Converts newline characters to `<br>` tags.                          |
+| [typeof](#typeof)                         | misc      | Returns the type of a variable.                                      |
+
 
 
 ### Custom data and variables
@@ -1851,6 +1853,35 @@ Parse data safely with JSONparseSafe. This helper is similar to the JSONparse he
 ```
 
 - [See it in GitHub](https://github.com/bigcommerce/paper-handlebars/blob/master/helpers/jsonParseSafe.js)
+
+
+
+### typeof
+
+Evaluate the "type" of an input variable. See [MDN](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/typeof) for more information.
+
+```handlebars showLineNumbers
+{{typeof value}}
+```
+
+#### Parameters
+
+- `value` (String|Number|Array|Object): The value to check.
+
+#### Example
+
+```handlebars
+{{#JSONparseSafe '{"string":"John Doe","number":123,"boolean":true,"nullValue":null,"objectValue":{"name":"John"},"array":["John","Doe"]}'}}
+  {{typeof undefined}} <!-- output string: undefined -->
+  {{typeof null}} <!-- output string: null -->
+  {{typeof this.boolean}} <!-- output string: boolean -->
+  {{typeof this.number}} <!-- output string: number -->
+  {{typeof this.string}} <!-- output string: string -->
+  {{typeof this}} <!-- output string: object -->
+{{/JSONparseSafe}}
+```
+
+- [See it in GitHub](https://github.com/bigcommerce/paper-handlebars/blob/master/helpers/typeof.js)
 
 ## Contributing to helpers
 

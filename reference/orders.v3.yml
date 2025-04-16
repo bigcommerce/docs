@@ -2295,17 +2295,12 @@ components:
         $ref: '#/components/schemas/RefundQuote_Post'
       x-internal: false
     RefundQuote_Post:
-      type: object
       title: RefundQuote_Post
       description: Request body for refund quotes.
       x-internal: false
-      properties:
-        items:
-          type: array
-          items:
-            $ref: '#/components/schemas/ItemsRefund'
-      required:
-        - items
+      anyOf:
+        - $ref: '#/components/schemas/RefundQuote_ItemsRefund'
+        - $ref: '#/components/schemas/RefundQuote_TaxAdjustmentAmount'
     RefundQuote_Full:
       type: object
       title: RefundQuote_Full
@@ -2391,10 +2386,15 @@ components:
           items:
             $ref: '#/components/schemas/RefundMethod'
     RefundRequest_Post:
-      type: object
       description: Request body for refund requests.
       title: RefundRequest_Post
       x-internal: false
+      anyOf:
+          - $ref: '#/components/schemas/RefundRequest_Post_Items'
+          - $ref: '#/components/schemas/RefundRequest_Post_TaxAdjustmentAmount'
+    RefundRequest_Post_Items:
+      title: Items Refund
+      type: object
       properties:
         items:
           type: array
@@ -2409,6 +2409,16 @@ components:
       required:
         - items
         - payments
+    RefundRequest_Post_TaxAdjustmentAmount:
+      title: Tax Adjustment Refund
+      type: object
+      properties:
+        tax_adjustment_amount:
+          $ref: '#/components/schemas/TaxAdjustmentAmount'
+        merchant_calculated_override:
+          $ref: '#/components/schemas/MerchantOverride'
+      required:
+        - tax_adjustment_amount
     RefundID_Get:
       type: object
       x-examples:
@@ -2504,6 +2514,7 @@ components:
                     description: |
                       Message indicates why the payment was declined.
             items:
+              description: Array of items refunded. In cases when `tax_refund_adjustment` was used to create the refund, this array will be empty.
               type: array
               items:
                 type: object
@@ -2760,6 +2771,37 @@ components:
         - total_amount
         - total_tax
       x-internal: false
+    TaxAdjustmentAmount:
+      type: number
+      format: float
+      title: Tax Adjustment Amount
+      example: 1.99
+      description: Amount to be used when tax may have been overcharged for an order, such as when the value for a partial refund is overridden. This amount should be equal to the calculated overcharged value, or should be used with `merchant_calculated_override` to override the value. If not, this will result in a `422` error.
+      x-internal: false
+    RefundQuote_ItemsRefund:
+      title: Items Refund
+      type: object
+      x-internal: false
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ItemsRefund'
+        merchant_calculated_override:
+          $ref: '#/components/schemas/MerchantOverride'
+      required:
+        - items
+    RefundQuote_TaxAdjustmentAmount:
+      title: Tax Adjustment Refund
+      type: object
+      x-internal: false
+      properties:
+        tax_adjustment_amount:
+          $ref: '#/components/schemas/TaxAdjustmentAmount'
+        merchant_calculated_override:
+          $ref: '#/components/schemas/MerchantOverride'
+      required:
+        - tax_adjustment_amount
     Refund:
       type: object
       title: Refund
@@ -2793,8 +2835,7 @@ components:
           description: Whether refund amount and tax are provided explicitly by merchant override.
         items:
           type: array
-          description: Array of items refunded.
-          minItems: 1
+          description: Array of items refunded. In cases when `tax_refund_adjustment` was used to create the refund, this array will be empty.
           items:
             $ref: '#/components/schemas/RefundItem'
         payments:

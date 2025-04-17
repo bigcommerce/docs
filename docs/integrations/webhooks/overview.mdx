@@ -8,6 +8,14 @@ Webhooks notify applications when specific events occur on a BigCommerce store. 
 
 This article is an overview of webhook behavior on BigCommerce. For webhook API reference, see [API Reference > Webhooks](/docs/webhooks/webhooks/manage-webhooks-bulk#create-a-webhook). For webhook event reference, see [Webhook Events](/docs/integrations/webhooks/events). For a step-by-step tutorial on creating webhooks for certain store events, see [Webhooks Tutorial](/docs/integrations/webhooks/tutorial).
 
+## Supported webhook delivery types
+
+BigCommerce offers webhook delivery for the following endpoint types:
+
+* HTTPS
+* Google Cloud Pub/Sub
+* Amazon EventBridge
+
 ## Creating a webhook
 
 To create a webhook, send a `POST` request to the [Create a webhook](/docs/webhooks/webhooks/manage-webhooks-bulk#create-a-webhooks) endpoint. Set the `scope` property value equal to the **Name / Scope** of the webhook you want to create.
@@ -177,46 +185,30 @@ Accept: application/json
 }
 ```
 
-BigCommerce will send the specified headers when making callback requests to the destination server - this allows webhook destination URIs to be secured with basic authentication.
+BigCommerce will send the specified headers when making callback requests to the destination server - this allows webhook destination URIs to be secured with basic authentication. The `hash` field is a SHA1 hash of event metadata, intended only to uniquely identify the event that triggered the webhook dispatch. If a hook fires twice for the same event, both request bodies should have the same hash.
 
 ## Troubleshooting
 
-**Not receiving webhook event callbacks**
+<Tabs items={['General', 'HTTPS', 'GCP', 'Amazon']}>
 
-If your app does not return an `HTTP 200` to BigCommerce after receiving the webhook event payload, BigCommerce considers it a failure. BigCommerce will keep trying for a little over 48 hours. At the end of that time, BigCommerce sends an email to the email address set during app registration and disables the webhook by setting the `is_active` flag to false.
-
-To see if a webhook is still active, send a request to the [Get a webhook](/docs/webhooks/webhooks/manage-webhooks-single#get-a-webhook) endpoint and check the value of the `is_active` property in the response.
-
-If you receive an email, or discover `is_active` is `false`, try the following:
-* Verify the app is responding to the callback with a `200` response.
-* Verify the destination server has a valid TLS/SSL setup by visiting `https://globalsign.ssllabs.com/`. Any of the following will cause the TLS/SSL handshake to fail:
-  * Self-signed certificates
-  * Hostname on certificate doesn't match the hostname in DNS settings
-  * Key and trust stores are not configured with the required intermediate certificates
-
-Once the issue is resolved, set `is_active` to `true` using the [Update a webhook](/docs/webhooks/webhooks/manage-webhooks-single#update-a-webhook) endpoint, so that BigCommerce starts sending event callback requests again.
+<Tab>
 
 **No 200 response from the [Create a webhook](/docs/webhooks/webhooks/manage-webhooks-bulk#create-a-webhook) endpoint**
-* Check TLS/SSL configuration on the computer sending the request.
-* Verify `POST` request contains the following required `HTTP` headers:
 
-```http filename="Example request with required headers: Create a webhook"
-POST https://api.bigcommerce.com/stores/{{STORE_HASH}}/v3/hooks
-Accept: application/json
-Content-Type: application/json
-X-Auth-Token: {{ACCESS_TOKEN}}
-```
+* Check TLS/SSL configuration on the computer sending the request.
+* Check the scope of the [event](/docs/integrations/webhooks/events) you’re subscribing to is correct 
+
 **Unable to view your webhook**
 
 Webhooks created with one token are not visible when you retrieve webhooks using a different token. To view your webhook, use the same account token that created the webhook.
 
-**Webhooks timing out**
-
-To prevent your webhooks from timing out, send a `200` success status response immediately after receiving the request.
-
 **What are duplicate events?**
 
 In our event-based system, events are like messages that trigger actions within the system. Sometimes, for various reasons, these events can be received or processed more than once, causing "duplicate events."
+
+**Duplicate webhook events**
+
+Duplicate webhooks can happen. For this reason, apps should use idempotent operations to avoid significant unintended side effects. Idempotent operations allow multiple calls without changing the result. A way to ensure webhook events are idempotent is to create a temporary "blacklist" array to store the hash of webhooks that have already been received or handled. When you receive a webhook, you can compare the hash of the received event to the list. If the hash has already been handled, you can ignore the event.
 
 **Why do duplicate events happen?**
 
@@ -230,6 +222,87 @@ Duplicate events can occur for several reasons:
 
 BigCommerce recommends that apps use idempotent operations to prevent unintended side effects. Idempotent operations allow multiple calls without changing the result. One approach to ensuring webhook events maintain idempotence is by creating a temporary 'blocklist' array to store the hashes of webhooks that have already been received or handled. When you receive a webhook, you can compare the hash of the received event to the list. If the hash has already been handled you can ignore the event.
 
+</Tab>
+
+<Tab>
+
+**Webhooks timing out**
+
+To prevent your webhooks from timing out, send a `200` success status response immediately after receiving the request.
+
+**Not receiving webhook event callbacks**
+
+If your app does not return an `HTTP 200` to BigCommerce after receiving the webhook event payload, BigCommerce considers it a failure. BigCommerce will keep trying for a little over 48 hours. At the end of that time, BigCommerce sends an email to the email address set during app registration and disables it by setting it as inactive.
+
+To see if a webhook is still active, send a request to the [Get a webhook](/docs/webhooks/webhooks/manage-webhooks-single#get-a-webhook) endpoint and check the value of the active property in the response. You can also retrieve your webhooks' active/inactive status in the store’s control panel. See [Viewing Webhooks](https://support.bigcommerce.com/s/article/Store-API-Accounts?language=en_US#webhooks).
+
+If you receive an email, or discover that your webhook is inactive, try the following:
+* Verify the app responds to the callback with a `200` response.
+* Verify the destination server has a valid TLS/SSL setup by visiting `https://globalsign.ssllabs.com/`. Any of the following will cause the TLS/SSL handshake to fail:
+  * Self-signed certificates
+  * Hostname on the certificate doesn't match the hostname in the DNS settings
+  * Key and trust stores are not configured with the required intermediate certificates
+
+Once the issue is resolved, set the webhook to active using the [Update a webhook](/docs/webhooks/webhooks/manage-webhooks-single#update-a-webhook) endpoint so that BigCommerce starts sending event callback requests again.
+
+</Tab>
+
+<Tab>
+## Scenarios
+**Webhook creation errors**. Possible causes of webhook creation errors are:
+* The [topic](#topic-does-not-exist) doesn't exist.
+* [Publisher permission](#publisher-permission-not-granted) isn't granted.
+* There is an [internal service error](#internal-service-error).
+
+**Webhook update errors**. Possible causes of webhook update errors are:
+* The [topic](#topic-does-not-exist) doesn't exist.
+* [Publisher permission](#publisher-permission-not-granted) isn't granted.
+* There is an [internal service error](#internal-service-error).
+
+**Webhook not received**. The possible causes why a webhook is not received are:
+* Check that you created a webhook subscription on the correct event and triggered the event correctly.
+* We deactivate the webhook if the topic was deleted or publisher permissions removed. You can check the webhook status.
+* The Webhook delivery could have been delayed because of a spike in user activity or an incident.
+
+
+## Errors
+
+### Topic does not exist
+
+This error occurs when the topic defined in the destination fields does not exist.<br></br>
+**Error message**: `_Google topic '{{TOPIC_NAME}}' doesn't exist_`<br></br>
+**How to fix**: Most probable, users have a typo in the defined topic or haven’t created it yet.
+
+### Publisher permission not granted
+
+This error occurs when the topic exists, but we (BigCommerce platform) don't have permission to publish it.<br></br>
+**Error message**: `_Publisher permissions not granted for '{{TOPIC_NAME}}'_` <br></br>
+**How to fix**: Users need to give our service account permission to publish. If a user has already done it and the error still happens, please double-check that you permitted the correct account or contact support with screenshots showing you granted permission successfully.
+
+
+### Internal service error
+
+Something goes wrong on the BigCommerce side. <br></br>
+**Error message**: All unexpected error messages should be treated as internal errors. <br></br>
+**How to fix**: Retry your request after some time. If it doesn’t work, please get in touch with support.
+</Tab>
+
+<Tab>
+
+**Field validation errors**
+
+To prevent and resolve a validation error, update the specific field to the proper value.
+
+
+**Internal validation errors**
+
+The client should make another attempt with some delay to resolve an internal error.
+
+
+
+</Tab>
+
+</Tabs>
 
 ## Tools
 

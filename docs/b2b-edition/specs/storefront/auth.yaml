@@ -1,205 +1,337 @@
 openapi: 3.0.0
 info:
   title: Authentication
-  version: '1.0'
-  description: Storefront authentication for the BigCommerce B2B Edition API
+  description: |-
+    ## Introduction
+    Requests to the B2B Edition Storefront API are either anonymous or authenticated, depending on whether or not it requires access to a Company user’s data. 
+
+    For example, you can [create a Company account](https://developer.bigcommerce.com/b2b-edition/apis/rest-storefront/company/companies#create-a-company) anonymously because the action can be performed by a shopper without a user account, but  [creating a Shopping List](https://developer.bigcommerce.com/b2b-edition/apis/rest-storefront/shopping-list/shopping#create-shopping-list) must be authenticated since the action is tied to a particular Company account and user.
+
+    The B2B Edition Storefront API includes endpoints to generate an authToken with or without specifying an existing Company user. Use the appropriate endpoint to authenticate your requests to Storefront REST APIs and StorefrontGraphQL APIs. Note that storefront authTokens expire after **1 day**.
+
+    The [BigCommerce GraphQL Storefront API](https://developer.bigcommerce.com/docs/start/authentication/graphql-storefront) requires different authentication tokens for client- and server-side contexts. With the B2B GraphQL API, authentication tokens are always in the context of a specific user, and they don’t rely on storefront cookies. 
+
+    As a result, these can be used in a client-side and server-side context. This means that you don’t have to change your authentication strategy for requests from the client or a server.
+
+    While the Storefront authentication endpoints can be used in either experience, it is best practice to get storefront authTokens via the GraphQL login and authorization mutations if you are developing on the Buyer Portal experience.
+
+    The  legacy Stencil storefront experience is built to use Storefront endpoints instead of GraphQL mutations, but it can also use GraphQL for authentication-based customizations. For more information on GraphQL structure and usage, see the [GraphQL Playground](https://api-b2b.bigcommerce.com/graphql/playground).
   contact:
     name: BigCommerce
     url: 'https://www.bigcommerce.com'
     email: support@bigcommerce.com
+  version: v2
 servers:
   - url: 'https://api-b2b.bigcommerce.com/api'
+tags:
+  - name: Authentication
+
 paths:
   /v2/login:
+    parameters: []
     post:
-      summary: Get Storefront authToken within Stencil
+      tags:
+        - Authentication
+      summary: "Get Storefront authToken within Stencil"
       operationId: post-login
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                description: ''
-                type: object
-                properties:
-                  code:
-                    type: number
-                  message:
-                    type: string
-                    minLength: 1
-                  data:
-                    type: object
-                    properties:
-                      token:
-                        type: string
-                        minLength: 1
-                    required:
-                      - token
-                required:
-                  - code
-                  - message
-                  - data
-                x-examples:
-                  example-1:
-                    code: 200
-                    message: SUCCESS
-                    data:
-                      token: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6ImxldmkudHVvQHNpbGtzb2Z0d2FyZS5jb20iLCJzdG9yZV9oYXNoIjoiMWk2enB4cGUzZyIsImRiIjoiZGVmYXVsdCJ9.ETkUWT7Rw4eOBq6UMqq2EyWtFkhceogNyWVpr34Qwgw
-              examples:
-                example-1:
-                  value:
-                    code: 200
-                    message: SUCCESS
-                    data:
-                      token: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6InRlc3RfYjJjX29yZGVyX2ltcG9ydEBxcS5jb21tIiwic3RvcmVfaGFzaCI6ImYyb3N4ampueGoiLCJkYiI6ImRlZmF1bHQifQ
       description: |-
-        Get a storefront authToken. You need a [BigCommerce Current Customer JWT](https://developer.bigcommerce.com/docs/storefront-auth/current-customer) to make the request. See the B2B Edition [Authentication article](/b2b-edition/docs/authentication) for more details.
-        
-        Equivalent Storefront GraphQL API Mutation: `authorization`. For more information, see the [GraphQL Playground](https://api-b2b.bigcommerce.com/graphql/playground).
+        Uses a [JSON web token](https://developer.bigcommerce.com/docs/storefront-auth/current-customer) (JWT) from a particular customer or Company user who is currently logged in to the storefront to create a storefront authToken for future requests. 
+
+        To learn more about how you can retrieve a JWT to create a storefront authToken. See [Authentication for hosted storefronts](https://developer.bigcommerce.com/b2b-edition/docs/authentication).
+
+        Equivalent Storefront GraphQL API Mutation: `authorization`.
+
+        ### Example GraphQL API Body
+        ``` graphQL copy
+        mutation {
+          authorization(
+            authData: {
+              bcToken: "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6ImtpZG8yNzZAc25hcG1haWwuY2MiLCJzdG9yZV9oYXNoIjoiMWk2enB4cGUzZyIsImRiIjoiZGVmYXVsdCIsIm5hbWUiOiJ0ZXN0OSIsImNoYW5uZWxfaWRzIjpbMV0sInRva2VuX3R5cGUiOjMsIm5iZiI6MTAwMCwiZXhwIjoyMDAxfQ.EiR__LVAlBVNYtFCZPWJYoPv6UfGiXtULxhK-BCQZjY",
+              channelId: 1
+            }
+          ) {
+            result {
+              token
+            }
+          }
+        }
+        ```
+        ### Example GraphQL API Response
+        ``` json copy
+        {
+          "data": {
+            "authorization": {
+              "result": {
+                "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6ImtpZG8yNzZAc25hcG1haWwuY2MiLCJzdG9yZV9oYXNoIjoiMWk2enB4cGUzZyIsImRiIjoiZGVmYXVsdCIsIm5hbWUiOiJ0ZXN0OSIsImNoYW5uZWxfaWRzIjpbMV0sInRva2VuX3R5cGUiOjMsIm5iZiI6MTAwMCwiZXhwIjoyMDAxfQ.EiR__LVAlBVNYtFCZPWJYoPv6UfGiXtULxhK-BCQZjY"
+              }
+            }
+          }
+        }
+        ```
+      parameters: []
       requestBody:
         content:
           application/json:
             schema:
+              required:
+                - bcToken
               type: object
               properties:
                 bcToken:
                   type: string
-                  description: BigCommerce JWT token
+                  description: "The JSON Web Token (JWT) obtained from a signed-in Company user. See [Current Customer API](https://developer.bigcommerce.com/docs/rest-authentication/current-customer) to learn how to request a JWT."
+                  example: "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6ImtpZG8yNzZAc25hcG1haWwuY2MiLCJzdG9yZV9oYXNoIjoiMWk2enB4cGUzZyIsImRiIjoiZGVmYXVsdCIsIm5hbWUiOiJ0ZXN0OSIsImNoYW5uZWxfaWRzIjpbMV0sInRva2VuX3R5cGUiOjMsIm5iZiI6MTAwMCwiZXhwIjoyMDAxfQ.EiR__LVAlBVNYtFCZPWJYoPv6UfGiXtULxhK-BCQZjY"
+                storeHash:
+                  $ref: "#/components/schemas/storeHash"
+                channelId:
+                  $ref: "#/components/schemas/channelId"
                 customerId:
                   type: integer
-                  description: Customer ID
-                storeHash:
-                  type: string
-                  description: Store Hash
-                channelId:
-                  type: integer
-                  description: BigCommerce channel ID
-              required:
-                - bcToken
-            examples:
-              example-1:
-                value:
-                  bcToken: string
-                  customerId: 1234
-                  storeHash: string
-      tags:
-        - Authentication
-    parameters: []
-  /io/auth/customers:
-    post:
-      summary: Get a Storefront authToken for a Specific Customer
-      operationId: post-auth-customer
+                  description: "The BigCommerce customer ID associated with a Company user."
+                  example: 1234
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
               schema:
-                description: ''
-                type: object
-                properties:
-                  code:
-                    type: number
-                  data:
-                    type: object
-                    properties:
-                      name:
-                        type: string
-                        minLength: 1
-                      token:
-                        type: string
-                        minLength: 1
-                    required:
-                      - name
-                      - token
-                  meta:
-                    type: object
+                allOf:
+                  - $ref: "#/components/schemas/responseBASE"
+                  - type: object
                     properties:
                       message:
                         type: string
-                        minLength: 1
-                    required:
-                      - message
-                required:
-                  - code
-                  - data
-                  - meta
-                x-examples:
-                  example-1:
-                    code: 200
-                    data:
-                      name: test9
-                      token: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6ImtpZG8yNzZAc25hcG1haWwuY2MiLCJzdG9yZV9oYXNoIjoiMWk2enB4cGUzZyIsImRiIjoiZGVmYXVsdCIsIm5hbWUiOiJ0ZXN0OSIsImNoYW5uZWxfaWRzIjpbMV0sInRva2VuX3R5cGUiOjMsIm5iZiI6MTAwMCwiZXhwIjoyMDAxfQ.EiR__LVAlBVNYtFCZPWJYoPv6UfGiXtULxhK-BCQZjY
-                    meta:
-                      message: SUCCESS
-              examples:
-                example-1:
-                  value:
-                    code: 200
-                    data:
-                      name: test9
-                      token: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6ImtpZG8yNzZAc25hcG1haWwuY2MiLCJzdG9yZV9oYXNoIjoiMWk2enB4cGUzZyIsImRiIjoiZGVmYXVsdCIsIm5hbWUiOiJ0ZXN0OSIsImNoYW5uZWxfaWRzIjpbMV0sInRva2VuX3R5cGUiOjMsIm5iZiI6MTAwMCwiZXhwIjoyMDAxfQ.EiR__LVAlBVNYtFCZPWJYoPv6UfGiXtULxhK-BCQZjY
-                    meta:
-                      message: SUCCESS
+                        example: "SUCCESS"
+  /io/auth/customers:
+    parameters: []
+    post:
+      tags:
+        - Authentication
+      summary: "Get a Storefront authToken for a Specific Customer"
+      operationId: post-auth-customer
+      description: |-
+        Validates a Company user’s login credentials to create a storefront authToken that can be queried for future GraphQL requests.
+
+        Equivalent Storefront GraphQL API Mutation: `login`
+
+        The GraphQL API mutation also allows you to return a `storefrontLoginToken`. This retrieves a JWT, which can be passed to the BigCommerce [Customer Login endpoint](https://developer.bigcommerce.com/docs/start/authentication/customer-login) in order to log a customer in with a Stencil storefront session.
+
+        The `login` response also includes information related to the Company user, such as their name and their account’s internal identifiers.
+
+        **Note:** the resulting storefront authToken is tied to the Company user, and their assigned user role determines whether or not further requests are authorized. For example, if you generate an authToken for a user who does not have the `create_address` permission enabled, using the token to validate the GraphQL API `addressCreate` mutation will result in an error.  
+
+        For a complete list of Company user permissions and their scopes, see [Company Roles and Permissions](https://developer.bigcommerce.com/b2b-edition/apis/rest-management/company#company-roles-and-permissions).
+
+        ### Example GraphQL API Body
+
+        **With Storefront authToken only**
+
+        ``` graphQL copy
+        mutation {
+          login(
+            loginData: {
+              storeHash: "1234abcd",
+              email: "axe@snapmail.cc",
+              password: "MyPassword123"
+            }
+          ) {
+            result {
+              token
+              user {
+                id
+                bcId
+                firstName
+                lastName
+                email
+              }
+            }
+          }
+        }
+        ```
+
+        **With Storefront authToken and storefrontLoginToken**
+
+        ``` graphQL copy
+        mutation {
+          login(
+            loginData: {
+              storeHash: "1234abcd",
+              email: "axe@snapmail.cc",
+              password: "MyPassword123"
+            }
+          ) {
+            result {
+              token
+              storefrontLoginToken
+              user {
+                id
+                bcId
+                firstName
+                lastName
+                email
+              }
+            }
+          }
+        }
+        ```
+
+        ### Example GraphQL API Responses
+
+        **With Storefront authToken only**
+
+        ``` json copy
+        {
+          "data": {
+            "login": {
+              "result": {
+                "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6InRlc3RfYjJjX29yZGVyX2ltcG9ydEBxcS5jb21tIiwic3RvcmVfaGFzaCI6ImYyb3N4ampueGoiLCJkYiI6ImRlZmF1bHQifQ",
+                "user": {
+                  "id": "8889911",
+                  "bcId": 28,
+                  "firstName": "B2B",
+                  "lastName": "User",
+                  "email": "user@example.com"
+                }
+              }
+            }
+          }
+        }
+        ```
+
+        **With Storefront authToken and storefrontLoginToken**
+
+        ``` json copy
+        {
+          "data": {
+            "login": {
+              "result": {
+                "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6InRlc3RfYjJjX29yZGVyX2ltcG9ydEBxcS5jb21tIiwic3RvcmVfaGFzaCI6ImYyb3N4ampueGoiLCJkYiI6ImRlZmF1bHQifQ",
+                "storefrontLoginToken": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6ImtpZG8yNzZAc25hcG1haWwuY2MiLCJzdG9yZV9oYXNoIjoiMWk2enB4cGUzZyIsImRiIjoiZGVmYXVsdCIsIm5hbWUiOiJ0ZXN0OSIsImNoYW5uZWxfaWRzIjpbMV0sInRva2VuX3R5cGUiOjMsIm5iZiI6MTAwMCwiZXhwIjoyMDAxfQ.EiR__LVAlBVNYtFCZPWJYoPv6UfGiXtULxhK-BCQZjY",
+                "user": {
+                  "id": "8889911",
+                  "bcId": 28,
+                  "firstName": "B2B",
+                  "lastName": "User",
+                  "email": "user@example.com"
+                }
+              }
+            }
+          }
+        }
+        ```
+      parameters: []
       requestBody:
         content:
           application/json:
             schema:
-              description: ''
-              type: object
-              x-examples:
-                example-1:
-                  storeHash: '{{store_hash}}'
-                  email: kido276@snapmail.cc
-                  password: test12345
-                  channelId: 1
-                  name: test9
-                  beginAt: 1000
-                  endAt: 2001
-              properties:
-                storeHash:
-                  type: string
-                  minLength: 1
-                email:
-                  type: string
-                  minLength: 1
-                  description: BigCommerce customer email
-                password:
-                  type: string
-                  minLength: 1
-                  description: BigCommerce customer password
-                channelId:
-                  type: number
-                  description: Store channel ID
-                name:
-                  type: string
-                  minLength: 1
               required:
                 - storeHash
                 - email
                 - password
                 - channelId
                 - name
-            examples:
-              example-1:
-                value:
-                  storeHash: string
-                  email: axe@snapmail.cc
-                  password: test12345
-                  channelId: 1
-                  name: test
-                  beginAt: 1000
-                  endAt: 1721930486
-        description: ''
-      description: |-
-        Get an authentication token for a specific BigCommerce customer.
+              type: object
+              properties:
+                storeHash:
+                  $ref: "#/components/schemas/storeHash"
+                channelId:
+                  $ref: "#/components/schemas/channelId"
+                name:
+                  allOf:
+                    - $ref: "#/components/schemas/name"
+                    - minLength: 1
+                email:
+                  type: string
+                  minLength: 1
+                  format: email
+                  description: "The email address associated with the user's account."
+                  example: "user@example.com"
+                password:
+                  type: string
+                  minLength: 1
+                  format: password
+                  description: "The password associated with the user's account."
+                  example: "MyPassword123"
+                beginAt:
+                  type: integer
+                  description: "The [Unix timestamp](https://www.unixtimestamp.com/) indicating when the storefront authToken starts being valid."
+                  example: 1721900486
+                endAt:
+                  type: integer
+                  description: "The [Unix timestamp](https://www.unixtimestamp.com/) indicating when the storefront authToken is no longer valid."
+                  example: 1721900486
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/responseBASE"
+                  - type: object
+                    properties:
+                      data:
+                        properties:
+                          name:
+                            $ref: "#/components/schemas/name"
+                      meta:
+                        type: object
+                        properties:
+                          message:
+                            type: string
+                            example: "SUCCESS"
+        "400":
+          $ref: "#/components/responses/authFailed"
 
-        Equivalent Storefront GraphQL API Mutation: `login`. For more information, see the [GraphQL Playground](https://api-b2b.bigcommerce.com/graphql/playground).
-      tags:
-        - Authentication
-    parameters: []
 components:
-  schemas: {}
-tags:
-  - name: Authentication
+  schemas:
+    storeHash:
+      type: string
+      minLength: 1
+      description: "The unique store hash for the BigCommerce store."
+      example: "1234abcd"
+    channelId:
+      type: number
+      description: "The storefront channel ID associated with the storefront login session. Use 1 for your store’s default storefront channel."
+      default: 1
+      example: 1000234
+    name:
+      type: string
+      description: The internal name assigned to the generated storefront authToken.
+      example: "customer storefront token"
+    responseBASE:
+      type: object
+      properties:
+        code:
+          type: number
+          default: 200
+        data:
+          type: object
+          properties:
+            token:
+              type: string
+              description: "The storefront authToken associated with the storefront login session, which can be used to validate further GraphQL requests."
+              example: "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6ImtpZG8yNzZAc25hcG1haWwuY2MiLCJzdG9yZV9oYXNoIjoiMWk2enB4cGUzZyIsImRiIjoiZGVmYXVsdCIsIm5hbWUiOiJ0ZXN0OSIsImNoYW5uZWxfaWRzIjpbMV0sInRva2VuX3R5cGUiOjMsIm5iZiI6MTAwMCwiZXhwIjoyMDAxfQ.EiR__LVAlBVNYtFCZPWJYoPv6UfGiXtULxhK-BCQZjY"
+  responses:
+    authFailed:
+      description: 400 - Auth Failed
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              code:
+                type: number
+                example: 400
+              data:
+                type: object
+                properties:
+                  errMsg:
+                    type: string
+                    example: "Customer auth failed"
+              meta:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Calling BC API failed"

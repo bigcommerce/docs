@@ -1,14 +1,18 @@
 # Amazon Webhooks Overview 
 
-Amazon EventBridge is a serverless event bus that distributes events to connect application components and build highly scalable and resilient event-driven applications. It offers a simple way to consume webhook events from the BigCommerce platform at scale.
+Amazon EventBridge is a serverless event bus that makes it easy to connect application components and build scalable, event-driven systems. With EventBridge, you can efficiently consume webhook events from the BigCommerce platform without managing your own webhook listener.
 
-To use Amazon EventBridge, you must do the following:
-* [Set up an event source](#set-up-an-event-source-not-available-in-beta) 
-* [Associate your event source with an event bus](#associate-an-event-bus-not-available-in-beta) 
-* [Create rules for the event bus](#create-a-rule-not-available-in-beta)
-* Subscribe to webhooks
+This guide walks you through the steps to integrate EventBridge with BigCommerce webhooks:
+
+* [Set up an event source](#set-up-an-event-source) 
+* [Associate your event source with an event bus](#associate-an-event-bus) 
+* [Create rules for the event bus](#create-a-rule)
+* [Apply Targets to Rules](#apply-a-target-to-the-rule)
+* [Create a Webhook](#create-an-amazon-eventbridge-webhook)
+* [Receive the Event Message](#receive-the-event-message)
 
 ## Prerequisites
+
 - To try out GraphQL queries and view responses, import our API examples into [Postman](https://www.getpostman.com/) or any other tool that allows testing of GraphQL queries. 
 - Enter the following environment variables before starting:
 
@@ -22,7 +26,7 @@ To use Amazon EventBridge, you must do the following:
 
 ## Set up an event source 
 
-Setting up an event source with EventBridge allows you to send event data to Amazon services directly instead of being responsible for receiving that traffic yourself through a front-end web server. You can set up an event source using a Create AWS Event Source query.
+Setting up an event source with EventBridge allows you to send event data to Amazon services directly instead of being responsible for receiving that traffic yourself through a front-end web server. You can set up an event source using a Create AWS Event Source query. Use the following GraphQL mutation to create an event source:
 
 <Tabs items={['Request', 'Response']}>
 <Tab>
@@ -77,12 +81,12 @@ mutation createEventSource($input: CreateEventSourceInput!){
 
 <Callout type="info">
 #### Make note of the `event_source_arn` and `event_source_name`
-Obtain the `event_source_arn` and `event_source_name` from the Graphql create event source mutation. You will not need them for the first iteration because there is no event source. After you create the event source, you will use these values later. You can save these fields in Postman as environment variables.
+Note: Save the `event_source_arn` and `event_source_name` from the response. While you won't need them during this step, you'll use them later to create the event bus and webhook. You can store them as environment variables in Postman.
 </Callout>
 
 ## Associate an event bus 
 
-The next step is to associate the event source with a bus. You can associate an event by following the procedure below:
+Now link the event source to an event bus using the following request:
 
 <Tabs items={['Request', 'Response']}>
 <Tab>
@@ -107,7 +111,7 @@ For more information on how to create an event bus, see [CreateEventBus](https:/
 
 ## Create a rule 
 
-Creating a rule helps to move specified events to the event bus otherwise, all events are ignored.
+A rule filters and routes events from the event bus to targets like SQS. Use this query to create one:
 
 <Tabs items={['Request', 'Response']}>
 <Tab>
@@ -135,7 +139,7 @@ For more information on how to create or update a rule, see [PutRule](https://do
 
 ## Apply a target to the rule 
 
-Add the specific targets to the specified rule. This step allows SQS to receive message requests and check end-to-end delivery.
+Next, add a target (such as an SQS queue) to the rule to receive the webhook payloads:
 
 <Tabs items={['Request', 'Response']}>
 <Tab>
@@ -163,10 +167,11 @@ POST https://events.{{regions}}.amazonaws.com/?Action=PutTargets&Version=2015-10
 </Tab>
 </Tabs>
 
-For more information on how to create an API destination, see [CreateApiDestination](https://docs.aws.amazon.com/eventbridge/latest/APIReference/API_CreateApiDestination.html).
+For more information on how to apply a target, see [PutTargets](https://docs.aws.amazon.com/eventbridge/latest/APIReference/API_PutTargets.html).
 
 ## Create an Amazon EventBridge webhook 
-Using GraphQL to create an Amazon EventBridge webhoook.
+
+Use the GraphQL mutation below to create a BigCommerce webhook that sends events to EventBridge:
 
 <Tabs items={['Request', 'Response']}>
 <Tab>
@@ -219,6 +224,6 @@ mutation createAwsEventBridgeWebhook($input: CreateEventBridgeWebhookInput!){
 
 ## Receive the event message 
 
-The next step is to trigger the event to receive the event message. Although there is limited JSON support with the SQS API, you can use SQS Receive Messages to view the event message.
+Once everything is set up, trigger a webhook event (e.g., update a category) to send a message to SQS. Use the Receive Messages feature in Amazon SQS to inspect the payload.
 
-For more information on Amazon Simple Queue Service (SQS), see [Amazon Simple Queue Service](https://aws.amazon.com/sqs/).
+For more information on how to receive the event message, see [Amazon Simple Queue Service](https://aws.amazon.com/sqs/).

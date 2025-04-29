@@ -1,420 +1,301 @@
 openapi: 3.0.0
 info:
-  title: Store
-  version: '1.0'
-  description: Store shopping information settings.
+  title: Store Settings
+  description: |-
+    Two endpoints are provided to retrieve store settings from BigCommerce within B2B Edition.
+    
+    These endpoints are strictly for data retrieval. In order to manage currency settings, use the endpoints provided at [Currencies](/docs/rest-management/currencies). For more information about order status settings, see [Order Status](/docs/rest-management/orders/order-status).
+
+    The [BigCommerce GraphQL API](/docs/graphql-storefront) is the recommended resource for retrieving data from these endpoints, and the equivalent queries are provided for each endpoint.
   contact:
     name: BigCommerce
     url: 'https://www.bigcommerce.com'
     email: support@bigcommerce.com
+  version: v2
+  termsOfService: 'https://www.bigcommerce.com/terms'
 servers:
   - url: 'https://api-b2b.bigcommerce.com/api/v2'
 security:
   - BearerToken: []
+tags:
+  - name: Store Settings
 paths:
-  /stores/order-statuses:
-    get:
-      summary: Get Store Order Statuses Setting
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                description: ''
-                type: object
-                x-examples:
-                  example-1:
-                    code: 200
-                    message: SUCCESS
-                    data:
-                      orderStatuses:
-                        - systemLabel: Incomplete
-                          customLabel: Incomplete
-                          statusCode: '0'
-                        - systemLabel: Pending
-                          customLabel: Pending Kido Test
-                          statusCode: '1'
-                        - systemLabel: Shipped
-                          customLabel: Shipping
-                          statusCode: '2'
-                        - systemLabel: Partially Shipped
-                          customLabel: Partially Shipped
-                          statusCode: '3'
-                        - systemLabel: Refunded
-                          customLabel: Refunded Test
-                          statusCode: '4'
-                        - systemLabel: Cancelled
-                          customLabel: Cancelled
-                          statusCode: '5'
-                        - systemLabel: Declined
-                          customLabel: Declined
-                          statusCode: '6'
-                        - systemLabel: Awaiting Payment
-                          customLabel: Awaiting Pay Kido Test
-                          statusCode: '7'
-                        - systemLabel: Awaiting Pickup
-                          customLabel: Awaiting Pickup
-                          statusCode: '8'
-                        - systemLabel: Awaiting Shipment
-                          customLabel: Awaiting Shipment
-                          statusCode: '9'
-                        - systemLabel: Completed
-                          customLabel: Completed Kido Test
-                          statusCode: '10'
-                        - systemLabel: Awaiting Fulfillment
-                          customLabel: Awaiting Fulfill
-                          statusCode: '11'
-                        - systemLabel: Manual Verification Required
-                          customLabel: Manual Verification Required
-                          statusCode: '12'
-                        - systemLabel: Disputed
-                          customLabel: Disputed
-                          statusCode: '13'
-                        - systemLabel: Partially Refunded
-                          customLabel: Partially Refunded
-                          statusCode: '14'
-                properties:
-                  code:
-                    type: number
-                  message:
-                    type: string
-                    minLength: 1
-                  data:
-                    type: object
-                    required:
-                      - orderStatuses
-                    properties:
-                      orderStatuses:
-                        type: array
-                        uniqueItems: true
-                        minItems: 1
-                        items:
-                          type: object
-                          properties:
-                            systemLabel:
-                              type: string
-                              minLength: 1
-                              description: Standard label name
-                            customLabel:
-                              type: string
-                              minLength: 1
-                              description: Custom label name
-                            statusCode:
-                              type: string
-                              minLength: 1
-                              description: Status code
-                          required:
-                            - systemLabel
-                            - customLabel
-                            - statusCode
-                required:
-                  - code
-                  - message
-                  - data
-              examples:
-                example-1:
-                  value:
-                    code: 200
-                    message: SUCCESS
-                    data:
-                      orderStatuses:
-                        - systemLabel: Incomplete
-                          customLabel: Incomplete
-                          statusCode: '0'
-                        - systemLabel: Pending
-                          customLabel: Pending Kido Test
-                          statusCode: '1'
-                        - systemLabel: Shipped
-                          customLabel: Shipping
-                          statusCode: '2'
-                        - systemLabel: Partially Shipped
-                          customLabel: Partially Shipped
-                          statusCode: '3'
-                        - systemLabel: Refunded
-                          customLabel: Refunded Test
-                          statusCode: '4'
-                        - systemLabel: Cancelled
-                          customLabel: Cancelled
-                          statusCode: '5'
-                        - systemLabel: Declined
-                          customLabel: Declined
-                          statusCode: '6'
-                        - systemLabel: Awaiting Payment
-                          customLabel: Awaiting Pay Kido Test
-                          statusCode: '7'
-                        - systemLabel: Awaiting Pickup
-                          customLabel: Awaiting Pickup
-                          statusCode: '8'
-                        - systemLabel: Awaiting Shipment
-                          customLabel: Awaiting Shipment
-                          statusCode: '9'
-                        - systemLabel: Completed
-                          customLabel: Completed Kido Test
-                          statusCode: '10'
-                        - systemLabel: Awaiting Fulfillment
-                          customLabel: Awaiting Fulfill
-                          statusCode: '11'
-                        - systemLabel: Manual Verification Required
-                          customLabel: Manual Verification Required
-                          statusCode: '12'
-                        - systemLabel: Disputed
-                          customLabel: Disputed
-                          statusCode: '13'
-                        - systemLabel: Partially Refunded
-                          customLabel: Partially Refunded
-                          statusCode: '14'
-      operationId: get-stores-order-statuses
-      description: |-
-        Get a list of all statuses of the order, including status codes and custom status names.
-        Equivalent Storefront GraphQL API Query: `orderStatuses`. For more information, see the [GraphQL Playground](https://api-b2b.bigcommerce.com/graphql/playground).
-      tags:
-        - Store
   /stores/currencies:
     get:
-      summary: Get Store Currencies Setting
+      tags:
+        - Store Settings
+      summary: "Get All Available Currencies"
+      operationId: get-stores-currencies
+      description: |-
+        Returns a list of the currencies currently enabled on a BigCommerce store. If the `channelId` parameter is provided, the response will also include a list of currencies currently enabled for the associated storefront channel.
+
+        **Note:** This endpoint is available with or without a Bearer Token. To use the endpoint without a token, the `storeHash` parameter is required.
+
+        Equivalent Storefront GraphQL API Query: `currencies`. For more information, see the [GraphQL Playground](https://api-b2b.bigcommerce.com/graphql/playground).
+      parameters:
+        - name: channelId
+          in: query
+          schema:
+            type: string
+          description: "The ID for a specific storefront channel. Including this parameter adds a list of channel-specific currencies to the response."
+          example: 123456
+        - name: storeHash
+          in: query
+          schema:
+            type: string
+          description: |-
+            The unique store hash for the BigCommerce store.
+
+            If a Bearer Token is provided with the request, the store's information is pulled using the token, and including the parameter will have no effect. If the Bearer Token is omitted this parameter is required to complete the request.
+          example: "abc123"
       responses:
         '200':
           description: OK
           content:
             application/json:
               schema:
-                description: ''
-                type: object
-                x-examples:
-                  example-1:
-                    code: 200
-                    message: SUCCESS
-                    data:
-                      currencies:
-                        - id: 1
-                          is_default: false
-                          last_updated: 'Wed, 19 May 2021 01:35:32 +0000'
-                          country_iso2: null
-                          default_for_country_codes: []
-                          currency_code: USD
-                          currency_exchange_rate: '0.1411948941'
-                          name: USD
-                          token: $
-                          auto_update: false
-                          token_location: left
-                          decimal_token: .
-                          thousands_token: ','
-                          decimal_places: 2
-                          enabled: true
-                          is_transactional: true
-                        - id: 2
-                          is_default: false
-                          last_updated: 'Wed, 19 May 2021 01:35:32 +0000'
-                          country_iso2: null
-                          default_for_country_codes: []
-                          currency_code: AUD
-                          currency_exchange_rate: '0.2077965256'
-                          name: Australian Dollar
-                          token: $
-                          auto_update: false
-                          token_location: right
-                          decimal_token: .
-                          thousands_token: ','
-                          decimal_places: 2
-                          enabled: true
-                          is_transactional: true
-                        - id: 3
-                          is_default: true
-                          last_updated: 'Wed, 19 May 2021 01:35:32 +0000'
-                          country_iso2: null
-                          default_for_country_codes: []
-                          currency_code: CNY
-                          currency_exchange_rate: '1.0000000000'
-                          name: Chinese Yuan
-                          token: ¥
-                          auto_update: false
-                          token_location: left
-                          decimal_token: .
-                          thousands_token: ','
-                          decimal_places: 2
-                          enabled: true
-                          is_transactional: true
-                        - id: 4
-                          is_default: false
-                          last_updated: 'Wed, 19 May 2021 01:35:32 +0000'
-                          country_iso2: null
-                          default_for_country_codes: []
-                          currency_code: GBP
-                          currency_exchange_rate: '0.1055431833'
-                          name: British Pound
-                          token: £
-                          auto_update: false
-                          token_location: left
-                          decimal_token: .
-                          thousands_token: ','
-                          decimal_places: 2
-                          enabled: true
-                          is_transactional: true
-                        - id: 5
-                          is_default: false
-                          last_updated: 'Wed, 19 May 2021 01:35:32 +0000'
-                          country_iso2: null
-                          default_for_country_codes: []
-                          currency_code: EUR
-                          currency_exchange_rate: '0.1164293097'
-                          name: Euro
-                          token: €
-                          auto_update: false
-                          token_location: left
-                          decimal_token: .
-                          thousands_token: ','
-                          decimal_places: 2
-                          enabled: true
-                          is_transactional: true
-                properties:
-                  code:
-                    type: number
-                  message:
-                    type: string
-                    minLength: 1
-                  data:
-                    type: object
-                    required:
-                      - currencies
-                    properties:
-                      currencies:
-                        type: array
-                        uniqueItems: true
-                        minItems: 1
-                        items:
-                          type: object
-                          properties:
-                            id:
-                              type: number
-                            is_default:
-                              type: boolean
-                            country_iso2:
-                              description: 'Country code, ex. US, CN'
-                              type: string
-                            last_updated:
-                              type: string
-                              minLength: 1
-                            default_for_country_codes:
-                              type: array
-                              items:
-                                type: string
-                            currency_code:
-                              type: string
-                              minLength: 1
-                              description: 'Currency code, ex. USD, CNY'
-                            currency_exchange_rate:
-                              type: string
-                              minLength: 1
-                            name:
-                              type: string
-                              minLength: 1
-                            token:
-                              type: string
-                              minLength: 1
-                              description: 'Currency token, ex. $'
-                            auto_update:
-                              type: boolean
-                            token_location:
-                              type: string
-                              minLength: 1
-                              description: 'Currency token location, ex. left or right'
-                            decimal_token:
-                              type: string
-                              minLength: 1
-                            thousands_token:
-                              type: string
-                              minLength: 1
-                            decimal_places:
-                              type: number
-                            enabled:
-                              type: boolean
-                            is_transactional:
-                              type: boolean
-                              description: Is transactional
-                          required:
-                            - id
-                            - is_default
-                            - last_updated
-                            - currency_code
-                            - currency_exchange_rate
-                            - name
-                            - token
-                            - auto_update
-                            - token_location
-                            - decimal_token
-                            - thousands_token
-                            - decimal_places
-                            - enabled
-                            - is_transactional
-                      channelCurrencies:
-                        type: array
-                        items:
-                          type: object
-                          properties:
-                            channel_id:
-                              type: integer
-                            enabled_currencies:
-                              type: array
-                              items: 
-                                type: string
-                            default_currency:
-                              type: string
-                required:
-                  - code
-                  - message
-                  - data
+                allOf:
+                  - $ref: https://raw.githubusercontent.com/bigcommerce/docs/main/docs/b2b-edition/models/response/code-object-message.yaml
+                  - properties:
+                      code:
+                        default: 200
+                      message:
+                        default: "SUCCESS"
+                      data:
+                        properties:
+                          currencies:
+                            type: array
+                            uniqueItems: true
+                            items:
+                              type: object
+                              properties:
+                                id:
+                                  type: number
+                                  description: "The unique ID for the currency within the BigCommerce store."
+                                  example: 2
+                                is_default:
+                                  type: boolean
+                                  description: "Indicates whether the currency is set as the default for the store."
+                                country_iso2:
+                                  type: string
+                                  description: "The two-character ISO country code for the currency."
+                                  example: "US"
+                                last_updated:
+                                  type: string
+                                  description: "The date and time of the most recent update to the currency's settings."
+                                  example: "Tue, 14 Feb 2023 21:02:15 +0000"
+                                default_for_country_codes:
+                                  type: array
+                                  description: "The list of two-character ISO country codes for which the currency is the default."
+                                  items:
+                                    type: string
+                                  example:
+                                    - "US"
+                                    - "CA"
+                                    - "GB"
+                                currency_code:
+                                  type: string
+                                  description: "The three-letter code corresponding to the currency."
+                                  example: "USD"
+                                currency_exchange_rate:
+                                  type: string
+                                  description: "The exchange rate between your store’s default currency and the selected currency."
+                                  example: "1.3540000"
+                                name:
+                                  type: string
+                                  description: "The display name of the currency as shown on the storefront."
+                                  example: "US Dollar"
+                                token:
+                                  type: string
+                                  description: "The currency symbol."
+                                  example: "$"
+                                auto_update:
+                                  type: boolean
+                                  description: "Indicates whether the exchange rate is set to automatically update. The store's default currency will always return `false`."
+                                token_location:
+                                  type: string
+                                  description: "Determines whether the currency symbol is added to the left or the right of pricing."
+                                  enum:
+                                    - "left"
+                                    - "right"
+                                decimal_token:
+                                  type: string
+                                  description: "The character used to separate decimal values in pricing."
+                                  example: "."
+                                thousands_token:
+                                  type: string
+                                  description: "The character used to separate the hundredths and thousandths places in pricing."
+                                  example: ","
+                                decimal_places:
+                                  type: number
+                                  description: "The number of digits to display after the decimal."
+                                  example: 2
+                                enabled:
+                                  type: boolean
+                                  description: "Indicates whether the currency is currently visible on the storefront."
+                                is_transactional:
+                                  type: boolean
+                                  description: "Indicates whether the currency is transacting (`true`) or display (`false`). For more information see [Managing Currencies (Help Center)](https://support.bigcommerce.com/s/article/Managing-Currencies)."
+                          channelCurrencies:
+                            description: "The list of currencies enabled on a specific channel. If the `channelId` parameter is **not** provided, this will return an empty object `{}`."
+                            type: object
+                            items:
+                              type: object
+                              properties:
+                                channel_id:
+                                  type: integer
+                                  description: "The unique ID for the channel. Matches the `channelId` parameter."
+                                  example: 123456
+                                  default: 1
+                                enabled_currencies:
+                                  type: array
+                                  description: "An array of the three-character currency codes enabled for the channel."
+                                  items:
+                                    type: string
+                                  example:
+                                    - "USD"
+                                    - "GBP"
+                                    - "IQD"
+                                default_currency:
+                                  type: string
+                                  description: "The three-character currency code of the currency set to default on the channel."
+                                  example: "USD"
+                          entered_inclusive_tax:
+                            type: boolean
+                            description: "Indicates whether product prices were provided inclusive of sales tax. For more information, see [Tax Overview (Help Center)](https://support.bigcommerce.com/s/article/Tax-Overview)."
               examples:
-                example-1:
+                With Channel ID:
                   value:
                     code: 200
                     message: SUCCESS
                     data:
                       currencies:
-                        - id: 1
-                          is_default: false
-                          last_updated: 'Wed, 19 May 2021 01:35:32 +0000'
-                          country_iso2: 'null'
-                          default_for_country_codes: []
-                          currency_code: USD
-                          currency_exchange_rate: '0.1411948941'
-                          name: USD
-                          token: $
-                          auto_update: false
-                          token_location: left
-                          decimal_token: .
-                          thousands_token: ','
-                          decimal_places: 2
-                          enabled: true
-                          is_transactional: true
-      operationId: get-stores-currencies
-      description: |-
-        Get store currencies config.
-        Equivalent Storefront GraphQL API Query: `currencies`. For more information, see the [GraphQL Playground](https://api-b2b.bigcommerce.com/graphql/playground).
-      parameters:
-        - schema:
-            type: string
-          in: query
-          name: storehash
-          description: Store Hash
-          required: true
-        - schema:
-            type: string
-          in: query
-          name: channelId
-          description: BigCommerce channel id
+                      - id: 2
+                        is_default: true
+                        country_iso2: "US"
+                        last_updated: "Tue, 14 Feb 2023 21:02:15 +0000"
+                        default_for_country_codes:
+                          - "US"
+                          - "CA"
+                          - "GB"
+                        currency_code: "USD"
+                        currency_exchange_rate: "1.3540000"
+                        name: "US Dollar"
+                        token: "$"
+                        auto_update: true
+                        token_location: "left"
+                        decimal_token: "."
+                        thousands_token: ","
+                        decimal_places: 2
+                        enabled: true
+                        is_transactional: true
+                      channelCurrencies:
+                        channel_id: 123456
+                        enabled_currencies:
+                          - "USD"
+                          - "GBP"
+                          - "IQD"
+                        default_currency: "USD"
+                      entered_inclusive_tax: true
+                Without Channel ID:
+                  value:
+                    code: 200
+                    message: SUCCESS
+                    data:
+                      currencies:
+                      - id: 2
+                        is_default: true
+                        country_iso2: "US"
+                        last_updated: "Tue, 14 Feb 2023 21:02:15 +0000"
+                        default_for_country_codes:
+                          - "US"
+                          - "CA"
+                          - "GB"
+                        currency_code: "USD"
+                        currency_exchange_rate: "1.3540000"
+                        name: "US Dollar"
+                        token: "$"
+                        auto_update: true
+                        token_location: "left"
+                        decimal_token: "."
+                        thousands_token: ","
+                        decimal_places: 2
+                        enabled: true
+                        is_transactional: true
+                      channelCurrencies: {}
+                      entered_inclusive_tax: true
+        '400':
+          description: |-
+            Bad Request
+            
+            This response is returned if neither the Bearer Token nor the `storeHash` parameter is provided.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: https://raw.githubusercontent.com/bigcommerce/docs/main/docs/b2b-edition/models/response/code-message.yaml
+                  - properties:
+                      code:
+                        default: 400
+                      message:
+                        default: "bad request"
+  /stores/order-statuses:
+    get:
       tags:
-        - Store
+        - Store Settings
+      summary: "Get All Store-Level Order Statuses"
+      operationId: get-stores-order-statuses
+      description: |-
+        Returns a list of all order statuses, including status codes and custom status names. For more information about order statuses generally, see  [Order Status](/docs/rest-management/orders/order-status) or [Order Statuses](https://support.bigcommerce.com/s/article/Order-Statuses).
+
+        Equivalent Storefront GraphQL API Query: `orderStatuses`. For more information, see the [GraphQL Playground](https://api-b2b.bigcommerce.com/graphql/playground).
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: https://raw.githubusercontent.com/bigcommerce/docs/main/docs/b2b-edition/models/response/code-object-message.yaml
+                  - properties:
+                      code:
+                        default: 200
+                      message:
+                        default: "SUCCESS"
+                      data:
+                        properties:
+                          orderStatuses:
+                            type: array
+                            description: "The complete list of order statuses available along with their status code and store-specific custom label. For more information, see [Order Status](/docs/rest-management/orders/order-status)."
+                            uniqueItems: true
+                            items:
+                              type: object
+                              properties:
+                                systemLabel:
+                                  type: string
+                                  description: "The default name of the order status in BigCommerce. This label is directly connected to the behavior of the label during order management."
+                                  example: "Incomplete"
+                                customLabel:
+                                  type: string
+                                  description: "The custom name of the order status in BigCommerce. If the status is unedited, then this will match `systemLabel`."
+                                  example: "Halted/On Hold"
+                                statusCode:
+                                  type: string
+                                  description: "The unique numeric code associated with the order status."
+                                  example: 0
 components:
   schemas: {}
   securitySchemes:
     BearerToken:
-      description: |-
-        ### Authentication header
+      description: '### Authentication header
+
         | Header | Argument | Description |
+
         |:-------|:---------|:------------|
-        |`Authorization`|`Bearer {{B2B_JWT_TOKEN}}`| You can obtain this token using the steps described in the [REST Storefront API](/b2b-edition/docs/authentication#rest-storefront-api) section of the [Authentication for hosted storefront](https://developer.bigcommerce.com/b2b-edition/docs/authentication) article. |
+
+        |`Authorization`|`Bearer {{B2B_JWT_TOKEN}}`| You can obtain this token using
+        the steps described in the [REST Storefront API](/b2b-edition/docs/authentication#rest-storefront-api)
+        section of the [Authentication for hosted storefront](https://developer.bigcommerce.com/b2b-edition/docs/authentication)
+        article. |'
       type: http
       scheme: bearer
-tags:
-  - name: Store

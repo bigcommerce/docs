@@ -18,6 +18,7 @@ Your task is to summarize the following pull requests into **well-formatted, con
 *  Write each bullet to clearly explain **what the change is and why it matters**.  
 *  Always include the **PR link** in the bullet point.  
 *  If the pull request includes a **"Release Notes" section** or release-focused summary, prioritize that, but cross-check the PR title and description to improve clarity and accuracy.  
+*  Where REST API endpoints or REST METHODS, use the inline code formatting such as `GET /api/v2/channels` or `POST /api/v2/channels`.
 * Group related bullet points under appropriate **bold section headings** such as:  
   * **Admin GraphQL Updates**  
   * **Webhooks Update**  

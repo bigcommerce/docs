@@ -1,0 +1,48 @@
+name: Generate Release Notes
+
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: "0 0 * * 5" # Every Friday
+
+jobs:
+  release_notes:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout docs repo
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Fetch merged PRs
+        id: fetch-prs
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prs = await github.paginate(
+              github.rest.pulls.list,
+              { owner: 'bigcommerce', repo: 'docs', state: 'closed', per_page: 100 }
+            );
+            const recentMergedPRs = prs.filter(pr => pr.merged_at && new Date(pr.merged_at) > new Date(Date.now() - 7 * 24 * 3600 * 1000));
+            return recentMergedPRs.map(pr => ({title: pr.title, body: pr.body, url: pr.html_url}));
+
+      - name: Generate release notes
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          PR_DATA: ${{ steps.fetch-prs.outputs.result }}
+        run: |
+          python scripts/generate_release_notes.py "$PR_DATA"
+
+      - name: Commit & Create PR
+        uses: peter-evans/create-pull-request@v6
+        with:
+          title: "Auto-generated Release Notes"
+          commit-message: "docs: Update release notes (auto-generated)"
+          branch: "auto-release-notes"
+          body: "This PR contains AI-generated release notes. Please review."

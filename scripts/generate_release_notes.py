@@ -1,9 +1,10 @@
 import sys
 import os
-import openai
 import json
+from openai import OpenAI
 
-openai.api_key = os.getenv("OPENAI_API_KEY")
+# Setup OpenAI client with API Key
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 # PR data passed from workflow
 pr_data = json.loads(sys.argv[1])
@@ -19,10 +20,12 @@ prompt = (
 for pr in pr_data:
     prompt += f"- Title: {pr['title']}\n  Description: {pr['body']}\n  Link: {pr['url']}\n\n"
 
-response = openai.ChatCompletion.create(
+response = client.chat.completions.create(
     model="gpt-4o",
-    messages=[{"role": "system", "content": "You generate release notes in markdown."},
-              {"role": "user", "content": prompt}],
+    messages=[
+        {"role": "system", "content": "You generate release notes in markdown."},
+        {"role": "user", "content": prompt}
+    ],
     temperature=0.3
 )
 

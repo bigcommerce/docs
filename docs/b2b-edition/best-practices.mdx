@@ -1,17 +1,40 @@
 # Best Practices
 
+B2B Edition is built to provide optimal stability and performance to your B2B store. In order to maintain a stable and reliable platform, we implement rate limits for our APIs, and we suggest several best practices when creating custom developments.
+
+Resources in B2B Edition share many of the guidelines as the BigCommerce platform in general. In this document, we will cover the rate limits and considerations that are specific to B2B Edition, but you can find more information on best practices in the following resources:
+
+* [API Best Practices](https://developer.bigcommerce.com/docs/start/best-practices)
+* [API rate limits](https://developer.bigcommerce.com/docs/start/best-practices/api-rate-limits)
+* [Best Practices for Using GraphQL APIs](https://developer.bigcommerce.com/docs/storefront/graphql/best-practices)
+* [Platform Limits \(Help Center\)](https://support.bigcommerce.com/s/article/Platform-Limits)
+
 ## Ensure your integration is up-to-date
 
-The B2B Edition team is actively developing both REST Management V3 API endpoints and the GraphQL Storefront API. We also integrate core BigCommerce updates as soon as possible.
+We make regular updates to B2B Edition’s  REST Management V3 API endpoints and the GraphQL Storefront API. This allows us to incorporate new features and maintain existing resources.
+
+Updating your integration ensures that it is compatible with any new or updated features, and also prevents it from using deprecated endpoints. Check our [release notes](https://developer.bigcommerce.com/release-notes) regularly to learn about any new features, as well as any upcoming changes to existing endpoints.
 
 ## API rate limits
 
+B2B Edition enforces a limit of **150 API requests per minute**. Any additional requests made in the time frame are rejected by the system until the interval resets. 
+
+This limit is applied across all integrations that make requests to B2B Edition APIs in your store. See our [best practices for API rate limits](https://developer.bigcommerce.com/docs/start/best-practices/api-rate-limits#best-practices) to learn how to manage them in your integration.
+
+### Endpoint-specific limits
+
+Some B2B Edition API endpoints have their own rate limits. For example, [Add a Company Attachment](https://developer.bigcommerce.com/b2b-edition/apis/rest-management/company/companies#add-a-company-attachment) has a limit of **15 requests per minute**. Check the reference documentation for a particular endpoint to confirm whether or not it has a specific quota.
+
 ### Concurrent API call rate limits
 
-Certain API resources rate limit concurrent requests. This is to ensure the performance and reliability of the platform for all of our users. API calls are metered on a per-store, per-endpoint basis. 
+Certain API resources rate limit concurrent requests. This is to ensure the performance and reliability of the platform for all of our users. API calls are metered on a per-store, per-endpoint basis.
 
-<Callout type="info">
-  Do not exceed 10,000 requests per hour. This limitation is subject to change.
-</Callout>
+B2B Edition API requests that invoke additional API calls to BigCommerce's APIs are also subject to BigCommerce rate limits. For example, the [Create a User](https://developer.bigcommerce.com/b2b-edition/apis/rest-management/user#create-a-user) endpoint creates a Company user account, which also generates a customer account in the BigCommerce control panel.
 
-B2B Edition API requests that invoke additional API calls to BigCommerce's APIs are also subject to BigCommerce rate limits.
+## Webhooks
+
+Currently, B2B Edition does not support the use of custom webhook events to listen for B2B Edition events, such as Company account creation or quote conversion. Some analogous events are supported by the standard BigCommerce APIs, and they can serve as viable alternatives with additional setup
+
+For example, you can listen for newly-created Company accounts by starting with the `store/customer/created` webhook, which fires when a new customer account is created. With a subsequent request to the [Get a User by Customer ID](https://developer.bigcommerce.com/b2b-edition/apis/rest-management/user#get-a-user-by-customer-id) endpoint, you confirm if the customer is associated with a Company account, and then you can use [Get Company Details](https://developer.bigcommerce.com/b2b-edition/apis/rest-management/company/companies#get-company-details) to compare its `createdAt` timestamp with the payload object of the original webhook.
+
+See [Webhooks Overview](https://developer.bigcommerce.com/docs/integrations/webhooks) to learn more about using webhooks in your integration.

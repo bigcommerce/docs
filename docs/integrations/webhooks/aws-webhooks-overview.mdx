@@ -1,0 +1,229 @@
+# Amazon Webhooks Overview 
+
+Amazon EventBridge is a serverless event bus that makes it easy to connect application components and build scalable, event-driven systems. With EventBridge, you can efficiently consume webhook events from the BigCommerce platform without managing your own webhook listener.
+
+This guide walks you through the steps to integrate EventBridge with BigCommerce webhooks:
+
+* [Set up an event source](#set-up-an-event-source) 
+* [Associate your event source with an event bus](#associate-an-event-bus) 
+* [Create rules for the event bus](#create-a-rule)
+* [Apply Targets to Rules](#apply-a-target-to-the-rule)
+* [Create a Webhook](#create-an-amazon-eventbridge-webhook)
+* [Receive the Event Message](#receive-the-event-message)
+
+## Prerequisites
+
+- To try out GraphQL queries and view responses, import our API examples into [Postman](https://www.getpostman.com/) or any other tool that allows testing of GraphQL queries. 
+- Enter the following environment variables before starting:
+
+| Credentials        | Variables               |
+|:-------------------|:------------------------|
+| Store variables    | zone                    |
+|                    | store_hash              |
+| OAuth credentials  | client_id               |
+
+
+
+## Set up an event source 
+
+Setting up an event source with EventBridge allows you to send event data to Amazon services directly instead of being responsible for receiving that traffic yourself through a front-end web server. You can set up an event source using a Create AWS Event Source query. Use the following GraphQL mutation to create an event source:
+
+<Tabs items={['Request', 'Response']}>
+<Tab>
+```graphql filename="Example query: Create Amazon Event Source" showLineNumbers copy
+POST https://{{zone}}/stores/{{store_hash}}/graphql
+mutation createEventSource($input: CreateEventSourceInput!){
+    webhook {
+        createEventSource(input: $input) {
+            eventSource {
+                id
+                awsAccount
+                arn
+                eventSourceName
+                eventSourceRegion
+            }
+        }
+    }
+}
+```
+
+```graphql filename="GraphQL variables" showLineNumbers copy
+{
+    "input" : { 
+        "awsAccount": "649666292244",
+        "eventSourceName": "Final-Test-1",
+        "eventSourceRegion": "US_EAST_1",
+        "clientId": "4yk6pb824t53hirbuz5akdr652lpjb2"
+    }
+}
+```
+</Tab>
+<Tab>
+```graphql filename="Example response: Create Amazon Event Source" showLineNumbers copy
+{
+  "data":{
+    "webhook": {
+       "createEventSource": {
+          "eventSource": {
+              "id": "bc/store/eventSource/9",
+              "awsAccount": "932486483912",
+              "arn": "arn:aws:us-east-1::event-source/aws.partner/bigcommerce.com/test/75fq9aqffI1I19pgc20b3xs8pulgqynm/final-test-1",
+              "eventSourceName": "final-test-1",
+              "eventSourceRegion": "US_EAST_1"
+              }
+            }
+          }
+        }
+}
+```
+</Tab>
+</Tabs>
+
+<Callout type="info">
+#### Make note of the `event_source_arn` and `event_source_name`
+Note: Save the `event_source_arn` and `event_source_name` from the response. While you won't need them during this step, you'll use them later to create the event bus and webhook. You can store them as environment variables in Postman.
+</Callout>
+
+## Associate an event bus 
+
+Now link the event source to an event bus using the following request:
+
+<Tabs items={['Request', 'Response']}>
+<Tab>
+```graphql filename="Example query: Create an Amazon event bus" showLineNumbers copy
+POST https://events.{{region}}.amazonaws.com/?Action=CreateEventBus&Version=2015-10-07
+{
+  "EventSourceName": "{{event_source_name}}",
+  "Name": "{{event_source_name}}"
+}
+```
+</Tab>
+<Tab>
+```graphql filename="Example response: Create an event bus" showLineNumbers copy
+{
+  "EventBusArn": "arn:aws:events:us-east-1:932486483912:event-bus/aws.partner/bigcommerce.com.test/75fq9aqffI1I9pgc20b3xs8pulgqynm/final-test-1"
+}
+```
+</Tab>
+</Tabs>
+
+For more information on how to create an event bus, see [CreateEventBus](https://docs.aws.amazon.com/eventbridge/latest/APIReference/API_CreateEventBus.html).
+
+## Create a rule 
+
+A rule filters and routes events from the event bus to targets like SQS. Use this query to create one:
+
+<Tabs items={['Request', 'Response']}>
+<Tab>
+```graphql filename="Example query: Create a rule" showLineNumbers copy
+POST https://events.{{regions}}.amazonaws.com/?Action=PutRule&Version=2015-10-07
+{
+  "Description": "Default rule to route all bigcommerce events.",
+  "EventBusName": "{{event_source_name}}",
+  "EventPattern": "{\"detail-type\":[\"bigCommerceWebhook\"]}",
+  "Name": "{{rule_name}}",
+  "State": "ENABLED"
+}
+```
+</Tab>
+<Tab>
+```graphql filename="Example response: Create a rule" showLineNumbers copy
+{
+  "RuleArn": "arn:aws:events:us-east-1:932486483912:rule/aws.partner/bigcommerce.com.test/75fq9aqffI1I9pgc20b3xs8pulgqynm/final-test-1/GenericRuleForBcEvents"
+}
+```
+</Tab>
+</Tabs>
+
+For more information on how to create or update a rule, see [PutRule](https://docs.aws.amazon.com/eventbridge/latest/APIReference/API_PutRule.html).
+
+## Apply a target to the rule 
+
+Next, add a target (such as an SQS queue) to the rule to receive the webhook payloads:
+
+<Tabs items={['Request', 'Response']}>
+<Tab>
+```graphql filename="Example query: Put Targets" showLineNumbers copy
+POST https://events.{{regions}}.amazonaws.com/?Action=PutTargets&Version=2015-10-07
+{
+  "EventBusName": "{{event_source_name}}",
+  "Rule": "{{rule_name}}",
+  "Targets": [
+    {
+      "Arn": "arn.aws:sqs:us-east-1:932486483912:{{sqs_name}}",
+      "Id": "{{sqs_id}}"
+    }
+]
+}
+```
+</Tab>
+<Tab>
+```graphql filename="Example response: Put Targets" showLineNumbers copy
+{
+  "FailedEntries": [],
+  "FailedEntryCount": 0
+}
+```
+</Tab>
+</Tabs>
+
+For more information on how to apply a target, see [PutTargets](https://docs.aws.amazon.com/eventbridge/latest/APIReference/API_PutTargets.html).
+
+## Create an Amazon EventBridge webhook 
+
+Use the GraphQL mutation below to create a BigCommerce webhook that sends events to EventBridge:
+
+<Tabs items={['Request', 'Response']}>
+<Tab>
+```graphql filename="Example query: Create Amazon EventBridge" showLineNumbers copy
+POST https://{{zone}}/stores/{{store_hash}}/graphql
+mutation createAwsEventBridgeWebhook($input: CreateEventBridgeWebhookInput!){
+    webhook {
+        createEventBridgeWebhook(input: $input) {
+            webhook {
+                id
+                scope
+                destination
+                isActive
+                createdAt 
+            }
+        }
+    }
+```
+
+```graphql filename="GraphQL variables" showLineNumbers copy
+{
+  "input": {
+    "destination": "{{event_source_arn}}",
+    "isActive": true,
+    "scope": "store/category/updated"
+     }
+}
+```
+</Tab>
+<Tab>
+```graphql filename="Example response: Create Amazon EventBridge" showLineNumbers copy
+{
+  "data": {
+    "webhook": {
+      "createEventBridgeWebhook": {
+          "webhook": {
+              "id": "bc/store/webhook/29458",
+              "scope": "store/category/updated",
+              "destination": "arn:aws:events:us-east-1::event-source/aws.partner/bigcommerce.com/test/75fq9aqffI1I9pgc20b3xs8pulgqynm/final-test-1",
+              "isActive": true,
+              "createdAt": "2023-05-31T17:17:17z"
+                  }
+                }
+            }
+          }
+      }
+```
+</Tab>
+</Tabs>
+
+## Receive the event message 
+
+Once everything is set up, trigger a webhook event (e.g., update a category) to send a message to SQS. Use the Receive Messages feature in Amazon SQS to inspect the payload.
+
+For more information on how to receive the event message, see [Amazon Simple Queue Service](https://aws.amazon.com/sqs/).

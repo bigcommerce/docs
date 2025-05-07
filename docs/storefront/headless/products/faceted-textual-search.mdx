@@ -1,14 +1,15 @@
 ---
 title: Faceted and Textual Search with the GraphQL Storefront API
-keywords: graphql, storefront, storefronts, search, get products, get all products, headless, 
+keywords: graphql, storefront, storefronts, search, get products, get all products, headless, faceted search, product filtering
+description: Learn how to implement faceted and textual search in your BigCommerce headless storefront using the GraphQL Storefront API.
 ---
 
 # Faceted and Textual Search with the GraphQL Storefront API
 
-Faceted search is a method of helping shoppers navigate a store's product inventory by categorizing products into various categories, brands, product features, and more. Textual search is a method of retrieving products based on product fields, for example, product name and description. BigCommerce's GraphQL Storefront API lets merchants on headless storefronts use faceted and textual search powered by results from our back-end search engine. These built-in capabilities also allow Stencil developers to take advantage of our search engine. 
+Faceted search is a method of helping shoppers navigate a store's product inventory by categorizing products into various categories, brands, product features, and more. Textual search is a method of retrieving products based on product fields, for example, product name and description. BigCommerce's GraphQL Storefront API lets merchants on headless storefronts use faceted and textual search powered by results from our back-end search engine. These built-in capabilities also allow Stencil developers to take advantage of our search engine.
 
 The GraphQL Storefront API's faceted and textual search lets you create the following features:
-- Load category pages with no selections, including both the facets and products relevant to the search results 
+- Load category pages with no selections, including both the facets and products relevant to the search results
 - Load category pages with facet selections for specific facets
 - Load featured products from specific categories
 - Quickly search products by using search terms (textual search)
@@ -225,6 +226,141 @@ If you sort by price, the products sort by either their `salePrice` or `basePric
   For a list of product fields that `searchTerm` searches, see the [Store Search Product Fields](https://support.bigcommerce.com/s/article/Store-Search?language=en_US#best-practices) article.
 </Callout>
 
+## Search and filtering with product attributes
+
+You can also search and filter to include only products that have a specific product attribute.
+
+<Callout type="info">
+- Product attributes are based on product variants and custom fields.
+- For products to be filtered by a variant or custom field filter, the specific variant or custom field filter must be enabled.
+</Callout>
+
+### Example
+This GraphQL query is searching for products using a **filter on a product attribute**—specifically, filtering by the attribute `Card Size` with a value of `Poker`. It is also retrieving:
+- The **matching products**, including their entityId, name, and customFields.
+- The available **filter options (facets)** that can be used for further refinement, such as `Category`, `Price`, and `Card Size`.
+
+<Tabs items={['Request', 'Response']}>
+<Tab>
+```graphql filename="Example Product Attributes" showLineNumbers copy
+query GetFacets {
+  site {
+    search {
+      searchProducts(
+        filters:
+        {
+          productAttributes: [{
+            attribute: "Card Size",
+            values: ["Poker"]
+          }]
+        }
+      ) {
+        products {
+          collectionInfo{
+            totalItems
+          }
+          edges {
+            node {
+              entityId
+              name
+              customFields{
+                edges{
+                  node{
+                    name
+                    value
+                  }
+                }
+              }
+            }
+          }
+        }
+        filters{
+          edges{
+            node{
+              name
+              isCollapsedByDefault
+            }
+          }
+        }
+      }
+    }
+  }
+}
+```
+</Tab>
+<Tab>
+```json filename="Example Product Attributes" showLineNumbers copy
+{
+  "data": {
+    "site": {
+      "search": {
+        "searchProducts": {
+          "products": {
+            "collectionInfo": {
+              "totalItems": 1
+            },
+            "edges": [
+              {
+                "node": {
+                  "entityId": 15137,
+                  "name": "[Sample] Smith Journal 13",
+                  "customFields": {
+                    "edges": [
+                      {
+                        "node": {
+                          "name": "Card Size",
+                          "value": "Poker"
+                        }
+                      },
+                    ]
+                  }
+                }
+              }
+            ]
+          },
+          "filters": {
+            "edges": [
+              {
+                "node": {
+                  "name": "Category",
+                  "isCollapsedByDefault": false
+                }
+              },
+              {
+                "node": {
+                  "name": "Price",
+                  "isCollapsedByDefault": false
+                }
+              },
+              {
+                "node": {
+                  "name": "Other",
+                  "isCollapsedByDefault": true
+                }
+              },
+              {
+                "node": {
+                  "name": "Color",
+                  "isCollapsedByDefault": false
+                }
+              },
+              {
+                "node": {
+                  "name": "Card Size",
+                  "isCollapsedByDefault": false
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+}
+```
+</Tab>
+</Tabs>
+
 ## Get facets
 
 To get facets, specify `filters` as a field in `searchProducts`. Here is an example request that returns the specified facets that have products with a rating between three and five: 
@@ -371,13 +507,403 @@ Note: The only facet query that works differently is `ProductAttributeSearchFilt
 
 For a complete list of facets, see the [GraphQL Storefront playground](/graphql-storefront/playground).
 
+## Category-Based Product Filtering
+
+In a product search, you can use AND and OR logic to control how multiple filters are applied:
+- **AND logic** requires a product to match all specified criteria, narrowing the results.
+- **OR logic** includes products that match any of the criteria, broadening the results.
+
+These behaviors determine how flexible or strict your search is when using categoryIdsFilter. This is specifically useful when constructing Product Landing Pages (PLPs) or expecting a different filtering behavior.
+
+### Comparison Summary:
+
+| Aspect | AND Logic | OR Logic |
+|--------|-----------|----------|
+| Match Criteria | Product must be in all specified categories | Product can be in any one of the specified categories |
+| Result Size | Usually smaller, since fewer products belong to multiple categories | Usually larger, since many products belong to at least one category |
+| Use Case Example | Find products that appear in both "Sale" and "New Arrivals" categories | Find products that appear in either "Accessories", "Shoes", or "Bags" |
+
+### AND Logic Example
+
+This example filters products to only those that appear in both of the specified categories:
+
+### Filter Logic
+- categoryIdsFilter: Defines the filter on product categories.
+- matchBehavior: AND:  Means products that belong **to both** category 1172 **and** category 250 will match the query.
+- entityIds: [1172, 250]: These are the category IDs being filtered on. Only products that are in **both** category 1172 **and** category 250 will be included in the results.
+
+<Tabs items={['Request', 'Response']}>
+<Tab>
+
+```graphql filename="Example AND Logic" showLineNumbers copy
+query AND_Categories {
+  site {
+    search {
+      searchProducts(
+        filters:{
+          categoryIdsFilter:{
+            matchBehavior: AND,
+            entityIds: [1172, 250]
+          }
+        }
+      ) {
+        products {
+          edges {
+            node {
+              entityId
+              name
+              categories{
+                edges{
+                  node{
+                    entityId
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+```
+</Tab>
+<Tab>
+
+```json filename="Example AND Logic" showLineNumbers copy
+{
+  "data": {
+    "site": {
+      "search": {
+        "searchProducts": {
+          "products": {
+            "edges": [
+              {
+                "node": {
+                  "entityId": 15133,
+                  "name": "ZZ Plant",
+                  "categories": {
+                    "edges": [
+                      {
+                        "node": {
+                          "entityId": 250
+                        }
+                      },
+                      {
+                        "node": {
+                          "entityId": 1100
+                        }
+                      },
+                      {
+                        "node": {
+                          "entityId": 1172
+                        }
+                      }
+                    ]
+                  },
+                  "customFields": {
+                    "edges": []
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+}
+```
+</Tab>
+</Tabs>
+
+### OR Logic Example
+
+This example filters products to only those that appear in either of the specified categories:
+
+### Filter Logic
+- categoryIdsFilter: Defines the filter on product categories.
+- matchBehavior: OR: Means products that belong to **either** category 1172 **or** 250 will match the query.
+- entityIds: [1172, 250]: These are the category IDs being filtered on.
+
+<Tabs items={['Request', 'Response']}>
+<Tab>
+
+```graphql filename="Example OR" showLineNumbers copy
+query OR_Categories {
+  site {
+    search {
+      searchProducts(
+        filters:{
+          categoryIdsFilter:{
+            matchBehavior: OR,
+            entityIds: [1172, 250]
+          }
+        }
+      ) {
+        products {
+          edges {
+            node {
+              entityId
+              name
+              categories{
+                edges{
+                  node{
+                    entityId
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+```
+</Tab>
+<Tab>
+
+```json filename="Example OR" showLineNumbers copy
+{
+  "data": {
+    "site": {
+      "search": {
+        "searchProducts": {
+          "products": {
+            "edges": [
+              {
+                "node": {
+                  "entityId": 113,
+                  "name": "Rolled Fire Extinguisher",
+                  "categories": {
+                    "edges": [
+                      {
+                        "node": {
+                          "entityId": 250
+                        }
+                      }
+                    ]
+                  },
+                  "customFields": {
+                    "edges": []
+                  }
+                }
+              },
+              {
+                "node": {
+                  "entityId": 115,
+                  "name": "Top",
+                  "categories": {
+                    "edges": [
+                      {
+                        "node": {
+                          "entityId": 250
+                        }
+                      }
+                    ]
+                  },
+                  "customFields": {
+                    "edges": []
+                  }
+                }
+              },
+              {
+                "node": {
+                  "entityId": 116,
+                  "name": "Square Fire Extinguisher",
+                  "categories": {
+                    "edges": [
+                      {
+                        "node": {
+                          "entityId": 250
+                        }
+                      }
+                    ]
+                  },
+                  "customFields": {
+                    "edges": []
+                  }
+                }
+              },
+              {
+                "node": {
+                  "entityId": 117,
+                  "name": " Flat Trim Fire Extinguisher",
+                  "categories": {
+                    "edges": [
+                      {
+                        "node": {
+                          "entityId": 250
+                        }
+                      }
+                    ]
+                  },
+                  "customFields": {
+                    "edges": [
+                      {
+                        "node": {
+                          "name": "ISBN",
+                          "value": "1234567890123"
+                        }
+                      }
+                    ]
+                  }
+                }
+              },
+              {
+                "node": {
+                  "entityId": 118,
+                  "name": "Fire Surface Mount",
+                  "categories": {
+                    "edges": [
+                      {
+                        "node": {
+                          "entityId": 250
+                        }
+                      }
+                    ]
+                  },
+                  "customFields": {
+                    "edges": [
+                      {
+                        "node": {
+                          "name": "Fit",
+                          "value": "Muscle"
+                        }
+                      }
+                    ]
+                  }
+                }
+              },
+              {
+                "node": {
+                  "entityId": 119,
+                  "name": " Rolled Fire Extinguisher Cabinet",
+                  "categories": {
+                    "edges": [
+                      {
+                        "node": {
+                          "entityId": 250
+                        }
+                      }
+                    ]
+                  },
+                  "customFields": {
+                    "edges": []
+                  }
+                }
+              },
+              {
+                "node": {
+                  "entityId": 120,
+                  "name": " Rolled-Flush Pull Fire Extinguisher Cabinet",
+                  "categories": {
+                    "edges": [
+                      {
+                        "node": {
+                          "entityId": 250
+                        }
+                      }
+                    ]
+                  },
+                  "customFields": {
+                    "edges": [
+                      {
+                        "node": {
+                          "name": "Fit",
+                          "value": "Tight"
+                        }
+                      }
+                    ]
+                  }
+                }
+              },
+              {
+                "node": {
+                  "entityId": 121,
+                  "name": "Rolled Fire Extinguisher Cabinet 1",
+                  "categories": {
+                    "edges": [
+                      {
+                        "node": {
+                          "entityId": 250
+                        }
+                      }
+                    ]
+                  },
+                  "customFields": {
+                    "edges": [
+                      {
+                        "node": {
+                          "name": "Fit",
+                          "value": "Tight"
+                        }
+                      }
+                    ]
+                  }
+                }
+              },
+              {
+                "node": {
+                  "entityId": 122,
+                  "name": "Red Fire Industries",
+                  "categories": {
+                    "edges": [
+                      {
+                        "node": {
+                          "entityId": 250
+                        }
+                      }
+                    ]
+                  },
+                  "customFields": {
+                    "edges": []
+                  }
+                }
+              },
+              {
+                "node": {
+                  "entityId": 123,
+                  "name": "Flat Trim Fire Extinguisher Cabinet",
+                  "categories": {
+                    "edges": [
+                      {
+                        "node": {
+                          "entityId": 250
+                        }
+                      }
+                    ]
+                  },
+                  "customFields": {
+                    "edges": [
+                      {
+                        "node": {
+                          "name": "Fit",
+                          "value": "Confort"
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+}
+```
+</Tab>
+</Tabs>
+
 ## Put it all together: get products and facets
 
 To get both products and facets, specify both `products` and `filters` fields in `searchProducts`. 
 
 <Tabs items={['Request', 'Response']}>
 <Tab>
-
 
 ```graphql filename="Example" showLineNumbers copy
 query {
@@ -596,6 +1122,13 @@ If a merchant has not enabled product filtering, you will receive an empty array
   }
 }
 ```
+
+## Limitations & Recommendations
+
+| Limitation | Recommendation |
+|------------|----------------|
+| Textual search input is limited to 255 characters. | If you're accepting user input for search (e.g., via a search bar), you should: <ul><li>Enforce or truncate the input to 255 characters.</li><li>Optionally notify users if their input is too long.</li></ul> |
+| When you query for the category facet, only top-level (root) categories are returned in the facets by default, even if you are performing a product search that includes subcategories via `search-subcategories=true`. | If you need subcategory-level filtering in the UI (e.g., in a sidebar filter), you typically need to: <ul><li>Query the category tree separately (via the Catalog API or Storefront API `site.categories`).</li><li>Build your own custom filtering UI that maps products to subcategories manually.</li><li>Apply subcategory filters on the query directly, rather than relying on the facet metadata.</li></ul> |
 
 ## Resources
 

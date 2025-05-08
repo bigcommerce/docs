@@ -149,6 +149,9 @@ paths:
                             class_id: '0'
                             name: Default Tax Class
                           tax_exempt: false
+                          customs_information:
+                            country_of_origin: 'AU'
+                            hs_code: '817355'
                           type: item
                           wrapping:
                             id: d2675662-6326-4a23-9107-ab71fa6a21a1
@@ -254,6 +257,9 @@ paths:
                                     name: Brutal Tax
                                     code: US
                                   id: Brutal Tax
+                            duties:
+                              - name: Brutal Duty
+                                amount: 50
                             type: item
                             wrapping:
                               id: d2675662-6326-4a23-9107-ab71fa6a21a1
@@ -942,6 +948,18 @@ components:
           description: Merchants may opt to include additional properties that a tax provider can choose to support, factoring these values into tax calculation.
           items:
             $ref: '#/components/schemas/request-item-tax-property'
+        customs_information:
+          type: object
+          description: Merchants may opt to include customs information data in the quote request allowing tax providers to supply calculated duties in addition to taxes. See [Customs Information API](/docs/rest-management/shipping/customs-information) for more information on configuring customs information.
+          properties:
+            country_of_origin:
+              type: string
+              description: The country of manufacture, production, or growth represented in ISO 3166-1 alpha-2 format, when available.
+              example: 'AU'
+            hs_code:
+              type: string
+              description: The item's harmonized tariff code for the document's destination country, when available.
+              example: '817355'
       required:
         - id
         - price
@@ -1227,9 +1245,9 @@ components:
     response-item:
       type: object
       description: |-
-        The tax liabilities calculated for a specific item.
+        The tax liabilities, and any duties, calculated for a specific item.
 
-        Note: Tax liabilities should be calculated with **quantity** accounted for.
+        Note: Tax liabilities and duties should be calculated with the item's **quantity** accounted for.
       title: Item
       properties:
         id:
@@ -1237,6 +1255,11 @@ components:
           description: A unique identifier for the line item these tax liabilities are calculated for. Must match the corresponding request line item ID.
         price:
           $ref: '#/components/schemas/response-taxprice'
+        duties:
+          type: array
+          description: Any duties that applied to this item.
+          items:
+            $ref: '#/components/schemas/CustomDuty'
       required:
         - id
         - price
@@ -1301,6 +1324,19 @@ components:
         - rate
         - amount
       x-internal: false
+    CustomDuty:
+      type: object
+      properties:
+        name:
+          type: string
+          description: The human-readable name of this custom duty. May not be empty.
+        amount:
+          type: number
+          format: double
+          description: The absolute amount that the shopper will be charged for this custom duty.
+      required:
+        - name
+        - amount
     item_type:
       type: string
       description: |-

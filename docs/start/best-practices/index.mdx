@@ -53,6 +53,37 @@ The [BigCommerce Ruby API client](https://github.com/bigcommerce/bigcommerce-api
 
 Looking for more information on handling requests? Continue with [API rate limits](/docs/start/best-practices/api-rate-limits) to learn about our best practices.
 
+## Use cursor-based pagination whenever possible
+
+For larger data sets, pagination is necessary to read through all the information being retrieved. Generally, the BigCommerce API provides this functionality through an `offset` structure, but some endpoints include a `cursor` structure either in addition to, or in lieu of, the `offset` structure.
+
+While you may use either `offset` or `cursor` pagination wherever they exist, `cursor` pagination is both more efficient and less computationally complex. As such, `cursor` pagination is the recommended method.
+
+### Cursor pagination
+
+Wherever available, `cursor` pagination is used by providing a limit with a request using either a `first`, `last`, or explicit `limit` directive. If a `cursor` is also provided with the request, it will serve as the starting point for data retrieval.
+
+In order to achieve full pagination, the ending `cursor` of returned data also includes a flag indicating whether another page of data exists.
+
+An example workflow for `cursor` pagination is outlined below:
+
+1. Make a request with a set `limit`.
+2. Check if there is another page, and make another request on the `endCursor` associated with the response.
+3. Repeat step 2. until no further pages exist after the `endCursor`.
+
+For explicit examples of `cursor` pagination, refer to [GraphQL Storefront API - Pagination](/docs/storefront/graphql#pagination).
+
+### Offset pagination
+
+By contrast with `cursor` pagination, `offset` pagination takes a `limit` and a starting `offset`, which must be compared against the totality of data being retrieved. This increases computational complexity by requiring extra comparisons and computations before moving to the next request.
+
+An example workflow for `offset` pagination is outlined below:
+
+1. Make a request with a set `limit` of returned data and an `offset` of `0`.
+2. When the response is returned, verify whether another request is required.
+3. If necessary, make another request with the same `limit` and `offset` increased by the value of `limit`.
+4. Repeat steps 2. and 3. until no further requests are required.
+
 ## Resources
 
 ### API platform
@@ -84,6 +115,7 @@ When building a headless storefront, it's best practice to group related request
 * [REST Storefront Cart API](/docs/rest-storefront/carts) 
 * [Upsert price list records](/docs/rest-management/price-lists/price-lists-records#upsert-price-list-records)
 * [BigCommerce Ruby API client (GitHub)](https://github.com/bigcommerce/bigcommerce-api-ruby)
+* [Offset and Cursor Pagination explained](https://dev.to/jackmarchant/offset-and-cursor-pagination-explained-b89)
 
 ### External articles
 

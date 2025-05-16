@@ -1,499 +1,347 @@
 openapi: 3.0.0
 info:
   title: Super Admin
-  version: '1.0'
-  description: Super Admin is a group of sales representatives assigned to the company.
+  description: |-
+    B2B Edition makes use of "Super Admin" accounts that generally serve one of several purposes, but may be used as needed. Some examples include
+    * Sales representatives who act on behalf of one or more Company accounts
+    * Secondary account managers who are restricted from accessing the BigCommerce control panel
+
+    ## Super Admins and Account Hierarchy
+
+    Companies within [Account Hierarchies](/b2b-edition/apis/rest-management/company#company-account-hierarchy) restrict Super Admin access to some data. Super Admins may not access aggregate data such as subsidiary orders and users for the Account Hierarchy. In addition, if a Super Admin needs to masquerade as a subsidiary Company, they will need to be explicitly assigned to the subsidiary.
+
+    **Note:** For stores without Account Hierarchies enabled, Super Admins may be used as a workaround to provide storefront administrator access to a user for more than one Company account, essentially allowing the user to serve as an account owner for their assigned Companies.
+
+    For more general information about Super Admins, refer to [Companies (Help Center)](https://support.bigcommerce.com/s/article/B2B-Edition-User-Guide-Company-and-Customer-Functions).
+
+    The storefront endpoints provided for Super Admins have limited scope. For more advanced management of specific Super Admin, use the [Server-to-Server Super Admin API](/b2b-edition/apis/rest-management/super-admin).
   contact:
     name: BigCommerce
     url: 'https://www.bigcommerce.com'
     email: support@bigcommerce.com
+  version: v2
+  termsOfService: 'https://www.bigcommerce.com/terms'
 servers:
   - url: 'https://api-b2b.bigcommerce.com/api/v2'
+
 security:
   - BearerToken: []
-paths:
-  '/sales-reps/{userId}/companies/{companyId}/begin-masq':
-    parameters:
-      - schema:
-          type: string
-        name: companyId
-        in: path
-        required: true
-        description: Unique company ID in B2B Edition
-      - schema:
-          type: string
-        name: userId
-        in: path
-        required: true
-        description: Unique user ID in B2B Edition
-    put:
-      summary: Super Admin Begin Masquerade
-      operationId: put-sales-reps-customerId-companies-companyId-begin-masq
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                description: ''
-                type: object
-                properties:
-                  code:
-                    type: number
-                  message:
-                    type: string
-                    minLength: 1
-                  data:
-                    type: object
-                    properties:
-                      email:
-                        type: string
-                        minLength: 1
-                      firstName:
-                        type: string
-                        minLength: 1
-                      lastName:
-                        type: string
-                        minLength: 1
-                      phoneNumber:
-                        type: string
-                    required:
-                      - email
-                      - firstName
-                      - lastName
-                      - phoneNumber
-                required:
-                  - code
-                  - message
-                  - data
-                x-examples:
-                  example-1:
-                    code: 200
-                    message: SUCCESS
-                    data:
-                      email: levi.tuo2@silksoftware.com
-                      firstName: levi
-                      lastName: test
-                      phoneNumber: ''
-              examples:
-                example-1:
-                  value:
-                    code: 200
-                    message: SUCCESS
-                    data:
-                      email: example@example.com
-                      firstName: Jo
-                      lastName: Sweet
-                      phoneNumber: '123456789'
-      description: |-
-        Update status for when a super admin masquerades as a company by userId and companyId.
-        Equivalent Storefront GraphQL API Mutation: `superAdminBeginMasquerade`. For more information, see the [GraphQL Playground](https://api-b2b.bigcommerce.com/graphql/playground).
-      tags:
-        - Super Admin
-  '/sales-reps/{userId}/companies/{companyId}/end-masq':
-    parameters:
-      - schema:
-          type: string
-        name: companyId
-        in: path
-        required: true
-        description: Unique ID of a company in B2B Edition
-      - schema:
-          type: string
-        name: userId
-        in: path
-        required: true
-        description: Unique ID of a user in B2B Edition
-    put:
-      summary: Super Admin End Masquerade
-      operationId: put-sales-reps-customerId-companies-companyId-end-masq
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                description: ''
-                type: object
-                properties:
-                  code:
-                    type: number
-                  message:
-                    type: string
-                    minLength: 1
-                  data:
-                    type: object
-                    properties: {}
-                required:
-                  - code
-                  - message
-                  - data
-                x-examples:
-                  example-1:
-                    code: 200
-                    message: SUCCESS
-                    data: {}
-              examples:
-                example-1:
-                  value:
-                    code: 200
-                    message: SUCCESS
-                    data: {}
-      description: |-
-        Update status for when a super admin masquerades as a company by userId and companyId.
-        Equivalent Storefront GraphQL API Mutation: `superAdminEndMasquerade`. For more information, see the [GraphQL Playground](https://api-b2b.bigcommerce.com/graphql/playground).
-      tags:
-        - Super Admin
-  '/sales-reps/{customerId}/companies/masquerading':
-    parameters:
-      - schema:
-          type: string
-        name: customerId
-        in: path
-        required: true
-        description: Unique ID of a company in BigCommerce
-    get:
-      summary: Get Masquerading Company
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                description: ''
-                type: object
-                x-examples:
-                  example-1:
-                    code: 200
-                    message: SUCCESS
-                    data:
-                      companyName: levi-test
-                      description: ''
-                      addressLine1: address line 1
-                      addressLine2: address line 2
-                      companyStatus: '1'
-                      city: Denver
-                      state: ''
-                      zipCode: '80022'
-                      country: Aruba
-                      companyId: '5716'
-                      catalogId: '5'
-                properties:
-                  code:
-                    type: number
-                  message:
-                    type: string
-                    minLength: 1
-                  data:
-                    type: object
-                    required:
-                      - companyName
-                      - description
-                      - addressLine1
-                      - addressLine2
-                      - companyStatus
-                      - city
-                      - state
-                      - zipCode
-                      - country
-                      - companyId
-                      - catalogId
-                    properties:
-                      companyName:
-                        type: string
-                        minLength: 1
-                        description: Company name
-                      description:
-                        type: string
-                        description: Company description
-                      addressLine1:
-                        type: string
-                        minLength: 1
-                        description: Company address line 1
-                      addressLine2:
-                        type: string
-                        minLength: 1
-                        description: Company address line 2
-                      companyStatus:
-                        type: string
-                        minLength: 1
-                        description: Company status
-                      city:
-                        type: string
-                        minLength: 1
-                        description: Company city
-                      state:
-                        type: string
-                        description: Company state
-                      zipCode:
-                        type: string
-                        minLength: 1
-                        description: Company zip code
-                      country:
-                        type: string
-                        minLength: 1
-                        description: Company country
-                      companyId:
-                        type: string
-                        minLength: 1
-                      catalogId:
-                        type: string
-                        minLength: 1
-                        description: Company price list ID
-                      extraFields:
-                        type: array
-                        items:
-                          type: object
-                          properties:
-                            fieldName:
-                              type: string
-                            fieldValue:
-                              type: string
-                required:
-                  - code
-                  - message
-                  - data
-              examples:
-                example-1:
-                  value:
-                    code: 200
-                    message: SUCCESS
-                    data:
-                      companyName: company name
-                      description: ''
-                      addressLine1: address line 1
-                      addressLine2: address line 2
-                      companyStatus: '1'
-                      city: Denver
-                      state: ''
-                      zipCode: '80022'
-                      country: Aruba
-                      companyId: '5716'
-                      catalogId: '5'
-                      extraFields:
-                        - fieldName: test
-                          fieldValue: test
-      operationId: get-sales-reps-customerId-companies-masquerading
-      description: |-
-        Get company information for the current super admin masquerading.
-        Equivalent Storefront GraphQL API Query: `superAdminMasquerading`. For more information, see the [GraphQL Playground](https://api-b2b.bigcommerce.com/graphql/playground).
-      tags:
-        - Super Admin
-  '/sales-reps/{salesRepId}/companies':
-    parameters:
-      - schema:
-          type: string
-        name: salesRepId
-        in: path
-        required: true
-        description: Unique ID of super admin
-    get:
-      summary: Get Company List by Super Admin
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                description: ''
-                type: object
-                x-examples:
-                  example-1:
-                    code: 200
-                    message: SUCCESS
-                    data:
-                      list:
-                        - companyName: stanton1112
-                          bcGroupName: stanton1112
-                          companyAdminName: judy he
-                          companyEmail: judy.he@silksoftware.com
-                          companyId: '84'
-                          extraFields:
-                            - fieldName: company_tax_exempt_code
-                              labelName: Company Tax Exempt Code
-                              dataType: '0'
-                              isRequired: '0'
-                              fieldValue: ''
-                        - companyName: james
-                          bcGroupName: james
-                          companyAdminName: user btc
-                          companyEmail: jamessen@1111.com
-                          companyId: '53'
-                          extraFields:
-                            - fieldName: company_tax_exempt_code
-                              labelName: Company Tax Exempt Code
-                              dataType: '0'
-                              isRequired: '0'
-                              fieldValue: ''
-                        - companyName: XYZ Inc.phone
-                          bcGroupName: XYZ Inc.phone
-                          companyAdminName: Mary Smith
-                          companyEmail: Marketingphone@xyz.com
-                          companyId: '376'
-                          extraFields:
-                            - fieldName: company_tax_exempt_code
-                              labelName: Company Tax Exempt Code
-                              dataType: '0'
-                              isRequired: '0'
-                              fieldValue: ''
-                      pagination:
-                        totalCount: 3
-                        perCount: 3
-                        offset: 0
-                        limit: 10
-                properties:
-                  code:
-                    type: number
-                  message:
-                    type: string
-                    minLength: 1
-                  data:
-                    type: object
-                    required:
-                      - list
-                      - pagination
-                    properties:
-                      list:
-                        type: array
-                        uniqueItems: true
-                        minItems: 1
-                        items:
-                          type: object
-                          properties:
-                            companyName:
-                              type: string
-                              minLength: 1
-                            bcGroupName:
-                              type: string
-                              minLength: 1
-                              description: Company BC customer group name
-                            companyAdminName:
-                              type: string
-                              minLength: 1
-                            companyEmail:
-                              type: string
-                              minLength: 1
-                            companyId:
-                              type: string
-                              minLength: 1
-                            extraFields:
-                              type: array
-                              uniqueItems: true
-                              minItems: 1
-                              items:
-                                type: object
-                                properties:
-                                  fieldName:
-                                    type: string
-                                    minLength: 1
-                                  labelName:
-                                    type: string
-                                    minLength: 1
-                                  dataType:
-                                    type: string
-                                    minLength: 1
-                                  isRequired:
-                                    type: string
-                                    minLength: 1
-                                  fieldValue:
-                                    type: string
-                                required:
-                                  - fieldName
-                                  - labelName
-                                  - dataType
-                                  - isRequired
-                                  - fieldValue
-                          required:
-                            - companyName
-                            - bcGroupName
-                            - companyAdminName
-                            - companyEmail
-                            - companyId
-                      pagination:
-                        type: object
-                        required:
-                          - totalCount
-                          - perCount
-                          - offset
-                          - limit
-                        properties:
-                          totalCount:
-                            type: number
-                          perCount:
-                            type: number
-                          offset:
-                            type: number
-                          limit:
-                            type: number
-                required:
-                  - code
-                  - message
-                  - data
-              examples:
-                example-1:
-                  value:
-                    code: 200
-                    message: SUCCESS
-                    data:
-                      list:
-                        - companyName: company name
-                          bcGroupName: bc group name
-                          companyAdminName: judy he
-                          companyEmail: example@example.com
-                          companyId: '84'
-                          extraFields:
-                            - fieldName: company_tax_exempt_code
-                              labelName: Company Tax Exempt Code
-                              dataType: '0'
-                              isRequired: '0'
-                              fieldValue: ''
-                      pagination:
-                        totalCount: 1
-                        perCount: 1
-                        offset: 0
-                        limit: 10
-      operationId: get-sales-reps-salesRepId-companies
-      description: |-
-        Get companies by Super Admin ID.
-        Equivalent Storefront GraphQL API Query: `superAdminCompanies`. For more information, see the [GraphQL Playground](https://api-b2b.bigcommerce.com/graphql/playground).
-      tags:
-        - Super Admin
-      parameters:
-        - schema:
-            type: integer
-          in: query
-          name: offset
-        - schema:
-            type: integer
-          in: query
-          name: limit
-        - schema:
-            type: string
-          in: query
-          name: orderBy
-        - schema:
-            type: string
-            example: 'DESC, ASC'
-          in: query
-          name: sortBy
-        - schema:
-            type: string
-          in: query
-          name: q
-        - schema:
-            type: string
-          in: query
-          name: companyId
-components:
-  schemas: {}
-  securitySchemes:
-    BearerToken:
-      description: |-
-        ### Authentication header
-        | Header | Argument | Description |
-        |:-------|:---------|:------------|
-        |`Authorization`|`Bearer {{B2B_JWT_TOKEN}}`| You can obtain this token using the steps described in the [REST Storefront API](/b2b-edition/docs/authentication#rest-storefront-api) section of the [Authentication for hosted storefront](https://developer.bigcommerce.com/b2b-edition/docs/authentication) article. |
-      type: http
-      scheme: bearer
 tags:
   - name: Super Admin
+
+paths:
+  /sales-reps/{superAdminId}/companies:
+    parameters:
+      - $ref: "#/components/parameters/superAdminId"
+    get:
+      parameters:
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+          description: "Number of results to skip before displaying the current page."
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+          description: "Maximum number of results to display per page. Values over `250` will return only `250` results."
+        - name: orderBy
+          in: query
+          schema:
+            type: string
+            enum:
+              - "companyName"
+              - "companyAdminName"
+              - "companyEmail"
+          description: "Determines the Company field by which results will be sorted. If this is omitted, results are sorted by `companyId`."
+        - name: sortBy
+          in: query
+          schema:
+            type: string
+            enum:
+              - "DESC"
+              - "ASC"
+            default: "DESC"
+          description: "Determines the sort order (ascending or descending) of the results."
+        - name: q
+          in: query
+          schema:
+            type: string
+          description: "Search string for filtering results. If this parameter is provided, results will include entries with a partial match in `companyName` or `companyAdminEmail`."
+          example: "Great Buys"
+        - name: companyId
+          in: query
+          schema:
+            type: string
+          description: "Search string for filtering results by `companyId`. Only returns data with an exact match in `companyId`. This ID does **not** match the ID shown in B2B Edition. To get a specific Company's ID, use the [Server-to-Server Company API](b2b-edition/apis/rest-management/company)."
+          example: 654321
+      tags:
+        - Super Admin
+      summary: "Get a Super Admin's Assigned Companies"
+      operationId: get-sales-reps-salesRepId-companies
+      description: |-
+        Returns the list of Companies that the Super Admin is assigned to.
+
+        Equivalent Storefront GraphQL API Query: `superAdminCompanies`. For more information, see the [GraphQL Playground](https://api-b2b.bigcommerce.com/graphql/playground).
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: https://raw.githubusercontent.com/bigcommerce/docs/main/docs/b2b-edition/models/response/code-object-message.yaml
+                  - properties:
+                      code:
+                        default: 200
+                      message:
+                        default: SUCCESS
+                      data:
+                        properties:
+                          list:
+                            type: array
+                            uniqueItems: true
+                            items:
+                              allOf:
+                                - $ref: "#/components/schemas/companyInfo_BASE"
+                                - properties:
+                                    bcGroupName:
+                                      type: string
+                                      description: "The BigCommerce customer group associated with the Company. If [Independent Company behavior](https://support.bigcommerce.com/s/article/Companies-and-Customer-Groups) is enabled, this field is not used."
+                                      example: "Great Buys Customers"
+                                    companyAdminName:
+                                      type: string
+                                      description: "The name of the primary admin user for the Company."
+                                      example: "Marie Curie"
+                                    companyEmail:
+                                      type: string
+                                      format: email
+                                      description: "The email address of the primary admin user for the Company."
+                                      example: "admin@example.com"
+                      pagination:
+                        type: object
+                        properties:
+                          totalCount:
+                            type: integer
+                            description: "The total number of items in the results."
+                            example: 279
+                          perCount:
+                            type: integer
+                            description: "The total number of items matching the search query."
+                            example: 33
+                          offset:
+                            type: integer
+                            description: "The starting offset for the current page of the response."
+                            default: 0
+                          limit:
+                            type: integer
+                            description: "The maximum number of items allowed per page of the response."
+                            example: 10
+                            maximum: 250
+        '403':
+          description: |-
+            Unauthorized
+            
+            This response is returned if the Bearer Token included with the request does not match the `superAdminId`.
+  /sales-reps/{superAdminId}/companies/masquerading:
+    parameters:
+      - $ref: "#/components/parameters/superAdminId"
+    get:
+      tags:
+        - Super Admin
+      summary: "Get a Super Admin's Current Masquerading Company"
+      operationId: get-sales-reps-customerId-companies-masquerading
+      description: |-
+        Returns basic details for the Company the Super Admin is currently masquerading as.
+
+        Equivalent Storefront GraphQL API Query: `superAdminMasquerading`. For more information, see the [GraphQL Playground](https://api-b2b.bigcommerce.com/graphql/playground).
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: https://raw.githubusercontent.com/bigcommerce/docs/main/docs/b2b-edition/models/response/code-object-message.yaml
+                  - properties:
+                      code:
+                        default: 200
+                      message:
+                        default: SUCCESS
+                      data:
+                        allOf:
+                          - $ref: "#/components/schemas/companyInfo_BASE"
+                          - properties:
+                              description:
+                                type: string
+                                description: "The description of the Company. Usually matches `companyName`."
+                                example: "Great Buys Sales"
+                              companyStatus:
+                                type: string
+                                description: "The status of the Company. See [Company Status Codes](/b2b-edition/apis/rest-management/company/) for more information."
+                                example: "1"
+                              addressLine1:
+                                type: string
+                                description: "The first line of the Company's primary address."
+                                example: "123 Test Street"
+                              addressLine2:
+                                type: string
+                                description: "The second line of the Company's primary address."
+                                example: "Building 1"
+                              city:
+                                type: string
+                                description: "The city for the Company's primary address."
+                                example: "Austin"
+                              state:
+                                type: string
+                                description: "The full name of the state on the Company's primary address."
+                                example: "Texas"
+                              zipCode:
+                                type: string
+                                description: "The postal code for the Company's primary address."
+                                example: "78726"
+                              country:
+                                type: string
+                                description: "The full name of the country on the Company's primary address."
+                                example: "United States"
+                              catalogId:
+                                type: string
+                                description: "The ID of the price list assigned to the Company account. This field is read-only for stores using [Independent Companies Behavior](/b2b-edition/apis/rest-management/company/companies/#independent-vs-dependent-companies-behavior)."
+                                example: "123456"
+        '403':
+          description: |-
+            Unauthorized
+            
+            This response is returned if the Bearer Token included with the request does not match the `superAdminId`.
+  /sales-reps/{superAdminId}/companies/{companyId}/begin-masq:
+    parameters:
+      - $ref: "#/components/parameters/superAdminId"
+      - $ref: "#/components/parameters/companyId"
+    put:
+      tags:
+        - Super Admin
+      summary: "Begin a Super Admin Masquerade"
+      operationId: put-sales-reps-customerId-companies-companyId-begin-masq
+      description: |-
+        Updates the status of the Super Admin associated with `superAdminId` to masquerade as the Company associated with `companyId`.
+
+        Equivalent Storefront GraphQL API Mutation: `superAdminBeginMasquerade`. For more information, see the [GraphQL Playground](https://api-b2b.bigcommerce.com/graphql/playground).
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: https://raw.githubusercontent.com/bigcommerce/docs/main/docs/b2b-edition/models/response/code-object-message.yaml
+                  - properties:
+                      message:
+                        default: SUCCESS
+                      code:
+                        default: 200
+                      data:
+                        properties:
+                          email:
+                            type: string
+                            format: email
+                            description: "The email address associated with the Super Admin account."
+                            example: "marie@example.com"
+                          firstName:
+                            type: string
+                            description: "The first name associated with the Super Admin account in B2B Edition."
+                            example: "Marie"
+                          lastName:
+                            type: string
+                            description: "The last name associated with the Super Admin account in B2B Edition."
+                            example: "Curie"
+                          phoneNumber:
+                            type: string
+                            description: "The phone number associated with the Super Admin account in B2B Edition."
+                            example: 9876543210
+  /sales-reps/{superAdminId}/companies/{companyId}/end-masq:
+    parameters:
+      - $ref: "#/components/parameters/superAdminId"
+      - $ref: "#/components/parameters/companyId"
+    put:
+      tags:
+        - Super Admin
+      summary: "End a Super Admin Masquerade"
+      operationId: put-sales-reps-customerId-companies-companyId-end-masq
+      description: |-
+        Updates the status of the Super Admin associated with `superAdminId`, ending their masquerade as the Company associated with `companyId`.
+
+        Equivalent Storefront GraphQL API Mutation: `superAdminEndMasquerade`. For more information, see the [GraphQL Playground](https://api-b2b.bigcommerce.com/graphql/playground).
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: https://raw.githubusercontent.com/bigcommerce/docs/main/docs/b2b-edition/models/response/code-object-message.yaml
+                  - properties:
+                      message:
+                        default: SUCCESS
+                      code:
+                        default: 200
+components:
+  schemas:
+    companyInfo_BASE:
+      type: object
+      properties:
+        companyName:
+          type: string
+          description: "The name of the business associated with the Company account."
+          example: "Great Buys, Inc."
+        companyId:
+          type: string
+          description: "Unique numeric ID of the Company account. This is a **read-only** field."
+          example: "123456"
+        extraFields:
+          type: array
+          uniqueItems: true
+          items:
+            type: object
+            properties:
+              fieldName:
+                type: string
+                description: "The name of the extra field."
+                example: "Company Tax Code"
+              fieldValue:
+                type: string
+                description: "The value of the extra field."
+                example: "Tax Code G"
+  parameters:
+    superAdminId:
+      name: superAdminId
+      in: path
+      required: true
+      schema:
+        type: integer
+      example: 1
+      description: "The unique numeric ID assigned to the Super Admin by B2B Edition. This ID does **not** match the BigCommerce customer account ID. To find the ID of a given Super Admin account, use the [Server-to-Server Super Admin API](/b2b-edition/apis/rest-management/super-admin)."
+    companyId:
+      name: companyId
+      in: path
+      required: true
+      schema:
+        type: integer
+      description: "The unique numeric ID for a Company to which the Super Admin is assigned. To find a Company ID, use the [Server-to-Server B2B Company API](/b2b-edition/apis/rest-management/company). For stores using Dependent Company behavior, this **does not** match the ID found in B2B Edition."
+      example: 123456
+      
+  securitySchemes:
+    BearerToken:
+      description: '### Authentication header
+
+        | Header | Argument | Description |
+
+        |:-------|:---------|:------------|
+
+        |`Authorization`|`Bearer {{B2B_JWT_TOKEN}}`| You can obtain this token using
+        the steps described in the [REST Storefront API](/b2b-edition/docs/authentication#rest-storefront-api)
+        section of the [Authentication for hosted storefront](https://developer.bigcommerce.com/b2b-edition/docs/authentication)
+        article. |'
+      type: http
+      scheme: bearer

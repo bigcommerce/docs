@@ -1,294 +1,135 @@
 openapi: 3.0.1
 info:
-  title: Quote
-  description: BigCommerce B2B Edition Quote
+  title: Quotes
+  description: |-
+    B2B Edition sales quotes allow you to build tailored orders on behalf of your B2B buyers, B2C customers, and guest shoppers while also incorporating your business’s terms and conditions.
+
+    With sales quotes, you can make customizations that are not available for buyers on your storefront, such as:
+
+    * Custom line item pricing and discounts, which can be optionally hidden from the recipient
+    * Offering custom products, catalog-only items, or items that are currently out of stock for typical checkouts
+    * Unique shipping methods for orders that require special considerations, such as LTL Freight
+    * Expiration dates to ensure the quote is purchased in a given time period
+
+    The Quotes API provides a variety of endpoints for managing the different steps of the backend quoting process. You can create and update sales quotes, add shipping methods, generate cart and checkout URLs, and retrieve detailed information.
+
+    The Quotes API is also known as *Request for Quote*, and endpoint URLs are formatted as `/rfq` instead of `/quotes`.
+
+    ## Custom Shipping
+
+    B2B Edition supports the ability to supply custom shipping methods and rates on sales quotes. This is helpful for adding accurate shipping costs to quotes with shipping dimensions or destinations that may not be supported in your standard checkout.
+
+    Custom shipping can be enabled from **Settings › Quotes** in your B2B Edition control panel. This is required for the following endpoints: 
+
+    * [Get All B2B Quote Custom Shipping Methods](#get-all-b2b-quote-custom-shipping-methods)
+    * [Select a Shipping Rate for a Quote](#select-a-shipping-rate-for-quote) (if you are adding a custom shipping rate)
+    * [Remove Selected Shipping Rate from a Quote](#remove-selected-shipping-rate-for-quote) (if you are removing a custom shipping rate)
+
+    See [B2B Edition Settings (Help Center)](https://support.bigcommerce.com/s/article/B2B-Edition-Settings) to learn more about enabling and configuring custom shipping methods.
+
+    ## Custom Items
+
+    Non-purchasable products are added to sales quotes as *custom items*. 
+
+    A custom item is a one-time line item which uses the SKU and pricing of the selected product, but not the product’s ID. Note that the missing product ID can cause downstream issues if you have an external integration which uses the ID to sync information and events.
+
+    Custom items can be added to a quote via the [Create a Quote](#create-a-quote) and [Update a Quote](#update-a-quote) endpoints. In order to use custom items, your store must meet the following prerequisites:
+
+    * Your store must use the Buyer Portal experience.
+    * You must enable custom items from **Settings › Quotes** in your B2B Edition control panel.
+    * Custom shipping must also be enabled in order to add shipping methods and rates to the quote.
+
+    To learn more about custom items and their considerations, see [Order Management and Sales Representative Functions (Help Center)](https://support.bigcommerce.com/s/article/B2B-Edition-Sales-Representative-Functions). For information on enabling custom items, see [B2B Edition Settings (Help Center)](https://support.bigcommerce.com/s/article/B2B-Edition-Settings).
+
+    ## Quote Statuses
+
+    Sales quotes have seven different statuses corresponding to the different parts of a quote’s life cycle. 
+
+    Each status is assigned a numeric ID, which appears in the `status` field of the response body when using the [Get All Quotes](#get-all-quotes) and [Get Quote Details](#get-quote-details) endpoints. You can also use a quote’s `status` as a parameter of the [Get All Quotes](#get-all-quotes) endpoint in order to filter for quotes in a specific status.
+
+    See the table below for information on each quote status, as well as its corresponding `status` code.
+    | Status Name | Description | Status ID |
+    | --- | --- | --- |
+    | New | The quote was created from the Buyer Portal and has not been processed yet. | 0 |
+    | In Process | The quote was created by a member of your staff and submitted back to the buyer. | 2 |
+    | Updated by customer | The buyer sent a message from the quote. | 3 |
+    | Ordered | The quote was purchased from the storefront or manually converted into an order. | 4 |
+    | Expired | The quote was not purchased before its expiration date. | 5 |
+    | Archived | The quote is hidden from the Quotes area of the Buyer Portal and cannot be purchased. | 6 |
+    | Draft | The quote was started by a member of your staff, but has not yet been submitted to the buyer. | 7 |
   contact: {}
   version: v3
 servers:
-  - url: 'https://api-b2b.bigcommerce.com/api/v3/io'
+  - url: https://api-b2b.bigcommerce.com/api/v3/io
 security:
   - authToken: []
 tags:
-  - name: Quote
+  - name: Quotes
     description: Request for Quote.
-components:
-  securitySchemes:
-    authToken:
-      name: authToken
-      description: Required to authenticate requests. Include the token in a header parameter called `authToken`.
-      type: apiKey
-      in: header
 paths:
   /rfq:
     get:
-      summary: Get Quote Form List
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: object
-                x-examples:
-                  example-1:
-                    code: 200
-                    message: SUCCESS
-                    data:
-                      list:
-                        - quoteId: 195
-                          quoteNumber: QN000195
-                          referenceNumber: ''
-                          quoteTitle: ''
-                          createdBy: Kido Zhao
-                          company: levi-test
-                          salesRep: Kido Zhao
-                          createdAt: 1622618606
-                          updatedAt: 1622618606
-                          expiredAt: 1622717999
-                          subtotal: 45.95
-                          status: 0
-                          currency:
-                            token: ¥
-                            location: left
-                            currencyCode: USD
-                            decimalToken: .
-                            decimalPlaces: 2
-                            thousandsToken: ','
-                            currencyExchangeRate: 1
-                          bcOrderId: ''
-                          orderId: ''
-                      pagination:
-                        totalCount: 1
-                        offset: 0
-                        limit: 10
-                properties:
-                  code:
-                    type: number
-                  message:
-                    type: string
-                    minLength: 1
-                  data:
-                    type: object
-                    required:
-                      - list
-                      - pagination
-                    properties:
-                      list:
-                        type: array
-                        uniqueItems: true
-                        minItems: 1
-                        items:
-                          type: object
-                          properties:
-                            quoteId:
-                              type: number
-                            quoteNumber:
-                              type: string
-                              minLength: 1
-                            referenceNumber:
-                              type: string
-                              description: Reference number of a quote
-                            quoteTitle:
-                              type: string
-                              description: Quote title created by a user
-                            createdBy:
-                              type: string
-                              minLength: 1
-                            company:
-                              type: string
-                              minLength: 1
-                            salesRep:
-                              type: string
-                              minLength: 1
-                            createdAt:
-                              type: number
-                            updatedAt:
-                              type: number
-                            expiredAt:
-                              type: number
-                            subtotal:
-                              type: number
-                              description: Total price
-                            status:
-                              type: integer
-                              description: Status of quote. 0:NEW; 2:IN PROCESS; 3:UPDATED BY CUSTOMER; 4:ORDERED; 5:EXPIRED; 6:ARCHIVED; 7:DRAFT
-                            currency:
-                              type: object
-                              description: Currency information
-                              properties:
-                                token:
-                                  type: string
-                                  minLength: 1
-                                  description: Currency token
-                                location:
-                                  type: string
-                                  minLength: 1
-                                  description: Currency token location
-                                currencyCode:
-                                  type: string
-                                  minLength: 1
-                                  description: 'Currency code, ex. USD, CNY'
-                                decimalToken:
-                                  type: string
-                                  minLength: 1
-                                  description: Decimal token
-                                decimalPlaces:
-                                  type: number
-                                  description: Number of decimal places
-                                currencyExchangeRate:
-                                  type: number
-                                  description: Exchange rate
-                                thousandsToken:
-                                  type: string
-                                  minLength: 1
-                                  description: Thousands token
-                              required:
-                                - token
-                                - location
-                                - currencyCode
-                                - decimalToken
-                                - decimalPlaces
-                                - currencyExchangeRate
-                                - thousandsToken
-                            bcOrderId:
-                              type: string
-                            orderId:
-                              type: string
-                            extraFields:
-                              type: array
-                              description: Extra fields of the quote
-                              items:
-                                type: object
-                                properties:
-                                  fieldName:
-                                    type: string
-                                    description: Field name
-                                  fieldValue:
-                                    type: string
-                                    description: Field value
-                            channelId:
-                              type: integer
-                              description: BigCommerce channel ID
-                            channelName:
-                              type: string
-                              description: Store Channel name
-                          required:
-                            - quoteId
-                            - quoteNumber
-                            - referenceNumber
-                            - quoteTitle
-                            - createdBy
-                            - company
-                            - salesRep
-                            - createdAt
-                            - updatedAt
-                            - expiredAt
-                            - subtotal
-                            - status
-                            - bcOrderId
-                            - orderId
-                      pagination:
-                        type: object
-                        required:
-                          - totalCount
-                          - offset
-                          - limit
-                        properties:
-                          totalCount:
-                            type: number
-                          offset:
-                            type: number
-                          limit:
-                            type: number
-                required:
-                  - code
-                  - message
-                  - data
-              examples:
-                example-1:
-                  value:
-                    code: 200
-                    message: SUCCESS
-                    data:
-                      list:
-                        - quoteId: 195
-                          quoteNumber: QN000195
-                          referenceNumber: ''
-                          quoteTitle: ''
-                          createdBy: Jo Sweet
-                          company: company name
-                          salesRep: Jo Sweet
-                          createdAt: 1622618606
-                          updatedAt: 1622618606
-                          expiredAt: 1622717999
-                          subtotal: 45.95
-                          status: 0
-                          currency:
-                            token: ¥
-                            location: left
-                            currencyCode: USD
-                            decimalToken: .
-                            decimalPlaces: 2
-                            thousandsToken: ','
-                            currencyExchangeRate: 1
-                          bcOrderId: ''
-                          orderId: ''
-                          extraField:
-                            - fieldName: test
-                              fieldValue: test
-                          channelId: 1
-                          channelName: string
-                      pagination:
-                        totalCount: 1
-                        offset: 0
-                        limit: 10
+      tags:
+        - Quotes
+      summary: Get All Quotes
       operationId: get-rfq
+      description: |-
+        Retrieves basic information for all sales quotes in your store. Use the parameters to narrow your results, such as filtering by a date range or quotes from a specific Company account.
+
+        More detailed information, such as line items and shipping details, can be retrieved with the [Get Quote Details](#get-quote-details) endpoint.
       parameters:
-        - schema:
-            type: string
-            default: '0'
+        - $ref: "#/components/parameters/offset"
+        - $ref: "#/components/parameters/limit"
+        - name: sortBy
           in: query
-          name: offset
-          description: Pagination offset
-        - schema:
-            type: string
-            default: '10'
-          in: query
-          name: limit
-          description: Pagination limit
-        - schema:
+          schema:
             type: string
             default: updatedAt
+            enum:
+              - company
+              - status
+              - salesRep
+              - createdAt
+              - expiredAt
+              - updatedAt
+          description: |-
+            Sorts results by Company name (`company`), quote status (`status`), sales rep name (`salesRep`), creation date (`createdAt`), expiration date (`expiredAt`), or last updated date (`updatedAt`). It defaults to the last updated date if no parameter is provided.
+        - name: orderBy
           in: query
-          name: sortBy
-          description: Sort by desc or asc
-        - schema:
+          schema:
             type: string
-            default: DESC
+            default: desc
+            enum:
+              - asc
+              - desc
+          description: "Establish a descending or ascending order of results. The order defaults to descending if the parameter is not included."
+        - name: q
           in: query
-          name: orderBy
-          description: Order by
-        - schema:
+          schema:
             type: string
+          description: "Enter quote information to return partial and exact matches. Accepted information fields include quote number, quote title, Company name, assigned sales rep, and Company user first and last name."
+          example: "Marie Curie"
+        - name: quoteNumber
           in: query
-          name: q
-          description: Query string
-        - schema:
+          schema:
             type: string
+          description: "Enter a full or partial quote number to retrieve relevant quotes."
+          example: "QN000035"
+        - name: company
           in: query
-          name: quoteNumber
-          description: Quote number
-        - schema:
+          schema:
             type: string
+          description: "Enter a full or partial Company name to retrieve relevant quotes."
+          example: "Great Buys Incorporated"
+        - name: salesRep
           in: query
-          name: company
-          description: Company name
-        - schema:
+          schema:
             type: string
+          description: "The name of the sales rep assigned to the quote."
+          example: "Isaac Newton"
+        - name: status
           in: query
-          name: salesRep
-          description: Super Admin ID
-        - schema:
+          schema:
             type: integer
             enum:
             - 0
@@ -298,1448 +139,354 @@ paths:
             - 5
             - 6
             - 7
+          description: "The backend status of the sales quote. Note that these are not the same as buyer-facing quote status. See [Quote Statuses](#quote-statuses) for more information."
+          example: 4
+        - name: quoteTitle
           in: query
-          name: status
-          description: Status of quote. 0:NEW; 2:IN PROCESS; 3:UPDATED BY CUSTOMER; 4:ORDERED; 5:EXPIRED; 6:ARCHIVED; 7:DRAFT
-        - schema:
+          schema:
             type: string
+          description: "The external title given to the quote."
+          example: "Plates - Custom Etching"
+        - name: createdBy
           in: query
-          name: quoteTitle
-          description: Title of quote
-        - schema:
+          schema:
             type: string
+          description: "The name of the sales rep or buyer who created the quote."
+          example: "Marie Curie"
+        - name: maxCreated
           in: query
-          name: createdBy
-          description: Create user name
-        - schema:
-            type: number
+          schema:
+            type: integer
+          description: "Enter a [Unix timestamp](https://www.unixtimestamp.com/) to retrieve all quotes created before that time."
+          example: 1741376113
+        - name: minCreated
           in: query
-          name: maxCreated
-          description: Maximum created timestamp
-        - schema:
-            type: number
+          schema:
+            type: integer
+          description: "Enter a [Unix timestamp](https://www.unixtimestamp.com/) to retrieve all quotes created after that time."
+          example: 1741376113
+        - name: maxModified
           in: query
-          name: minCreated
-          description: Minimum created timestamp
-        - schema:
-            type: number
+          schema:
+            type: integer
+          description: "Enter a [Unix timestamp](https://www.unixtimestamp.com/) to retrieve all quotes modified before that time."
+          example: 1741376113
+        - name: minModified
           in: query
-          name: maxModified
-          description: Maximum modified timestamp
-        - schema:
-            type: number
+          schema:
+            type: integer
+          description: "Enter a [Unix timestamp](https://www.unixtimestamp.com/) to retrieve all quotes modified after that time."
+          example: 1741376113
+        - name: maxExpired
           in: query
-          name: minModified
-          description: Minimum modified timestamp
-        - schema:
-            type: number
+          schema:
+            type: integer
+          description: "Enter a [Unix timestamp](https://www.unixtimestamp.com/) to retrieve all quotes that expired before that time."
+          example: 1741376113
+        - name: minExpired
           in: query
-          name: maxExpired
-          description: Maximum expired timestamp
-        - schema:
-            type: number
+          schema:
+            type: integer
+          description: "Enter a [Unix timestamp](https://www.unixtimestamp.com/) to retrieve all quotes that expired after that time."
+          example: 1741376113
+        - name: channelIds[]
           in: query
-          name: minExpired
-          description: Minimum expired timestamp
-        - schema:
+          schema:
             type: array
             items:
-              type: number
-          in: query
-          name: channelIds
-          description: BigCommerce channel IDs.
-      description: Get quote form list
-      tags:
-        - Quote
+              type: integer
+            default: 1
+          description: "Enter one or more storefront channel IDs to retrieve quotes assigned to the storefront(s). Use 1 for your store’s default storefront channel. Separate channel IDs with a comma."
+          example: 1,12345678
       security:
         - authToken: []
-    post:
-      summary: Create a Quote Form
-      operationId: post-rfq
       responses:
         '200':
-          description: OK
+          description: |-
+            OK
+
+            A 200 response has a body with information on all quotes based on the provided parameters. If there are no quotes that correspond to the provided parameter values, the endpoint still returns a 200 response, but the `data` array is empty.
           content:
             application/json:
               schema:
-                description: ''
-                type: object
-                properties:
-                  code:
-                    type: number
-                  message:
-                    type: string
-                    minLength: 1
-                  data:
-                    type: object
-                    properties:
-                      quoteId:
-                        type: number
-                      quoteUrl:
-                        type: string
-                        minLength: 1
-                    required:
-                      - quoteId
-                      - quoteUrl
-                required:
-                  - code
-                  - message
-                  - data
-              example:
-                code: 200
-                message: SUCCESS
-                data:
-                  quoteId: 195
-                  quoteUrl: 'https://sylvia-apptest-store.mybigcommerce.com/quote/?id=195&date=1622618606'
-        '201':
-          description: Created
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              x-examples:
-                example-1:
-                  notes: this is a note
-                  legalTerms: for example
-                  message: test message
-                  grandTotal: 45.95
-                  discount: 0
-                  subtotal: 45.95
-                  referenceNumber: ''
-                  userEmail: kido.zhao@bundleb2b.net
-                  expiredAt: 06/02/2021
-                  quoteTitle: ''
-                  shippingAddress:
-                    country: Argentina
-                    state: Mendoza
-                    city: AS
-                    zipCode: '10013'
-                    address: line1
-                    apartment: line1
-                  contactInfo:
-                    name: levi-test-quote
-                    email: levi.tuo@silksoftware.com
-                    companyName: levi-test
-                    phoneNumber: ''
-                  companyId: 5716
-                  currency:
-                    token: ¥
-                    location: left
-                    decimalToken: .
-                    decimalPlaces: 2
-                    thousandsToken: ','
-                  companyInfo:
-                    companyId: 5716
-                    companyName: levi-test
-                  productList:
-                    - sku: e1-1
-                      basePrice: 45.95
-                      discount: 0
-                      offeredPrice: 45.95
-                      quantity: 1
-                      productId: 104
-                      variantId: 142
-                      imageUrl: 'https://cdn11.bigcommerce.com/s-1i6zpxpe3g/products/104/images/336/utilitybucket1.1554505753.220.290.jpg?c=2'
-                      orderQuantityMaximum: 0
-                      orderQuantityMinimum: 0
-                      productName: '[Sample] Utility Caddy'
-                      options:
-                        - optionId: 147
-                          optionValue: 95
-                          optionLabel: Small
-                          optionName: Size
-              properties:
-                notes:
-                  type: string
-                  minLength: 1
-                legalTerms:
-                  type: string
-                  minLength: 1
-                  description: Legal terms
-                message:
-                  type: string
-                  minLength: 1
-                  description: Extra message
-                grandTotal:
-                  type: number
-                  description: Total price after discount
-                discount:
-                  type: number
-                totalAmount:
-                  type: integer
-                  description: Total price after discount
-                subtotal:
-                  type: number
-                  description: Total price
-                referenceNumber:
-                  type: string
-                userEmail:
-                  type: string
-                  minLength: 1
-                  description: user email belong to a sales rep.
-                quoteTitle:
-                  type: string
-                  description: title for quote
-                expiredAt:
-                  type: string
-                  minLength: 1
-                  description: 'format time with %m/%d/%Y %H:%M:%S'
-                shippingAddress:
-                  type: object
-                  description: shipping address information for quote
-                  properties:
-                    country:
-                      type: string
-                      minLength: 1
-                      description: country name
-                    state:
-                      type: string
-                      minLength: 1
-                      description: state name
-                    city:
-                      type: string
-                      minLength: 1
-                      description: city name
-                    zipCode:
-                      type: string
-                      minLength: 1
-                      description: zip code
-                    address:
-                      type: string
-                      minLength: 1
-                      description: address detail information
-                    apartment:
-                      type: string
-                      minLength: 1
-                  required:
-                    - country
-                    - state
-                    - city
-                    - zipCode
-                    - address
-                    - apartment
-                contactInfo:
-                  type: object
-                  properties:
-                    name:
-                      type: string
-                      minLength: 1
-                      description: contact name
-                    email:
-                      type: string
-                      minLength: 1
-                      description: contact email
-                    companyName:
-                      type: string
-                      minLength: 1
-                    phoneNumber:
-                      type: string
-                  required:
-                    - name
-                    - email
-                companyId:
-                  type: number
-                  description: company ID field for quote
-                currency:
-                  type: object
-                  description: Currency info
-                  properties:
-                    token:
-                      type: string
-                      minLength: 1
-                      description: 'Currency token, such as $'
-                    location:
-                      type: string
-                      minLength: 1
-                      description: 'Currency token position, left or right'
-                    decimalToken:
-                      type: string
-                      minLength: 1
-                      description: Decimal separator
-                    decimalPlaces:
-                      type: number
-                    thousandsToken:
-                      type: string
-                      minLength: 1
-                      description: Thousands separator
-                productList:
-                  type: array
-                  uniqueItems: true
-                  minItems: 1
-                  items:
-                    type: object
-                    properties:
-                      sku:
-                        type: string
-                        minLength: 1
-                      basePrice:
-                        type: number
-                      discount:
-                        type: number
-                      offeredPrice:
-                        type: number
-                        description: The discounted price must be passed on.
-                      quantity:
-                        type: number
-                        description: Quantity for product in this quote
-                      productId:
-                        type: number
-                        description: product ID
-                      variantId:
-                        type: number
-                        description: Variant SKU ID of the product
-                      imageUrl:
-                        type: string
-                        minLength: 1
-                        description: Image URL path for the product
-                      orderQuantityMaximum:
-                        type: number
-                      orderQuantityMinimum:
-                        type: number
-                      productName:
-                        type: string
-                        minLength: 1
-                        description: Name for product
-                      options:
-                        type: array
-                        uniqueItems: true
-                        minItems: 1
-                        description: Product choices, option information for quote item
-                        items:
-                          type: object
-                          properties:
-                            optionId:
-                              type: number
-                            optionValue:
-                              type: number
-                            optionLabel:
-                              type: string
-                              minLength: 1
-                            optionName:
-                              type: string
-                              minLength: 1
-                          required:
-                            - optionId
-                            - optionValue
-                            - optionLabel
-                            - optionName
-                    required:
-                      - sku
-                      - basePrice
-                      - discount
-                      - offeredPrice
-                      - quantity
-                      - productId
-                extraFields:
-                  type: array
-                  description: Extra fields of the quote
-                  items:
-                    type: object
-                    properties:
-                      fieldName:
-                        type: string
-                        description: Extra field name.
-                      fieldValue:
-                        type: string
-                        description: Extra field value.
-                    required:
-                      - fieldName
-                      - fieldValue
-                channelId:
-                  type: integer
-                  description: BigCommerce channel ID
-                displayDiscount:
-                  type: boolean
-                  description: Whether the quote email and PDF show a discount.
-                  default: true
-                allowCheckout:
-                  type: boolean
-                  description: Whether the quote email and PDF show the checkout button.
-                  default: true
-              required:
-                - grandTotal
-                - discount
-                - totalAmount
-                - subtotal
-                - expiredAt
-                - productList
-            examples: {}
-          application/xml:
-            schema:
-              type: object
-              properties: {}
-        description: ''
-      description: Create a quote form
-      security:
-        - authToken: []
-      tags:
-        - Quote
-  '/rfq/{quote_id}':
-    parameters:
-      - schema:
-          type: string
-        name: quote_id
-        in: path
-        required: true
-        description: Unique quote ID
-    get:
-      summary: Get a Quote Detail
-      responses:
-        '200':
-          description: OK
+                allOf:
+                  - $ref: "#/components/schemas/responseWithMessage"
+                  - properties:
+                      data:
+                        type: object
+                        properties:
+                          list:
+                            type: array
+                            uniqueItems: true
+                            items:
+                              $ref: "#/components/schemas/quoteData_GET_ALL"
+                          pagination:
+                            $ref: "#/components/schemas/responsePagination"
+        '400':
+          description: |-
+            Bad Requests Error
+
+            The 400 error occurs if the `channelIds` parameter is not formatted correctly. The parameter must be formatted as an array, and you must separate each channel ID value with a comma. An example of  proper format is `?channelIds[]=1,12345678`.
           content:
             application/json:
               schema:
-                type: object
-                x-examples:
-                  example-1:
-                    code: 200
-                    message: SUCCESS
-                    data:
-                      quoteNumber: QN000199
-                      referenceNumber: ''
-                      createdAt: 1622619778
-                      expiredAt: ''
-                      status: 0
-                      contactInfo:
-                        name: Hannah Admin330
-                        email: charles.admin@charlesco.com
-                        companyName: CharlesCo
-                        phoneNumber: '0000000000'
-                      shippingAddress:
-                        city: ''
-                        state: ''
-                        address: ''
-                        country: ''
-                        zipCode: ''
-                        apartment: ''
-                      subtotal: 45.95
-                      discount: 0
-                      grandTotal: 45.95
-                      currency:
-                        token: ¥
-                        location: left
-                        currencyCode: USD
-                        decimalToken: .
-                        decimalPlaces: 2
-                        thousandsToken: ','
-                        currencyExchangeRate: 1
-                      trackingHistory: []
-                      productList:
-                        - sku: e1-3
-                          basePrice: 45.95
-                          discount: 0
-                          offeredPrice: 45.95
-                          quantity: 1
-                          imageUrl: 'https://cdn11.bigcommerce.com/s-1i6zpxpe3g/images/stencil/original/products/104/336/utilitybucket1.1554505753.jpg?c=2'
-                          productId: 104
-                          variantId: 144
-                          productName: '[Sample] Utility Caddy'
-                          options:
-                            - optionId: 147
-                              optionName: Size
-                              optionLabel: Large
-                              optionValue: '97'
-                          notes: ''
-                          orderQuantityMaximum: 0
-                          orderQuantityMinimum: 0
-                      quoteTitle: ''
-                      notes: ''
-                      legalTerms: ''
-                      createdBy: Hannah Admin330
-                      bcOrderId: ''
-                      orderId: ''
-                      storeInfo:
-                        storeName: Sylvia Apptest Store
-                        storeAddress: |-
-                          47 Discovery
-                          Acmeville, AC 12345
-                          United States of America
-                        storeCountry: United States
-                      companyInfo:
-                        companyId: '5456'
-                        companyName: CharlesCo
-                        companyAddress: Asia China
-                        companyCountry: ''
-                        companyState: Sichuan
-                        companyCity: Chengdu
-                        companyZipCode: '10086'
-                        phoneNumber: '123412'
-                      salesRepInfo: {}
-                properties:
-                  code:
-                    type: number
-                  data:
-                    type: object
-                    required:
-                      - quoteNumber
-                      - referenceNumber
-                      - createdAt
-                      - expiredAt
-                      - status
-                      - contactInfo
-                      - shippingAddress
-                      - subtotal
-                      - discount
-                      - grandTotal
-                      - currency
-                      - trackingHistory
-                      - productList
-                      - quoteTitle
-                      - notes
-                      - legalTerms
-                      - createdBy
-                      - bcOrderId
-                      - orderId
-                      - storeInfo
-                      - companyInfo
-                      - salesRepInfo
-                    properties:
-                      quoteNumber:
-                        type: string
-                        minLength: 1
-                        description: Quote number
-                      referenceNumber:
-                        type: string
-                        description: Reference number of a quote
-                      createdAt:
-                        type: number
-                        description: Created at timestamp
-                      expiredAt:
-                        type: number
-                        description: Expired at timestamp
-                      status:
-                        type: integer
-                        description: Status of this quote. 0:NEW; 2:IN PROCESS; 3:UPDATED BY CUSTOMER; 4:ORDERED; 5:EXPIRED; 6:ARCHIVED; 7:DRAFT
-                      contactInfo:
-                        type: object
-                        required:
-                          - name
-                          - email
-                          - companyName
-                          - phoneNumber
+                allOf:
+                  - $ref: "#/components/schemas/responseWithMeta"
+                  - properties:
+                      code:
+                        default: 400
+                      data:
                         properties:
-                          name:
-                            type: string
-                            minLength: 1
-                          email:
-                            type: string
-                            minLength: 1
-                          companyName:
-                            type: string
-                            minLength: 1
-                          phoneNumber:
-                            type: string
-                            minLength: 1
-                      shippingAddress:
-                        type: object
-                        required:
-                          - city
-                          - state
-                          - address
-                          - zipCode
-                          - country
-                          - apartment
-                        properties:
-                          city:
-                            type: string
-                          state:
-                            type: string
-                          address:
-                            type: string
-                          zipCode:
-                            type: string
-                          country:
-                            type: string
-                          apartment:
-                            type: string
-                      subtotal:
-                        type: number
-                        description: Total price
-                      discount:
-                        type: number
-                        description: Discount
-                      grandTotal:
-                        type: number
-                        description: Total price after discount
-                      currency:
-                        type: object
-                        required:
-                          - token
-                          - location
-                          - currencyCode
-                          - decimalToken
-                          - decimalPlaces
-                          - thousandsToken
-                          - currencyExchangeRate
-                        properties:
-                          token:
-                            type: string
-                            minLength: 1
-                            description: 'Currency token, such as $'
-                          location:
-                            type: string
-                            minLength: 1
-                            description: 'Currency token location, ex. left or right'
-                          currencyCode:
-                            type: string
-                            minLength: 1
-                            description: 'Currency code, ex. USD CNY'
-                          decimalToken:
-                            type: string
-                            minLength: 1
-                            description: Decimal separator
-                          decimalPlaces:
-                            type: number
-                            description: Number of decimal places
-                          thousandsToken:
-                            type: string
-                            minLength: 1
-                            description: Thousands separator
-                          currencyExchangeRate:
-                            type: number
-                            description: Currency rate
-                      trackingHistory:
-                        type: array
-                        description: tracking message history
-                        items:
-                          type: object
-                          properties:
-                            date:
-                              type: number
-                              description: timestamp of this message
-                              example: 1630489012
-                            role:
-                              type: string
-                              description: Role and username of this message. The role maybe start with 'Sales rep' or 'Customer' which depends on if user is a backend user.
-                              example: Customer Tom
-                            message:
-                              type: string
-                              description: comments message record
-                              example: 'record some message when update this quote '
-                      productList:
-                        type: array
-                        uniqueItems: true
-                        minItems: 1
-                        items:
-                          type: object
-                          properties:
-                            sku:
-                              type: string
-                              minLength: 1
-                            basePrice:
-                              type: number
-                              description: Base price of this product
-                            discount:
-                              type: number
-                              description: Discount
-                            offeredPrice:
-                              type: number
-                              description: The discounted price must be passed on
-                            quantity:
-                              type: number
-                              description: Quantity of the product
-                            imageUrl:
-                              type: string
-                              minLength: 1
-                              description: Product image URL
-                            productId:
-                              type: number
-                            variantId:
-                              type: number
-                              description: Variant SKU ID
-                            productName:
-                              type: string
-                              minLength: 1
-                            options:
+                          channel_id_list:
+                            type: array
+                            items:
                               type: array
-                              uniqueItems: true
-                              minItems: 1
                               items:
-                                type: object
-                                properties:
-                                  optionId:
-                                    type: number
-                                  optionName:
-                                    type: string
-                                    minLength: 1
-                                  optionLabel:
-                                    type: string
-                                    minLength: 1
-                                  optionValue:
-                                    type: string
-                                    minLength: 1
-                                required:
-                                  - optionId
-                                  - optionName
-                                  - optionLabel
-                                  - optionValue
-                            notes:
-                              type: string
-                              description: The extra message notes
-                            orderQuantityMaximum:
-                              type: number
-                              description: The maximum quantity for this order
-                            orderQuantityMinimum:
-                              type: number
-                              description: The minimum quantity for this order
-                          required:
-                            - sku
-                            - basePrice
-                            - discount
-                            - offeredPrice
-                            - quantity
-                            - imageUrl
-                            - productId
-                            - variantId
-                            - productName
-                            - notes
-                            - orderQuantityMaximum
-                            - orderQuantityMinimum
-                      quoteTitle:
-                        type: string
-                        description: Quote title
-                      notes:
-                        type: string
-                        description: Extra message note
-                      legalTerms:
-                        type: string
-                        description: Legal terms
-                      createdBy:
-                        type: string
-                        minLength: 1
-                      bcOrderId:
-                        type: string
-                        description: BC order ID
-                      orderId:
-                        type: string
-                        description: B2B Edition order ID
-                      storeInfo:
-                        type: object
-                        required:
-                          - storeName
-                          - storeAddress
-                          - storeCountry
+                                type: string
+                                default: "A valid integer is required."
+                      meta:
                         properties:
-                          storeName:
-                            type: string
-                            minLength: 1
-                          storeAddress:
-                            type: string
-                            minLength: 1
-                          storeCountry:
-                            type: string
-                            minLength: 1
-                      companyInfo:
-                        type: object
-                        required:
-                          - companyId
-                          - companyName
-                          - companyAddress
-                          - companyCountry
-                          - companyState
-                          - companyCity
-                          - companyZipCode
-                          - phoneNumber
-                        properties:
-                          companyId:
-                            type: string
-                            minLength: 1
-                          companyName:
-                            type: string
-                            minLength: 1
-                          companyAddress:
-                            type: string
-                            minLength: 1
-                          companyCountry:
-                            type: string
-                          companyState:
-                            type: string
-                            minLength: 1
-                          companyCity:
-                            type: string
-                            minLength: 1
-                          companyZipCode:
-                            type: string
-                            minLength: 1
-                          phoneNumber:
-                            type: string
-                            minLength: 1
-                      salesRepInfo:
-                        type: object
-                        properties: {}
-                      extraFields:
-                        type: array
-                        items:
-                          type: object
-                          properties:
-                            fieldName:
-                              type: string
-                            fieldValue:
-                              type: string
-                      channelId:
-                        type: integer
-                        description: BigCommerce channel ID
-                      channelName:
-                        type: string
-                        description: Store Channel name
-                      displayDiscount:
-                        type: boolean
-                        description: Whether the quote email and PDF show discount.
-                      allowCheckout:
-                        type: boolean
-                        description: Whether the quote email and PDF show checkout button.
-                  meta:
-                    type: object
-                    properties:
-                      message:
-                        type: string
-                required:
-                  - code
-                  - data
+                          message:
+                            default: "Bad Requests Error"
+    post:
+      tags:
+        - Quotes
+      summary: Create a Quote
+      operationId: post-rfq
+      description: |-
+        Creates a new sales quote and automatically submits it to the assigned buyer. 
+
+        While the B2B Edition control panel allows you to save a new quote as a draft without sending it to the buyer, quotes created with this endpoint are automatically visible in a Company user's Buyer Portal. However, you can give the `allowCheckout` a value of `false` to prevent the buyer from purchasing it immediately upon submission.
+
+        ### Custom Products
+
+        While you can create custom products from within a quote while creating or editing it in your B2B Edition control panel, you cannot create a custom product with this endpoint. 
+
+        Create a custom product while [creating or editing](https://support.bigcommerce.com/s/article/B2B-Edition-Quotes) a quote in the B2B Edition control panel, or by using the [Create a Product](/docs/rest-catalog/products#create-a-product) endpoint in the Catalog API. Obtain your newly-created product’s ID and add it to the `productId` field of the Create a Quote request body to include it in the quote.
+
+        ### Minimum Required Fields
+
+        In order to create a sales quote, the request body must include the following fields. Fields marked with an asterisk are only required under specific conditions.
+
+        * `grandTotal`
+        * `discount`
+        * `subtotal`
+        * `userEmail`
+        * `expiredAt`
+        * `contactInfo`
+            * `name`
+            * `email`
+        * `companyId`*
+        * `productList`
+            * `sku`
+            * `productId`
+            * `basePrice`
+            * `discount`
+            * `offeredPrice`
+            * `quantity`
+        * `extraFields`*
+            * `fieldName`*
+            * `fieldValue`*
+        * `channelId`*
+
+        The `companyId` field is only required if you are linking a quote to a Company’s Buyer Portal. The `companyName` field and `email` fields will not link a quote to a particular Company or Company user without a corresponding `companyId`.
+
+        The `extraFields` array is only required if you have created Quote extra fields which are marked as required. To learn more about extra fields, see B2B Edition Settings (Help Center).
+
+        The `channelId` field is required if you have multiple storefront channels. If you only have a single storefront, then you do not need to include it.
+      security:
+        - authToken: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/quoteData_POST"
+            examples:
+              Minimum-required fields:
+                value:
+                  grandTotal: 1000
+                  discount: 0
+                  subtotal: 1000
+                  userEmail: "hero@mybcstore.com"
+                  expiredAt: "05/07/2025"
+                  channelId: 1
+                  contactInfo:
+                    name: "Marie Curie"
+                    email: "mcurie@greatbuysinc.com"
+                  productList:
+                    - sku: "SAN-PL"
+                      basePrice: 25
+                      discount: 5
+                      offeredPrice: 20
+                      quantity: 50
+                      productId: 12345
+              All fields:
+                value:
+                  notes: "Use the in-quote messaging system to contact us about products, pricing, or other quote information."
+                  legalTerms: "Thank you for the opportunity to provide this quote! Please note the following:\n - Quotes are valid for 30 days unless otherwise stated.\n - Pricing is subject to change at any time.\n - Please note, the shipping and tax quoted are estimates only. Final shipping and tax will be calculated during checkout and may be billed post sale.\n - Due to fluctuating shipping rates, LTL shipping calculations are only estimates. Final LTL rates will be determined by quote upon shipment and may be billed post sale. Also, if a lift gate is required an additional fee will apply if not included in this quote.\n - Please contact your Technical Sales Representative, call 877-567-3598, or email sales.rep@mybcstore.com for assistance."
+                  message: "Hello Marie! I have submitted the quote you requested. Please review the notes and terms, and don't hesitate to reach out with any questions."
+                  grandTotal: 1495
+                  discount: 0
+                  totalAmount: 1495
+                  subtotal: 1495
+                  referenceNumber: "03302025-0001"
+                  userEmail: "hero@mybcstore.com"
+                  quoteTitle: "Plant and Planter Bulk Order"
+                  expiredAt: "05/07/2025"
+                  channelId: 1
+                  companyId: 11111111
+                  displayDiscount: false,
+                  allowCheckout: true
+                  shippingAddress:
+                    address: "512 Bluebonnet Lane"
+                    apartment: "Building 100"
+                    city: "Austin"
+                    state: "Texas"
+                    zipCode: "78704"
+                    country: "United States"
+                  contactInfo:
+                    name: "Marie Curie"
+                    email: "mcurie@greatbuysinc.com"
+                    companyName: "Great Buys Incorporated"
+                    phoneNumber: "512-200-1234"
+                  currency:
+                    token: "$"
+                    currencyCode: "USD"
+                    location: "left"
+                    decimalToken: "."
+                    decimalPlaces: 2
+                    thousandsToken: ","
+                  extraFields:
+                    fieldName: "I want a sales representative to call me at the provided phone number."
+                    fieldValue: "Yes"
+                  productList:
+                    - sku: "SAN-PL"
+                      basePrice: 25
+                      discount: 20.0
+                      offeredPrice: 20
+                      quantity: 50
+                      productId: 54321
+                      variantId: 12345
+                      imageUrl: "https://mybcstore.com/sansiveria.jpg"
+                      orderQuantityMaximum: 0
+                      orderQuantityMinimum: 0
+                      productName: "Sansiveria Plant"
+                      options: []
+
+                    - sku: "CER-POT-2-GR"
+                      basePrice: 55.0
+                      discount: 10.0
+                      offeredPrice: 49.5
+                      quantity: 10
+                      imageUrl: "https://mybcstore.com/ocean-planter.jpg"
+                      productId: 63261
+                      variantId: 54321
+                      productName: "The Planter by Rustic Roots"
+                      options:
+                        - optionId: 1234
+                          optionName: "Color"
+                          optionLabel: "Ocean"
+                          optionValue: 98765
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/responseWithMessage"
+                  - properties:
+                      data:
+                        $ref: "#/components/schemas/quote_PUT_POST"
+              example:
+        '422':
+          description: |-
+            Missing or Invalid Data
+            
+            The 422 error occurs if any of the fields are not formatted correctly. Check the detailed error message to determine which field is affected and what must be corrected.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/responseError"
               examples:
-                example-1:
+                Pricing mismatch:
                   value:
-                    code: 200
+                    code: 422
                     data:
-                      quoteNumber: QN000199
-                      referenceNumber: ''
-                      createdAt: 1622619778
-                      expiredAt: 1722619778
-                      status: 0
-                      contactInfo:
-                        name: Hannah Admin330
-                        email: charles.admin@charlesco.com
-                        companyName: CharlesCo
-                        phoneNumber: '0000000000'
-                      shippingAddress:
-                        city: ''
-                        state: ''
-                        address: ''
-                        country: ''
-                        zipCode: ''
-                        apartment: ''
-                      subtotal: 45.95
-                      discount: 0
-                      grandTotal: 45.95
-                      currency:
-                        token: ¥
-                        location: left
-                        currencyCode: USD
-                        decimalToken: .
-                        decimalPlaces: 2
-                        thousandsToken: ','
-                        currencyExchangeRate: 1
-                      trackingHistory:
-                        - date: 1630489012
-                          role: Customer Tom
-                          message: 'record some message when update this quote'
-                        - date: 1630490012
-                          role: Sales rep Cat
-                          message: 'record some message when update this quote'
-                      productList:
-                        - sku: e1-3
-                          basePrice: 45.95
-                          discount: 0
-                          offeredPrice: 45.95
-                          quantity: 1
-                          imageUrl: 'https://cdn11.bigcommerce.com/s-1i6zpxpe3g/images/stencil/original/products/104/336/utilitybucket1.1554505753.jpg?c=2'
-                          productId: 104
-                          variantId: 144
-                          productName: '[Sample] Utility Caddy'
-                          options:
-                            - optionId: 147
-                              optionName: Size
-                              optionLabel: Large
-                              optionValue: '97'
-                          notes: ''
-                          orderQuantityMaximum: 0
-                          orderQuantityMinimum: 0
-                      quoteTitle: ''
-                      notes: ''
-                      legalTerms: ''
-                      createdBy: Hannah Admin330
-                      bcOrderId: ''
-                      orderId: ''
-                      storeInfo:
-                        storeName: Sylvia Apptest Store
-                        storeAddress: |-
-                          47 Discovery
-                          Acmeville, AC 12345
-                          United States of America
-                        storeCountry: United States
-                      companyInfo:
-                        companyId: '5456'
-                        companyName: CharlesCo
-                        companyAddress: Asia China
-                        companyCountry: ''
-                        companyState: Sichuan
-                        companyCity: Chengdu
-                        companyZipCode: '10086'
-                        phoneNumber: '123412'
-                      salesRepInfo: {}
-                      extraFields:
-                        - fieldName: test
-                          fieldValue: test
-                      channelId: 1
-                      channelName: string
+                      errMsg: "Grand total amount not match for product list details"
                     meta:
-                      message: SUCCESS
-      operationId: get-rfq-quote_id
-      parameters:
-        - schema:
-            type: string
-          in: query
-          name: date
-          required: true
-          description: quote create at
-      description: Get a quote form detail by quoteId
+                      message: "Grand total amount not match for product list details"
+  /rfq/custom/shipping-methods:
+    get:
+      tags:
+        - Quotes
+      summary: Get all B2B quote custom shipping methods
+      operationId: get-rfq-quote_id-custom-shipping
+      description: |-
+        Retrieves all custom shipping methods that you’ve enabled in the Quotes settings of your B2B Edition control panel. See [Custom Shipping](#custom-shipping) for more information.
       security:
         - authToken: []
-      tags:
-        - Quote
-    put:
-      summary: Update a Quote
-      operationId: put-rfq-quote_id
       responses:
         '200':
           description: OK
           content:
             application/json:
               schema:
-                description: ''
-                type: object
-                properties:
-                  code:
-                    type: number
-                  message:
-                    type: string
-                    minLength: 1
-                  data:
-                    type: object
-                    properties:
-                      quoteId:
-                        type: number
-                      quoteUrl:
-                        type: string
-                        minLength: 1
-                    required:
-                      - quoteId
-                      - quoteUrl
-                required:
-                  - code
-                  - message
-                  - data
-                x-examples:
-                  example-1:
-                    code: 200
-                    message: SUCCESS
-                    data:
-                      quoteId: 195
-                      quoteUrl: url
-              examples:
-                example-1:
-                  value:
-                    code: 200
-                    message: SUCCESS
-                    data:
-                      quoteId: 195
-                      quoteUrl: url
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              x-examples:
-                example-1:
-                  notes: string
-                  legalTerms: string
-                  message: string
-                  grandTotal: 0
-                  discount: 0
-                  subtotal: 0
-                  referenceNumber: string
-                  userEmail: string
-                  expiredAt: string
-                  quoteTitle: string
-                  shippingAddress:
-                    country: string
-                    state: string
-                    city: string
-                    zipCode: string
-                    address: string
-                    apartment: string
-                  contactInfo:
-                    name: string
-                    email: string
-                    companyName: string
-                    phoneNumber: string
-                  companyId: 0
-                  currency:
-                    token: string
-                    location: string
-                    decimalToken: string
-                    decimalPlaces: 0
-                    thousandsToken: string
-                  companyInfo:
-                    companyId: 0
-                    companyName: string
-                  productList:
-                    - sku: string
-                      basePrice: 0
-                      discount: 0
-                      offeredPrice: 0
-                      quantity: 0
-                      productId: 0
-                      variantId: 0
-                      imageUrl: string
-                      orderQuantityMaximum: 0
-                      orderQuantityMinimum: 0
-                      productName: string
-                      options:
-                        - optionId: 0
-                          optionValue: 0
-                          optionLabel: string
-                          optionName: string
-              properties:
-                notes:
-                  type: string
-                  minLength: 1
-                  description: Quote extra message
-                legalTerms:
-                  type: string
-                  minLength: 1
-                message:
-                  type: string
-                  minLength: 1
-                  description: Text info from comments
-                grandTotal:
-                  type: number
-                  description: Total price after discount
-                discount:
-                  type: number
-                subtotal:
-                  type: number
-                  description: Total price
-                referenceNumber:
-                  type: string
-                  minLength: 1
-                  description: Reference number of a quote
-                userEmail:
-                  type: string
-                  minLength: 1
-                expiredAt:
-                  type: string
-                  minLength: 1
-                quoteTitle:
-                  type: string
-                  minLength: 1
-                shippingAddress:
-                  type: object
-                  properties:
-                    country:
-                      type: string
-                      minLength: 1
-                    state:
-                      type: string
-                      minLength: 1
-                    city:
-                      type: string
-                      minLength: 1
-                    zipCode:
-                      type: string
-                      minLength: 1
-                    address:
-                      type: string
-                      minLength: 1
-                    apartment:
-                      type: string
-                      minLength: 1
-                contactInfo:
-                  type: object
-                  properties:
-                    name:
-                      type: string
-                      minLength: 1
-                    email:
-                      type: string
-                      minLength: 1
-                    companyName:
-                      type: string
-                      minLength: 1
-                    phoneNumber:
-                      type: string
-                      minLength: 1
-                currency:
-                  type: object
-                  description: 'Currency info, which can be seen when you get quote detail.'
-                  properties:
-                    token:
-                      type: string
-                      minLength: 1
-                    location:
-                      type: string
-                      minLength: 1
-                    decimalToken:
-                      type: string
-                      minLength: 1
-                    decimalPlaces:
-                      type: number
-                    thousandsToken:
-                      type: string
-                      minLength: 1
-                productList:
-                  type: array
-                  uniqueItems: true
-                  minItems: 1
-                  items:
-                    type: object
-                    properties:
-                      sku:
-                        type: string
-                        minLength: 1
-                      basePrice:
-                        type: number
-                      discount:
-                        type: number
-                      offeredPrice:
-                        type: number
-                        description: The discounted price must be passed on.
-                      quantity:
-                        type: number
-                      productId:
-                        type: number
-                      variantId:
-                        type: number
-                      imageUrl:
-                        type: string
-                        minLength: 1
-                      orderQuantityMaximum:
-                        type: number
-                      orderQuantityMinimum:
-                        type: number
-                      productName:
-                        type: string
-                        minLength: 1
-                      options:
+                allOf:
+                  - $ref: "#/components/schemas/responseArrayMeta"
+                  - properties:
+                      code:
+                        default: 200
+                      data:
                         type: array
-                        uniqueItems: true
-                        minItems: 1
                         items:
                           type: object
                           properties:
-                            optionId:
-                              type: number
-                            optionValue:
-                              type: number
-                            optionLabel:
+                            customShippingMethodName:
                               type: string
-                              minLength: 1
-                            optionName:
-                              type: string
-                              minLength: 1
-                extraFields:
-                  type: array
-                  items:
-                    type: object
-                    properties:
-                      fieldName:
-                        type: string
-                        description: Extra field name.
-                      fieldValue:
-                        type: string
-                        description: Extra field value.
-                    required:
-                      - fieldName
-                      - fieldValue
-                displayDiscount:
-                  type: boolean
-                  description: Whether the quote email and PDF show a discount.
-                allowCheckout:
-                  type: boolean
-                  description: Whether the quote email and PDF show the checkout button.
-            examples:
-              example-1:
-                value:
-                  notes: string
-                  legalTerms: string
-                  message: string
-                  grandTotal: 0
-                  discount: 0
-                  subtotal: 0
-                  referenceNumber: string
-                  userEmail: string
-                  expiredAt: string
-                  quoteTitle: string
-                  shippingAddress:
-                    country: string
-                    state: string
-                    city: string
-                    zipCode: string
-                    address: string
-                    apartment: string
-                  contactInfo:
-                    name: string
-                    email: string
-                    companyName: string
-                    phoneNumber: string
-                  currency:
-                    token: string
-                    location: string
-                    decimalToken: string
-                    decimalPlaces: 0
-                    thousandsToken: string
-                  productList:
-                    - sku: string
-                      basePrice: 0
-                      discount: 0
-                      offeredPrice: 0
-                      quantity: 0
-                      productId: 0
-                      variantId: 0
-                      imageUrl: string
-                      orderQuantityMaximum: 0
-                      orderQuantityMinimum: 0
-                      productName: string
-                      options:
-                        - optionId: 0
-                          optionValue: 0
-                          optionLabel: string
-                          optionName: string
-        description: Request body parameters you can find when you get a quote detail.
-      description: Update a quote
-      security:
-        - authToken: []
-      tags:
-        - Quote
-    delete:
-      summary: Delete a Quote
-      operationId: delete-rfq-quote_id
-      responses:
-        '200':
-          description: OK
+                              description: "The name of the custom shipping method."
+                              example: "2nd Day Air"
+                      meta:
+                        properties:
+                          message:
+                            default: "SUCCESS"
+        '422':
+          description: Parameter error
           content:
             application/json:
               schema:
-                description: ''
-                type: object
-                properties:
-                  code:
-                    type: number
-                  message:
-                    type: string
-                    minLength: 1
-                  data:
-                    type: object
-                    properties: {}
-                required:
-                  - code
-                  - message
-                  - data
-                x-examples:
-                  example-1:
-                    code: 200
-                    message: SUCCESS
-                    data: {}
-              examples:
-                example-1:
-                  value:
-                    code: 200
-                    message: SUCCESS
-                    data: {}
-      description: Delete a quote by quoteId
-      security:
-        - authToken: []
-      tags:
-        - Quote
-  '/rfq/{quote_id}/checkout':
-    parameters:
-      - schema:
-          type: string
-        name: quote_id
-        in: path
-        required: true
-        description: Unique quote ID
-    post:
-      summary: Checkout Quote Form
-      operationId: post-rfq-quote_id-checkout
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                description: ''
-                type: object
-                x-examples:
-                  example-1:
-                    code: 200
-                    message: SUCCESS
-                    data:
-                      checkoutUrl: url
-                      cartId: '123'
-                      cartUrl: url
-                properties:
-                  code:
-                    type: number
-                  message:
-                    type: string
-                    minLength: 1
-                  data:
-                    type: object
-                    required:
-                      - checkoutUrl
-                      - cartId
-                      - cartUrl
-                    properties:
-                      checkoutUrl:
-                        type: string
-                        minLength: 1
-                        description: The checkout URL
-                      cartId:
-                        type: string
-                        minLength: 1
-                        description: Cart ID
-                      cartUrl:
-                        type: string
-                        minLength: 1
-                        description: The cart URL
-                required:
-                  - code
-                  - message
-                  - data
-              examples:
-                example-1:
-                  value:
-                    code: 200
-                    message: SUCCESS
-                    data:
-                      checkoutUrl: url
-                      cartId: '123'
-                      cartUrl: url
-      description: Checkout quote form by quoteId
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties: {}
-            examples:
-              example-1:
-                value: {}
-      security:
-        - authToken: []
-      tags:
-        - Quote
-  '/rfq/{quote_id}/ordered':
-    parameters:
-      - schema:
-          type: string
-        name: quote_id
-        in: path
-        required: true
-        description: Unique quote ID
-    post:
-      summary: Ordered a Quote
-      operationId: post-rfq-quote_id-ordered
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                description: ''
-                type: object
-                properties:
-                  code:
-                    type: number
-                  message:
-                    type: string
-                    minLength: 1
-                  data:
-                    type: object
-                    properties: {}
-                required:
-                  - code
-                  - message
-                  - data
-                x-examples:
-                  example-1:
-                    code: 200
-                    message: SUCCESS
-                    data: {}
-              examples:
-                example-1:
-                  value:
-                    code: 200
-                    message: SUCCESS
-                    data: {}
-      description: |
-        Ordered a quote by quoteId
-      requestBody:
-        content:
-          application/json:
-            schema:
-              description: ''
-              type: object
-              x-examples:
-                example-1:
-                  orderId: ''
-                  shippingTotal: 0
-                  taxTotal: 0
-                  shippingMethod:
-                    id: kWf@Mjg
-                    type: flat
-                    description: Fixed (Fixed)
-                    imageUrl: 'telnet://axcsqlcngg.cc/sfsrtyimv'
-                    transitTime: ''
-                    cost: 10
-                    additionalDescription: ''
-              properties:
-                orderId:
-                  type: string
-                  description: Unique order ID
-              required:
-                - orderId
-            examples:
-              example-1:
-                value:
-                  orderId: ''
-      security:
-        - authToken: []
-      tags:
-        - Quote
+                $ref: "#/components/schemas/responseError"
+              example:
+                code: 422
+                data:
+                  errMsg: "Custom shipping is not enabled"
+                meta:
+                  message: "Custom shipping is not enabled"
   /rfq/emails:
     post:
+      tags:
+        - Quotes
       summary: Send a Quote Email
       operationId: post-rfq-emails
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                description: ''
-                type: object
-                properties:
-                  code:
-                    type: number
-                  message:
-                    type: string
-                    minLength: 1
-                  data:
-                    type: object
-                    properties: {}
-                required:
-                  - code
-                  - message
-                  - data
-              example:
-                code: 200
-                message: SUCCESS
-                data: {}
-      description: Send a quote email
+      description: |-
+        Sends an email to the buyer with information on a specific quote based on the provided `quoteId`.
+
+        The email address in the `email` field must correspond with the buyer’s email address on the quote. However, you can use the `ccTo` field to include additional recipients.
+
+        ### Quote Email Templates
+
+        The request uses the `emailTemplate` field to format the quote contents with one of the pre-built quote email templates. You must enter the exact name of the template in the field.
+
+        The following email templates can be used:
+
+        * `Simple`
+        * `Simple with Pictures`
+        * `Waves with Pictures`
+        * `Database with checkout button`
+        * `Modern with checkout link`
+        * `Modern without checkout link`
+
+        The selected template applies to the quote PDF if `withAttach` is specified as `true`.
       requestBody:
         content:
           application/json:
@@ -1749,93 +496,364 @@ paths:
               properties:
                 quoteId:
                   type: string
-                  minLength: 1
-                  description: The quote ID you want to use.
+                  description: "The internal numeric ID of the sales quote."
+                  example: "12345"
                 email:
                   type: string
-                  minLength: 1
-                  description: The email you want to send.
+                  format: email
+                  description: "The recipient's email. This should match the buyer's email on the quote."
                 withAttach:
                   default: true
                   type: boolean
-                  description: Whether to send the quote pdf as an attachment.
+                  description: "Indicates whether or not a quote PDF will be included with the email."
                 emailTemplate:
                   type: string
                   enum:
-                    - Simple
-                    - Simple with Pictures
-                    - Waves with Pictures
-                    - Sky
-                    - Dots
-                  description: Template for sending emails
+                  - Simple
+                  - Simple with Pictures
+                  - Waves with Pictures
+                  - Sky
+                  - Dots
+                  - Database with checkout button
+                  - Modern with checkout link
+                  - Modern without checkout link
+                  description: "The template used to format the quote email."
                 ccTo:
                   type: array
-                  description: Cc who sent the message
+                  description: "The list of emails to CC."
                   items:
                     type: string
+                    format: email
                 emailLang:
                   type: string
                   enum:
-                    - en
-                    - nl
-                  description: 'The language in which the message is sent. nl: Dutch'
+                  - en
+                  - nl
+                  - de
+                  - fr
+                  - it
+                  - ja
+                  - zh
+                  - es
+                  description: "The two-letter code for the language of the quote email and PDF, if included."
               required:
-                - quoteId
-                - email
-                - withAttach
-                - emailTemplate
-      tags:
-        - Quote
-  '/rfq/{quote_id}/pdf-export':
-    parameters:
-      - schema:
-          type: string
-        name: quote_id
-        in: path
-        required: true
-        description: Unique quote ID
-    post:
-      summary: Quote Export PDF
+              - quoteId
+              - email
+              - withAttach
+              - emailTemplate
       responses:
         '200':
           description: OK
           content:
             application/json:
               schema:
-                description: ''
-                type: object
-                properties:
-                  code:
-                    type: number
-                  message:
-                    type: string
-                    minLength: 1
-                  data:
-                    type: object
-                    properties:
-                      url:
-                        type: string
-                        minLength: 1
-                    required:
-                      - url
-                required:
-                  - code
-                  - message
-                  - data
-                x-examples:
-                  example-1:
-                    code: 200
-                    message: SUCCESS
-                    data:
-                      url: 'https://s3-us-west-2.amazonaws.com/bundleb2b-v2.0-quote-staging/Sylvia_Apptest_Store:QN000195.pdf'
+                $ref: "#/components/schemas/responseWithMessage"
+        '422':
+          description: |-
+            Missing or Invalid Data
+
+            The 422 error occurs if the request fields have unsupported values. Make sure that the `email` field matches the email address of the quote’s assigned buyer, and confirm that you are using allowed values for `emailTemplate` and `emailLang`.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/responseWithMeta"
+                  - properties:
+                      data:
+                        properties:
+                          email_lang:
+                            type: array
+                            items:
+                              type: string
               examples:
-                example-1:
+                Invalid email language:
                   value:
-                    code: 200
-                    message: SUCCESS
+                    code: 422
                     data:
-                      url: pdf url
+                      email_lang:
+                        - "Invalid choice of email language"
+                    meta:
+                      message: "Invalid choice of email language"
+  /rfq/extra-fields:
+    get:
+      tags:
+        - Quotes
+      summary: Get Quote Extra Fields Configs
+      operationId: get-rfq-extra-fields
+      description: |-
+        Returns a list of available extra fields configs for sales quotes.
+
+        We recommend caching the response results to avoid frequent API requests.
+      parameters:
+        - $ref: "#/components/parameters/offset"
+        - $ref: "#/components/parameters/limit"
+      security:
+        - authToken: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/responseArrayMeta"
+                  - properties:
+                      code:
+                        default: 200
+                      data:
+                        items:
+                          allOf:
+                            - $ref: https://raw.githubusercontent.com/bigcommerce/docs/main/docs/b2b-edition/models/extra_fields/extra_fields.yaml
+                            - properties:
+                                valueConfig:
+                                  type: object
+                                  description: "The extra field configuration as an object. The fields `defaultValue` and `listOfValue` match those in the main object body. The field `maximumLimit` matches maximumLength in the main body."
+                                  properties:
+                                    defaultValue:
+                                      type: string
+                                    listOfValue:
+                                      type: array
+                                      items:
+                                        type: object
+                                    maximumLimit:
+                                      type: string
+                      meta:
+                        properties:
+                          message:
+                            default: SUCCESS
+                          pagination:
+                            $ref: "#/components/schemas/responsePagination"
+  /rfq/{quote_id}:
+    parameters:
+      - $ref: "#/components/parameters/quoteId"
+    get:
+      tags:
+        - Quotes
+      summary: Get Quote Details
+      operationId: get-rfq-quote_id
+      description: |-
+        Retrieves the full details of a specific quote based on the provided `quote_id`.
+
+        This endpoint provides more detailed information about a specific quote than [Get All Quotes](#get-all-quotes). This includes line items, shipping address fields, and even a history of messages sent by the buyer and their sales representative.
+      parameters:
+        - name: date
+          in: query
+          required: true
+          schema:
+            type: string
+          description: "The date that the quote was created. Use %m/%d/%Y format."
+          example: "04/07/2025"
+      security:
+        - authToken: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/responseWithMeta"
+                  - properties:
+                      code:
+                        default: 200
+                      data:
+                        $ref: "#/components/schemas/quoteData_GET_ONE"
+                      meta:
+                        properties:
+                          message:
+                            default: SUCCESS
+    put:
+      tags:
+        - Quotes
+      summary: Update a Quote
+      operationId: put-rfq-quote_id
+      description: |-
+        Updates an existing quote based on the details provided in the request body.
+
+        Before using this endpoint to update a quote, review the following considerations:
+
+        * None of the fields in the body are required for a successful response. This means that you can use this endpoint to update a single field or a subset of fields.
+        * When adding or updating line items, you must include all existing line items that you want to keep in the quote. Omitting existing line items from a quote will remove them from the quote when you send the request.
+        * If you add products or change discounts, you must also update the `grandTotal` and `subtotal` fields to reflect the new totals.
+        * You cannot use this endpoint to change the sales rep or Company account assigned to an existing quote.
+        * To update a quote’s shipping rate, use the [Select a Shipping Rate for a Quote](#select-a-shipping-rate-for-quote) endpoint.
+
+        See [Create a Quote](#create-a-quote) for experience- and setting-specific requirements related to adding custom shipping or non-purchasable products to a quote.
+      security:
+        - authToken: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/quoteData_PUT_POST"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/responseWithMessage"
+                  - properties:
+                      data:
+                        $ref: "#/components/schemas/quote_PUT_POST"
+    delete:
+      tags:
+        - Quotes
+      summary: Delete a Quote
+      operationId: delete-rfq-quote_id
+      description: |-
+        Permanently deletes a specific quote based on the provided `quote_id`.
+
+        If you want to hide a quote from a buyer without deleting it, you can archive the quote from the **Quotes** area of your B2B Edition control panel. See [Managing Sales Quotes in B2B Edition (Help Center)](https://support.bigcommerce.com/s/article/B2B-Edition-Quotes) for more information.
+      security:
+        - authToken: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/responseWithMessage"
+  /rfq/{quote_id}/checkout:
+    parameters:
+      - $ref: "#/components/parameters/quoteId"
+    post:
+      tags:
+        - Quotes
+      summary: Generate Cart and Checkout URL for a Quote
+      operationId: post-rfq-quote_id-checkout
+      description: |-
+        Generates a cart URL and a checkout URL for a specific quote based on the provided `quote_id`.
+
+        You can only generate cart and checkout URLs for quotes in one of the following [statuses](#quote-statuses):
+
+        * New (0)
+        * In Process (2)
+        * Updated by Customer (3)
+
+        This endpoint will generate a checkout link for a quote even if it is configured to hide the checkout button on the Buyer Portal. You can use this to create an alternate checkout flow for your sales quotes.
+      security:
+        - authToken: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties: {}
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/responseWithMessage"
+                  - properties:
+                      data:
+                        properties:
+                          checkoutUrl:
+                            type: string
+                            description: "The URL that takes the quote to the storefront checkout page."
+                            example: "https://mybcstore.com/cart.php?action=loadInCheckout&id=0c3ede4f-edbe-4385-83a"
+                          cartId:
+                            type: string
+                            description: "The unique identifier of the cart generated for the quote."
+                            example: "0c3ede4f-edbe-4385-83a"
+                          cartUrl:
+                            type: string
+                            description: "The URL that takes the quote to the storefront cart page."
+                            example: "https://mybcstore.com/cart.php?action=load&id=0c3ede4f-edbe-4385-83a"
+        '422':
+          description: |-
+            Missing or Invalid Data
+
+            The 422 error occurs if the quote_id in the request path corresponds to a quote in an unsupported status.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/responseError"
+              examples:
+                Quote is in Draft status:
+                  value:
+                    code: 422
+                    data:
+                      errMsg: "Draft Quote can not be ordered"
+                    meta:
+                      message: "Draft Quote can not be ordered"
+  /rfq/{quote_id}/ordered:
+    parameters:
+      - $ref: "#/components/parameters/quoteId"
+    post:
+      tags:
+        - Quotes
+      summary: Assign a Quote to a BigCommerce Order
+      operationId: post-rfq-quote_id-ordered
+      description: |-
+        Associates an existing BigCommerce order with a specific quote based on the provided `quote_id`. 
+
+        In order to assign a quote to an order, it must be in one of the following statuses:
+
+        * New (0)
+        * In Process (2)
+        * Updated by Customer (3)
+
+        When specifying the order to be associated with the quote, use its **BigCommerce Order ID**, not the **B2B Edition Order ID**.
+
+        This endpoint **does not** convert an unpurchased quote into a new BigCommerce order. You can manually convert a quote while editing it in your B2B Edition control panel.
+      security:
+        - authToken: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              description: ''
+              type: object
+              properties:
+                orderId:
+                  $ref: "#/components/schemas/orderId"
+              required:
+              - orderId
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/responseWithMessage"
+        '422':
+          description: |-
+            Missing or Invalid Data
+
+            The 422 error occurs if the BigCommerce Order ID is invalid, or if the quote is in an unsupported status.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/responseError"
+              examples:
+                Invalid Order ID:
+                  value:
+                    code: 422
+                    data:
+                      errMsg: "Invalid BigCommerce order"
+                    meta:
+                      message: "Invalid BigCommerce order"
+  /rfq/{quote_id}/pdf-export:
+    parameters:
+      - $ref: "#/components/parameters/quoteId"
+    post:
+      tags:
+        - Quotes
+      summary: Export a Quote PDF
       operationId: get-rfq-quote_id-pdf-export
+      description: |-
+        Creates a download link for a PDF with information on a specific quote based on the provided `quoteId`.
+
+        The PDF does not use one of the buyer-facing templates that can be selected for PDFs and emails. Instead, it uses a non-configurable template that also communicates backend information, like storefront channel and line item cost margins.
+
+        You can optionally update the currency information and also supply a custom exchange rate by using the `currency` array.
+      security:
+        - authToken: []
       requestBody:
         content:
           application/json:
@@ -1843,276 +861,45 @@ paths:
               type: object
               properties:
                 currency:
-                  type: object
-                  properties:
-                    currencyExchangeRate:
-                      type: string
-                      description: Currency rate
-      description: Export quote pdf
-      security:
-        - authToken: []
-      tags:
-        - Quote
-  /rfq/extra-fields:
-    get:
-      summary: Get Quote Extra Fields Configs
-      tags:
-        - Quote
-      parameters:
-        - schema:
-            type: integer
-            default: 0
-          in: query
-          name: offset
-          description: Pagination offset.
-        - schema:
-            type: integer
-            default: 10
-          in: query
-          description: Pagination limit.
-          name: limit
+                  allOf:
+                    - $ref: "#/components/schemas/currency"
+                    - properties:
+                        currencyExchangeRate:
+                          type: string
+                          example: "1.34"
       responses:
         '200':
           description: OK
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  code:
-                    type: number
-                  data:
-                    type: array
-                    items:
-                      $ref: https://raw.githubusercontent.com/bigcommerce/docs/main/docs/b2b-edition/models/extra_fields/extra_fields.yaml
-                  meta:
-                    type: object
-                    properties:
-                      message:
-                        type: string
-                      pagination:
-                        type: object
+                allOf:
+                  - $ref: "#/components/schemas/responseWithMessage"
+                  - properties:
+                      data:
                         properties:
-                          totalCount:
-                            type: integer
-                          offset:
-                            type: integer
-                          limit:
-                            type: integer
-                
-              examples:
-                example-1:
-                  value:
-                    code: 200
-                    data:
-                      - id: 1
-                        uuid: b4be8a36-98c7-48e1-9495-cb8ec302378c
-                        filedName: test1
-                        fieldType: 0
-                        isRequired: false
-                        isUnique: false
-                        visibleToEnduser: true
-                        configType: 1
-                        defaultValue: ""
-                        maximumLength: "10"
-                      - id: 2
-                        uuid: 602c4b76-426e-46ff-a098-b37a15335936
-                        filedName: test2
-                        fieldType: 1
-                        isRequired: false
-                        isUnique: false
-                        visibleToEnduser: true
-                        configType: 1
-                        defaultValue: ""
-                        maximumValue: "20"
-                    meta:
-                      message: SUCCESS
-                      pagination:
-                        offset: 0
-                        limit: 10
-                        totalCount: 2
-      operationId: get-rfq-extra-fields
-      description: Get quote extra fields configs. It is better to cache the response results to avoid frequent API requests.
-      security:
-        - authToken: []
-  '/rfq/{quote_id}/shipping-rates':
+                          url:
+                            type: string
+                            description: "The URL for the generated PDF that can be sent to the customer or attached to the quote."
+                            example: "https://s3-us-west-2.amazonaws.com/bundleb2b-v2.0-quote-prod/B2B_Store%3AQN1234.pdf"
+  /rfq/{quote_id}/shipping-rate:
     parameters:
-      - schema:
-          type: string
-        name: quote_id
-        in: path
-        required: true
-        description: Unique quote ID
-    get:
-      summary: Get available shipping rates for quote
-      operationId: get-rfq-quote_id-shipping-rates
-      description: Get available shipping rates for quote.
-      security:
-        - authToken: []
-      tags:
-        - Quote
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                description: ''
-                type: object
-                properties:
-                  code:
-                    type: number
-                  data:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        shippingMethodId:
-                          type: string
-                          description: Shipping method ID
-                        type: 
-                          type: string
-                          description: Shipping method type
-                        description:
-                          type: string
-                          description: Shipping method description
-                        cost:
-                          type: number
-                          description: Shipping cost
-                  meta:
-                    type: object
-                    properties:
-                      message:
-                        type: string
-              examples:
-                Success:
-                  value:
-                    code: 200
-                    data:
-                      - shippingMethodId: "07a4b3bc067385847b04d80d430486d9"
-                        type: "shipping_flatrate"
-                        description: "Flat Rate"
-                        cost: 10
-                    meta:
-                      message: SUCCESS
-        '404':
-          description: Not found error
-          content:
-            application/json:
-              schema:
-                description: ''
-                type: object
-                properties:
-                  code:
-                    type: number
-                  data:
-                    type: object
-                    properties:
-                      errMsg:
-                        type: string
-                  meta:
-                    type: object
-                    properties:
-                      message:
-                        type: string
-
-              examples:
-                Not found error:
-                  value:
-                    code: 404
-                    data:
-                      errMsg: "Quote does not exist."
-                    meta:
-                      message: "Not found error"
-
-  '/rfq/custom/shipping-methods':
-    get:
-      summary: Get all B2B quote custom shipping methods
-      operationId: get-rfq-quote_id-custom-shipping
-      description: Get all B2B quote custom shipping methods. 
-      security:
-        - authToken: []
-      tags:
-        - Quote
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                description: ''
-                type: object
-                properties:
-                  code:
-                    type: number
-                  data:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        customShippingMethodName:
-                          type: string
-                          description: Custom shipping method name
-                  meta:
-                    type: object
-                    properties:
-                      message:
-                        type: string
-              examples:
-                Success:
-                  value:
-                    code: 200
-                    data:
-                        - customShippingMethodName: "custom1"
-                        - customShippingMethodName: "custom2"
-                    meta:
-                      message: SUCCESS
-        '422':
-          description: Parameter error
-          content:
-            application/json:
-              schema:
-                description: ''
-                type: object
-                properties:
-                  code:
-                    type: number
-                  data:
-                    type: object
-                    properties:
-                      errMsg:
-                        type: string
-                  meta:
-                    type: object
-                    properties:
-                      message:
-                        type: string
-
-              examples:
-                Parameter error:
-                  value:
-                    code: 422
-                    data:
-                      errMsg: "Custom shipping is not enabled."
-                    meta:
-                      message: "Parameter error"
-
-  '/rfq/{quote_id}/shipping-rate':
-    parameters:
-        - schema:
-            type: string
-          name: quote_id
-          in: path
-          required: true
-          description: Unique quote ID
+      - $ref: "#/components/parameters/quoteId"
     put:
-      summary: Select a shipping rate for quote
+      tags:
+        - Quotes
+      summary: Select a Shipping Rate for a Quote
       operationId: rfq-quote_id-select-shipping-rate
-      description: Select a shipping rate for quote. 
+      description: |-
+        Adds a shipping method to a specific quote based on the provided `quoteId`.
+
+        Use the [Get Available Shipping Rates for a Quote](#get-available-shipping-rates-for-a-quote) or [Get All B2B Quote Custom Shipping Methods](#get-all-b2b-quote-custom-shipping-methods) endpoints to retrieve shipping method information that you can add to the quote.
+
+        The request body must include either the `shippingMethodId` field to add a static or real-time shipping method, *or* the `customShippingMethodName` **and** the `customShippingMethodCost` fields to add a custom shipping method.
+
+        Note that the URL for this endpoint is *https://api-b2b.bigcommerce.com/api/v3/io/rfq/{quote_id}/shipping-rate*, which is different from the URL for the [Get Available Shipping Rates for a Quote](#get-available-shipping-rates-for-a-quote) endpoint (*https://api-b2b.bigcommerce.com/api/v3/io/rfq/{quote_id}/shipping-rates*). Using the incorrect URL will result in a **405 - Method Not Allowed** error.
       security:
         - authToken: []
-      tags:
-        - Quote
       requestBody:
         content:
           application/json:
@@ -2121,103 +908,993 @@ paths:
               properties:
                 shippingMethodId:
                   type: string
-                  description: Shipping method ID. Cannot be used with `customShippingMethodName` at the same time.
+                  description: "Shipping method ID. Cannot be used with `customShippingMethodName`
+                    at the same time."
                 customShippingMethodName:
                   type: string
-                  description: Custom shipping method name. Cannot be used with `shippingMethodId` at the same time.
+                  description: "Custom shipping method name. Cannot be used with `shippingMethodId`
+                    at the same time."
                 customShippingMethodCost:
                   type: number
-                  description: Custom shipping method cost. Required when using custom shipping method.
+                  description: "Custom shipping method cost. Required when using custom
+                    shipping method."
                   minimum: 0
+            examples:
+              Static or real-time method:
+                value:
+                  shippingMethodId: "07a4b3bc067385847b04d80d430486d9"
+              Custom method:
+                value:
+                  customShippingMethodName: "LTL Freight"
+                  customShippingMethodCost: 175
       responses:
         '200':
           description: OK
           content:
             application/json:
               schema:
-                description: ''
-                type: object
-                properties:
-                  code:
-                    type: number
-                  meta:
-                    type: object
-                    properties:
-                      message:
-                        type: string
-              examples:
-                Success:
-                  value:
-                    code: 200
-                    meta:
-                      message: SUCCESS
+                allOf:
+                  - $ref: "#/components/schemas/responseWithMeta"
+                  - properties:
+                      code:
+                        default: 200
+                      meta:
+                        properties:
+                          message:
+                            default: SUCCESS
         '422':
-          description: Parameter error
+          description: |-
+            Missing or Invalid Data
+
+            The 422 error occurs if the fields have incorrect data, such as entering a `shippingMethodId` value which does not correspond to an available shipping method.
           content:
             application/json:
               schema:
-                description: ''
-                type: object
-                properties:
-                  code:
-                    type: number
-                  data:
-                    type: object
-                    properties:
-                      errMsg:
-                        type: string
-                  meta:
-                    type: object
-                    properties:
-                      message:
-                        type: string
-
-              examples:
-                Parameter error:
-                  value:
-                    code: 422
-                    data:
-                      errMsg: "Shipping cost is required when using a custom shipping method."
-                    meta:
-                      message: "Parameter error"
+                $ref: "#/components/schemas/responseError"
+              example:
+                code: 422
+                data:
+                  errMsg: "Invalid shipping method"
+                meta:
+                  message: "Invalid shipping method"
     delete:
-      summary: Remove selected shipping rate for quote
+      tags:
+        - Quotes
+      summary: Remove Selected Shipping Rate from a Quote
       operationId: rfq-quote_id-delete-shipping-rate
-      description: Remove selected shipping rate for quote.
+      description: |-
+        Removes the current shipping method associated with a specific quote based on the provided `quoteId`.
+
+        Note that the URL for this endpoint is *https://api-b2b.bigcommerce.com/api/v3/io/rfq/{quote_id}/shipping-rate*, which is different from the URL for the [Get Available Shipping Rates for a Quote](#get-available-shipping-rates-for-a-quote) endpoint (*https://api-b2b.bigcommerce.com/api/v3/io/rfq/{quote_id}/shipping-rates*). Using the incorrect URL will result in a **405 - Method Not Allowed** error.
       security:
         - authToken: []
-      tags:
-        - Quote
       responses:
         '204':
           description: OK
         '422':
-          description: Parameter error
+          description: |-
+            Missing or invalid data
+
+            The 422 error occurs if the queried quote does not currently have a shipping method, or if the quote has already been ordered.
           content:
             application/json:
               schema:
-                description: ''
+                $ref: "#/components/schemas/responseError"
+              example:
+                code: 422
+                data:
+                  errMsg: "Your quote does not have any shipping rate."
+                meta:
+                  message: "Your quote does not have any shipping rate."
+  /rfq/{quote_id}/shipping-rates:
+    parameters:
+      - $ref: "#/components/parameters/quoteId"
+    get:
+      tags:
+        - Quotes
+      summary: Get Available Shipping Rates for a Quote
+      operationId: get-rfq-quote_id-shipping-rates
+      description: |-
+        Retrieves all shipping rates available to a specific quote based on the provided `quoteId`.
+
+        This endpoint only returns the static and real-time shipping methods available to a quote based on its product specifications and shipping address. Use the [Get All B2B Quote Custom Shipping Methods](#get-all-b2b-quote-custom-shipping-methods) endpoint to retrieve information on custom shipping methods.
+
+        Note that the URL for this endpoint is *https://api-b2b.bigcommerce.com/api/v3/io/rfq/{quote_id}/shipping-rates*, which is different from the URL for the [Select a Shipping Rate for a Quote](#select-a-shipping-rate-for-quote) and [Remove Selected Shipping Rate from a Quote](#remove-selected-shipping-rate-for-quote) endpoints (*https://api-b2b.bigcommerce.com/api/v3/io/rfq/{quote_id}/shipping-rate*). Using the incorrect URL will result in a **405 - Method Not Allowed** error.
+      security:
+        - authToken: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/responseArrayMeta"
+                  - properties:
+                      code:
+                        default: 200
+                      data:
+                        items:
+                          type: object
+                          properties:
+                            shippingMethodId:
+                              type: string
+                              description: "The unique identifier for the shipping method."
+                              example: 1725
+                            type:
+                              type: string
+                              description: "The type of shipping method added to the quote. Custom shipping methods appear as `custom`, while static and real-time shipping methods appear as `provider_methodtype`, like `shipping_flatrate`."
+                              enum:
+                                - "custom"
+                                - "provider_methodtype"
+                                - "shipping_flatrate"
+                            description:
+                              type: string
+                              description: "The name of the shipping method."
+                              example: "LTL - With Lift Gate"
+                            cost:
+                              type: number
+                              description: "The shipping rate on the quote."
+                              example: 175.95
+                      meta:
+                        properties:
+                          message:
+                            default: SUCCESS
+        '404':
+          description: Not found error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/responseError"
+              example:
+                code: 404
+                data:
+                  errMsg: "Quote does not exist."
+                meta:
+                  message: "Not found error"
+
+components:
+  schemas:
+    quoteId:
+      type: integer
+      description: "The internal numeric ID of the sales quote."
+      example: 123456
+    quoteUrl:
+      type: string
+      description: "The storefront URL for the quote."
+      example: "https://mybcstore.com/quote/?id=195&date=1622618606"
+    orderId:
+      type: string
+      description: "The B2B Edition internal order ID. Note that this is different from the BigCommerce order ID returned in the `bcOrderId` field."
+      example: "112495"
+    quoteData_GET:
+      allOf:
+        - properties:
+            quoteNumber:
+              type: string
+              description: "The quote identifier that is visible in the B2B Edition control panel and the Buyer Portal."
+              example: "QN101234"
+            status:
+              type: integer
+              description: "The numeric ID associated with the quote’s status. See [Quote Statuses](#quote-statuses) to learn about the statuses that correspond to each ID."
+              enum:
+                - 0
+                - 2
+                - 3
+                - 4
+                - 5
+                - 6
+                - 7
+            bcOrderId:
+              type: string
+              description: "The BigCommerce order ID associated with the sales quote."
+              example: "195"
+            orderId:
+              $ref: "#/components/schemas/orderId"
+            channelName:
+              type: string
+              description: "The name of the storefront channel associated with the quote."
+              example: "b2B Store"
+            createdAt:
+              type: integer
+              description: "The [Unix timestamp](https://www.unixtimestamp.com/) for when the sales quote was created. This is a read-only field."
+              example: 1622619778
+            expiredAt:
+              type: integer
+              description: "The [Unix timestamp](https://www.unixtimestamp.com/) for when the sales quote expires. This is a read-only field."
+              example: 1722619778
+            createdBy:
+              type: string
+              description: "The name of the sales rep or buyer who created the quote."
+              example: "Marie Curie"
+        - $ref: "#/components/schemas/quoteData_BASE"
+    quoteData_GET_ALL:
+      allOf:
+        - properties:
+            quoteId:
+              $ref: "#/components/schemas/quoteId"
+            company:
+              type: string
+              description: "The name of the Company account associated with the buyer on the quote. If the quote is for a B2C customer or guest shopper, this field is blank."
+              example: "Great Buys Incorporated"
+            salesRep:
+              type: string
+              description: "The sales rep user who last edited the quote."
+              example: "Isaac Newton"
+            updatedAt:
+              type: integer
+              description: "The [Unix timestamp](https://www.unixtimestamp.com/) when the quote was last modified."
+              example: 1722619778
+        - $ref: "#/components/schemas/quoteData_GET"
+    quoteData_GET_ONE:
+      allOf:
+        - $ref: "#/components/schemas/quoteData_GET"
+        - $ref: "#/components/schemas/quoteData_MOST"
+        - properties:
+            discountType:
+              type: integer
+              description: "Indicates whether the quote uses line item discounts (0), percentage discounts (1), or fixed amount discounts (2)."
+              enum:
+                - 0
+                - 1
+                - 2
+            discountValue:
+              type: number
+              description: "The total discount value on the quote. If there are no discounts, the value is `null`."
+              nullable: true
+              example: 25.00
+            shippingTotal:
+              type: number
+              description: "The total cost of shipping on the quote."
+              example: 150.95
+            taxTotal:
+              type: number
+              description: "The total tax cost on the quote."
+              example: 140.67
+            totalAmount:
+              type: number
+              description: "The total price of the quote after any discounts."
+              example: 1495.00
+            quoteLogo:
+              type: string
+              description: "The image URL of the store logo added to quote emails and PDFs."
+              example: "https://s3-us-west-2.amazonaws.com/bundleb2b-v3.0-media-files-prod/logo.png"
+            shippingMethod:
+              allOf:
+                - properties:
+                    id:
+                      type: integer
+                      description: "The unique identifier for the shipping method."
+                      example: 1725
+                    b2bId:
+                      type: integer
+                      description: "The unique identifier for custom shipping methods. This is the same value as the id value in the shipping array."
+                      example: 1725
+                    imageUrl:
+                      type: string
+                      description: "The URL of the logo image for the shipping provider, if the quote has a real-time shipping method."
+                      example: "https://fedex.com/logo.png"
+                    isCustom:
+                      type: boolean
+                      description: "Indicates whether or not the quote is using a custom shipping method."
+                      example: true
+                    transitTime:
+                      type: string
+                      description: "The estimated delivery time for a real-time shipping method."
+                      example: "2 business days"
+                    additionalDescription:
+                      type: string
+                      description: "A secondary description found on some real-time shipping methods."
+                      example: "Priority Mail International"
+                - $ref: "#/components/schemas/shippingMethod_BASE"
+            billingAddress:
+              allOf:
+                - $ref: "#/components/schemas/companyAddress"
+                - properties:
+                    label:
+                      type: string
+                      description: "The address label specified in the Company account."
+                      example: "Default Shipping"
+                    firstName:
+                      type: string
+                      description: "The buyer’s first name on the address."
+                      example: "Marie"
+                    lastName:
+                      type: string
+                      description: "The buyer’s last name on the address."
+                      example: "Curie"
+                    addressId:
+                      type: number
+                      description: "The unique identifier for addresses associated with Company accounts."
+                      example: 12345
+                    stateCode:
+                      type: string
+                      description: "The two-letter code for the state on the address."
+                      example: "TX"
+                    countryCode:
+                      type: string
+                      description: "The two-letter code for the country on the address."
+                      example: "US"
+            shippingAddress:
+              properties:
+                label:
+                  type: string
+                  description: "The address label specified in the Company account."
+                  example: "Default Shipping"
+                firstName:
+                  type: string
+                  description: "The buyer’s first name on the address."
+                  example: "Marie"
+                lastName:
+                  type: string
+                  description: "The buyer’s last name on the address."
+                  example: "Curie"
+                addressId:
+                  type: number
+                  description: "The unique identifier for addresses associated with Company accounts."
+                  example: 12345
+                stateCode:
+                  type: string
+                  description: "The two-letter code for the state on the address."
+                  example: "TX"
+                countryCode:
+                  type: string
+                  description: "The two-letter code for the country on the address."
+                  example: "US"
+            storeInfo:
+              type: object
+              properties:
+                storeName:
+                  type: string
+                  description: "The name of the storefront."
+                  example: "B2B Store"
+                storeAddress:
+                  type: string
+                  description: "The storefront’s full origin address. The newline character \n is used to separate each line of text."
+                  example: "123 Main Street\nAustin, TX 78704\nUnited States of America"
+                storeCountry:
+                  type: string
+                  description: "The full name of the storefront’s origin country."
+                  example: "United States"
+                storeLogo:
+                  type: string
+                  description: "The image URL for the storefront logo."
+                  example: "https://cdn11.bigcommerce.com/s-1234abcd/product_images/bc_logo_1666214140__52549.png"
+            companyInfo:
+              type: object
+              properties:
+                companyId:
+                  type: integer
+                  description: "The unique identifier for the Company account."
+                  example: 5456
+                companyName:
+                  type: string
+                  description: "The Company account name."
+                  example: "Great Buys Incorporated"
+                companyAddress:
+                  type: string
+                  description: "The first line of the primary address for the Company account."
+                  example: "512 Bluebonnet Lane"
+                companyCity:
+                  type: string
+                  description: "The city of the primary address for the Company account."
+                  example: "Austin"
+                companyState:
+                  type: string
+                  description: "The state of the primary address for the Company account, if applicable."
+                  example: "Texas"
+                companyZipCode:
+                  type: string
+                  description: "The postal code of the primary address for the Company account."
+                  example: "78704"
+                companyCountry:
+                  type: string
+                  description: "The full name of the country on the primary address of the Company account."
+                  example: "United States"
+                companyphoneNumber:
+                  type: string
+                  description: "The phone number associated with the Company account."
+                  example: "512-200-1234"
+            salesRepInfo:
+              type: object
+              properties:
+                salesRepName:
+                  type: string
+                  description: "The name of the sales rep."
+                  example: "Isaac Newton"
+                salesRepEmail:
+                  type: string
+                  description: "The sales rep’s email address."
+                  format: email
+                  example: "inewton@mybcstore.com"
+                salesRepPhoneNumber:
+                  type: string
+                  description: "The sales rep’s phone number."
+                  example: "512-111-4444"
+            storefrontAttachFiles:
+              type: array
+              items:
                 type: object
                 properties:
-                  code:
+                  id:
+                    type: integer
+                    description: "The unique identifier assigned to the file attachment."
+                    example: 12345
+                  fileName:
+                    type: string
+                    description: "The attachment’s file name."
+                    example: "fintech intake form - filled out.csv"
+                  fileType:
+                    type: string
+                    description: "The attachment’s file type."
+                    example: "text/csv"
+                  fileUrl:
+                    type: string
+                    description: "The download link for the attachment file."
+                    example: "https://s3-us-west-2.amazonaws.com/bundleb2b-v3.0-media-files-prod/quoteattachedfile/fintech%20intake%20form%20-%20filled%20-out.csv?versionId=abcd1234"
+              description: "Information on files attached to the quote by the buyer."
+            backendAttachFiles:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    description: "The unique identifier assigned to the file attachment."
+                    example: 12345
+                  fileName:
+                    type: string
+                    description: "The attachment’s file name."
+                    example: "fintech intake form - filled out.csv"
+                  fileType:
+                    type: string
+                    description: "The attachment’s file type."
+                    example: "text/csv"
+                  fileUrl:
+                    type: string
+                    description: "The download link for the attachment file."
+                    example: "https://s3-us-west-2.amazonaws.com/bundleb2b-v3.0-media-files-prod/quoteattachedfile/fintech%20intake%20form%20-%20filled%20-out.csv?versionId=abcd1234"
+              description: "Information on files attached to the quote by the sales rep."
+            trackingHistory:
+              type: array
+              items:
+                type: object
+                properties:
+                  date:
                     type: number
-                  data:
-                    type: object
-                    properties:
-                      errMsg:
-                        type: string
-                  meta:
-                    type: object
-                    properties:
-                      message:
-                        type: string
+                    description: "The [Unix timestamp](https://www.unixtimestamp.com/) for when the message was sent."
+                    example: 1630489012
+                  role:
+                    type: string
+                    description: "The sender of the message. Buyers are designated as `Customer:` while sales reps are designated as `Sales rep:`"
+                    example: "Customer: Marie Curie"
+                  message:
+                    type: string
+                    description: "The contents of the message."
+                    example: "Are there bulk discounts available?"
+              description: "Provides a log of messages sent between the buyer and the sales rep."
+            extraFieldsInfo:
+              type: array
+              items:
+                type: object
+                description: Extra Fields
+                properties:
+                  id:
+                    type: number
+                    description: Unique id
+                  uuid:
+                    type: string
+                    description: UUID of the extra field
+                  fieldName:
+                    type: string
+                    description: Field name that config in you store
+                  fieldType:
+                    type: number
+                    description: Field type of the extra field.0 means text type. 1 means textarea type. 2 means number type. 3 means dropdown type.
+                    enum:
+                      - 0
+                      - 1
+                      - 2
+                      - 3
+                  isRequired:
+                    type: boolean
+                    description: Is this field is required
+                  isUnique:
+                    type: boolean
+                    description: Is the value of this field is unique
+                  visibleToEnduser:
+                    type: boolean
+                    description: Is this field visible to end-user
+                  configType:
+                    type: number
+                    description: Extra field config type.1 means built in. 2 means user defined.
+                    enum:
+                      - 1
+                      - 2
+                  defaultValue:
+                    type: string
+                    description: Default value of this field.
+                  maximumLength:
+                    type: string
+                    description: The maximum length of the value of this field. fieldType == 0
+                  numberOfRows:
+                    type: string
+                    description: The maximum number of rows of the value of this field. fieldType == 1
+                  maximumValue:
+                    type: string
+                    description: Maximum value of the field value. fieldType == 2
+                  listOfValue:
+                    type: array
+                    description: List of all optional values for the field value. fieldType == 3
+                    items:
+                      type: string
+            recipients:
+              type: array
+              items:
+                type: string
+                format: email
+              description: |-
+                Lists additional recipients added to the quote. This is different from the additional recipients listed on quote emails.
 
-              examples:
-                Parameter error:
-                  value:
-                    code: 422
-                    data:
-                      errMsg: "Quote does not have any shipping rate."
-                    meta:
-                      message: "Parameter error"
-    
+                This array is not supported if you are using the new Add/Edit Quote experience. See [Managing Sales Quotes in B2B Edition (Help Center)](https://support.bigcommerce.com/s/article/B2B-Edition-Quotes) to learn more.
+              example:
+                - "mcurie@greatbuysic.com"
+                - "alavoisier@greatbuysinc.com"
+            productList:
+              items:
+                properties:
+                  costPrice:
+                    type: number
+                    description: "The line item’s cost price."
+                    example: 4.95
+                  inventoryTracking:
+                    type: string
+                    description: "Indicates whether the line item’s inventory is tracked on the product (product) or variant level (variant), or if it is not tracked (none)."
+                    enum:
+                      - "product"
+                      - "none"
+                      - "variant"
+                  purchasedHandled:
+                    type: boolean
+                    description: "Indicates whether or not the line item is a [custom item](#custom-items). A value of `true` indicates the line item is a custom item."
+                  inventoryLevel:
+                    type: integer
+                    description: "The available stock for the line item."
+                    example: 70
+                  type:
+                    type: string
+                    description: "Indicates whether the line item is a physical or digital product."
+                    enum:
+                      - "physical"
+                      - "digital"
+                  isFreeShipping:
+                    type: boolean
+                    description: "Indicates whether the line item has product-level free shipping."
+                  availability:
+                    type: boolean
+                    description: "Indicates whether or not the line item is visible on the storefront."
+                  isPriceHidden:
+                    type: boolean
+                    description: "Indicates whether or not the line item’s price is hidden on the storefront."
+                  purchasingDisabled:
+                    type: string
+                    description: "Indicates whether or not the line item is purchasable on the storefront. Non-purchasable products can still be added to a quote as [custom items](#custom-items)."
+                    enum:
+                      - "available"
+                      - "disabled"
+                  foundInBc:
+                    type: boolean
+                    description: "Indicates whether or not the line item is present in your store’s catalog."
+                  hasInvalidOptions:
+                    type: boolean
+                    description: "Indicates whether or not the line item has product options which were removed from your store’s catalog. If a line item has invalid options in an unpurchased quote, it must be updated before the buyer can take it to checkout."
+                  productUrl:
+                    type: string
+                    description: "The relative URL of the product with respect to your store's domain."
+                    example: "/sansevieria/"
+    quoteData_PUT_POST:
+      allOf:
+        - $ref: "#/components/schemas/quoteData_BASE"
+        - $ref: "#/components/schemas/quoteData_MOST"
+        - properties:
+            message:
+              type: string
+              description: "A message sent to the buyer via the in-quote messaging system."
+              example: "Hello Marie! I have submitted the quote you requested. Please review the notes and terms, and don't hesitate to reach out with any questions."
+            userEmail:
+              type: string
+              format: email
+              description: "The email address of the quote’s sales rep."
+            expiredAt:
+              type: string
+              description: "The date when the buyer can no longer purchase the quote. Use '%m/%d/%Y' format when entering the expiration date."
+              example: "04/19/2025"
+    quoteData_POST:
+      required:
+        - grandTotal
+        - discount
+        - totalAmount
+        - subtotal
+        - expiredAt
+        - productList
+      allOf:
+        - $ref: "#/components/schemas/quoteData_PUT_POST"
+        - properties:
+            totalAmount:
+              type: number
+              description: "The total price of the quote after any discounts."
+              example: 1495.00
+            companyId:
+              type: integer
+              description: "The unique identifier for the Company account associated with the quote. This field is required when creating a quote for a Company account."
+              example: 111111
+            shippingAddress:
+              required:
+                - country
+                - state
+                - city
+                - zipCode
+                - address
+                - apartment
+            contactInfo:
+              required:
+                - name
+                - email
+            extraFields:
+              required:
+                - fieldName
+                - fieldValue
+            productList:
+              items:
+                required:
+                  - sku
+                  - basePrice
+                  - discount
+                  - offeredPrice
+                  - quantity
+                  - productId
+                properties:
+                  options:
+                    required:
+                      - optionId
+                      - optionValue
+                      - optionLabel
+                      - optionName
+    quoteData_BASE:
+      properties:
+        subtotal:
+          type: number
+          description: "The quoted total after discounts and before shipping and tax. If you are updating the line items or discounts on a quote, you must also update the subtotal to reflect the new pricing."
+          example: 1495.00
+        channelId:
+          type: integer
+          description: "The storefront channel ID associated with the quote. This is required if your store has multiple storefront channels. Use `1` for your store’s default storefront channel."
+          default: 1
+        quoteTitle:
+          type: string
+          description: "The external title given to the quote."
+          example: "Plates - Custom Etching"
+        referenceNumber:
+          type: string
+          description: "An identifier for the quote that can be supplied by the sales rep or the buyer, such as a Purchase Order number."
+          example: "03302025-0001"
+        currency:
+          allOf:
+            - $ref: "#/components/schemas/currency"
+            - properties:
+                currencyExchangeRate:
+                  type: number
+                  example: 1.34
+        extraFields:
+          $ref: "#/components/schemas/extraFields"
+    quoteData_MOST:
+      properties:
+        notes:
+          type: string
+          description: "The quote’s buyer-facing notes. Use the newline character `\n` to separate each line of text."
+          example: "Use the in-quote messaging system to contact us about products, pricing, or other quote information."
+        discount:
+          type: number
+          description: "The total value of discounts applied to the quote."
+          example: 20.00
+        grandTotal:
+          type: number
+          description: "The quoted total after discounts, shipping, and tax are applied. If you are updating the line items or discounts on a quote, you must also update the grand total to reflect the new pricing."
+          example: "1495"
+        legalTerms:
+          type: string
+          description: "The quote’s terms and conditions. Use the newline character `\n` to separate each line of text. Omitting this field or leaving it blank does not add your store’s default terms and conditions to the quote. Instead, the quote will not display any terms."
+          example: "Thank you for the opportunity to provide this quote! Please note the following:\n - Quotes are valid for 30 days unless otherwise stated.\n - Pricing is subject to change at any time."
+        displayDiscount:
+          type: boolean
+          description: "Determines if buyers can see quoted discount values in the Buyer Portal, or if they only see the quoted prices. If left blank, the quote uses the discount display selection in your Quote settings."
+        allowCheckout:
+          type: boolean
+          description: "Determines whether or not the buyer can take the quote to the checkout page. If left blank, the quote uses the checkout selection in your Quote settings."
+        productList:
+          $ref: "#/components/schemas/productList"
+        shippingAddress:
+          $ref: "#/components/schemas/companyAddress"
+        contactInfo:
+          $ref: "#/components/schemas/contactInfo"
+    contactInfo:
+      type: object
+      description: "This object contains the contact information for the buyer in the quote."
+      properties:
+        name:
+          type: string
+          description: "The buyer’s full name."
+          example: "Marie Curie"
+        email:
+          type: string
+          format: email
+          description: "The buyer’s email address."
+        companyName:
+          type: string
+          description: "The name of the Company associated with the quote’s buyer. For B2C customers and guest shoppers, this is the name of their business, if provided."
+          example: "Great Buys Incorporated"
+        phoneNumber:     
+          type: string
+          description: "The buyer’s phone number."
+          example: "512-200-1234"
+    extraFields:
+      type: array
+      description: "Adds extra field information to the quote. This is required if your store has required quote extra fields. If you include the array in the request, you must include all of its fields."
+      items:
+        type: object
+        properties:
+          fieldName:
+            type: string
+            description: "The name of the quote extra field."
+            example: "I want a sales representative to call me at the provided phone number."
+          fieldValue:
+            type: string
+            description: "The value of the quote extra field."
+            example: "Yes"
+    companyAddress:
+      type: object
+      properties:
+        address:
+          type: string
+          description: "The first line of the address."
+          example: "512 Bluebonnet Lane"
+        apartment:
+          type: string
+          description: "The second line of the address."
+          example: "Building 100"
+        city:
+          type: string
+          description: "The city on the address."
+          example: "Austin"
+        state:
+          type: string
+          description: "The full name of the state on the address."
+          example: "Texas"
+        zipCode:
+          type: string
+          description: "The postal code on the address."
+          example: "78704"
+        country:
+          type: string
+          description: "The full name of the country on the address."
+          example: "United States"
+    shippingMethod_BASE:
+      type: object
+      properties:
+        type:
+          type: string
+          description: "The type of shipping method added to the quote. Custom shipping methods appear as `custom`, while static and real-time shipping methods appear as `provider_methodtype`, like `shipping_flatrate`."
+          enum:
+            - "custom"
+            - "provider_methodtype"
+            - "shipping_flatrate"
+          example: "shipping_flatrate"
+        cost:
+          type: number
+          description: "The shipping rate on the quote."
+          example: 175.95
+        description:
+          type: string
+          description: "The name of the shipping method."
+          example: "LTL - With Lift Gate"
+    currency:
+      type: object
+      properties:
+        token:
+          type: string
+          description: "The currency symbol."
+          example: "$"
+        location:
+          type: string
+          description: "Determines whether the currency symbol is added to the left or the right of quote pricing."
+          enum:
+            - "left"
+            - "right"
+        currencyCode:
+          type: string
+          description: "The three-letter code corresponding to the quote’s currency."
+          example: "USD"
+        decimalToken:
+          type: string
+          description: "The character used to separate decimal values in quote pricing."
+          example: "."
+        decimalPlaces:
+          type: integer
+          description: "The number of decimal places displayed in quote pricing."
+          example: 2
+        thousandsToken:
+          type: string
+          description: "The character used to separate the hundredths and thousandths places in quote pricing."
+          example: ","
+        currencyExchangeRate:
+          description: "Overrides the built-in exchange rate between your store’s default currency and the quote’s selected currency. If left blank, the exchange rate defined in your store’s settings is used."
+          example: "1.34"
+    productList:
+      type: array
+      description: "Line item information for the quote. If you add this array to the request, you must include all existing line items that you want to keep in the quote."
+      items:
+        properties:
+          productId:
+            type: integer
+            description: "The unique identifier for the base line item."
+            example: "12345"
+          productName:
+            type: string
+            minLength: 1
+            description: "The name of the line item."
+            example: "Sansiveria Plant"
+          variantId:
+            type: integer
+            description: "The unique identifier for the line item variant."
+            example: 12345
+          sku:
+            type: string
+            description: "The line item’s SKU."
+            example: "SAN-PL"
+          basePrice:
+            type: number
+            description: "The line item’s price before any discounts are applied."
+            example: 25.00
+          discount:
+            type: number
+            description: "The discount percentage applied to the line item."
+            example: 20.0
+          offeredPrice:
+            type: number
+            description: "The line item’s price after any discounts are applied. You can also use this field to override the base price without specifying a `discount` value."
+            example: 20.00
+          quantity:
+            type: integer
+            description: "The quantity of the line item."
+            example: 20
+          orderQuantityMaximum:
+            type: integer
+            description: "The maximum number of line item units that can be added to the quote. To set an unlimited order quantity, omit this field or use a value of `0`."
+            example: 100
+          orderQuantityMinimum:
+            type: integer
+            description: "The minimum number of line item units that can be added to the quote. To set a minimum quantity of zero, omit this field or use a value of `0`."
+            example: 5
+          imageUrl:
+            type: string
+            description: "The URL for the line item image on your storefront."
+            example: "https://mybcstore.com/sansiveria.jpg"
+          options:
+            type: array
+            description: "Variant and modifier option information for the line item. This array is required if the line item has variant options."
+            items:
+              properties:
+                optionId:
+                  type: integer
+                  description: "The unique identifier for the line item’s variant or modifier option."
+                  example: 1234
+                optionValue:
+                  type: string
+                  description: "The unique identifier for the line item’s selected option value."
+                  example: 1234
+                optionLabel:
+                  type: string
+                  description: "The name of the line item’s selected option value."
+                  example: "Ocean"
+                optionName:
+                  type: string
+                  description: "The name of the line item’s variant or modifier option."
+                  example: "Color"
+# schemas below this point are response-specific
+    quote_PUT_POST:
+      type: object
+      properties:
+        quoteId:
+          $ref: "#/components/schemas/quoteId"
+        quoteUrl:
+          $ref: "#/components/schemas/quoteUrl"
+    responseObject:
+      properties:
+        code:
+          type: number
+          description: "HTTP Response Code"
+        data:
+          type: object
+    responseWithMessage:
+      allOf:
+        - $ref: "#/components/schemas/responseObject"
+        - properties:
+            code:
+              default: 200
+            message:
+              type: string
+              default: SUCCESS
+    responseWithMeta:
+      allOf:
+        - $ref: "#/components/schemas/responseObject"
+        - properties:
+            meta:
+              type: object
+              properties:
+                message:
+                  type: string
+    responseArrayMeta:
+      properties:
+        code:
+          type: number
+          description: "HTTP Response Code"
+        data:
+          type: array
+        meta:
+          type: object
+          properties:
+            message:
+              type: string
+    responseError:
+      allOf:
+        - $ref: "#/components/schemas/responseWithMeta"
+        - properties:
+            data:
+              properties:
+                errMsg:
+                  type: string
+    responsePagination:
+      type: object
+      properties:
+        totalCount:
+          type: integer
+          description: "The total number of items in the full response."
+          example: 250
+        offset:
+          type: integer
+          description: "The number of results skipped before the first result."
+          default: 0
+        limit:
+          type: integer
+          description: "The number of records returned per page."
+          default: 10
+  parameters:
+    offset:
+      name: offset
+      in: query
+      schema:
+        type: integer
+        default: '0'
+      description: "The number of results to skip before returning the first result. If left blank, this defaults to `0`."
+    limit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        default: '10'
+      description: "Determines the number of records to return per page. If left blank, this defaults to `10`."
+    quoteId:
+      name: quote_id
+      in: path
+      required: true
+      schema:
+        type: integer
+      description: "The internal numeric ID of the sales quote."
+      example: 123456
+  securitySchemes:
+    authToken:
+      name: authToken
+      description: Required to authenticate requests. Include the token in a header
+        parameter called `authToken`.
+      type: apiKey
+      in: header

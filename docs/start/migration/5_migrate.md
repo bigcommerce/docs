@@ -38,7 +38,8 @@ BigCommerce enforces strict platform limits, such as maximum variants per produc
 The flowchart below is an example of the appropriate workflow for migrating products:
 
 ```mermaid
-flowchart TD
+flowchart LR
+
     A[Start Migration] --> B[Fetch Source Data Batch]
     B --> C[Transform Data for BigCommerce Schema]
     C --> D["Check for Existing Product (by SKU/ID)"]

@@ -36,7 +36,8 @@ Delta migrations are subject to all the same API rate limits and catalog constra
 The flowchart below is an example of the appropriate workflow for delta migration:
 
 ```mermaid
-flowchart TD
+flowchart LR
+
     A[Initial Migration Complete] --> B[Track Source Data Changes]
     B --> C["Extract Changed Records (since Initial Migration)"]
 

@@ -35,26 +35,6 @@ For batch uploads, log each product's status whenever possible to ensure complet
 BigCommerce enforces strict platform limits, such as maximum variants per product, image sizes, and total catalog size. Exceeding these can cause migration jobs to fail or result in incomplete imports. Review BigCommerce’s documentation on limitations before migration to avoid unexpected errors.
 </Callout>
 
-The flowchart below is an example of the appropriate workflow for migrating products:
-
-```mermaid
-flowchart LR
-
-    A[Start Migration] --> B[Fetch Source Data Batch]
-    B --> C[Transform Data for BigCommerce Schema]
-    C --> D["Check for Existing Product (by SKU/ID)"]
-    D -- Exists --> E[Update Product Record]
-    D -- Not Exists --> F[Create Product Record]
-    E --> G["Upload Related Entities (images, categories, etc.)"]
-    F --> G
-    G --> H[Log Status and API Response]
-    H --> I["Handle Errors / Retry as Needed"]
-    I --> J{"More Batches?"}
-    J -- Yes --> B
-    J -- No --> K["Post-Migration Verification"]
-    K --> L[End Migration]
-```
-
 ### Post-Migration verification
 
 * Compare product counts between your source platform and BigCommerce  

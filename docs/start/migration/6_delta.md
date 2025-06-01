@@ -33,26 +33,6 @@ The closer your delta migration occurs to the actual go-live cutover, the less r
 Delta migrations are subject to all the same API rate limits and catalog constraints as your initial migration. Always check for updated limits before running your delta to avoid unexpected failures.
 </Callout>
 
-The flowchart below is an example of the appropriate workflow for delta migration:
-
-```mermaid
-flowchart LR
-
-    A[Initial Migration Complete] --> B[Track Source Data Changes]
-    B --> C["Extract Changed Records (since Initial Migration)"]
-
-    C --> D[Prepare Delta Dataset]
-    D --> E{"Does Record Exist in BigCommerce?"}
-    E -- Yes, Modified --> F[Update Record via API]
-    E -- No, New --> G[Create Record via API]
-    F --> H["Log Success/Error"]
-    G --> H
-    H --> I{"More Records?"}
-    I -- Yes --> C
-    I -- No --> J["Run Post-Migration Verification"]
-    J --> K[Go Live or Final Sync]
-```
-
 ### Data Reconciliation Strategy
 
 * Implement a reliable method to identify which products were created or modified since your initial migration  

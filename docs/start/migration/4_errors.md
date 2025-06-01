@@ -19,7 +19,7 @@ While rate limiting typically returns a `429`, you may occasionally receive a `5
 
 `4xx` errors indicate malformed requests or invalid data. For automated operations, log and skip most `4xx` errors for later review, but note that some require immediate attention.
 
-<Callout type=“warning”>  
+<Callout type="warning">  
 Logging and skipping errors can lead to silent data loss. Always review error logs post-migration and generate a summary of skipped records for follow-up.  
 </Callout>
 
@@ -39,7 +39,7 @@ $milliseconds = $response->getHeader("X-Rate-Limit-Time-Reset-Ms");
 usleep($milliseconds * 1000);
 ```
 
-<Callout type=“info”>  
+<Callout type="info">  
 If both `X-Retry-After` and `X-Rate-Limit-Time-Reset-Ms` are present, honor the longer of the two wait times.  
 </Callout>
 
@@ -53,7 +53,7 @@ The API returns this error either when a request’s path does not match an exis
 
 When employing batch endpoints, for example [Update Products (Batch)](https://developer.bigcommerce.com/docs/rest-catalog/products#update-products-batch), there may be a single item that causes the whole request to fail. Often, the response for batch endpoints will include the index of the failed item. Use this index to remove the item from the request, then retry.
 
-<Callout type=“info”>  
+<Callout type="info">  
 Not every batch endpoint identifies the index or indices of failed items. If the response doesn't specify which items failed in a batch request, you'll need to send each item in separate requests to identify and report the failures.
 
 Do not assume the entire batch succeeded or failed. Process successful items, and retry or log errors for failed ones.  
@@ -66,7 +66,7 @@ The API returns this error when a request is formatted incorrectly or contains i
 * A `422` error should typically only occur during testing. If you see it during a large data migration, check your dataset and the data mapping for potential problems.  
 * You can likely log and skip a single `422` error. However, repeated `422` errors indicate a persistent problem that you must fix before continuing the migration.
 
-<Callout type=“info”>  
+<Callout type="info">  
 Implement thorough client-side validation before sending API requests. If you encounter repeated `422` errors during production data migration, treat this as a critical issue. Pause the migration, fix the data mapping, and only resume once the problem is resolved.  
 </Callout>
 

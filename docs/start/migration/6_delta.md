@@ -38,7 +38,8 @@ The flowchart below is an example of the appropriate workflow for delta migratio
 ```mermaid
 flowchart TD
     A[Initial Migration Complete] --> B[Track Source Data Changes]
-    B --> C[Extract Changed Records (since Initial Migration)]
+    B --> C["Extract Changed Records (since Initial Migration)"]
+
     C --> D[Prepare Delta Dataset]
     D --> E{"Does Record Exist in BigCommerce?"}
     E -- Yes, Modified --> F[Update Record via API]

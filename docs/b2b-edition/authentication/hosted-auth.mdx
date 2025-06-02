@@ -1,65 +1,39 @@
 # Authentication for hosted storefronts
 
-B2B Edition has four APIs that let you manage data, log in customers, make client-side queries for company information, and more. Each requires a different authentication method.
+Authentication provides vital security for your application by verifying who can access certain data. B2B Edition provides several methods for retrieving tokens that can be used to authenticate requests to server to server and storefront APIs.
 
-## REST Management API
+## Server to Server Tokens
 
-B2B Edition's REST Management APIs require you to create and pass a token along with the request using the `authToken` header.
+Server to server authentication tokens are used to authenticate requests to the B2B REST Management API. Unlike other BigCommerce APIs, B2B server to server authTokens are preconfigured with all API scopes.
 
-For the REST Management V3 API, create an auth token using the [Create a server-to-server token](/b2b-edition/apis/rest-management/authentication#get-server-to-server-tokens) endpoint.
+You can generate a server to server authToken from an [API account](#creating-an-api-account) in the B2B Edition control panel, or by [using the API](#using-the-rest-management-api). Once created, tokens do not expire on their own after a set period of time, but you can invalidate a token by using the [Delete Backend API Tokens](/b2b-edition/apis/rest-management/authentication#delete-backend-api-tokens) endpoint.
 
-For the REST Management V2 API, request an auth token by contacting support.
+### Creating an API Account
 
-## REST Storefront API
+Creating an API Account is recommended for backend users with the correct user role and permissions to generate a server to server authToken. This method also allows you to create tokens for developers without a Store Owner or Administrator role in your B2B Edition account.
 
-To create a storefront auth token, use the following steps:
+To create a B2B API account, go to the **Settings** &rsaquo; **API Accounts** area of the B2B Edition control panel and click **Create API Account**. Select the **V3 API** token type, as the V2 REST Management API is deprecated. 
 
-First, make a request to the [BigCommerce Current Customer API](/docs/storefront-auth/current-customer), passing B2B Edition's client ID as the value of the `app_client_id` query parameter. Our client ID is `dl7c39mdpul6hyc489yk0vzxl6jesyx`.
+![The available fields when creating a new V3 API account in the B2B Edition control panel](https://storage.googleapis.com/bigcommerce-production-dev-center/images/B2B%20Edition/Authentication-for-hosted-storefronts/api-account-fields.png)
 
-```http filename="Example request to BigCommerce Current Customer API" copy
-https://{yourstore.example.com}/customer/current.jwt?app_client_id=dl7c39mdpul6hyc489yk0vzxl6jesyx
-```
+See the “API Account Settings” section of [B2B Edition Settings](https://support.bigcommerce.com/s/article/B2B-Edition-Settings) to learn more about API accounts.
 
-If your request is successful, BigCommerce returns a current customer [JSON web token (JWT)](https://jwt.io/). Retain the token.
+### Using the REST Management API
 
-After you receive the current customer JWT, make a request to the B2B Edition [Get a storefront OpenAPI authtoken](/b2b-edition/apis/rest-management/authentication#get-a-storefront-api-authtoken) endpoint. Use the current customer JWT as the value of the `jwtToken` query parameter.
+The [Get a Server to Server Token](/b2b-edition/apis/rest-management/authentication#get-server-to-server-tokens) endpoint generates a B2B server to server authToken by validating a backend user’s login credentials and the store hash. This is useful if you are building an integration which automatically generates a token for Store Owner or Administrator users. 
 
-A successful request to the [Get a storefront OpenAPI authtoken](/b2b-edition/apis/rest-management/authentication#get-a-storefront-api-authtoken) endpoint returns a B2B Edition REST Storefront API token, which you can pass as a value of the `authToken` header in requests to the B2B Edition REST Storefront API.
+<Callout type= "warning">
+   **Note:** This endpoint does not support users with custom system user roles, even if those roles have API account creation permissions.
+</Callout> 
 
-```curl filename="Example token request (CURL)" copy
-curl https://api-b2b.bigcommerce.com/api/io/auth/storefront?jwtToken=bigCommerce.currentCustomerResponse.jwtString
-```
+Server to server authTokens do not expire by default, but you can use this endpoint to set a fixed validity period. The function in the example below returns a token that expires at the [Unix timestamp](https://www.unixtimestamp.com/) specified in the `endAt` field.
 
-```js filename="Example token request (Fetch)" copy
-async function() {
-  try {
-    let authToken = await fetch({
-      method: "get",
-      url: "https://api-b2b.bigcommerce.com/api/io/auth/storefront",
-      query:{
-        jwtToken: "bigCommerce.currentCustomerResponse.jwtString"
-      }
-    });
-    return authToken;
-  } catch(error) {
-    console.log(error);
-    throw error;
-  }
-}
-```
-
-## REST Management V3 API
-
-To get a REST Management API auth token, use the [Get server to server OpenAPI tokens](/b2b-edition/apis/rest-management/authentication#get-server-to-server-tokens) endpoint. Send the store's `storeHash` and the email and password you use to sign in to B2B Edition in the store control panel. The response returns tokens you can use as the value of the authToken header in requests to the B2B Edition REST Management V3 API.
-
-For details, see the [Get server to server OpenAPI tokens](/b2b-edition/apis/rest-management/authentication#get-server-to-server-tokens) endpoint reference.
-
-```js http
+```js filename="Fetch request example" copy
 async function() {
   try {
     let authToken = await fetch({
       method: "post",
-      url: "https://api-b2b.bigcommerce.com/api/io/auth/backend",
+      url: "https://api-b2b.bigcommerce.com/api/v3/io/auth/backend",
       body:{
         storeHash: "theStoreHash",
         email: "b2bEditionControlPanelUserLoginEmail",
@@ -77,3 +51,212 @@ async function() {
   }
 }
 ```
+
+## Storefront Tokens
+
+<Callout type= "info">
+   **Note:** This section covers authentication for the B2B Edition GraphQL Storefront API. It is best practice to use GraphQL mutations when generating storefront authTokens on B2B Edition’s Buyer Portal experience. For information about the equivalent REST Storefront Authentication API requests, see [Authentication](/b2b-edition/apis/rest-storefront/sales-rep).
+</Callout>
+
+B2B Edition’s REST Storefront and GraphQL Storefront APIs allow you to query and modify data from the context of a storefront user. Depending on your store’s configurations, you can perform certain actions as a guest shopper, a B2C customer with a storefront account, a B2B buyer with a Company user account, or a [Super Admin](/b2b-edition/apis/rest-storefront/sales-rep) user.
+
+Certain requests are considered *anonymous* and do not require a storefront authToken for validation. This includes requests that can be performed as a guest shopper without an account, such as the [companyCreate](/b2b-edition/apis/rest-storefront/company/companies#create-a-company) mutation, as well as mutations that generate tokens themselves.
+
+To view or modify data from the context of a storefront user with an account, you must authenticate it by including a storefront authToken passed with the `Authorization` header. Storefront authTokens have the following differences from server to server authToken:
+
+* They are bearer tokens tied to a specific user.  
+* They automatically expire after **1 day**. Refresh a storefront authToken with a new request.  
+* A storefront authToken’s scope depends on the corresponding user.  
+  * For example, a token generated for a B2C customer authenticates any request that does not require a Company account, while one for a B2B buyer can only authenticate a request if the buyer’s Company user account has the corresponding [permissions](/b2b-edition/apis/rest-management/company#company-roles-and-permissions) enabled.
+
+The [BigCommerce GraphQL Storefront API](/docs/start/authentication/graphql-storefront) requires different authentication tokens for client- and server-side contexts. With the B2B GraphQL API, authentication tokens are always in the context of a specific user, and they do not rely on storefront cookies.
+
+The sections below provide information about the different methods for generating a storefront authToken. All methods can be used in both Stencil and headless storefronts.
+
+### The *login* Mutation
+
+The `login` mutation allows you to gather an authToken with the credentials used by Company users to log in to the Buyer Portal. This request is performed independently of a standard customer session in the storefront, but you can sync their login by including the `storefrontLoginToken` field in the request.
+
+The `storefrontLoginToken` field returns a JSON Web Token (JWT) signed with the B2B Edition client secret. To sync the login with a storefront session, pass the JWT to the [Customer Login](/docs/start/authentication/customer-login) endpoint.
+
+The examples below include the request body and variables for generating a storefront authToken and JWT with user details, as well as the expected response.
+
+```graphql filename="Example login request" showLineNumbers copy
+mutation LogIn(
+    $storeHash: String!,
+    $email: String!,
+    $password: String!
+) {
+  login(
+    loginData: {
+      storeHash: $storeHash,
+      email: $email,
+      password: $password
+    }
+  ) {
+    result {
+      token
+      storefrontLoginToken
+      user {
+        id
+        bcId
+        firstName
+        lastName
+        email
+      }
+    }
+  }
+}
+```
+
+```graphql filename="Variables" showLineNumbers copy
+{
+    "storeHash": "{The BigCommerce store hash}",
+    "email": "{The Company user email address}",
+    "password": "{The Company user password}"
+}
+```
+
+```json filename="Example login response" showLineNumbers copy
+{
+    "data": {
+        "login": {
+            "result": {
+                "token": "{storefront authToken)",
+                "storefrontLoginToken": "{JWT}",
+                "user": {
+                    "id": "12345",
+                    "bcId": 123,
+                    "firstName": "Marie",
+                    "lastName": "Curie",
+                    "email": "mcurie@greatbuysinc.com"
+                }
+            }
+        }
+    }
+}
+```
+
+To learn more about the `login` mutation, see our [storefront authentication](/b2b-edition/apis/rest-storefront/authentication#get-a-storefront-authtoken-for-a-specific-customer) documentation.
+
+### The *authorization* Mutation
+
+If you want your integration to use an existing storefront session for a logged-in Company user to generate a storefront authToken, you can accomplish this with the `authorization` mutation. The request uses a JWT to retrieve a token that can be used to authenticate further requests to the GraphQL API while the user is logged in.
+
+To obtain a JWT for validation, make a request to the BigCommerce [Current Customer API](/docs/rest-authentication/current-customer) while passing the B2B Edition client ID (`dl7c39mdpul6hyc489yk0vzxl6jesyx`) with the `app-client-id` query parameter. 
+
+Here’s an example of a Fetch request that you can use to obtain a JWT for B2B Edition. Replace the example domain in the endpoint with your store’s domain.
+
+
+```js filename="Fetch request example" showLineNumbers copy
+const options = {
+  method: 'GET',
+  headers: {Accept: 'application/json', 'Content-Type': 'application/json'}
+};
+
+fetch('https://mybcstore.com/customer/current.jwt?$app_client_id=dl7c39mdpul6hyc489yk0vzxl6jesyx', options)
+  .then(response => response.json())
+  .then(response => console.log(response))
+  .catch(err => console.error(err));
+```
+
+You can pass the resulting JWT to the `authorization` mutation without decoding it. The request can be structured as follows:
+
+```graphql filename="Example authorization request" showLineNumbers copy
+mutation userAuth(
+	$bcToken: String!,
+	$channelId: Int!
+) {
+    authorization(
+        authData: {
+            bcToken: $bcToken,
+	     channelId: $channelId
+        }
+    ) {
+        result {
+            token
+        }
+    }
+}
+```
+
+```graphql filename="Variables" showLineNumbers copy
+{
+	"bcToken": "{The JWT for the storefront session}",
+	"channelId": {BigCommerce storefront channel ID; use 1 for the default channel}
+}
+```
+
+```json filename="Example authorization response" showLineNumbers copy
+{
+    "data": {
+        "authorization": {
+            "result": {
+                "token": "{storefront authToken}"
+            }
+        }
+    }
+}
+```
+
+See our article on [storefront authentication](/b2b-edition/apis/rest-storefront/authentication#get-storefront-authtoken-within-stencil) to learn more about this mutation’s usage and fields.
+
+### Rest Management API Endpoints
+
+If your integration or headless solution is built to use server-side endpoints, you can also retrieve storefront authTokens via B2B Edition’s REST Management Authentication API. Each endpoint uses a server to server authToken for validation, but they also require specific fields or parameters based on their use case.  
+ 
+
+| Request | Description | Use case |
+| :---- | :---- | :---- |
+| [Get Storefront authToken with Credentials](#get-storefront-authtoken-with-credentials) | Uses a Company user’s login email and password to generate a token | Authenticating requests after a Company user logs in |
+| [Get a B2B Storefront Token](#get-a-b2b-storefront-token) | Generates a token based on the supplied `customerId` of a Company user | Syncing a token with an authentication already performed with BigCommerce’s GraphQL Storefront API   |
+| [Get a Storefront API authToken](#get-a-storefront-api-authtoken) | Returns an existing token based on its corresponding JWT | Syncing a token with an active storefront session |
+
+#### Get Storefront authToken with Credentials
+
+Like the [login mutation](#the-login-mutation), this endpoint validates a Company user’s login credentials to create a storefront authToken for future requests. The resulting token has the default validity period of 1 day, but you can use the `beginAt` and `endAt` fields in the request body to specify a custom period.
+
+See our [server to server authentication](/b2b-edition/apis/rest-management/authentication#get-storefront-authtoken-with-credentials) documentation for information on formatting the request.
+
+#### Get a B2B Storefront Token
+
+The [Get a B2B Storefront Token](/b2b-edition/apis/rest-management/authentication#get-a-b2b-storefront-token) endpoint only requires a customer ID to retrieve a storefront authToken. However, this token does not automatically sync with a storefront session.
+
+To sync a login with the token, you must include a customer access token (CAT) in the request body. You can retrieve a CAT by using the `login` mutation of the [BigCommerce GraphQL Storefront API](/docs/start/authentication/graphql-storefront#login-mutation), **not** the [equivalent request](#the-login-mutation) in the B2B Edition GraphQL Storefront API.
+
+#### Get a Storefront API authToken
+
+Rather than targeting a specific Company user, this endpoint retrieves an existing storefront authToken based on the JWT associated with an active storefront session. As with the [authorization mutation](#the-authorization-mutation), you can use the [Current Customer API](/docs/storefront-auth/current-customer) to retrieve a JWT and pass it to the `jwtToken` query parameter of the request. Here are two examples of how you can format the request:
+
+
+```curl filename="CURL request example"
+curl https://api-b2b.bigcommerce.com/api/io/auth/storefront?jwtToken=bigCommerce.currentCustomerResponse.jwtString&channelId=1
+```
+
+
+```js filename="Fetch request example"
+async function() {
+  try {
+    let authToken = await fetch({
+      method: "get",
+      url: "https://api-b2b.bigcommerce.com/api/io/auth/storefront",
+      query:{
+        jwtToken: "bigCommerce.currentCustomerResponse.jwtString",
+        channelId: 1
+      }
+    });
+    return authToken;
+  } catch(error) {
+    console.log(error);
+    throw error;
+  }
+}
+```
+
+## Resources
+
+* [Authentication](/b2b-edition/apis/rest-management/authentication) (Server to Server)  
+* [Authentication](/b2b-edition/apis/rest-storefront/authentication) (Storefront)  
+* [Current Customer](/docs/storefront-auth/current-customer)  
+* [Authenticating requests to the GraphQL Storefront API](/docs/start/authentication/graphql-storefront)
+

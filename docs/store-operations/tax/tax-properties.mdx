@@ -1,25 +1,29 @@
 ---
-title: Tax Properties for Products
-keywords: get all products, tax, tax properties, 
+title: Tax Properties
+keywords: tax, tax properties,
 ---
 
-# Tax Properties for Products
+# Tax Properties
 
-The Tax Properties API allows merchants to vary the tax information they send to tax providers for tax calculation. In some jurisdictions, tax rates for products vary by product composition. For example, accurate taxation of alcohol may require information about alcohol percentage. Using tax properties, providers can return more accurate tax quotes. The examples in this guide expand on this use case. 
+The Tax Properties API allows merchants to vary the tax information they send to tax providers for tax calculation.
 
-Tax providers may sometimes need multiple inputs that can vary between different types of product. For example, for products with alcohol, the alcohol percentage and the volume sold affect alcohol taxes. As shown in this guide, merchants can provide both pieces of information to tax providers.
+In some jurisdictions, tax rates for products vary by product composition. For example, accurate taxation of alcohol may require information about alcohol percentage. Using product tax properties, providers can return more accurate tax quotes.
+
+Tax calculations can also be affected by customer data that exists outside the standard BigCommerce customer model. For example, a tax provider might apply a tax exemption based on exemption certificates linked to a third-party ERP customer ID. By using customer tax properties, providers can adjust the tax quote accordingly for the customer involved in the transaction.
+
+The examples in this guide expand on these product and customer use cases.
 
 <Callout type="info">
   #### Tax properties versus tax codes
-  A tax code is a single code that tax providers use to invoke specific rules when calculating tax on a product. 
-  In contrast, tax properties are fields that contain information about product specifics. Tax providers use these fields to factor product specifics into their calculations. 
+  A tax code is a single code that tax providers use to invoke specific rules when calculating tax on a product or customer.
+  In contrast, tax properties are fields that contain information about product or customer specifics. Tax providers use these fields to factor product or customer specifics into their calculations.
 </Callout>
 
-This guide demonstrates how to use the Tax Properties API. For more, see the [Tax Properties API Reference](/docs/rest-management/tax-properties) and the [Tax Provider API Reference](/docs/rest-contracts/tax). 
+This guide demonstrates how to use the Tax Properties API. For more, see the [Tax Properties API Reference](/docs/rest-management/tax-properties) and the [Tax Provider API Reference](/docs/rest-contracts/tax).
 
 ## Tax properties
 
-Tax properties rely on `code`s specific to third-party tax providers. Consult a tax provider's documentation to identify supported `code`s. The `code`s used in tax properties are not tax codes. See [Tax properties versus tax codes](#tax-properties-versus-tax-codes).    
+Tax properties rely on `code`s specific to third-party tax providers. Consult a tax provider's documentation to identify supported `code`s. The `code`s used in tax properties are not tax codes. See [Tax properties versus tax codes](#tax-properties-versus-tax-codes).
 
 ### Create tax properties
 
@@ -40,12 +44,14 @@ The response provides an `id` for each tax property. Use the `id` to get, update
         "code": "alcohol-percentage",
         "display_name": "Alcohol Percentage",
         "description": "Beverage Industry"
+        "type": "PRODUCT"
       },
       {
-        "code": "fuel-type",
-        "display_name": "Fuel Type",
-        "description": "Oil and Natural Gas Industry"
-      }  
+        "code": "erp-external-id",
+        "display_name": "ERP Customer ID",
+        "description": "External ID used to link customer records with ERP systems"
+        "type": "CUSTOMER"
+      }
     ]
     ```
   </Tab>
@@ -59,15 +65,17 @@ The response provides an `id` for each tax property. Use the `id` to get, update
           "display_name": "Alcohol Percentage",
           "description": "Beverage Industry",
           "created_at": "2022-05-17T14:25:21+00:00",
-          "updated_at": "2022-05-17T14:25:21+00:00"
+          "updated_at": "2022-05-17T14:25:21+00:00",
+          "type": "PRODUCT"
         },
         {
           "id": 2,
-          "code": "fuel-type",
-          "display_name": "Fuel Type",
-          "description": "Oil and Natural Gas Industry",
+          "code": "erp-external-id",
+          "display_name": "ERP Customer ID",
+          "description": "External ID used to link customer records with ERP systems",
           "created_at": "2022-05-17T14:25:21+00:00",
-          "updated_at": "2022-05-17T14:25:21+00:00"
+          "updated_at": "2022-05-17T14:25:21+00:00",
+          "type": "CUSTOMER"
         }
       ],
       "meta": {}
@@ -78,7 +86,7 @@ The response provides an `id` for each tax property. Use the `id` to get, update
 
 ### Update tax properties
 
-Send a request to the [Update tax properties](/docs/rest-management/tax-properties#update-tax-properties) endpoint to modify a tax property's `code`, `display_name`, or `description`. The request updates only fields that you specify.   
+Send a request to the [Update tax properties](/docs/rest-management/tax-properties#update-tax-properties) endpoint to modify a tax property's `code`, `display_name`, or `description`. The request updates only fields that you specify.
 
 <Tabs items={[`Request`, `Response`]}>
   <Tab>
@@ -92,12 +100,12 @@ Send a request to the [Update tax properties](/docs/rest-management/tax-properti
       {
         "id": 1,
         "description": "Alcohol Industry"
-      }  
+      }
     ]
     ```
   </Tab>
   <Tab>
-    ```json filename="Example response: Update tax properties" showLineNumbers 
+    ```json filename="Example response: Update tax properties" showLineNumbers
     {
       "data": [
         {
@@ -106,7 +114,8 @@ Send a request to the [Update tax properties](/docs/rest-management/tax-properti
           "display_name": "Alcohol Percentage",
           "description": "Alcohol Industry",
           "created_at": "2022-05-17T14:25:21+00:00",
-          "updated_at": "2022-05-21T14:25:21+00:00"
+          "updated_at": "2022-05-21T14:25:21+00:00",
+          "type": "PRODUCT"
         }
       ],
       "meta": {}
@@ -138,15 +147,17 @@ This endpoint supports batch operations. You can get all the tax properties in y
           "display_name": "Alcohol Percentage",
           "description": "Alcohol Industry",
           "created_at": "2022-05-17T14:25:21+00:00",
-          "updated_at": "2022-05-21T14:25:21+00:00"
+          "updated_at": "2022-05-21T14:25:21+00:00",
+          "type": "PRODUCT"
         },
         {
           "id": 2,
-          "code": "fuel-type",
-          "display_name": "Fuel Type",
-          "description": "Oil and Natural Gas Industry",
+          "code": "erp-external-id",
+          "display_name": "ERP Customer ID",
+          "description": "External ID used to link customer records with ERP systems",
           "created_at": "2022-05-17T14:25:21+00:00",
-          "updated_at": "2022-05-17T14:25:21+00:00"
+          "updated_at": "2022-05-17T14:25:21+00:00",
+          "type": "CUSTOMER"
         }
       ],
       "meta": {
@@ -180,17 +191,17 @@ To delete tax properties, send a request to the [Delete tax properties](/docs/re
     ```
   </Tab>
   <Tab>
-    ```http filename="Example response: Delete tax properties" showLineNumbers 
+    ```http filename="Example response: Delete tax properties" showLineNumbers
     HTTP 204 No content
     ```
   </Tab>
 </Tabs>
 
-## Product tax properties 
+## Product tax properties
 
-After [creating a tax property](#create-tax-properties), you can attach it to a base product to create a product tax property. To do so, specify the product using its `product_id`. The `product_id` is the `id` from the [Get all products](/docs/rest-catalog/products#get-all-products) endpoint. 
+After [creating a tax property](#create-tax-properties), you can attach it to a base product to create a product tax property. To do so, specify the product using its `product_id`. The `product_id` is the `id` from the [Get all products](/docs/rest-catalog/products#get-all-products) endpoint.
 
-You can add multiple tax properties to a single product. The following example shows tax properties attached to alcohol products. In this example, the tax rate of alcohol products varies by both alcohol percentage and net volume. 
+You can add multiple tax properties to a single product. The following example shows tax properties attached to alcohol products. In this example, the tax rate of alcohol products varies by both alcohol percentage and net volume.
 
 <Callout type="info">
   #### Tax properties aren't product properties
@@ -261,11 +272,11 @@ To attach tax properties to a product, send a request to the [Update product tax
     }
     ```
   </Tab>
-</Tabs> 
+</Tabs>
 
-### Get product tax properties 
+### Get product tax properties
 
-To get the tax properties attached to a product, send a request to the [Get product tax properties](/docs/rest-management/tax-properties/product-tax-properties#get-product-tax-properties) endpoint and use the `product_id:in` query parameter. 
+To get the tax properties attached to a product, send a request to the [Get product tax properties](/docs/rest-management/tax-properties/product-tax-properties#get-product-tax-properties) endpoint and use the `product_id:in` query parameter.
 
 <Tabs items={[`Request`, `Response`]}>
   <Tab>
@@ -319,7 +330,7 @@ To get the tax properties attached to a product, send a request to the [Get prod
   This endpoint removes **all** tax properties from a given product.
 </Callout>
 
-To remove tax properties from a product, send a request to the [Delete product tax properties](/docs/rest-management/tax-properties/product-tax-properties#delete-product-tax-properties) endpoint and use the `product_id:in` query parameter. This disassociates all the tax properties from a product. 
+To remove tax properties from a product, send a request to the [Delete product tax properties](/docs/rest-management/tax-properties/product-tax-properties#delete-product-tax-properties) endpoint and use the `product_id:in` query parameter. This disassociates all the tax properties from a product.
 
 
 <Tabs items={[`Request`, `Response`]}>
@@ -338,9 +349,13 @@ To remove tax properties from a product, send a request to the [Delete product t
   </Tab>
 </Tabs>
 
+## Customer tax properties
+
+See the [Tax Customers API](/docs/store-operations/tax/tax-customers) to attach tax properties to a customer.
+
 ## Tax Quotes
 
-BigCommerce sends product tax properties to request [tax estimates](/docs/rest-contracts/tax#estimate-taxes) from a provider. The requests include tax properties for each item in a consignment. 
+BigCommerce sends product and customer tax properties to request [tax estimates](/docs/rest-contracts/tax#estimate-taxes) from a provider. The requests include tax properties for each item in a consignment.
 
 The following request uses the Tax Provider API:
 
@@ -351,6 +366,21 @@ Content-Type: application/json
 Accept: application/json
 
 {
+  "customer": {
+    "customer_id": "12345",
+    "customer_group_id": "1",
+    "taxability_code": "",
+    "tax_properties": [
+      {
+        "code": "tax-exemption-status",
+        "value": "exempt"
+      },
+      {
+        "code": "erp-external-id",
+        "value": "CUST-001"
+      }
+    ]
+  },
   ...
   "items": [
     {
@@ -382,9 +412,9 @@ Accept: application/json
   ...
 }
 ```
-BigCommerce also sends product tax properties to [commit](/docs/rest-contracts/tax#commit-tax-quote) and [adjust tax quotes](/docs/rest-contracts/tax#adjust-tax-quote). 
+BigCommerce also sends product tax properties to [commit](/docs/rest-contracts/tax#commit-tax-quote) and [adjust tax quotes](/docs/rest-contracts/tax#adjust-tax-quote).
 
-## Resources 
+## Resources
 - [Tax Properties API Reference](/docs/rest-management/tax-properties)
 - [Tax Provider API Reference](/docs/rest-contracts/tax)
 

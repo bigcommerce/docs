@@ -63,6 +63,86 @@ If a customer signs in to a BigCommerce-hosted cart or checkout, then navigates 
 
 To address this need, BigCommerce provides the [Current Customer API](/docs/start/authentication/current-customer), which you can access using client-side JavaScript. The [Get current customer](/docs/rest-authentication/current-customer#get-current-customer) endpoint returns a BigCommerce-generated JWT signed with the client secret of the API account you used to make the request. To access customer details, such as customer ID, customer group number, and email, use a library to decode the JWT.
 
+## Create a session sync JWT token
+
+The session sync token is a JWT (JSON Web Token) designed to seamlessly synchronize user sessions across different storefront environments—whether between headless and Stencil, Stencil and Stencil, or headless and headless setups. You can generate this token using the [generateSessionSyncJwt](https://developer.bigcommerce.com/graphql-storefront/reference#mutation-generateSessionSyncJwt) GraphQL mutation. 
+
+The token enables secure, transparent, and optional sharing of session-related data, including:
+
+* customer login data
+* cart data
+* visit data for analytics
+
+One key use of the session sync token is to enable smooth redirection to any page. This works for both logged-in customers and anonymous shoppers. To support this, the token can include a `redirect_to` field in its payload. After validating the token, this field is used to redirect the shopper to the appropriate page (e.g., checkout), carrying over all necessary session context.
+
+<Tabs items={['Request', 'Response']}>
+<Tab>
+
+```http filename="Example request: generateSessionSyncJwt" showLineNumbers copy
+POST https://api.bigcommerce.com/stores/{store_hash}/graphql
+Accept: application/json
+Content-Type: application/json
+X-Auth-Token: {{ACCESS_TOKEN}}
+Authorization: {{Bearer token}}
+
+mutation sessionSyncJwt(
+    $redirectTo: String!,
+    $cartId: String,
+    $visitId: UUID,
+    $visitorId: UUID,
+    $ipAddress: IpAddress,
+    $paymentWalletData: PaymentWalletDataInput
+) {
+  generateSessionSyncJwt(
+    redirectTo: $redirectTo
+    visitorId: $visitorId
+    visitId: $visitId
+    cartId: $cartId
+    paymentWalletData: $paymentWalletData
+    ipAddress: $ipAddress
+  ) {
+    result {
+        token
+        url
+    }
+    errors {
+      ...on Error {
+        message
+      }
+    }
+  }
+}
+
+```
+```http filename="Variables" showLineNumbers copy
+{
+  "redirectTo": "xyz789",
+  "cartId": "abc123",
+  "visitorId": "3d077ee5-373a-42aa-91d2-dd43dc87dde9",
+  "ipAddress": IpAddress,
+  "paymentWalletData": PaymentWalletDataInput,
+  "visitId": "3d077ee5-373a-42aa-91d2-dd43dc87dde9"
+}
+```
+</Tab>
+<Tab>
+
+```json filename="Example response: " showLineNumbers copy
+ {
+    "data": {
+        "generateSessionSyncJwt": {
+            "result": {
+                "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiJ9.eyJpc3MiOiJCQyIsImlhdCI6MTc0NTMyOTE3NiwiZWF0IjoxNzQ1MzI5MjA2LCJqdGkiOiJkZDVkM2EwYi04YmYxLTQ2OWUtOTEwMy1jMGM3NGVlOTlmOGQiLCJvcGVyYXRpb24iOiJzZXNzaW9uX3N5bmMiLCJzaWQiOjEwMDExOTc1NjgsInNlc3Npb25fcGF5bG9hZCI6eyJjYXJ0X2lkIjoiYTgyZjIwZjUtZjBjNi00OGU0LTg2MDEtNzNjOGQ0N2YxNWE2IiwiY3VzdG9tZXJfaWQiOm51bGwsInZpc2l0b3JfaWQiOiJlMTgxNGY4Yy0zNGI3LTRkMzYtODY2Zi1mOTEyMWE0MTU2MzAiLCJ2aXNpdF9pZCI6IjVhY2ZjZTgwLTBkNDUtNDdiOS1hZGNhLWQyZDg5NGU2MDQ0NCIsImNhcnRfbG9jYWxlIjpudWxsLCJwYXltZW50X3dhbGxldF9kYXRhIjpudWxsfSwicmVxdWVzdF9pcCI6IjE5Mi4xNjguMS4xNCIsInJlZGlyZWN0X3RvIjoiaHR0cHM6Ly9hcmFiaWMtZ29vZHMubXliaWdjb21tZXJjZS5jb20veHl6Nzg5In0.WR0shNe3exfCzbikXwyF0WGMRtRN4IZtYeGO6v6jCKW8s-Ih__ELkRsA3HbwwNgFTCSP8kcLUjLFgI2UqnqcKg",
+                "url": "https://arabic-goods.mybigcommerce.com/session-sync?jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiJ9.eyJpc3MiOiJCQyIsImlhdCI6MTc0NTMyOTE3NiwiZWF0IjoxNzQ1MzI5MjA2LCJqdGkiOiJkZDVkM2EwYi04YmYxLTQ2OWUtOTEwMy1jMGM3NGVlOTlmOGQiLCJvcGVyYXRpb24iOiJzZXNzaW9uX3N5bmMiLCJzaWQiOjEwMDExOTc1NjgsInNlc3Npb25fcGF5bG9hZCI6eyJjYXJ0X2lkIjoiYTgyZjIwZjUtZjBjNi00OGU0LTg2MDEtNzNjOGQ0N2YxNWE2IiwiY3VzdG9tZXJfaWQiOm51bGwsInZpc2l0b3JfaWQiOiJlMTgxNGY4Yy0zNGI3LTRkMzYtODY2Zi1mOTEyMWE0MTU2MzAiLCJ2aXNpdF9pZCI6IjVhY2ZjZTgwLTBkNDUtNDdiOS1hZGNhLWQyZDg5NGU2MDQ0NCIsImNhcnRfbG9jYWxlIjpudWxsLCJwYXltZW50X3dhbGxldF9kYXRhIjpudWxsfSwicmVxdWVzdF9pcCI6IjE5Mi4xNjguMS4xNCIsInJlZGlyZWN0X3RvIjoiaHR0cHM6Ly9hcmFiaWMtZ29vZHMubXliaWdjb21tZXJjZS5jb20veHl6Nzg5In0.WR0shNe3exfCzbikXwyF0WGMRtRN4IZtYeGO6v6jCKW8s-Ih__ELkRsA3HbwwNgFTCSP8kcLUjLFgI2UqnqcKg"
+            },
+            "errors": []
+        }
+    }
+}
+```
+</Tab>
+</Tabs>
+
 ## Surfacing customer group pricing
 
 When querying the GraphQL Storefront API, customer-specific pricing will be reflected in query results if the request is made using a [customer access token](/docs/start/authentication/graphql-storefront#customer-access-tokens).

@@ -83,8 +83,8 @@ paths:
           application/json:
             schema:
               anyOf:
-                - $ref: '#/components/schemas/PromotionCoupon'
-                - $ref: '#/components/schemas/PromotionAutomatic'
+                - $ref: '#/components/schemas/DraftCouponPromotion'
+                - $ref: '#/components/schemas/DraftAutomaticPromotion'
       responses:
         '201':
           $ref: '#/components/responses/PromotionsResponse'
@@ -168,8 +168,8 @@ paths:
           application/json:
             schema:
               anyOf:
-                - $ref: '#/components/schemas/PromotionCoupon'
-                - $ref: '#/components/schemas/PromotionAutomatic'
+                - $ref: '#/components/schemas/PatchCouponPromotion'
+                - $ref: '#/components/schemas/PatchAutomaticPromotion'
       responses:
         '200':
           $ref: '#/components/responses/PromotionsResponse'
@@ -297,6 +297,13 @@ paths:
           content: {}
 components:
   schemas:
+    CreatedFrom:
+      enum:
+        - react_ui
+        - legacy_ui
+        - api
+      description: Describes which client originally created the promotion
+      readOnly: true
     PromotionBase:
       title: PromotionBase
       type: object
@@ -382,31 +389,161 @@ components:
           $ref: '#/components/schemas/AddressMatcher'
         schedule:
           $ref: '#/components/schemas/AvailabilityByWeekDay'
-      required:
-        - name
-        - rules
-    PromotionCoupon:
-      title: Coupon Promotion
+    PatchCouponPromotion:
+      title: Patch Coupon Promotion
+      description: 'A Partial **Coupon Promotion** that contains properties to patch.'
+      allOf:
+        - $ref: '#/components/schemas/PromotionBase'
+        - type: object
+          properties:
+            codes:
+              $ref: '#/components/schemas/CouponCode'
+            coupon_overrides_automatic_when_offering_higher_discounts:
+              type: boolean
+              example: false
+              default: false
+              description: |-
+                This field only has effect when `can_be_used_with_other_promotions` is `false`:
+                - When the property is set to `true`, the coupon will override the applied automatic promotions if it provides a greater discount.
+                - When the property is set to `fasle`, the coupon will not be applied if automatic promotions are already applied.
+                Trying to set the value of this field to `true` when `can_be_used_with_other_promotions` is `true` will yield a 422 error response.
+    DraftCouponPromotion:
+      allOf:
+        - $ref: '#/components/schemas/PromotionBase'
+        - title: Draft Coupon Promotion
+          description: 'A draft **Coupon Promotion** to be created. A shopper must manually apply a *coupon promotion* to their cart.'
+          type: object
+          properties:
+            codes:
+              $ref: '#/components/schemas/CouponCode'
+            coupon_overrides_automatic_when_offering_higher_discounts:
+              type: boolean
+              example: false
+              default: false
+              description: |-
+                This field only has effect when `can_be_used_with_other_promotions` is `false`:
+                - When the property is set to `true`, the coupon will override the applied automatic promotions if it provides a greater discount.
+                - When the property is set to `fasle`, the coupon will not be applied if automatic promotions are already applied.
+                Trying to set the value of this field when `can_be_used_with_other_promotions` is `true` will yield a 422 error response.
+            redemption_type:
+              type: string
+              description: The type of the promotion. Promotions applied automatically have a value of `AUTOMATIC` whereas promotions requiring a coupon have a value of `COUPON`.
+              enum:
+                - COUPON
+          required:
+            - redemption_type
+            - name
+            - rules
+    SavedCouponPromotion:
+      title: Saved Coupon Promotion
       description: '**Coupon Promotion** A shopper must manually apply a *coupon promotion* to their cart.'
       allOf:
         - $ref: '#/components/schemas/PromotionBase'
         - type: object
           properties:
+            id:
+              type: integer
+              description: An auto-generated unique identifier for the discount rule.
+              example: 1
+              readOnly: true
+            created_from:
+              $ref: '#/components/schemas/CreatedFrom'
+            codes:
+              $ref: '#/components/schemas/CouponCode'
             coupon_overrides_automatic_when_offering_higher_discounts:
               type: boolean
               example: false
               default: false
               description: |-
                 This field only has effect when the `redemption_type` is `COUPON` and `can_be_used_with_other_promotions` is `false`:
-                - When the property is set to "true", the coupon will override the applied automatic promotions if it provides a greater discount.
-                - When the property is set to "false", the coupon will not be applied if automatic promotions are already applied.
+                - When the property is set to `true`, the coupon will override the applied automatic promotions if it provides a greater discount.
+                - When the property is set to `fasle`, the coupon will not be applied if automatic promotions are already applied.
 
-                Trying to set the value of this field to "true" when the `redemption_type` is not `COUPON`, or when `can_be_used_with_other_promotions` is `true` will yield a 422 error response.
-    PromotionAutomatic:
-      title: Automatic Promotion
-      description: The store applies *automatic promotions* to a shopper’s cart once the promotion criteria are satisfied. The shopper cannot manually apply an *automatic promotion*.
+                Trying to set the value of this field to `true` when the `redemption_type` is not `COUPON`, or when `can_be_used_with_other_promotions` is `true` will yield a 422 error response.
+            redemption_type:
+              type: string
+              description: The type of the promotion. Promotions applied automatically have a value of `AUTOMATIC` whereas promotions requiring a coupon have a value of `COUPON`.
+              enum:
+                - COUPON
+            multiple_codes:
+              type: object
+              properties:
+                has_multiple_codes:
+                    type: boolean
+                    example: false
+                    default: false
+      required:
+        - id
+        - name
+        - channels
+        - created_from
+        - customer
+        - rules
+        - notifications
+        - stop
+        - currency_code
+        - redemption_type
+        - current_uses
+        - start_date
+        - status
+        - can_be_used_with_other_promotions
+        - coupon_overrides_automatic_when_offering_higher_discounts
+    PatchAutomaticPromotion:
+      title: Patch Automatic Promotion
+      description: 'A Partial **Automatic Promotion** that contains properties to patch.'
       allOf:
         - $ref: '#/components/schemas/PromotionBase'
+    DraftAutomaticPromotion:
+      title: Draft Automatic Promotion
+      description: 'A draft **Automatic Promotion** to be created. The store applies *automatic promotions* to a shopper’s cart once the promotion criteria are satisfied. The shopper cannot manually apply an *automatic promotion*.'
+      allOf:
+        - $ref: '#/components/schemas/PromotionBase'
+        - type: object
+          properties:
+            redemption_type:
+              type: string
+              description: The type of the promotion. Promotions applied automatically have a value of `AUTOMATIC` whereas promotions requiring a coupon have a value of `COUPON`.
+              enum:
+                - AUTOMATIC
+      required:
+        - redemption_type
+        - name
+        - rules
+    SavedAutomaticPromotion:
+      title: Saved Automatic Promotion
+      description: The store applies *Automatic promotions* to a shopper’s cart once the promotion criteria are satisfied. The shopper cannot manually apply an *automatic promotion*.
+      allOf:
+        - $ref: '#/components/schemas/PromotionBase'
+        - type: object
+          properties:
+            redemption_type:
+              type: string
+              description: The type of the promotion. Promotions applied automatically have a value of `AUTOMATIC` whereas promotions requiring a coupon have a value of `COUPON`.
+              enum:
+                - AUTOMATIC
+            id:
+              type: integer
+              description: An auto-generated unique identifier for the discount rule.
+              example: 1
+              readOnly: true
+            created_from:
+              $ref: '#/components/schemas/CreatedFrom'
+      required:
+        - id
+        - name
+        - channels
+        - created_from
+        - customer
+        - rules
+        - notifications
+        - stop
+        - currency_code
+        - redemption_type
+        - current_uses
+        - start_date
+        - status
+        - can_be_used_with_other_promotions
+
     Customer:
       type: object
       description: |-
@@ -882,6 +1019,7 @@ components:
         When a 'before' or 'after' cursor is provided, only the 'cursor_pagination' property will be present.
         When a 'page' parameter is provided, only the offset based 'pagination' property will be present.
     CollectionMeta:
+      required: [pagination]
       title: Collection Meta
       type: object
       properties:
@@ -889,6 +1027,7 @@ components:
           $ref: '#/components/schemas/Pagination'
       description: Contains data about the response including pagination and collection totals.
     Pagination:
+      required: [total, count, per_page, current_page, total_pages, links]
       title: Pagination
       type: object
       properties:
@@ -1145,8 +1284,8 @@ components:
                 type: string
                 example: "0439538491"
     CouponCode:
-      type: object
       description: A `CouponCode` object encapsulates attributes of a coupon code.
+      type: object
       properties:
         id:
           type: integer
@@ -1177,6 +1316,9 @@ components:
           format: date-time
           example: '2019-01-20T22:00:00.000Z'
       required:
+        - id
+        - current_uses
+        - created
         - code
     BulkActionResponseMeta:
       title: Bulk Action Response Meta
@@ -1567,14 +1709,17 @@ components:
       content:
         application/json:
           schema:
+            required:
+              - data
+              - meta
             type: object
             properties:
               data:
                 type: array
                 items:
-                  anyOf:
-                    - $ref: '#/components/schemas/PromotionAutomatic'
-                    - $ref: '#/components/schemas/PromotionCoupon'
+                  oneOf:
+                    - $ref: '#/components/schemas/SavedAutomaticPromotion'
+                    - $ref: '#/components/schemas/SavedCouponPromotion'
               meta:
                 $ref: '#/components/schemas/CollectionMeta'
           examples:
@@ -1585,6 +1730,7 @@ components:
                     redemption_type: AUTOMATIC
                     name: Buy Product X Get Free Shipping
                     display_name: WOW!!! FREE SHIPPING for Product X
+                    created_from: api
                     channels:
                       - id: 1
                     customer:
@@ -1657,9 +1803,9 @@ components:
             type: object
             properties:
               data:
-                anyOf:
-                  - $ref: '#/components/schemas/PromotionCoupon'
-                  - $ref: '#/components/schemas/PromotionAutomatic'
+                oneOf:
+                  - $ref: '#/components/schemas/SavedCouponPromotion'
+                  - $ref: '#/components/schemas/SavedAutomaticPromotion'
               meta:
                 type: object
                 description: 'Empty meta object, which may be used at a later time.'

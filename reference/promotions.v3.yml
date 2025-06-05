@@ -297,6 +297,13 @@ paths:
           content: {}
 components:
   schemas:
+    CreatedFrom:
+      enum:
+        - react_ui
+        - legacy_ui
+        - api
+      description: Describes which client originally created the promotion
+      readOnly: true
     PromotionBase:
       title: PromotionBase
       type: object
@@ -384,8 +391,7 @@ components:
           $ref: '#/components/schemas/AvailabilityByWeekDay'
     PatchCouponPromotion:
       title: Patch Coupon Promotion
-      type: object
-      description: '**Coupon Promotion** A shopper must manually apply a *coupon promotion* to their cart.'
+      description: 'A Partial **Coupon Promotion** that contains properties to patch.'
       allOf:
         - $ref: '#/components/schemas/PromotionBase'
         - type: object
@@ -402,12 +408,11 @@ components:
                 - When the property is set to 'false', the coupon will not be applied if automatic promotions are already applied.
                 Trying to set the value of this field to 'true' when `can_be_used_with_other_promotions` is `true` will yield a 422 error response.
     DraftCouponPromotion:
-      title: Draft Coupon Promotion
-      description: '**Coupon Promotion** A shopper must manually apply a *coupon promotion* to their cart.'
-      type: object
       allOf:
         - $ref: '#/components/schemas/PromotionBase'
-        - type: object
+        - title: Draft Coupon Promotion
+          description: 'A draft **Coupon Promotion** to be created. A shopper must manually apply a *coupon promotion* to their cart.'
+          type: object
           properties:
             codes:
               $ref: '#/components/schemas/CouponCode'
@@ -425,10 +430,10 @@ components:
               description: The type of the promotion. Promotions applied automatically have a value of `AUTOMATIC` whereas promotions requiring a coupon have a value of `COUPON`.
               enum:
                 - COUPON
-      required:
-        - redemption_type
-        - name
-        - rules
+          required:
+            - redemption_type
+            - name
+            - rules
     SavedCouponPromotion:
       title: Saved Coupon Promotion
       description: '**Coupon Promotion** A shopper must manually apply a *coupon promotion* to their cart.'
@@ -442,12 +447,7 @@ components:
               example: 1
               readOnly: true
             created_from:
-              enum:
-                - react_ui
-                - legacy_ui
-                - api
-              description: Describes which client originally created the promotion
-              readOnly: true
+              $ref: '#/components/schemas/CreatedFrom'
             codes:
               $ref: '#/components/schemas/CouponCode'
             coupon_overrides_automatic_when_offering_higher_discounts:
@@ -490,12 +490,12 @@ components:
         - coupon_overrides_automatic_when_offering_higher_discounts
     PatchAutomaticPromotion:
       title: Patch Automatic Promotion
-      description: The store applies *automatic promotions* to a shopper’s cart once the promotion criteria are satisfied. The shopper cannot manually apply an *automatic promotion*.
+      description: 'A Partial **Coupon Promotion** that contains properties to patch.'
       allOf:
         - $ref: '#/components/schemas/PromotionBase'
     DraftAutomaticPromotion:
       title: Draft Automatic Promotion
-      description: The store applies *automatic promotions* to a shopper’s cart once the promotion criteria are satisfied. The shopper cannot manually apply an *automatic promotion*.
+      description: 'A draft **Coupon Promotion** to be created. The store applies *automatic promotions* to a shopper’s cart once the promotion criteria are satisfied. The shopper cannot manually apply an *automatic promotion*.'
       allOf:
         - $ref: '#/components/schemas/PromotionBase'
         - type: object
@@ -527,12 +527,7 @@ components:
               example: 1
               readOnly: true
             created_from:
-              enum:
-                - react_ui
-                - legacy_ui
-                - api
-              description: Describes which client originally created the promotion
-              readOnly: true
+              $ref: '#/components/schemas/CreatedFrom'
       required:
         - id
         - name
@@ -1288,9 +1283,9 @@ components:
                 minItems: 1
                 type: string
                 example: "0439538491"
-    DraftCouponCode:
+    CouponCode:
+      description: A `CouponCode` object encapsulates attributes of a coupon code.
       type: object
-      description: A draft `CouponCode` object encapsulates attributes of a coupon code.
       properties:
         id:
           type: integer
@@ -1302,10 +1297,6 @@ components:
           description: 'A unique code that can be used to manually apply a discount. Only letters, numbers, white spaces, underscores and hyphens are allowed.'
           example: TEST-COUPON-CODE
           maxLength: 50
-        current_uses:
-          type: integer
-          description: A read-only count of the times this coupon code has been used.
-          example: 2
         max_uses:
           type: integer
           description: The maximum number of times you can use this coupon code. The default value is 0, which represents unlimited uses.
@@ -1320,22 +1311,10 @@ components:
           format: date-time
           example: '2019-01-20T22:00:00.000Z'
       required:
-        - code
-    CouponCode:
-      type: object
-      description: A `CouponCode` object encapsulates attributes of a coupon code.
-      allOf:
-        - $ref: '#/components/schemas/DraftCouponCode'
-        - type: object
-          properties:
-            id:
-              type: integer
-              description: An auto-generated unique identifier for the coupon code.
-              example: 1
-      required:
         - id
         - current_uses
         - created
+        - code
     BulkActionResponseMeta:
       title: Bulk Action Response Meta
       type: object
@@ -1733,7 +1712,7 @@ components:
               data:
                 type: array
                 items:
-                  anyOf:
+                  oneOf:
                     - $ref: '#/components/schemas/SavedAutomaticPromotion'
                     - $ref: '#/components/schemas/SavedCouponPromotion'
               meta:
@@ -1746,6 +1725,7 @@ components:
                     redemption_type: AUTOMATIC
                     name: Buy Product X Get Free Shipping
                     display_name: WOW!!! FREE SHIPPING for Product X
+                    created_from: api
                     channels:
                       - id: 1
                     customer:
@@ -1818,7 +1798,7 @@ components:
             type: object
             properties:
               data:
-                anyOf:
+                oneOf:
                   - $ref: '#/components/schemas/SavedCouponPromotion'
                   - $ref: '#/components/schemas/SavedAutomaticPromotion'
               meta:

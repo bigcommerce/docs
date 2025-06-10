@@ -206,7 +206,7 @@ paths:
         Generate a batch of coupon codes for a particular bulk coupon promotion.
         
         **Note:**
-        * batch_size is limited to 250 codes per request for first version. If batch_size is not an integer or larger than 250, it will return a 400 error code.
+        * batch_size is limited to 250 codes per request for first version. If batch_size is not an integer or larger than 250, it will return a 422 error code.
         * The default rate limit for this endpoint is 40 concurrent requests.
       operationId: generatePromotionCodesBatch
       parameters:
@@ -224,16 +224,16 @@ paths:
                 prefix:
                   type: string
                   description: A prefix to add to the generated codes.
-                  example: 'PROMO'
+                  example: 'PROMO-'
                   minLength: 1
-                  maxLength: 10
+                  maxLength: 20
                   pattern: '[a-zA-Z0-9_\ -]'
                 suffix:
                   type: string
                   description: A suffix to add to the generated codes.
                   example: '2025'
                   minLength: 1
-                  maxLength: 10
+                  maxLength: 20
                   pattern: '[a-zA-Z0-9_\ -]'
                 batch_size:
                   type: integer
@@ -245,20 +245,20 @@ paths:
                   type: integer
                   description: The maximum number of times each coupon code can be used. The default value is 1.
                   example: 10
-                  minimum: 1
-                  maximum: 250
+                  minimum: 0
+                  maximum: 100000
                 max_uses_per_customer:
                   type: integer
                   description: The maximum number of times a specific customer can use each coupon code. The default value is 1.
                   example: 5
-                  minimum: 1
-                  maximum: 250
+                  minimum: 0
+                  maximum: 100000
         required: true
       responses:
         '200':
           $ref: '#/components/responses/BulkCouponCodesResponse'
         '400':
-          description: The request payload was invalid.
+          description: Invalid request.
           content:
             application/json:
               schema:
@@ -287,7 +287,7 @@ paths:
         Get codes for a particular promotion.
 
         **Note:**
-        The default rate limit for this endpoint is 40 concurrent requests.
+        The default rate limit for this endpoint is 10 concurrent requests.
       operationId: getPromotionCodes
       parameters:
         - $ref: '#/components/parameters/PromotionIdPath'

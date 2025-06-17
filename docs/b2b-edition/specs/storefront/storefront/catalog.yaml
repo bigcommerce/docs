@@ -1,408 +1,424 @@
 openapi: 3.0.0
 info:
   title: Catalog
-  version: '1.0'
-  description: The Catalog refers to a store’s collection of physical and digital products.
+  description: |-
+    The Catalog endpoints in the B2B Edition Storefront API enable you to retrieve product and variant information from a BigCommerce store. These endpoints are designed for fast, programmatic access to variant data, supporting use cases such as catalog display, quick ordering, and integration with external systems.
+
+    Use these endpoints to:
+    - List variants for a specific product (`/catalogs/variants`)
+    - Fetch details for one or more variants by SKU (`/catalogs/quick-product`)
+    - Retrieve comprehensive variant data for quick order workflows (`/catalogs/quick-order-pad`)
+
+    All endpoints require a Bearer token for authentication. For details, see the [REST Storefront API authentication guide](/b2b-edition/docs/authentication#rest-storefront-api).
+
+    These endpoints mirror the functionality of standard BigCommerce REST API endpoints and provide data similar to Storefront GraphQL API queries like `productVariantsInfo` and `variantSku`. For more information, see the [GraphQL Playground](https://api-b2b.bigcommerce.com/graphql/playground).
+
+    Refer to the individual endpoint documentation below for parameters, responses, and usage examples.
   contact:
     name: BigCommerce
     url: 'https://www.bigcommerce.com'
     email: support@bigcommerce.com
+  version: v2
+  termsOfService: 'https://www.bigcommerce.com/terms'
 servers:
   - url: 'https://api-b2b.bigcommerce.com/api/v2'
 security:
   - BearerToken: []
+tags:
+  - name: Catalog
+
 paths:
   /catalogs/variants:
+    parameters:
+      - name: productId
+        in: query
+        required: true
+        schema:
+          type: string
+          example: "123"
+        description: "The unique product ID as assigned by BigCommerce."
     get:
       summary: Get Product Variants Info
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                description: ''
-                type: object
-                x-examples:
-                  example-1:
-                    code: 200
-                    message: Success
-                    data:
-                      - sku: OTS
-                        variantId: 65
-                properties:
-                  code:
-                    type: number
-                  message:
-                    type: string
-                    minLength: 1
-                  data:
-                    type: array
-                    uniqueItems: true
-                    minItems: 1
-                    items:
-                      type: object
-                      properties:
-                        sku:
-                          type: string
-                          minLength: 1
-                          description: Variant SKU name.
-                        variantId:
-                          type: number
-                          description: Unique ID of this variant.
-                      required:
-                        - sku
-                        - variantId
-                required:
-                  - code
-                  - message
-                  - data
-              examples:
-                example-1:
-                  value:
-                    code: 200
-                    message: Success
-                    data:
-                      - sku: OTS
-                        variantId: 65
       operationId: get-catalogs-variants
       description: |-
-        Get variants list.
+        Returns a list of variants associated with the product identified by the `productId` parameter.
+        
+        Analogous to the [Get all product variants](/docs/rest-catalog/product-variants#get-all-product-variants) endpoint in the default BigCommerce API.
+
         Equivalent Storefront GraphQL API Query: `productVariantsInfo`. For more information, see the [GraphQL Playground](https://api-b2b.bigcommerce.com/graphql/playground).
-      parameters:
-        - schema:
-            type: string
-          in: query
-          name: productId
-          description: Unique product ID
       tags:
         - Catalog
-  /catalogs/quick-product:
-    get:
-      summary: Search Variant SKU
       responses:
         '200':
-          description: OK
+          description: SUCCESS
           content:
             application/json:
               schema:
-                description: ''
                 type: object
                 properties:
                   code:
-                    type: number
+                    type: integer
+                    description: "HTTP status code indicating the result of the API operation."
+                    default: 200
                   message:
                     type: string
-                    minLength: 1
+                    description: "Message describing the outcome of the request."
+                    default: "Success"
                   data:
                     type: array
-                    uniqueItems: true
-                    minItems: 1
+                    description: "List of variant identifiers and their corresponding SKUs."
                     items:
                       type: object
-                      required:
-                      - id
-                      - product_id
-                      - sku
-                      - calculated_price
-                      - image_url
-                      - inventory_level
-                      - variantSku
-                      - productId
-                      - variantId
-                      - baseSku
-                      - productName
-                      - price
-                      - isVisible
                       properties:
-                        id:
-                          type: number
-                        product_id:
-                          type: number
                         sku:
                           type: string
-                          minLength: 1
-                        calculated_price:
-                          type: number
-                        image_url:
-                          type: string
-                          minLength: 1
-                        inventory_level:
-                          type: number
-                        option_values:
-                          type: array
-                          items:
-                            type: object
-                            properties:
-                              id:
-                                type: integer
-                              label:
-                                type: string
-                              option_id:
-                                type: integer
-                              option_display_name:
-                                type: string
-                        variantSku:
-                          type: string
-                          minLength: 1
-                        productId:
-                          type: string
-                          minLength: 1
+                          description: "The Stock Keeping Unit for the product variant."
+                          example: "HB-2-RE-SM"
                         variantId:
-                          type: string
-                          minLength: 1
-                        baseSku:
-                          type: string
-                          minLength: 1
-                        productName:
-                          type: string
-                          minLength: 1
-                        categories:
-                          type: array
-                          items:
-                            type: integer
-                        price:
-                          type: number
-                        option:
-                          type: array
-                          items:
-                            type: object
-                            properties:
-                              id:
-                                type: integer
-                              label:
-                                type: string
-                              option_id:
-                                type: integer
-                              option_display_name:
-                                type: string
-                        isVisible:
-                          type: string
-                          minLength: 1
-                required:
-                  - code
-                  - message
-                  - data
-                x-examples:
-                  example-1:
-                    code: 200
-                    message: Success
-                    data:
-                      - id: 65
-                        product_id: 81
-                        sku: OTS
-                        calculated_price: 89
-                        image_url: 'https://cdn11.bigcommerce.com/s-1i6zpxpe3g/products/81/images/273/roundterrariumsmall.1554505753.386.513.jpg?c=2'
-                        inventory_level: 999
-                        option_values: []
-                        variantSku: OTS
-                        productId: '81'
-                        variantId: '65'
-                        baseSku: OTS
-                        productName: '[Sample] Orbit Terrarium - Small'
-                        categories:
-                          - 23
-                          - 19
-                        price: 89
-                        option: []
-                        isVisible: '1'
-              examples:
-                example-1:
-                  value:
-                    code: 200
-                    message: Success
-                    data:
-                      - id: 65
-                        product_id: 81
-                        sku: OTS
-                        calculated_price: 89
-                        image_url: url
-                        inventory_level: 999
-                        option_values: []
-                        variantSku: OTS
-                        productId: '81'
-                        variantId: '65'
-                        baseSku: OTS
-                        productName: '[Sample] Orbit Terrarium - Small'
-                        categories:
-                          - 23
-                          - 19
-                        price: 89
-                        option: []
-                        isVisible: '1'
+                          type: integer
+                          description: "Unique numeric identifier for the product variant assigned by BigCommerce."
+                          example: 118
+  /catalogs/quick-product:
+    parameters:
+      - name: variantSkus
+        in: query
+        required: true
+        schema:
+          type: string
+          example: "HB-2-RE-SM|HB-2-GR-SM|HB-2-BL-SM"
+        description: "A collection of SKUs associated with product variants, separated by `|`."
+    get:
+      summary: Get Variant Information
       operationId: get-catalogs-quickProduct
-      parameters:
-        - schema:
-            type: string
-            example: sku-1|sku-2|sku-3
-          in: query
-          name: variantSkus
-          description: 'Variant SKU names, split by "|".'
       description: |-
-        Get the catalogʼs product information by requesting the [Get All Products](https://developer.bigcommerce.com/docs/rest-catalog/products#get-all-products) BigCommerceʼs API. 
+        Returns detailed information for each product variant provided in the `variantSkus` parameter. Several fields are duplicated in other formats for convenience.
+
+        Analogous to the [Get a product variant](/docs/rest-catalog/product-variants#get-a-product-variant) endpoint in the default BigCommerce API. 
+
         Equivalent Storefront GraphQL API Query: `variantSku`. For more information, see the [GraphQL Playground](https://api-b2b.bigcommerce.com/graphql/playground).
       tags:
         - Catalog
-    parameters: []
-  /catalogs/quick-order-pad:
-    post:
-      summary: Quick Order Pad
-      operationId: post-catalogs-quick-order-pad
       responses:
         '200':
-          description: OK
+          description: SUCCESS
           content:
             application/json:
               schema:
-                description: ''
                 type: object
-                x-examples:
-                  example-1:
-                    code: 200
-                    message: Success
-                    data:
-                      - isStock: '1'
-                        stock: 999
-                        variantSku: OTS
-                        productId: '81'
-                        variantId: 65
-                        baseSku: OTS
-                        productName: '[Sample] Orbit Terrarium - Small'
-                        categories:
-                          - 23
-                          - 19
-                        option: []
-                        minQuantity: 0
-                        maxQuantity: 0
-                        isVisible: '1'
-                        modifiers: []
                 properties:
                   code:
-                    type: number
+                    type: integer
+                    description: "HTTP status code indicating the result of the operation."
+                    example: 200
                   message:
                     type: string
-                    minLength: 1
+                    description: "Message describing the result of the operation."
+                    example: Success
                   data:
                     type: array
-                    uniqueItems: true
-                    minItems: 1
+                    description: "List of product variant data objects."
                     items:
                       type: object
                       properties:
-                        isStock:
+                        id:
+                          type: integer
+                          description: "The unique variant ID as assigned by BigCommerce."
+                          example: 118
+                        product_id:
+                          type: integer
+                          description: "The unique product ID associated with the variant's parent product as assigned by BigCommerce."
+                          example: 134
+                        sku:
                           type: string
-                          minLength: 1
-                        stock:
+                          description: "SKU (Stock Keeping Unit) for the variant. This field is unique in a given BigCommerce catalog."
+                          example: "HB-2-RE-SM"
+                        calculated_price:
                           type: number
-                          description: Stock number
+                          format: float
+                          description: "The calculated price of the variant including currency and sale adjustments."
+                          example: 15.00
+                        cost_price:
+                          type: number
+                          format: float
+                          description: "The cost price of the variant."
+                          example: 0.00
+                        purchasing_disabled:
+                          type: boolean
+                          description: "Indicates whether purchasing this variant is disabled. A value of `false` indicates that the product is purchasable on the storefront."
+                          example: false
+                        image_url:
+                          type: string
+                          format: uri
+                          description: "The URL to the image associated with the variant. This will usually be a BigCommerce CDN link."
+                          example: "https://cdn.example.com/product_images/attribute_rule_images/2_source_1709578415.jpg"
+                        inventory_level:
+                          type: integer
+                          description: "The current inventory level for the variant."
+                          example: 0
+                        option_values:
+                          type: array
+                          description: "The list of options and their values that determine the variant."
+                          items:
+                            $ref: '#/components/schemas/VariantOption'
                         variantSku:
                           type: string
-                          minLength: 1
-                          description: Variant SKU name
+                          description: "The SKU of the variant (duplicated from `sku` for convenience)."
+                          example: "HB-2-RE-SM"
                         productId:
                           type: string
-                          minLength: 1
-                          description: Unique product ID
+                          description: "String representation of the product ID (duplicated from `product_id` for compatibility)."
+                          example: "134"
                         variantId:
-                          type: number
-                          description: Unique variant ID
+                          type: string
+                          description: "String representation of the variant ID (duplicated from `id` for compatibility)."
+                          example: "118"
                         baseSku:
                           type: string
-                          minLength: 1
-                          description: SKU name
+                          description: "The base SKU from which the variant is derived. This is usually the SKU of the parent product, if it exists."
+                          example: "HB-2"
                         productName:
                           type: string
-                          minLength: 1
-                          description: Product name
+                          description: "The name of the product as displayed on product listing and detail pages."
+                          example: "A Most Excellent Product"
                         categories:
                           type: array
+                          description: "The list of category IDs to which the product is assigned."
                           items:
                             type: integer
+                            example: 24
+                        price:
+                          type: number
+                          format: float
+                          description: "The default price of the variant (may be the same as `calculated_price` if sale price is unset and the default store currency is used)."
+                          example: 15.00
                         option:
                           type: array
+                          description: "The list of options and their values that determine the variant. Duplicated from `option_values`."
                           items:
-                            type: object
-                            properties:
-                              id:
-                                type: integer
-                              label:
-                                type: string
-                              option_id:
-                                type: integer
-                              option_display_name:
-                                type: string
-                        minQuantity:
-                          type: number
-                          description: Order quantity minimum
-                        maxQuantity:
-                          type: number
-                          description: Order quantity maximum
+                            $ref: '#/components/schemas/VariantOption'
                         isVisible:
                           type: string
-                          minLength: 1
-                          description: If product is visible.
-                        modifiers:
-                          type: array
-                          items:
-                            type: object
-                      required:
-                        - isStock
-                        - stock
-                        - variantSku
-                        - productId
-                        - variantId
-                        - baseSku
-                        - productName
-                        - minQuantity
-                        - maxQuantity
-                        - isVisible
-                required:
-                  - code
-                  - message
-                  - data
-              examples:
-                example-1:
-                  value:
-                    code: 200
-                    message: Success
-                    data:
-                      - isStock: '1'
-                        stock: 999
-                        variantSku: OTS
-                        productId: '81'
-                        variantId: 65
-                        baseSku: OTS
-                        productName: '[Sample] Orbit Terrarium - Small'
-                        categories:
-                          - 23
-                          - 19
-                        option: []
-                        minQuantity: 0
-                        maxQuantity: 0
-                        isVisible: '1'
-                        modifiers: []
+                          enum: ["0", "1"]
+                          description: "Indicates the variant's visibility status A value of `1` indicates the variant is visible, while `0` indicates it is hidden."
+                          example: "1"
+  /catalogs/quick-order-pad:
+    parameters:
+      - name: currencyCode
+        in: query
+        required: false
+        schema:
+          type: string
+          example: "USD"
+        description: "The three-letter currency code to use in price calculation. If not provided, defaults to the store's default currency."
+    post:
+      summary: Get Detailed Variant Information
+      operationId: post-catalogs-quick-order-pad
       description: |-
-        Get products quickly.
+        Returns detailed information about the variants whose SKUs are provided in the body of the request. This includes the information from [Get Variant Information](#get-variant-information) as well as other variant data that may affect pricing, availability, and other factors.
+
+        Details provided in the response body are sufficient to quickly add a product to a cart or a quote using appropriate methods.
+
+        > Note: This endpoint uses the `POST` method, despite its use to only *retrieve* information. Using the `GET` method with this endpoint will return a `200` status, but the `data` field will be empty. Likewise, using `POST` with this endpoint with an empty body will return an empty `data` field.
+
         Equivalent Storefront GraphQL API Query: `variantSku`. For more information, see the [GraphQL Playground](https://api-b2b.bigcommerce.com/graphql/playground).
       tags:
         - Catalog
-      parameters:
-        - schema:
-            type: string
-          in: query
-          name: variantSkus
-          description: Variant SKU names, split by "|".
-          example: sku-1|sku-2|sku-3
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                variantSkus:
+                  type: array
+                  items:
+                    type: string
+                    example: "SKU1"
+                  description: "List of variant SKUs for which to fetch detailed information. If this is omitted, the response will be empty."
+                  example: ["HB-2-RE-SM", "HB-2-RE-ME"]
+      responses:
+        '200':
+          description: SUCCESS
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuickVariantInfoResponse'
+
 components:
-  schemas: {}
+  schemas:
+    VariantOption:
+      type: object
+      description: "Option and corresponding value for a variant (e.g., color, size)."
+      properties:
+        id:
+          type: integer
+          description: "The unique option value ID as assigned by BigCommerce. Does **not** match the variant ID by default."
+          example: 113
+        label:
+          type: string
+          description: "The display name for the specific option value."
+          example: "Red"
+        option_id:
+          type: integer
+          description: "The unique option ID as assigned by BigCommerce. The option contains all the values associated with it. For example, a `Color` option might contain `red`, `green`, and `blue`."
+          example: 120
+        option_display_name:
+          type: string
+          description: "The display name for the option."
+          example: "Color"
+    Modifier:
+      type: object
+      description: "Modifiers associated with a product variant."
+      properties:
+        id:
+          type: integer
+          description: "The unique modifier ID assigned by BigCommerce."
+          example: 122
+        productId:
+          type: integer
+          description: "The unique ID for the product the modifier belongs to."
+          example: 134
+        name:
+          type: string
+          description: "The internal modifier name. This is **not** visible on the storefront by default."
+          example: "forced1709578669-134"
+        displayName:
+          type: string
+          description: "The modifier's display name as shown on the storefront."
+          example: "Custom Message"
+        type:
+          type: string
+          description: "The modifier's type. This value determines how the modifier behaves on the storefront as well as what datatypes are allowed. For more information see the [Product Modifiers](/docs/rest-catalog/product-modifiers) API documentation."
+          enum:
+            - "swatch"
+            - "radio_buttons"
+            - "rectangles"
+            - "dropdown"
+            - "product_list_with_images"
+            - "product_list"
+            - "text"
+            - "checkbox"
+            - "numbers_only_text"
+            - "date"
+            - "multi_line_text"
+            - "file"
+          example: "text"
+        required:
+          type: boolean
+          description: "Indicates whether the modifier is required when adding the variant to cart."
+          example: true
+        sortOrder:
+          type: integer
+          description: "Indicates the position of the modifier. Lower values are placed earlier in modifier lists."
+          example: 3
+        config:
+          type: object
+          description: "The configuration of the specific modifier. Different modifier `type` values require different structures for this object. For more information, see the [Product Modifiers](/docs/rest-catalog/product-modifiers) API documentation."
+          example:
+            defaultValue: "text"
+            textCharactersLimited: false
+            textMinLength: 0
+            textMaxLength: 0
+        optionValues:
+          type: array
+          description: "An array of modifier values, as created within BigCommerce. Different modifier `type` values use different structures for this array. For more information, see the [Product Modifiers](/docs/rest-catalog/product-modifiers) API documentation."
+          items:
+            type: object
+          example: []
+    QuickVariantInfoItem:
+      type: object
+      description: "Detailed information about a specific variant."
+      properties:
+        isStock:
+          type: string
+          description: "Indicates whether the variant is currently in stock. A value of `1` indicates the product in stock, otherwise `0`."
+          enum: ["0", "1"]
+        stock:
+          type: integer
+          description: "Current inventory of the variant. If this value returns `0`, so will the `isStock` field."
+          example: 0
+        variantSku:
+          type: string
+          description: "SKU (Stock Keeping Unit) for the variant. This field is unique in a given BigCommerce catalog."
+          example: "HB-2-RE-ME"
+        productId:
+          type: string
+          description: "String representation of the product ID for the parent product of the variant."
+          example: "134"
+        calculatedPrice:
+          type: number
+          description: "The calculated price of the variant including currency and sale adjustments."
+          example: 15
+        imageUrl:
+          type: string
+          description: "The URL for the image associated with the variant. May return an empty string."
+          example: "https://cdn.example.com/product_images/attribute_rule_images/2_source_1709578415.jpg"
+        variantId:
+          type: integer
+          description: "The unique variant ID as assigned by BigCommerce."
+          example: 119
+        baseSku:
+          type: string
+          description: "The base SKU from which the variant is derived. This is usually the SKU of the parent product, if it exists."
+          example: "HB-2"
+        productName:
+          type: string
+          description: "The name of the product as displayed on product listing and detail pages."
+          example: "A Most Excellent Product"
+        categories:
+          type: array
+          description: "The list of category IDs to which the product is assigned."
+          items:
+            type: integer
+          example: [24]
+        option:
+          type: array
+          description:  "The list of options and their values that determine the variant."
+          items:
+            $ref: '#/components/schemas/VariantOption'
+        minQuantity:
+          type: integer
+          description: "The minimum purchase quantity for the variant, as assigned in BigCommerce."
+          example: 0
+        maxQuantity:
+          type: integer
+          description: "The maximum purchase quantity for the variant, as assigned in BigCommerce."
+          example: 0
+        purchasingDisabled:
+          type: string
+          description: "Indicates whether purchasing this variant is disabled. A value of `0` indicates that the product is purchasable on the storefront."
+          enum: ["0", "1"]
+        isVisible:
+          type: string
+          description: "Indicates the variant's visibility status A value of `1` indicates the variant is visible, while `0` indicates it is hidden."
+          enum: ["1", "0"]
+        modifiers:
+          type: array
+          description: "List of product modifiers available to the variant."
+          items:
+            $ref: '#/components/schemas/Modifier'
+    QuickVariantInfoResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          description: "HTTP status code of the response."
+          example: 200
+        message:
+          type: string
+          description: "Status message."
+          example: Success
+        data:
+          type: array
+          description: "List of product variant info objects."
+          items:
+            $ref: '#/components/schemas/QuickVariantInfoItem'
   securitySchemes:
     BearerToken:
       description: |-
         ### Authentication header
         | Header | Argument | Description |
         |:-------|:---------|:------------|
-        |`Authorization`|`Bearer {{B2B_JWT_TOKEN}}`| You can obtain this token using the steps described in the [REST Storefront API](/b2b-edition/docs/authentication#rest-storefront-api) section of the [Authentication for hosted storefront](https://developer.bigcommerce.com/b2b-edition/docs/authentication) article. |
+        |`Authorization`|`Bearer {{B2B_JWT_TOKEN}}`| You can obtain this token using the steps described in the [REST Storefront API](/b2b-edition/docs/authentication#rest-storefront-api) section[...]
       type: http
       scheme: bearer
-tags:
-  - name: Catalog

@@ -1,0 +1,124 @@
+# Price Lists - International Enhancements for Multi-Storefront
+
+<Callout type="info">
+  Tax-inclusive and exclusive price lists are in beta. Features may change based on user feedback or internal testing.
+</Callout>
+
+When you sell internationally, you may need your storefront to display prices that either include or exclude tax based on regional expectations. You may need some storefront channels to display prices that include tax, while others display prices that exclude tax.
+
+To localize your storefronts, you can do the following:
+- Specify whether a price list has prices that include or exclude tax when entered (i.e., `prices_entered_with_tax`).
+- Add prices (of your desired `prices_entered_with_tax`) setting to the price list in your desired [currency for a storefront](https://support.bigcommerce.com/s/article/Multi-Storefront?language=en_US#currencies).
+- Assign the price list to storefront channels (or customer groups).
+
+
+## Limitations
+
+- Stores using [Catalog V2](/docs/store-operations/catalog/migration) have may have fixed pricing rules and are not eligible to use inc/ex tax price lists. 
+- You cannot enter price changes due to product modifier rules, gift wrapping features, and fixed shipping prices into a price list. During checkout, the global prices for these features will be applied as is on top of the prices shown for the current shopper. Effectively, these features will inherit the `prices_entered_with_tax` setting from the price list.
+- You cannot mix inclusive and exclusive pricing within a single price list.
+- For the best experience, [set the display price](https://support.bigcommerce.com/s/article/Product-Display-Settings?language=en_US#settings) to the lowest variant price when a shopper's preselected options don't match to a price. 
+
+If your store doesn't have multiple storefronts, you can still create tax-inclusive or exclusive price lists and assign them to customer groups.
+
+## Settings
+
+Price lists will have a `prices_entered_with_tax` setting, which overrides the (default) global store setting. Use this setting to choose whether the price list is tax-inclusive or exclusive, or inherits the global settings. For details, see the [Price List endpoints](/docs/rest-management/price-lists) in the REST Management APIs.
+
+When you're using tax-inclusive price lists, tax-inclusive prices will remain the same across all tax zones; the tax amount will vary based on the shopper's location. 
+To ensure that you keep prices as entered , go to **Settings > Tax > Store Tax Settings** in the control panel. Turn on "Keep prices as entered" for "When calculating the taxes on sales made outside the pricing tax zone." For more information, see the [Tax Overview](https://support.bigcommerce.com/s/article/Tax-Overview?language=en_US#tax-settings) support article. 
+
+If you're inheriting global tax settings, you have an additional option for tax-inclusive prices. You can choose to subtract the item's store tax rate before calculating tax using the shopper's tax zone. For information on the global settings, see the [Tax Settings](/docs/rest-management/tax-settings) endpoint of the REST Management API. 
+
+## Example
+
+### Usage
+
+The following describes an example usage:
+
+1. Your store has the following prices entered globally in US dollars, exclusive of tax:
+- $5 modifier rule
+- $1.99 fixed shipping
+- +$3 for gift wrapping
+
+2. You add a tax-inclusive price list and assign it to a storefront that uses Australian dollars:
+- $55.97 (AUD) for the price of the product
+
+3. The currency conversion of 2 AUD to 1 USD will apply to the prices you entered previously, so you end up with the following:
+- $10 modifier rule
+- $3.98 fixed shipping
+- $6 gift wrapping
+
+These prices will be added as is, on top of the product price from the price list, effectively inheriting the price list setting. 
+
+The cart total for the item with the modifier rule selected will be $55.97 + $10 + $6 + $3.98 = **$75.95 AUD**
+
+### Price list setting
+
+The following example creates a tax-inclusive price list by sending a request to the [Create a Price List](/docs/rest-management/price-lists#create-a-price-list) endpoint. 
+
+<Tabs items={['Request', 'Response']}>
+  <Tab>
+
+  ```http filename="Example request: Create a tax-inclusive price list" showLineNumbers copy
+  POST https://api.bigcommerce.com/stores/{{store_hash}}/v3/pricelists
+  X-Auth-Token: {{ACCESS_TOKEN}}
+  Accept: application/json
+  Content-Type: application/json
+
+  {
+    "name": "Wholesale",
+    "active": true,
+    "prices_entered_with_tax": "entered_inclusive"
+  }
+  ```
+
+  </Tab>
+  <Tab>
+
+  ```json filename="Example response: Create a tax-inclusive price list" showLineNumbers copy
+  {
+    "data": {
+      "id": 4,
+      "name": "Wholesale Group - Trade Show",
+      "date_created": "2022-09-17T18:41:59Z",
+      "date_modified": "2022-09-17T18:41:59Z",
+      "active": false,
+      "prices_entered_with_tax": "entered_inclusive"
+    },
+    "meta": {}
+  }
+  ```
+
+  </Tab>
+</Tabs>
+
+
+## Fallback behavior
+
+The following fallback behavior applies if you set a product as available for purchase, but the price list doesn't have a price entered for the product.
+
+- When a price list inherits global settings, price lists will default to catalog prices if a price is missing. 
+- When a price list overrides the global store setting, prices returned will be `null` if a price is missing in the price list. 
+
+  This applies for the prices returned in the [Pricing](/docs/rest-management/pricing/products) endpoint of the REST Management API and the [GraphQL Storefront API](/docs/storefront/graphql). 
+  
+### Update Cornerstone theme
+
+If you have an empty price for a product (or variant) in a inclusive or exclusive price list, [update to Cornerstore](https://support.bigcommerce.com/s/article/Marketplace-Theme-Updates) version 6.15 or make adjustments to your current theme to handle `null` prices. You can view the changes required in the [Cornerstone reference PR](https://github.com/bigcommerce/cornerstone/pull/2486/files).
+
+If you update the theme, and you have an empty price, the product, but not the price, will still be visible on the PDP. You won't be able to purchase it, but you can still add to wishlist.
+
+If you do not update the theme, the following will occur:
+- If the variant is the default selection on the PDP, the entire html for the price section will not load. If you change to a variant with a price, the price will still not show.
+- If the variant is not the default selection, the price will load on the PDP without issue. However, when you make the selection to a variant without a price, the price will not change and will display the price of the previously selected variant.
+
+If one of these issues occurs on the theme, and the merchant can not update their theme, entering a price for the product (or variant) causing an issue will resolve the problem. If there is always a price entered for all products on the inclusive or exclusive price list, then no issues will occur. 
+
+## Additional resources
+
+- [Introduction to Multi-Storefront](/docs/storefront/multi-storefront)
+- [Price Lists](/docs/store-operations/pricing/price-lists) overview
+- [Tax Settings](/docs/rest-management/tax-settings) endpoint reference
+- [Pricing](/docs/rest-management/pricing/products) endpoint reference
+- [Update your Stencil theme](https://support.bigcommerce.com/s/article/Marketplace-Theme-Updates) support article

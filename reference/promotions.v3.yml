@@ -207,7 +207,7 @@ paths:
         
         **Note:**
         * batch_size is limited to 250 codes per request for first version. If batch_size is not an integer or larger than 250, it will return a 422 error code.
-        * The default rate limit for this endpoint is 40 concurrent requests.
+        * The default rate limit for this endpoint is 10 concurrent requests.
       operationId: generatePromotionCodesBatch
       parameters:
         - $ref: '#/components/parameters/ContentType'
@@ -221,20 +221,6 @@ paths:
                 - batch_size
               type: object
               properties:
-                prefix:
-                  type: string
-                  description: A prefix to add to the generated codes.
-                  example: 'PROMO-'
-                  minLength: 1
-                  maxLength: 20
-                  pattern: '[a-zA-Z0-9_\ -]'
-                suffix:
-                  type: string
-                  description: A suffix to add to the generated codes.
-                  example: '2025'
-                  minLength: 1
-                  maxLength: 20
-                  pattern: '[a-zA-Z0-9_\ -]'
                 batch_size:
                   type: integer
                   description: The number of coupon codes to generate in each batch. The maximum value is 250.
@@ -255,7 +241,7 @@ paths:
                   maximum: 100000
         required: true
       responses:
-        '200':
+        '201':
           $ref: '#/components/responses/BulkCouponCodesResponse'
         '400':
           description: Invalid request.
@@ -264,13 +250,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse400'
         '403':
-          description: The request payload was invalid.
+          description: Forbidden.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse403'
         '422':
-          description: The request payload was invalid.
+          description: The request payload is invalid.
           content:
             application/json:
               schema:
@@ -1405,11 +1391,11 @@ components:
       properties:
         code:
           type: string
-          pattern: '[a-zA-Z0-9_\ -]'
-          description: A unique code that can be used to manually apply a discount. Only letters, numbers, white spaces, underscores and hyphens are allowed.
-          example: TEST-COUPON-CODE
-          maxLength: 50
-          minLength: 12
+          pattern: '^[A-Z0-9]{16}$'
+          description: A unique, 16-character code that can be used to manually apply a discount. The code consists of randomly generated capital letters and numbers.
+          example: 'OMHYFQ4S26EY63UW'
+          maxLength: 16
+          minLength: 16
 
     BulkCouponCodes:
       type: array
@@ -1756,11 +1742,16 @@ components:
             example-1:
               value:
                 data:
-                  - code: "PROMO-abc123-2025"
-                  - code: "PROMO-def456-2025"
-                  - code: "PROMO-ghi789-2025"
-                  - code: "PROMO-jkl012-2025"
-                  - code: "PROMO-mno345-2025"
+                  - max_uses: 10
+                    max_uses_per_customer: 5
+                    current_uses: 0
+                    created: '2019-01-20T22:00:00+00:00'
+                    codes:
+                      - code: "WFYUYQM1W1ZYGK7S"
+                      - code: "TQ4PBBEK9SCZ212Z"
+                      - code: "B2YKV43O18LPJGNS"
+                      - code: "OSGJJBV3WBRC3G7X"
+                      - code: "XA8JS9T2N0C2TGS3"
                 meta: {}
 
     PromotionCodeResponse:

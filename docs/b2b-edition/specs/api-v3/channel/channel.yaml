@@ -1,30 +1,42 @@
 openapi: 3.0.0
 info:
-  title: Channel
-  version: '1.0'
-  description: Related with BigCommerce store channels. Only support 'bigcommerce' platform and 'storefront' type.
+  title: Channels
+  description: |-
+    Channels are the primary structure for separating storefront experience for customers on the frontend. The endpoints provided by the B2B Edition API allow polling, but not management, of channel data. For details on managing channels and updating their settings via API, see [Channels](/docs/rest-management/channels).
+
+    The B2B Edition channels endpoints are intended for use only in Multi-Storefront environments, and using them in Single-Storefront environments will result in unexpected responses.
   contact:
     name: BigCommerce
     url: 'https://www.bigcommerce.com'
     email: support@bigcommerce.com
+  version: v3
+  termsOfService: 'https://www.bigcommerce.com/terms'
 servers:
   - url: 'https://api-b2b.bigcommerce.com/api/v3/io'
+tags:
+  - name: Channels
+security:
+  - authToken: []
 paths:
   /channels:
     get:
-      summary: Get Store Channels
+      summary: "Get all Channels"
       tags:
-        - channel
+        - Channels
+      description: |-
+        Returns all enabled channels for the current store. Analogous to [Get All Channels](/docs/rest-management/channels#get-all-channels) in the BigCommerce API.
+      operationId: get-channels
       responses:
         '200':
-          description: OK
+          description: SUCCESS
           content:
             application/json:
               schema:
                 type: object
                 properties:
                   code:
-                    type: number
+                    type: integer
+                    default: 200
                   data:
                     type: array
                     items:
@@ -34,77 +46,49 @@ paths:
                     properties:
                       message:
                         type: string
-              examples:
-                example-1:
-                  value:
-                    code: 200
-                    data:
-                      - id: 1
-                        channelId: 1
-                        channelName: msf2
-                        createdAt: 1645582457
-                        updatedAt: 1645582457
-                        type: storefront
-                        platform: bigcommerce
-                        status: active
-                        site: 'https://msfbeta2.mybigcommerce.com'
-                        isVisible: true
-                        isEnabled: true
-                    meta:
-                      message: SUCCESS
-        '422':
-          description: Unprocessable Entity (WebDAV)
+                        default: "SUCCESS"
+        '403':
+          description: Forbidden
           content:
             application/json:
               schema:
                 type: object
                 properties:
                   code:
-                    type: number
-                  data:
-                    type: object
-                    properties:
-                      errMsg:
-                        type: string
-                  meta:
-                    type: object
-                    properties:
-                      message:
-                        type: string
-              examples:
-                example-1:
-                  value:
-                    code: 422
-                    data:
-                      errMsg: Multi-storefront is not enabled
-                    meta:
-                      message: Multi-storefront is not enabled
-      operationId: get-channels
-      description: Get store channels
-      security:
-        - authToken: []
-  '/channels/{channelId}':
+                    type: integer
+                    description: HTTP status code.
+                    example: 403
+                  message:
+                    type: string
+                    description: Error message.
+                    example: "Multi storefront is not enabled"
+  /channels/{channel_id}:
     parameters:
-      - schema:
-          type: number
-        name: channelId
+      - name: channel_id
         in: path
         required: true
-        description: BigCommerce channel ID
+        schema:
+          type: integer
+        description: The unique BigCommerce channel ID.
+        example: 1
     get:
-      summary: Get a Store Channel
+      summary: Get Channel Details by channel ID
       tags:
-        - channel
+        - Channels
+      description: |-
+        Returns data for the specific channel associated with `channel_id`. Analogous to [Get A Channel](/docs/rest-management/channels#get-a-channel) in the BigCommerce API.
+      operationId: get-channels-channelId
       responses:
         '200':
-          description: OK
+          description: SUCCESS
           content:
             application/json:
               schema:
                 type: object
                 properties:
                   code:
-                    type: number
+                    type: integer
+                    default: 200
                   data:
                     $ref: '#/components/schemas/Channel'
                   meta:
@@ -112,104 +96,107 @@ paths:
                     properties:
                       message:
                         type: string
-              examples:
-                example-1:
-                  value:
-                    code: 200
-                    data:
-                      id: 1
-                      channelId: 1
-                      channelName: msf2
-                      createdAt: 1645582457
-                      updatedAt: 1645582457
-                      type: storefront
-                      platform: bigcommerce
-                      status: active
-                      site: 'https://msfbeta2.mybigcommerce.com'
-                      isVisible: true
-                      isEnabled: true
-                    meta:
-                      message: SUCCESS
-      operationId: get-channels-channelId
-      description: Get a store channel
+                        default: "SUCCESS"
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    description: HTTP status code.
+                    example: 403
+                  message:
+                    type: string
+                    description: Error message.
+                    example: "Multi storefront is not enabled"
+        '404':
+          description: Channel Not Found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    description: HTTP status code.
+                    example: 404
+                  message:
+                    type: string
+                    description: Error message.
+                    example: "Channel does not exist"
 components:
   schemas:
     Channel:
       type: object
-      x-examples:
-        example-1:
-          id: 1
-          channelId: 1
-          channelName: msf2
-          createdAt: 1645582457
-          updatedAt: 1645582457
-          type: storefront
-          platform: bigcommerce
-          status: active
-          site: 'https://msfbeta2.mybigcommerce.com'
-          isVisible: true
-          isEnabled: true
+      description: A BigCommerce store channel object
       properties:
         id:
-          type: number
-          description: B2B Edition channel ID
+          type: integer
+          description: "The unique numeric ID assigned to the storefront channel by B2B Edition. Does **not** match `channelId`."
+          example: 1
         channelId:
-          type: number
-          description: BigCommerce channel ID
-        channelName:
+          type: integer
+          description: "The unique numeric ID assigned to the storefront channel by BigCommerce. Does **not** match `id`."
+          example: 1
+        name:
           type: string
-          minLength: 1
-          description: Channel name
-        createdAt:
-          type: number
-          description: The timestamp when you created the channel.
-        updatedAt:
-          type: number
-          description: The timestamp when you updated the channel.
+          description: "The display name for the channel as shown in the Channels menu in the BigCommerce control panel."
+          example: "Default Channel"
         type:
           type: string
-          minLength: 1
-          description: 'The channel type only supports "storefront" now.'
+          description: "The type of channel. Currently, only `storefront` channel type is supported within B2B Edition."
+          example: "storefront"
+          enum: ["storefront", "marketplace", "pos", "custom"]
         platform:
           type: string
-          minLength: 1
-          description: 'The channel platform only supports "bigcommerce" now.'
+          description: "The platform provider for the channel. Currently, only `bigcommerce` channel platform is supported within B2B Edition."
+          example: "bigcommerce"
+          enum: ["bigcommerce", "amazon", "ebay", "custom"]
         status:
           type: string
-          minLength: 1
-          description: Channel status
-          enum:
-            - prelaunch
-            - active
-            - inactive
-            - archived
-            - deleted
+          description: "The status of the channel, indicating whether it is prelaunch (`prelaunch`), live (`active`), down for maintenance (`inactive`), archived (`archived`), or marked for deletion (`deleted`). Once a channel is deleted, it will no longer be available to the API."
+          example: "active"
+          enum: ["active", "inactive", "archived"]
         site:
           type: string
-          minLength: 1
-          description: ' The domain associated with a channel.'
+          description: "The domain associated with the channel, as reported within BigCommerce."
+          example: "https://default.example.com"
         isVisible:
           type: boolean
+          description: "Indicates whether the channel is visible in the BigCommerce control panel."
+          example: true
         isEnabled:
           type: boolean
-      required:
-        - id
-        - channelId
-        - channelName
-        - createdAt
-        - updatedAt
-        - type
-        - platform
-        - status
-        - site
-        - isVisible
-        - isEnabled
-      x-internal: false
+          description: "Indicates whether the channel is enabled."
+          example: true
+        iconUrl:
+          type: string
+          description: "The URL for the channel's icon seen in B2B Edition's Storefronts settings. Note that this does not correspond to the storefront channel's logo or favicon."
+          example: "https://cdn.example.com/icons/default.png"
+        b2bEnabled:
+          type: boolean
+          description: "Indicates whether B2B features are enabled for this channel."
+          example: true
+        allowGlobalLogins:
+          type: boolean
+          description: "Determines if customers created on this channel will get global access/login."
+          example: false
+        createdAt:
+          type: string
+          format: date-time
+          description: "The [Unix Timestap](https://www.unixtimestamp.com/) creation date for the channel."
+          example: "1750437336"
+        updatedAt:
+          type: string
+          format: date-time
+          description: "The [Unix Timestap](https://www.unixtimestamp.com/) last update date for the channel."
+          example: "1750437336"
   securitySchemes:
     authToken:
       name: authToken
       description: Required to authenticate requests. Include the token in a header parameter called `authToken`.
       type: apiKey
       in: header
-tags:
-  - name: channel

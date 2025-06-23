@@ -1,40 +1,270 @@
 # About Our APIs
 
-## API environments
+B2B Edition's APIs allow you to retrieve and manage B2B resources, such as Company accounts and users, sales quotes, and invoice payments. In conjunction with other [BigCommerce APIs](/docs/start/about), you can build integrations and headless solutions for stores using B2B Edition.
 
-Make BigCommerce B2B Edition API requests in the context of the storefront or server-to-server.
+This article covers general information about B2B Edition's APIs and how to use them. See our [list of B2B Edition APIs](/b2b-edition/apis) for endpoint-specific requirements, considerations, and use cases.
 
-| API | Base URL |
-|:--|:--|
-| GraphQL Storefront API | `https://api-b2b.bigcommerce.com/graphql` |
-| REST Storefront API | See [endpoint reference](/b2b-edition/apis#storefront-apis) |
-| REST Management V3 | `https://api-b2b.bigcommerce.com/api/v3/io/`|
-| REST Management V2 | `https://api-b2b.bigcommerce.com/api/v2/io/`|
+## Available APIs
 
-## Key resources
+B2B Edition has different APIs for managing store and Company data, each geared toward specific environments and experiences. See the descriptions below to identify the APIs that best fit your integration.
 
-| Resource | Description |
-|:--|:--|
-| [Company](/b2b-edition/apis/rest-storefront/company) | Set client company info, administrator, and more. |
-| [Address](/b2b-edition/apis/rest-management/address) | Associate one or more addresses with a company. |
-| [Order](/b2b-edition/apis/rest-management/order) | Extend the BigCommerce order object with B2B-specific information, such as purchase order number. |
-| [Payment](/b2b-edition/apis/rest-management/payment) | Manage company payment methods. |
-| [Sales staff](/b2b-edition/apis/rest-management/sales-staff) and [super admin](/b2b-edition/apis/rest-management/super-admin) | Manage sales staff and admin access privileges. |
-| [Quote](/b2b-edition/apis/rest-management/quote) | Manage quotes. |
+### Rest Management V3 APIs
 
-## Request headers
+**Base URL** &mdash; `https://api-b2b.bigcommerce.com/api/v3/io/`
+
+The Rest Management V3 APIs allow you to manage B2B store data and settings from a server-to-server context. Use these APIs to perform backend actions as a store administrator.
+
+Example use cases include:
+
+* Creating new Company accounts and setting up Company account hierarchies  
+* Submitting sales quotes to buyers  
+* Generating payable invoices for purchase orders  
+* Retrieving B2B order information  
+* Assigning user roles to B2B buyers
+
+Unlike the other BigCommerce REST Management APIs, the B2B REST Management V3 APIs do not include store-specific data in the request path, such as the store hash. Instead the store specificity is contained within the server to server authToken used to authenticated the request.
+
+### GraphQL Storefront APIs
+
+**Base URL** &mdash; `https://api-b2b.bigcommerce.com/graphql` 
+
+B2B Edition's GraphQL Storefront APIs include queries and mutations for managing records like Company account information, sales quotes, and invoices in native and headless storefronts. It is the recommended environment if you are building storefront integrations for B2B Edition's [Buyer Portal experience](https://support.bigcommerce.com/s/article/B2B-Edition-Buyer-Functions).
+
+Example use cases include:
+
+* Adding new Company users  
+* Taking sales quotes to checkout  
+* Curating and approving Shopping Lists  
+* Starting or ending Super Admin Masquerade
+
+Our [GraphQL Playground](https://api-b2b.bigcommerce.com/graphql/playground) includes documentation and schemas for B2B GraphQL API requests, as well as an environment for testing responses.
+
+### REST Storefront APIs
+
+**Base URL** &mdash; `https://api-b2b.bigcommerce.com/api/v2/`**\***
+
+The REST Storefront APIs also allow you to manage B2B records from the context of a specific Company user or Super Admin. It is used by the [legacy Stencil storefront experience](/b2b-edition/docs/stencil), but the requests are also supported in the Buyer Portal experience. However, we recommend using the GraphQL Storefront API for storefront customization.
+
+**\*** Most REST Storefront API endpoints use `https://api-b2b.bigcommerce.com/api/v2/`, but the [Get a Storefront authToken for a Specific Customer](/b2b-edition/apis/rest-storefront/authentication#get-a-storefront-authtoken-for-a-specific-customer) endpoint uses `https://api-b2b.bigcommerce.com/api/io/`.
+
+### REST Management V2 APIs
+
+**Base URL** &mdash; `https://api-b2b.bigcommerce.com/api/v2/io/`
+
+The REST Management V2 APIs include legacy server-to-server endpoints for managing store information and processes. Like V3 APIs, the V2 APIs do not include store-specific data in the request path.
+
+The V2 API is deprecated, and it does not support many of B2B Edition's newer features. We recommend building or upgrading your integration to use the V3 Management APIs.
+
+## API authentication and context
+
+Requests to the B2B Edition REST Management V3 API are always in the context of the server. To authenticate V3 API requests, generate a server to server authToken via one of the following methods:
+
+* Create an API account from [B2B Edition's settings](https://support.bigcommerce.com/s/article/B2B-Edition-Settings)  
+* Generate a token via the [Create a Server to Server Token](/b2b-edition/apis/rest-management/authentication#get-a-server-to-server-token) endpoint
+
+GraphQL and REST Storefront API authentication tokens are always in the context of a specific storefront user. As a result, you do not need separate tokens for authenticating requests in client and server contexts, unlike the [BigCommerce GraphQL Storefront API](/docs/start/authentication/graphql-storefront).
+
+There are several methods for generating storefront authTokens, each with distinct use cases. See [Authentication for hosted storefronts](/b2b-edition/docs/authentication) to learn more.
+
+## Available B2B Resources
+
+B2B Edition's APIs allow you to manage the following major resources:
+
+| Resource | Description | Server to server endpoints? | Storefront endpoints, queries, and mutations? |
+| :---- | :---- | :---- | :---- |
+| Addresses | Gather Company address information and add new addresses | [Yes](/b2b-edition/apis/rest-management/address) | [Yes](/b2b-edition/apis/rest-storefront/company/addresses) |
+| Channels | Obtain store channel details | [Yes](/b2b-edition/apis/rest-management/channel) | No |
+| Companies | Create and manage Company accounts. Includes sub-resources for configuring account hierarchy and managing Company user roles and permissions. | [Yes](/b2b-edition/apis/rest-management/company) | [Yes](/b2b-edition/apis/rest-storefront/company) |
+| Invoice Management | Generate invoices for purchase orders and log external payments | [Yes](/b2b-edition/apis/rest-management/invoice-management) | No |
+| Orders | Get order information and assign historical orders to Company accounts | [Yes](/b2b-edition/apis/rest-management/order) | [Yes](/b2b-edition/apis/rest-storefront/orders) |
+| Payments | View and update Company payment methods, available credit, and net terms | [Yes](/b2b-edition/apis/rest-management/payment) | No |
+| Quotes | Create and process sales quotes | [Yes](/b2b-edition/apis/rest-management/quote) | [Yes](/b2b-edition/apis/rest-storefront/request-for-quote) |
+| Sales Staff | Assign your backend sales representatives to Company accounts | [Yes](/b2b-edition/apis/rest-management/sales-staff) | No |
+| Shopping Lists | Build and manage Shopping Lists for repeat purchases | [Yes](/b2b-edition/apis/rest-management/shopping-list) | [Yes](/b2b-edition/apis/rest-storefront/shopping-list) |
+| Store Settings | Retrieve basic information from a storefront context, such as available currencies and order statuses | No | [Yes](/b2b-edition/apis/rest-storefront/store) |
+| Super Admins | Assign your frontend sales representatives to Company accounts and initiate or end a Masquerade session | [Yes](/b2b-edition/apis/rest-management/super-admin) | [Yes](/b2b-edition/apis/rest-storefront/sales-rep) |
+| Users | Add users to Company accounts and assign roles to specify Buyer Portal access permissions | [Yes](/b2b-edition/apis/rest-management/user) | [Yes](/b2b-edition/apis/rest-storefront/company/user) |
+
+## Making Requests to B2B Edition APIs
+
+Like other BigCommerce APIs, B2B Edition's APIs accept requests in JSON. You must encode requests in the UTF-8 character set to ensure valid results.
+
+See the following sections for information on the content and structure of B2B Edition API requests and their responses. 
+
+### Requests
+
+#### Request headers
 
 | Header | Expected value or type | Description | Example |
-|:-------|:---------------|:------------|:--------|
-| `authToken` | String | B2B Edition auth token | - |
-| `Accept` | MIME types | The MIME type format that indicates which response type the request expects. For more information, see [HTTP Docs: Accept Header (MDN)](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Accept). | `application/json` |
+| :---- | :---- | :---- | :---- |
+| `authToken` | String | The authToken that validates requests to the REST Management V3 API | \- |
+| `Authorization` | String | The authToken that validates requests to the REST Storefront and GraphQL Storefront APIs | \- |
 | `Content-Type` | MIME types | The MIME type of the request body. The API uses this value to validate and parse the request. For more information, see [HTTP Docs: Content-Type Header (MDN)](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Type). | `application/json` |
-| `User-Agent` | String | We ask that you specify a user agent to identify your integration or client. | `PostmanRuntime/7.32.3` |
+| `Accept` | MIME types | The MIME type format that indicates which response type the request expects. For more information, see [HTTP Docs: Accept Header (MDN)](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Accept). | `application/json` |
 
-## Pagination
+#### Request structure
 
-Use the `limit` and `offset` query parameters together to paginate responses. 
+B2B Edition REST Management and Storefront APIs use the standard JSON request format of an object containing a set of key-value pairs. For example, this is what the body of a simplified request to the server to server [Create a Quote](/b2b-edition/apis/rest-management/quote/quotes#create-a-quote) endpoint would look like:
 
-The `limit` value determines the number of records to return per page. The `offset` value is the number of results to skip before returning the first result.
+```json filename="Example request: Create a Quote" showLineNumbers copy
+{
+  "grandTotal": 1000,
+  "discount": 0,
+  "subtotal": 1000,
+  "userEmail": "hero@mybcstore.com",
+  "expiredAt": "05/07/2025",
+  "channelId": 1,
+  "contactInfo": {
+    "name": "Marie Curie",
+    "email": "mcurie@greatbuysinc.com"
+  },
+  "productList": [
+    {
+      "sku": "SAN-PL",
+      "basePrice": 25,
+      "discount": 5,
+      "offeredPrice": 20,
+      "quantity": 50,
+      "productId": 12345
+    }
+  ]
+}
+```
 
-For example, passing the following query param string returns the 11th through 20th results: `offset=10&limit=10`.
+   
+B2B Edition Storefront GraphQL queries and mutations use the same format as [BigCommerce's GraphQL Storefront API](/docs/storefront/graphql), with request fields being defined as variables. Below is an example query for returning store currency information:
+
+```graphql filename="Example GraphQL query: currencies" showLineNumbers copy
+query GetCurrencies(
+  $storeHash: String!,
+  $channelId: String!
+) {
+  currencies(
+    storeHash: $storeHash,
+    channelId: $channelId,
+  ) {
+    currencies {
+      currency_code,
+      currency_exchange_rate,
+      token,
+      decimal_token,
+      decimal_places,
+      token_location,
+      thousands_token,
+    },
+    channelCurrencies
+  }
+}
+```
+
+### Responses
+
+The `Accept` value provided in the header of your request determines the content type for the response body. Specifying `application/json` as the `Accept` value ensures that API responses return as JSON.
+
+#### Response headers
+
+B2B Edition API response headers provide standard and BigCommerce-specific information about the request. Like response headers for other BigCommerce APIs, they are case-insensitive.
+
+##### Standard response headers
+
+| Header | Expected value or type | Description | Learn more | Example |
+| :---- | :---- | :---- | :---- | :---- |
+| `Date` | A [RFC 2822](http://tools.ietf.org/html/rfc2822#section-3.3) date | The date and time when the response was received | [HTTP Docs: Date Header (MDN)](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Date) | `Tue, 30 May 2025 12:45:26 GMT` |
+| `Content-Type` | MIME types | The MIME type of the response, dependent on the extension of the endpoint that was requested | [HTTP Docs: Content-Type Header (MDN)](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Type) | `application/json` |
+| `Vary` | One or more request headers | Determines how to match future request headers to decide if a cached response can be used | [HTTP Docs: Vary Header (MDN)](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Vary) | `Accept-Language` |
+| `Allow` | One or more request methods | Specifies the request methods supported for a resource | [HTTP Docs: Allow Header (MDN)](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Allow) | `GET, POST, HEAD, OPTIONS` |
+| `Content-Language` | One or more locale codes | Lists the language locale code that indicates the content's intended audience | [HTTP Docs: Content-Language Header (MDN)](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Content-Language). | `en-US` |
+| `X-Content-Type-Options` | `nosniff` | Indicates whether or not the content type can be changed via MIME type sniffing | [HTTP Docs: X-Content-Type-Options Header (MDN)](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/X-Content-Type-Options) | `nosniff` |
+| `Access-Control-Expose-Headers` | One or more response headers | Specifies the response headers that can be exposed for CORS scripts | [HTTP Docs: Access-Control-Expose-Headers Header (MDN)](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Access-Control-Expose-Headers) | `X-Request-ID,Content-Length` |
+| `Set-Cookie` | A set of key-value pairs related to the cookie | The cookie sent from the server so that the user can send it back at a later time | [HTTP Docs: Set-Cookie Header (MDN)](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Set-Cookie) | `csrftoken={token}; expires=Wed, 20 May 2026 14:50:23 GMT; Max-Age=31449600; Path=/; SameSite=Lax` |
+| `Access-Control-Allow-Origin` | One or more URLs An asterisk \* for wildcard values null for no origin support | Specifies the supported origins for code requesting to access the response | [HTTP Docs: Access-Control-Allow-Origin Header (MDN)](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Access-Control-Allow-Origin) | `*` |
+| `Access-Control-Allow-Headers`  | One or more request headers | Specifies in a pre-flight request which headers can be used in an actual request | [HTTP Docs: Access-Control-Allow-Headers Header (MDN)](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Access-Control-Allow-Headers) | `authToken, Content-Type` |
+| `Access-Control-Allow-Methods` | One or more request methods | Specifies in a pre-flight request which methods can be used in an actual request | [HTTP Docs: Access-Control-Allow-Methods Header (MDN)](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Access-Control-Allow-Methods) | `GET, POST, PUT, OPTIONS, DELETE, PATCH` |
+| `Access-Control-Max-Age` | Time interval, in seconds | Specifies how long that a pre-flight request's results can be cached | [HTTP Docs: Access-Control-Max-Age Header (MDN)](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Access-Control-Max-Age) | `1728000` |
+| `Strict-Transport-Security` | A collection of fields with specifications for loading the information using HTTPS  | Informs the browser how long to wait before trying to access information again after it was not served over HTTPS | [HTTP Docs: Strict-Transport-Security Header (MDN)](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Strict-Transport-Security) | `max-age=31536000; includeSubDomains` |
+| `Content-Encoding` | One or more encoding formats | Allows API clients to request content to be compressed before being sent back in the response to an API request | [HTTP Docs: Content-Encoding Header (MDN)](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Content-Encoding) | `gzip` |
+| `Via` | The protocol version and host | Lists the protocol and host to track messages forward and avoid request loops | [HTTP Docs: Via Header (MDN)](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Via) | `1.1 google` |
+| `Transfer-Encoding` | One or more encoding formats | Specifies the method used to transmit data between network nodes | [HTTP Docs: Transfer-Encoding Header (MDN)](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Transfer-Encoding) | `chunked` |
+
+##### BigCommerce-specific response headers
+
+| Header | Expected value or type | Description | Example |
+| :---- | :---- | :---- | :---- |
+| `X-Requests-Allocated` | Rate (requests \[times\] per minute) | Displays how many API requests per minute are allowed in the current window for your client | `150 times/60 s` |
+| `X-Requests-Window-Length` | Number of requests (times) | Lists the number of concurrent requests in the current 60 second window | `0 times` |
+| `X-Requests-Remaining` | Number of requests (times) | Displays how many requests your client can make in the current window | `150 times` |
+| `X-Request-Window-Resets-After` | Number of seconds | Displays how many seconds remain in the window | `0.3973509933774834 s` |
+| `Referrer-Policy` | A specific policy value | Specifies the types of requests that can retrieve information from the Referrer header, and which Referrer header details can be retrieved by those requests | `same-origin` |
+| `Cross-Origin-Opener-Policy` | A specific policy value | Specifies the browsing context groups that are permitted to load documents | `same-origin` |
+| `X-Request-Id` | String | The unique identifier for the request associated with the response | \- |
+| `Trace-Id` | String | The unique identifier for the request's trace, which can be used to monitor a request as it flows through distributed systems | \- |
+| `X-Envoy-Upstream-Service-Time` | Number of milliseconds | The amount of time in which the upstream service processed the request | `68` |
+| `Alt-Svc` | The protocol id, alternative authority, and max age | Designates a separate server to load the resource | `h3=":443"; ma=2592000` |
+
+#### Response structure
+
+Management and Storefront REST responses are structured similarly to requests, and include the endpoint's specific response fields in the `data` object. The body also includes the [HTTP status code](/docs/start/about/status-codes), a descriptive message, and pagination data where relevant.
+
+For example, here is a simplified response body for the [Get Sales Staff Account Details](/b2b-edition/apis/rest-management/sales-staff#get-sales-staff-account-details) endpoint:
+
+```json filename="Example response: Get Sales Staff Account Details" showLineNumbers copy
+{
+  "code": 200,
+  "meta": {
+    "message": "SUCCESS"
+  },
+  "data": {
+    "id": 20135,
+    "email": "user@example.com",
+    "name": "Marie Curie",
+    "phoneNumber": "9876543210",
+    "assignedCompanies": [
+      {
+        "id": 123456,
+        "bcId": "15",
+        "companyName": "Great Buys, Inc",
+        "bcGroupName": "Great Buys",
+        "assignedAt": 1721835018
+      }
+    ]
+  }
+}
+```
+
+Storefront GraphQL responses contain all the fields specified in the original query or mutation. Using the [example from earlier](#request-structure), this is what the response looks like:
+
+```graphql filename="Example GraphQL response: currencies" showLineNumbers copy
+{
+    "data": {
+        "currencies": {
+            "currencies": [
+                {
+                    "currency_code": "USD",
+                    "currency_exchange_rate": "1.0000000000",
+                    "token": "$",
+                    "decimal_token": ".",
+                    "decimal_places": 2,
+                    "token_location": "left",
+                    "thousands_token": ","
+                }
+            ],
+            "channelCurrencies": {
+                "channel_id": 1,
+                "enabled_currencies": [
+                    "USD"
+                ],
+                "default_currency": "USD"
+            }
+        }
+    }
+}
+```
+
+## Resources
+
+* [About BigCommerce APIs](/docs/start/about)  
+* [B2B Edition APIs](/b2b-edition/apis)  
+* [Best Practices](/b2b-edition/docs/best-practices)  
+* [Developer Community](/community)  
+* [BigCommerce on Stack Overflow](https://stackoverflow.com/questions/tagged/bigcommerce)  
+* [Release Notes](/release-notes)

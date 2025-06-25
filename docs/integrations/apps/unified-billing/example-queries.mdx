@@ -8,6 +8,10 @@ The following examples of queries and mutations use the Unified Billing features
 
 The first step in charging a merchant for a product is to create a checkout. After creating a checkout through the API, the checkout will be in a pending `status`, and a `checkoutUrl` will be included in the response. The `checkoutUrl` routes to the BigCommerce checkout UI where a merchant must complete the checkout in their store's control panel. After checkout completion, a subscription is created and billed to the merchant, and the checkout status moves to complete. When the merchant exits the BigCommerce checkout UI, they will be redirected to the `redirectUrl` provided in the request. Use this field to route the merchant back to your app.
 
+When creating a checkout with a product that has a trial period, set the `trialDays` field to the number of days the trial should last.
+
+The merchant will not be charged during this period. A subscription only generates an invoice once the trial period ends. No charges are made during the trial.
+
 To create a checkout, run the `createCheckout` mutation:
 
 <Tabs items={["Request", "Sample variables", "Response"]}>
@@ -500,6 +504,16 @@ This mutation cancels the subscription at the end of the merchant's current bill
 
   </Tab>
 </Tabs>
+
+#### How Cancellations Work During a Free Trial
+* No Billing During Trial
+  * A subscription only generates an invoice once the trial period ends. No charges are made during the trial.
+
+* Immediate Cancellation During Trial
+   * If a subscription is canceled while it's still in the trial period, the cancellation takes effect immediately. The trial ends, and no invoice is ever generated.
+
+* Post Trial Cancellation Behavior
+   * Once the trial ends, the subscription begins billing. Any cancellation initiated will take effect at the end of the current billing cycle (e.g., monthly or annual term), not immediately.
 
 ### Query subscriptions
 Subscriptions can be queried using the `subscriptions` query endpoint.

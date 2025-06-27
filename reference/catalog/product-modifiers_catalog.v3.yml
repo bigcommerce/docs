@@ -13,7 +13,73 @@ info:
     You can add an adjuster to a modifier value to override the underlying product variant's properties, such as price, weight, and shipping rules.  Not all modifier types are compatible with adjusters.
 
     > To learn more about authenticating Catalog endpoints, locate the **Authentication** section at the top of each endpoint, then click **Show Details**.
+
+    ## Option Values and Configs
+
+    Modifiers endpoints include many fields with data that are specific to one or more `type` values, as different modifier option types have different functionality. This information is contained in the `option_values` array and the `config` object. See the tables below for details on the fields available for each modifier type.
+
+    ### Option Values
+
+    Modifier types that present choices to the shopper use an `option_values` array. Each entry defines a possible value for that modifier, along with display text, ordering, and adjusters for price, weight, and more. This is not used for modifier types that do not present choices, including `text`, `multi_line_text`, `numbers_only_text`, `date`, and `file`.
     
+    | Field                      | Description                                                           | Applies to Types                       |
+    |----------------------------|-----------------------------------------------------------------------|----------------------------------------|
+    | `is_default`               | Whether this value is selected by default; not supported by the swatch `type`            | All with options (except swatch)       |
+    | `label`                    | Storefront display text for the option value                                    | All with options                       |
+    | `sort_order`               | Display order of the value on product pages                                             | All with options                       |    
+    | `value_data`               | <ul><li><strong>swatch</strong> &mdash; can include a `colors` array with up to three hexidecimal color keys or an `image_url` field with a full image URL path including procotol for a custom pattern</li><li><strong>product list/product list with images</strong> &mdash; uses the `product_id` field to identify the product in the list</li><li><strong>checkbox</strong> &mdash; uses the boolean `checked_value` field to indicate whether the option value is the "checked" state.</li></ul>               | swatch, product list, product list with images, checkbox |  
+    | `adjusters.price`          | Price adjustment for [complex rules](/docs/store-operations/catalog#complex-rules). Defines whether the price adjustment is relative (fixed) or percentage, and sets the amount to adjust the price.                        | All with options                       |
+    | `adjusters.weight`         | Weight adjustment for [complex rules](/docs/store-operations/catalog#complex-rules) on physical products. Defines whether the weight adjustment is relative (fixed) or percentage, and sets the amount to adjust the weight.                       | All with options                       |
+    | `adjusters.image_url`      | The full URL path for the image displayed when the value is selected on the storefront product page. The image file can have a maximum size of 8 MB.                           | All with options            |
+    | `adjusters.purchasing_disabled` | Defines whether or not the option value is purchasable. If purchasing is disabled, you can specify a message to appear when the value is selected on the storefront.                     | All with options                       |
+    | `id`                       | Unique numeric ID for the option value; not used in /POST requests                                       | All with options                                |
+    | `option_id`                | Modifier ID this value belongs to                                     | All with options                                    |
+    
+    ---
+    
+    ### Configs
+    
+    The `config` object customizes the behavior and validation of a modifier. Available fields depend on the `type` of modifier, such as text, date, file, or product list. Note that the multiple choice option types (`radio_buttons`, `rectangles`, `dropdown`, `swatch`) do not have option configs, as they only use fields in the `option_values` array.
+    
+    | Modifier Type(s)                   | Config Field                   | Description or Values                                                |
+    |-------------------------------------|-------------------------------|---------------------------------------------------------------------|
+    | `date`                             | `default_value`                | Default ISO date string                                             |
+    |                                     | `date_limited`                 | Boolean: Indicates whether the allowed date options are limited       |
+    |                                     | `date_limit_mode`              | Defines the type of limit on the date option. Accepts `earliest`, `range`, and `latest`.                          |
+    |                                     | `date_earliest_value`          | ISO date: the earliest date allowed to be entered on the date option                                          |
+    |                                     | `date_latest_value`            | ISO date: the latest date allowed to be entered on the date option                                            |
+    | `checkbox`                         | `checked_by_default`           | Boolean: Indicates whether the option is checked by default                                         |
+    |                                     | `checkbox_label`               | The label that appears next to the checkbox on the storefront                                      |
+    | `file`                             | `file_types_mode`              | Specifies whether you want to allow shoppers to upload any file type or if you only want to accept particular types defined in the `file_types_supported` array.                                                  |
+    |                                     | `file_types_supported`         | Specifies groups of file types to accept for upload. See [Supported File Types](#supported-file-types) to learn more.                                     |
+    |                                     | `file_types_other`             | List specific file types to accept for upload                                       |
+    |                                     | `file_max_size`                | Integer: the max file size in KB to accept for upload. This cannot exceed 524,288 KB.                             |
+    | `text`, `multi_line_text`          | `default_value`                | String: the default value that appears in the text box                                              |
+    |                                     | `text_characters_limited`      | Boolean: Indicates whether the field validates the character count with a minimum and maximum value               |
+    |                                     | `text_min_length`              | Integer: Specifies the minimum allowed characters                                                  |
+    |                                     | `text_max_length`              | Integer: Specifies the maximum allowed characters                                                  |
+    | `multi_line_text`                  | `text_lines_limited`           | Boolean: Indicates whether the field limits the number of text lines                                      |
+    |                                     | `text_max_lines`               | Integer: Specifies the maximum allowed lines                                                  |
+    | `numbers_only_text`                | `default_value`                | String/number: the default value that appears in the number box                                              |
+    |                                     | `number_limited`               | Boolean: Indicates whether the field validates the entered number with a minimum and maximum value                |
+    |                                     | `number_limit_mode`            | Defines the type of limit on the number option. Accepts `lowest`, `range`, and `highest`.                         |
+    |                                     | `number_lowest_value`          | Number: Specifies the minimum value                                               |
+    |                                     | `number_highest_value`         | Number: Specifies the maximum value                                               |
+    |                                     | `number_integers_only`         | Boolean: Indicates whether the field accepts decimals or whole numbers only                                       |
+    | `product_list`, `product_list_with_images` | `product_list_adjusts_inventory` | Indicates whether selecting and purchasing a product in the list adjusts that product's inventory         |
+    |                                     | `product_list_adjusts_pricing` | Indicates whether selecting a product in the list adds its price to the main product's price                       |
+    |                                     | `product_list_shipping_calc`   | Specifies how to factor weight and package dimensions when selecting a product in the list. Use `weight` to add the list product's weight to the main product, `package` to add the list product's weight and dimensions, or `none` to not adjust the main product's weight and dimensions.                     |
+    
+    ### Supported File Types
+
+    The `file` modifier type allows you to restrict the file types that can be uploaded by a shopper by setting the `file_types_mode` to `specific`. You can then use the `file_types_supported` and `file_types_other` arrays to specify the allowed file types. The following file types are supported:
+
+    | File Type Category | Included File Types                                                       |
+    |--------------------|---------------------------------------------------------------------------|
+    | `images`            | `bmp`, `gif`, `jpg`, `jpeg`, `jpe`, `jif`, `jfif`, `jfi`, `png`, `wbmp`, `xbm`, `tiff` |
+    | `documents`        | `txt`, `pdf`, `rtf`, `doc`, `docx`, `xls`, `xlsx`, `accdb`, `mdb`, `one`, `pps`, `ppsx`, `ppt`, `pptx`, `pub`, `odt`, `ods`, `odp`, `odg`, `odf` |
+    | `other`            | Custom file types defined in the `file_types_other` array |
+
     ## Resources
 
     ### Webhooks
@@ -394,7 +460,7 @@ paths:
                     default_value:
                       type: string
                       description: |
-                        (date, text, multi_line_text, numbers_only_text) The default value. Shown on a date option as an ISO-8601–formatted string, or on a text option as a string.
+                        (date, text, multi_line_text, numbers_only_text) The default value. Shown on a date option as an ISO-8601–formatted string, or on a text option as a string. See [Config](#config) for more details.
                     checked_by_default:
                       type: boolean
                       description: |
@@ -437,23 +503,25 @@ paths:
                     file_types_supported:
                       type: array
                       description: |
-                        (file) The type of files allowed to be uploaded if the `file_type_option` is set to `specific`. Values:
-                          `images` - Allows upload of image MIME types (`bmp`, `gif`, `jpg`, `jpeg`, `jpe`, `jif`, `jfif`, `jfi`, `png`, `wbmp`, `xbm`, `tiff`). `documents` - Allows upload of document MIME types (`txt`, `pdf`, `rtf`, `doc`, `docx`, `xls`, `xlsx`, `accdb`, `mdb`, `one`, `pps`, `ppsx`, `ppt`, `pptx`, `pub`, `odt`, `ods`, `odp`, `odg`, `odf`).
-                          `other` - Allows file types defined in the `file_types_other` array.
+                        (file) The type of files allowed to be uploaded if the `file_type_option` is set to `specific`. See [Supported File Types](#supported-file-types) for more details.
                       items:
                         type: string
                         example: 'images, documents, other'
+                        enum:
+                          - images
+                          - documents
+                          - other
                     file_types_other:
                       type: array
                       description: |
-                        (file) A list of other file types allowed with the file upload option.
+                        (file) A list of other file types allowed with the file upload option. See [Supported File Types](#supported-file-types) for more details.
                       items:
                         type: string
                         example: pdf
                     file_max_size:
                       type: integer
                       description: |
-                        (file) The maximum size for a file that can be used with the file upload option. This will still be limited by the server.
+                        (file) The maximum size for a file that can be used with the file upload option. This will still be limited by the server. See [Config](#config) for more details.
                       example: 5
                     text_characters_limited:
                       type: boolean
@@ -518,15 +586,16 @@ paths:
                     product_list_shipping_calc:
                       type: string
                       description: |
-                        (product_list, product_list_with_images) How to factor the optional product's weight and package dimensions into the shipping quote. Values: `none` - don't adjust; `weight` - use shipping weight only; `package` - use weight and dimensions.
+                        (product_list, product_list_with_images) How to factor the optional product's weight and package dimensions into the shipping quote. See [Config](#config) for more details.
                       example: weight
                       enum:
                         - none
                         - weight
                         - package
-                  description: The values for option config can vary based on the Modifier created.
+                  description: The values for option config can vary based on the Modifier created. See [Config](#config) to learn more about the type-specific `config` fields.
                 option_values:
                       type: array
+                      description: Contains information about the values for modifier types with options. Certain fields are not used for specific modifier types. See [Option Values](#option-values) for more details.
                       items:
                         type: object
                         properties:
@@ -559,7 +628,6 @@ paths:
                                             The numeric amount by which the adjuster will change either the price or the weight of the variant, when the modifier value is selected on the storefront.
                                           example: 5
                                       description: Adjuster for Complex Rules.
-                      description: 'Part of Modifier Value Response '
                 display_name:
                   type: string
                   description: |
@@ -620,7 +688,7 @@ paths:
                               default_value:
                                 type: string
                                 description: |
-                                  (date, text, multi_line_text, numbers_only_text) The default value. Shown on a date option as an ISO-8601–formatted string, or on a text option as a string.
+                                  (date, text, multi_line_text, numbers_only_text) The default value. Shown on a date option as an ISO-8601–formatted string, or on a text option as a string. See [Config](#config) for more details.
                               checked_by_default:
                                 type: boolean
                                 description: |
@@ -663,23 +731,21 @@ paths:
                               file_types_supported:
                                 type: array
                                 description: |
-                                  (file) The type of files allowed to be uploaded if the `file_type_option` is set to `specific`. Values:
-                                    `images` - Allows upload of image MIME types (`bmp`, `gif`, `jpg`, `jpeg`, `jpe`, `jif`, `jfif`, `jfi`, `png`, `wbmp`, `xbm`, `tiff`). `documents` - Allows upload of document MIME types (`txt`, `pdf`, `rtf`, `doc`, `docx`, `xls`, `xlsx`, `accdb`, `mdb`, `one`, `pps`, `ppsx`, `ppt`, `pptx`, `pub`, `odt`, `ods`, `odp`, `odg`, `odf`).
-                                    `other` - Allows file types defined in the `file_types_other` array.
+                                  (file) The type of files allowed to be uploaded if the `file_type_option` is set to `specific`. See [Supported File Types](#supported-file-types) for more details.
                                 items:
                                   type: string
                                   example: 'images, documents, other'
                               file_types_other:
                                 type: array
                                 description: |
-                                  (file) A list of other file types allowed with the file upload option.
+                                  (file) A list of other file types allowed with the file upload option. See [Supported File Types](#supported-file-types) for more details.
                                 items:
                                   type: string
                                   example: pdf
                               file_max_size:
                                 type: integer
                                 description: |
-                                  (file) The maximum size for a file that can be used with the file upload option. This will still be limited by the server.
+                                  (file) The maximum size for a file that can be used with the file upload option. This will still be limited by the server. See [Config](#config) for more details.
                                 example: 5
                               text_characters_limited:
                                 type: boolean
@@ -744,14 +810,15 @@ paths:
                               product_list_shipping_calc:
                                 type: string
                                 description: |
-                                  (product_list, product_list_with_images) How to factor the optional product's weight and package dimensions into the shipping quote. Values: `none` - don't adjust; `weight` - use shipping weight only; `package` - use weight and dimensions.
+                                  (product_list, product_list_with_images) How to factor the optional product's weight and package dimensions into the shipping quote. See [Config](#config) for more details.
                                 example: weight
                                 enum:
                                   - none
                                   - weight
                                   - package
-                            description: The values for option config can vary based on the Modifier created.
+                            description: The values for option config can vary based on the Modifier created. See [Config](#config) to learn more about the type-specific `config` fields.
                           option_values:
+                            description: Contains information about the values for modifier types with options. Certain fields are not used for specific modifier types. See [Option Values](#option-values) for more details.
                             type: array
                             items:
                               type: object
@@ -778,7 +845,7 @@ paths:
                                   type: object
                                   properties: {}
                                   description: |
-                                    Extra data describing the value, based on the type of option or modifier with which the value is associated. The `swatch` type option can accept an array of `colors`, with up to three hexadecimal color keys; or an `image_url`, which is a full image URL path including protocol. The `product list` type option requires a `product_id`. The `checkbox` type option requires a boolean flag, called `checked_value`, to determine which value is considered to be the checked state.
+                                    Extra data describing the value, based on the type of option or modifier with which the value is associated. See [Option Values](#option-values) for more details.
                                 adjusters:
                                   type: object
                                   properties:
@@ -1159,8 +1226,7 @@ paths:
                                 type: object
                                 properties: {}
                                 description: |
-                                  Extra data describing the value, based on the type of option or modifier with which the value is associated. The `swatch` type option can accept an array of `colors`, with up to three hexadecimal color keys; or an `image_url`, which is a full image URL path including protocol. The `product list` type option requires a `product_id`. The `checkbox` type option requires a boolean flag, called `checked_value`, to determine which value is considered to be the checked state.
-                            description: Common Option Value properties.
+                                  Extra data describing the value, based on the type of option or modifier with which the value is associated.  See [Option Values](#option-values) for more details.
                           - type: object
                             properties:
                               adjusters:
@@ -1394,7 +1460,7 @@ paths:
                           type: object
                           properties: {}
                           description: |
-                            Extra data describing the value, based on the type of option or modifier with which the value is associated. The `swatch` type option can accept an array of `colors`, with up to three hexadecimal color keys; or an `image_url`, which is a full image URL path including protocol. The `product list` type option requires a `product_id`. The `checkbox` type option requires a boolean flag, called `checked_value`, to determine which value is considered to be the checked state.
+                            Extra data describing the value, based on the type of option or modifier with which the value is associated.  See [Option Values](#option-values) for more details.
                       description: Common Option Value properties.
                     - type: object
                       properties:
@@ -1508,8 +1574,7 @@ paths:
                                 type: object
                                 properties: {}
                                 description: |
-                                  Extra data describing the value, based on the type of option or modifier with which the value is associated. The `swatch` type option can accept an array of `colors`, with up to three hexadecimal color keys; or an `image_url`, which is a full image URL path including protocol. The `product list` type option requires a `product_id`. The `checkbox` type option requires a boolean flag, called `checked_value`, to determine which value is considered to be the checked state.
-                            description: Common Option Value properties.
+                                  Extra data describing the value, based on the type of option or modifier with which the value is associated.  See [Option Values](#option-values) for more details.
                           - type: object
                             properties:
                               adjusters:
@@ -1829,6 +1894,7 @@ components:
         config:
           $ref: '#/components/schemas/config_Full'
         option_values:
+          description: Contains information about the values for modifier types with options. Certain fields are not used for specific modifier types. See [Option Values](#option-values) for more details.
           type: array
           items:
             type: object
@@ -1890,7 +1956,8 @@ components:
                 The unique option name. Auto-generated from the display name, a timestamp, and the product ID.
               example: Add-a-$5-Donation1535039590-191
             option_values:
-              type: array
+              type: 
+              description: Contains information about the values for modifier types with options. Certain fields are not used for specific modifier types. See [Option Values](#option-values) for more details.
               items:
                 $ref: '#/components/schemas/productModifierOptionValue_Full'
       x-internal: false
@@ -1926,7 +1993,7 @@ components:
           type: object
           properties: {}
           description: |
-            Extra data describing the value, based on the type of option or modifier with which the value is associated. The `swatch` type option can accept an array of `colors`, with up to three hexadecimal color keys; or an `image_url`, which is a full image URL path including protocol. The `product list` type option requires a `product_id`. The `checkbox` type option requires a boolean flag, called `checked_value`, to determine which value is considered to be the checked state. If no data is available, returns `null`.
+            Extra data describing the value, based on the type of option or modifier with which the value is associated.  See [Option Values](#option-values) for more details.
           nullable: true
         adjusters:
           $ref: '#/components/schemas/adjusters_Full'
@@ -2035,7 +2102,7 @@ components:
         default_value:
           type: string
           description: |
-            (date, text, multi_line_text, numbers_only_text) The default value. Shown on a date option as an ISO-8601–formatted string, or on a text option as a string.
+            (date, text, multi_line_text, numbers_only_text) The default value. Shown on a date option as an ISO-8601–formatted string, or on a text option as a string. See [Config](#config) for more details.
         checked_by_default:
           type: boolean
           description: |
@@ -2078,23 +2145,21 @@ components:
         file_types_supported:
           type: array
           description: |
-            (file) The type of files allowed to be uploaded if the `file_type_option` is set to `specific`. Values:
-              `images` - Allows upload of image MIME types (`bmp`, `gif`, `jpg`, `jpeg`, `jpe`, `jif`, `jfif`, `jfi`, `png`, `wbmp`, `xbm`, `tiff`). `documents` - Allows upload of document MIME types (`txt`, `pdf`, `rtf`, `doc`, `docx`, `xls`, `xlsx`, `accdb`, `mdb`, `one`, `pps`, `ppsx`, `ppt`, `pptx`, `pub`, `odt`, `ods`, `odp`, `odg`, `odf`).
-              `other` - Allows file types defined in the `file_types_other` array.        
+            (file) The type of files allowed to be uploaded if the `file_type_option` is set to `specific`.  See [Supported File Types](#supported-file-types) for more details.       
           items:
             type: string
             example: 'images, documents, other'
         file_types_other:
           type: array
           description: |
-            (file) A list of other file types allowed with the file upload option.
+            (file) A list of other file types allowed with the file upload option. See [Supported File Types](#supported-file-types) for more details.
           items:
             type: string
             example: pdf
         file_max_size:
           type: integer
           description: |
-            (file) The maximum size for a file that can be used with the file upload option. This will still be limited by the server.
+            (file) The maximum size for a file that can be used with the file upload option. This will still be limited by the server. See [Config](#config) for more details.
           example: 5
         text_characters_limited:
           type: boolean
@@ -2159,13 +2224,13 @@ components:
         product_list_shipping_calc:
           type: string
           description: |
-            (product_list, product_list_with_images) How to factor the optional product's weight and package dimensions into the shipping quote. Values: `none` - don't adjust; `weight` - use shipping weight only; `package` - use weight and dimensions.
+            (product_list, product_list_with_images) How to factor the optional product's weight and package dimensions into the shipping quote. See [Config](#config) for more details.
           example: weight
           enum:
             - none
             - weight
             - package
-      description: The values for option config can vary based on the Modifier created.
+      description: The values for option config can vary based on the Modifier created. See [Config](#config) to learn more about the type-specific `config` fields.
       x-internal: false
     adjusters_Full:
       title: adjusters_Full

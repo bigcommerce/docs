@@ -1,57 +1,71 @@
-# Translations for Categories (Beta)
+# Translations for Categories and Brands (Beta)
 
 <Callout type="info">
 The Translations Admin GraphQL API is currently available on Catalyst storefronts only.
 </Callout>
 
+The BigCommerce GraphQL API provides queries and mutations for retrieving and managing translations in stores operating within a multi-language context. This allows for a seamless experience for customers across multiple locales.
 
-The categories translatable fields are:
+The current implementation supports managing translations for categories and brands, handled using analogous queries and mutations separated by the `resourceType` filter and `resourceID`. The table below provides the details for each of these fields as they would be included in queries and mutations:
 
-* Name
-* Description
-* Page Title
-* Meta Keywords
-* Meta Description
-* Search Keywords
+| Resource | resourceType | resourceId |
+| --- | --- | --- |
+| Category | `CATEGORIES` | `bc/store/category/{{categoryId}}` |
+| Brand | `BRANDS` | `bc/store/brand/{{brandId}}` |
+
+<Callout type="info">
+Before attempting to use a given `resourceId` with the queries and mutations below, confirm the value using the `store.translations` query with the appropriate `resourceType` set in the filters.
+</Callout>
+
+Across both categories and brands, the following fields have built-in availability for translations:
+* Name as `name`
+* Description as `description`
+* Page Title as `page_title`
+* Meta Keywords as `meta_keywords`
+* Meta Description as `meta_description`
+* Search Keywords as `search_keywords`
 
 ## Examples
 
-Below are examples of GraphQL queries and mutations for retrieving and managing translation settings for categories.
+Below are examples of GraphQL queries and mutations for retrieving and managing translation settings. The examples provided are explicitly structured with categories in mind. Adjust appropriately for your use-case and the appropriate data.
 
 ### Query translations
 
 This query returns a paginated list of translations by resourceType, channel and locale with a maximum of 50 results per request.  
 
 <Tabs items={['Request', 'Response']}>
-  <Tab>
-    ```json filename="Example mutation: Query a translation" showLineNumbers copy
-    GRAPHQL https://api.bigcommerce.com/stores/{{store_hash}}/graphql
-    X-Auth-Token: {{token}}
-
-      query {
-          store {
-              translations(filters: {
-                  resourceType: CATEGORIES,
-                  channelId: "bc/store/channel/3",
-                  localeId: "bc/store/locale/en"
-              } first: 50) {
-                  edges {
-                      node {
-                            resourceId
-                              fields {
-                                  fieldName
-                                  original
-                                  translation
-                              }
-                          }
-                      cursor
-                  }
-              }
-          }
-      }
-    ```
-  </Tab>
 <Tab>
+
+```graphql filename="Example mutation: Query a translation" showLineNumbers copy
+GRAPHQL https://api.bigcommerce.com/stores/{{store_hash}}/graphql
+X-Auth-Token: {{token}}
+
+query {
+    store {
+        translations(filters: {
+            resourceType: CATEGORIES,
+            channelId: "bc/store/channel/3",
+            localeId: "bc/store/locale/en"
+        } first: 50) {
+            edges {
+                node {
+                    resourceId
+                    fields {
+                        fieldName
+                        original
+                        translation
+                    }
+                }
+                cursor
+            }
+        }
+    }
+}
+
+```
+</Tab>
+<Tab>
+
 ```json filename="Example query: Query a translation" showLineNumbers copy
   {
   "data": {
@@ -105,8 +119,9 @@ This query returns a paginated list of translations by resourceType, channel and
 This mutation updates a translation.
 
 <Tabs items={['Request', 'Response']}>
-  <Tab>
-    ```json filename="Example mutation: Update a translation" showLineNumbers copy
+<Tab>
+
+```json filename="Example mutation: Update a translation" showLineNumbers copy
      GRAPHQL https://api.bigcommerce.com/stores/{{store_hash}}/graphql
      X-Auth-Token: {{token}}
 
@@ -155,8 +170,9 @@ This mutation updates a translation.
     }
 }
 ```
-  </Tab>
+</Tab>
 <Tab>
+
 ```json filename="Example mutation: Update a translation" showLineNumbers copy
  {
     "data": {
@@ -177,14 +193,14 @@ This mutation updates a translation.
 The following mutation deletes a translation.
 
 <Tabs items={['Request', 'Response']}>
-  <Tab>
-    ```json filename="Example mutation: Delete a translation" showLineNumbers copy
-    GRAPHQL https://api.bigcommerce.com/stores/{{store_hash}}/graphql
-    X-Auth-Token: {{token}}
+<Tab>
+```graphql filename="Example mutation: Delete a translation" showLineNumbers copy
+GRAPHQL https://api.bigcommerce.com/stores/{{store_hash}}/graphql
+X-Auth-Token: {{token}}
 
-      mutation {
-        translation {
-          deleteTranslations(input: {
+mutation {
+    translation {
+        deleteTranslations(input: {
             resourceType: CATEGORIES,
             channelId: "bc/store/channel/1",
             localeId: "bc/store/locale/en",
@@ -206,10 +222,11 @@ The following mutation deletes a translation.
     }
 }
 ```
-  </Tab>
+</Tab>
 <Tab>
+
 ```json filename="Example mutation: Delete a translation" showLineNumbers copy
- {
+{
   "data": {
     "translation": {
       "deleteTranslations": {

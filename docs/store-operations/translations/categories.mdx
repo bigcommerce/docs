@@ -1,33 +1,21 @@
-# Translations for Categories and Brands (Beta)
+# Translations for Categories (Beta)
 
 <Callout type="info">
 The Translations Admin GraphQL API is currently available on Catalyst storefronts only.
 </Callout>
 
-The BigCommerce GraphQL API provides queries and mutations for retrieving and managing translations in stores operating within a multi-language context. This allows for a seamless experience for customers across multiple locales.
+The categories translatable fields are:
 
-The current implementation supports managing translations for categories and brands, handled using analogous queries and mutations separated by the `resourceType` filter and `resourceID`. The table below provides the details for each of these fields as they would be included in queries and mutations:
-
-| Resource | resourceType | resourceId |
-| --- | --- | --- |
-| Category | `CATEGORIES` | `bc/store/category/{{categoryId}}` |
-| Brand | `BRANDS` | `bc/store/brand/{{brandId}}` |
-
-<Callout type="info">
-Before attempting to use a given `resourceId` with the queries and mutations below, confirm the value using the `store.translations` query with the appropriate `resourceType` set in the filters.
-</Callout>
-
-Across both categories and brands, the following fields have built-in availability for translations:
-* Name as `name`
-* Description as `description`
-* Page Title as `page_title`
-* Meta Keywords as `meta_keywords`
-* Meta Description as `meta_description`
-* Search Keywords as `search_keywords`
+* Name
+* Description
+* Page Title
+* Meta Keywords
+* Meta Description
+* Search Keywords
 
 ## Examples
 
-Below are examples of GraphQL queries and mutations for retrieving and managing translation settings. The examples provided are explicitly structured with categories in mind. Adjust appropriately for your use-case and the appropriate data.
+Below are examples of GraphQL queries and mutations for retrieving and managing translation settings for categories.
 
 ### Query translations
 
@@ -41,33 +29,33 @@ GRAPHQL https://api.bigcommerce.com/stores/{{store_hash}}/graphql
 X-Auth-Token: {{token}}
 
 query {
-    store {
-        translations(filters: {
-            resourceType: CATEGORIES,
-            channelId: "bc/store/channel/3",
-            localeId: "bc/store/locale/en"
-        } first: 50) {
-            edges {
-                node {
-                    resourceId
-                    fields {
-                        fieldName
-                        original
-                        translation
-                    }
-                }
-                cursor
+  store {
+    translations(filters: {
+        resourceType: CATEGORIES,
+        channelId: "bc/store/channel/3",
+        localeId: "bc/store/locale/en"
+      } first: 50) {
+      edges {
+        node {
+          resourceId
+            fields {
+              fieldName
+              original
+              translation
             }
-        }
+          }
+        cursor
+      }
     }
+  }
 }
-
 ```
+
 </Tab>
 <Tab>
 
 ```json filename="Example query: Query a translation" showLineNumbers copy
-  {
+{
   "data": {
     "store": {
       "translations": {
@@ -111,6 +99,7 @@ query {
   }
 }
 ```
+
 </Tab>
 </Tabs>
 
@@ -120,71 +109,72 @@ This mutation updates a translation.
 
 <Tabs items={['Request', 'Response']}>
 <Tab>
+```graphql filename="Example mutation: Update a translation" showLineNumbers copy
+GRAPHQL https://api.bigcommerce.com/stores/{{store_hash}}/graphql
+X-Auth-Token: {{token}}
 
-```json filename="Example mutation: Update a translation" showLineNumbers copy
-     GRAPHQL https://api.bigcommerce.com/stores/{{store_hash}}/graphql
-     X-Auth-Token: {{token}}
-
-      mutation {
-        translation {
-            updateTranslations(input: {
-                resourceType: CATEGORIES,
-                channelId: "bc/store/channel/1",
-                localeId: "bc/store/locale/en",
-                entities: [
-                    {
-                        resourceId: "bc/store/category/18",
-                        fields: [
-                            {
-                              fieldName: "name",
-                              value: "name (OVR)"
-                            },
-                            {
-                              fieldName: "description",
-                              value: "description (OVR)"
-                            },
-                            {
-                              fieldName: "page_title",
-                              value: "page_title (OVR)"
-                            },
-                            {
-                              fieldName: "meta_description",
-                              value: "meta_description (OVR)"
-                            },
-                            {
-                              fieldName: "search_keywords",
-                              value: "search_keywords (OVR)"
-                        }
-                    ]
-                }
-            ]
-        }) {
-            __typename
-            errors {
-                __typename
-                ... on Error {
-                    message
-                }
+mutation {
+  translation {
+    updateTranslations(input: {
+      resourceType: CATEGORIES,
+      channelId: "bc/store/channel/1",
+      localeId: "bc/store/locale/en",
+      entities: [
+        {
+          resourceId: "bc/store/category/18",
+          fields: [
+            {
+              fieldName: "name",
+              value: "name (OVR)"
+            },
+            {
+              fieldName: "description",
+              value: "description (OVR)"
+            },
+            {
+              fieldName: "page_title",
+              value: "page_title (OVR)"
+            },
+            {
+              fieldName: "meta_description",
+              value: "meta_description (OVR)"
+            },
+            {
+              fieldName: "search_keywords",
+              value: "search_keywords (OVR)"
             }
+          ]
         }
-    }
-}
-```
-</Tab>
-<Tab>
-
-```json filename="Example mutation: Update a translation" showLineNumbers copy
- {
-    "data": {
-      "translation": {
-        "updateTranslations": {
-          "__typename": "UpdateTranslationsResult",
-          "errors": []
+      ]
+    }) {
+      __typename
+      errors {
+        __typename
+        ... on Error {
+          message
         }
       }
     }
   }
+}
 ```
+
+</Tab>
+<Tab>
+
+```json filename="Example mutation: Update a translation" showLineNumbers copy
+{
+  "data": {
+    "translation": {
+      "updateTranslations": {
+        "__typename": "UpdateTranslationsResult",
+        "errors": []
+      }
+    }
+  }
+}
+```
+
 </Tab>
 </Tabs>
 
@@ -194,34 +184,36 @@ The following mutation deletes a translation.
 
 <Tabs items={['Request', 'Response']}>
 <Tab>
+
 ```graphql filename="Example mutation: Delete a translation" showLineNumbers copy
 GRAPHQL https://api.bigcommerce.com/stores/{{store_hash}}/graphql
 X-Auth-Token: {{token}}
 
 mutation {
-    translation {
-        deleteTranslations(input: {
-            resourceType: CATEGORIES,
-            channelId: "bc/store/channel/1",
-            localeId: "bc/store/locale/en",
-            resources: [
-                {
-                    resourceId: "bc/store/category/18",
-                    fields: ["name", "page_title", "meta_description"]
-                }
-            ]
-        }) {
-            __typename
-            errors {
-                __typename
-                ... on Error {
-                    message
-                }
-            }
+  translation {
+    deleteTranslations(input: {
+      resourceType: CATEGORIES,
+      channelId: "bc/store/channel/1",
+      localeId: "bc/store/locale/en",
+      resources: [
+        {
+          resourceId: "bc/store/category/18",
+          fields: ["name", "page_title", "meta_description"]
         }
+      ]
+    }) {
+      __typename
+      errors {
+        __typename
+        ... on Error {
+          message
+        }
+      }
     }
+  }
 }
 ```
+
 </Tab>
 <Tab>
 
@@ -237,5 +229,6 @@ mutation {
   }
 }
 ```
+
 </Tab>
 </Tabs>

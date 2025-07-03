@@ -84,8 +84,8 @@ paths:
           application/json:
             schema:
               oneOf:
-                - $ref: '#/components/schemas/DraftCouponPromotion'
-                - $ref: '#/components/schemas/DraftAutomaticPromotion'
+                - $ref: '#/components/schemas/CreateCouponPromotionRequest'
+                - $ref: '#/components/schemas/CreateAutomaticPromotionRequest'
       responses:
         '201':
           $ref: '#/components/responses/PromotionsResponse'
@@ -408,33 +408,97 @@ components:
                 - When the property is set to `true`, the coupon will override the applied automatic promotions if it provides a greater discount.
                 - When the property is set to `fasle`, the coupon will not be applied if automatic promotions are already applied.
                 Trying to set the value of this field to `true` when `can_be_used_with_other_promotions` is `true` will yield a 422 error response.
-    DraftCouponPromotion:
+    CreateCouponPromotionRequest:
       title: Draft Coupon Promotion
       description: 'A draft **Coupon Promotion** to be created. A shopper must manually apply a *coupon promotion* to their cart.'
-      allOf:
-        - $ref: '#/components/schemas/PromotionBase'
-        - type: object
-          properties:
-            codes:
-              $ref: '#/components/schemas/CouponCode'
-            coupon_overrides_automatic_when_offering_higher_discounts:
-              type: boolean
-              example: false
-              default: false
-              description: |-
-                This field only has effect when `can_be_used_with_other_promotions` is `false`:
-                - When the property is set to `true`, the coupon will override the applied automatic promotions if it provides a greater discount.
-                - When the property is set to `fasle`, the coupon will not be applied if automatic promotions are already applied.
-                Trying to set the value of this field when `can_be_used_with_other_promotions` is `true` will yield a 422 error response.
-            redemption_type:
-              type: string
-              description: The type of the promotion. Promotions applied automatically have a value of `AUTOMATIC` whereas promotions requiring a coupon have a value of `COUPON`.
-              enum:
-                - COUPON
-          required:
-            - redemption_type
-            - name
-            - rules
+      type: object
+      properties:
+        redemption_type:
+          type: string
+          description: The type of the promotion. Promotions applied automatically have a value of `AUTOMATIC` whereas promotions requiring a coupon have a value of `COUPON`.
+          enum:
+            - COUPON
+        name:
+          type: string 
+          description: An internal name for this rule that the merchant can refer to.
+          example: Buy Product X Get Free Shipping 
+        display_name:
+          type: string
+          description: Customer-facing name for this rule, that the merchant want to display to customers.
+          example: WOW!!! FREE SHIPPING for Product X
+        channels:
+          type: array
+          description: 'Channels that the promotion targets. Empty array [] means targeting all the channels. In POST request, if omitted, this field defaults to an empty array [] value.'
+          items:
+            $ref: '#/components/schemas/Channel'
+        customer:
+          $ref: '#/components/schemas/Customer'
+        rules:
+          type: array
+          description: An ordered list of rules to be executed until the first applicable one applies a discount successfully and the rest will be skipped.
+          items:
+            $ref: '#/components/schemas/Rule'
+        current_uses:
+          type: integer
+          description: A read-only count of the times this rule has been used by customers. A rule is considered to be used when a customer successfully checks out with a rule that has applied a discount to their cart.
+          readOnly: true
+          example: 2
+        max_uses:
+          type: integer
+          description: The maximum number of times this discount can be used by customers.
+          example: 10
+        status:
+          type: string
+          description: Controls whether or not a discount rule can be used by customers. `INVALID` is a read-only status into which enabled discount rules may transition when they become invalid.
+          enum:
+            - ENABLED
+            - DISABLED
+            - INVALID
+        start_date:
+          type: string
+          description: The date and time when this rule will become active.
+          example: '2005-12-30T01:02:03+00:00'
+        end_date:
+          type: string
+          description: 'The date and time when this rule will expire. If this property is left null, the promotion never expires.'
+          example: '2025-12-30T01:02:03+00:00'
+        stop:
+          type: boolean
+          description: 'Boolean value that specifies whether to stop evaluating promotions down the priority list when the promotion is applied successfully.'
+          example: false
+        can_be_used_with_other_promotions:
+          type: boolean
+          description: 'Boolean value that specifies whether this promotion can be used with other promotions. When set to false, only apply this promotion if there are no discounts applied already, and stop executing other promotions if this promotion applies successfully.'
+          example: false
+          default: true
+        currency_code:
+          type: string
+          description: The ISO-4217-based transactional currency code to which the promotion applies OR * for all currencies.
+          example: USD
+        notifications:
+          type: array
+          description: Notifications to display on the storefront based on the result of the evaluation for promotion eligibility.
+          items:
+            $ref: '#/components/schemas/Notification'
+        shipping_address:
+          $ref: '#/components/schemas/AddressMatcher'
+        schedule:
+          $ref: '#/components/schemas/AvailabilityByWeekDay'
+        codes:
+          $ref: '#/components/schemas/CouponCode'
+        coupon_overrides_automatic_when_offering_higher_discounts:
+          type: boolean
+          example: false
+          default: false
+          description: |-
+            This field only has effect when `can_be_used_with_other_promotions` is `false`:
+            - When the property is set to `true`, the coupon will override the applied automatic promotions if it provides a greater discount.
+            - When the property is set to `fasle`, the coupon will not be applied if automatic promotions are already applied.
+            Trying to set the value of this field when `can_be_used_with_other_promotions` is `true` will yield a 422 error response.
+      required:
+        - redemption_type
+        - name
+        - rules
     SavedCouponPromotion:
       title: Saved Coupon Promotion
       description: '**Coupon Promotion** A shopper must manually apply a *coupon promotion* to their cart.'
@@ -494,18 +558,82 @@ components:
       description: 'A Partial **Automatic Promotion** that contains properties to patch.'
       allOf:
         - $ref: '#/components/schemas/PromotionBase'
-    DraftAutomaticPromotion:
+    CreateAutomaticPromotionRequest:
       title: Draft Automatic Promotion
       description: 'A draft **Automatic Promotion** to be created. The store applies *automatic promotions* to a shopper’s cart once the promotion criteria are satisfied. The shopper cannot manually apply an *automatic promotion*.'
-      allOf:
-        - $ref: '#/components/schemas/PromotionBase'
-        - type: object
-          properties:
-            redemption_type:
-              type: string
-              description: The type of the promotion. Promotions applied automatically have a value of `AUTOMATIC` whereas promotions requiring a coupon have a value of `COUPON`.
-              enum:
-                - AUTOMATIC
+      type: object
+      properties:
+        redemption_type:
+          type: string
+          description: The type of the promotion. Promotions applied automatically have a value of `AUTOMATIC` whereas promotions requiring a coupon have a value of `COUPON`.
+          enum:
+            - AUTOMATIC
+        name:
+          type: string 
+          description: An internal name for this rule that the merchant can refer to.
+          example: Buy Product X Get Free Shipping 
+        display_name:
+          type: string
+          description: Customer-facing name for this rule, that the merchant want to display to customers.
+          example: WOW!!! FREE SHIPPING for Product X
+        channels:
+          type: array
+          description: 'Channels that the promotion targets. Empty array [] means targeting all the channels. In POST request, if omitted, this field defaults to an empty array [] value.'
+          items:
+            $ref: '#/components/schemas/Channel'
+        customer:
+          $ref: '#/components/schemas/Customer'
+        rules:
+          type: array
+          description: An ordered list of rules to be executed until the first applicable one applies a discount successfully and the rest will be skipped.
+          items:
+            $ref: '#/components/schemas/Rule'
+        current_uses:
+          type: integer
+          description: A read-only count of the times this rule has been used by customers. A rule is considered to be used when a customer successfully checks out with a rule that has applied a discount to their cart.
+          readOnly: true
+          example: 2
+        max_uses:
+          type: integer
+          description: The maximum number of times this discount can be used by customers.
+          example: 10
+        status:
+          type: string
+          description: Controls whether or not a discount rule can be used by customers. `INVALID` is a read-only status into which enabled discount rules may transition when they become invalid.
+          enum:
+            - ENABLED
+            - DISABLED
+            - INVALID
+        start_date:
+          type: string
+          description: The date and time when this rule will become active.
+          example: '2005-12-30T01:02:03+00:00'
+        end_date:
+          type: string
+          description: 'The date and time when this rule will expire. If this property is left null, the promotion never expires.'
+          example: '2025-12-30T01:02:03+00:00'
+        stop:
+          type: boolean
+          description: 'Boolean value that specifies whether to stop evaluating promotions down the priority list when the promotion is applied successfully.'
+          example: false
+        can_be_used_with_other_promotions:
+          type: boolean
+          description: 'Boolean value that specifies whether this promotion can be used with other promotions. When set to false, only apply this promotion if there are no discounts applied already, and stop executing other promotions if this promotion applies successfully.'
+          example: false
+          default: true
+        currency_code:
+          type: string
+          description: The ISO-4217-based transactional currency code to which the promotion applies OR * for all currencies.
+          example: USD
+        notifications:
+          type: array
+          description: Notifications to display on the storefront based on the result of the evaluation for promotion eligibility.
+          items:
+            $ref: '#/components/schemas/Notification'
+        shipping_address:
+          $ref: '#/components/schemas/AddressMatcher'
+        schedule:
+          $ref: '#/components/schemas/AvailabilityByWeekDay'
       required:
         - redemption_type
         - name

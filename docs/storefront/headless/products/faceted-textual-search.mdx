@@ -245,10 +245,87 @@ The Storefront GraphQL API supports product search in multiple languages. When m
 
 No special query arguments are required; localization is automatic based on the request context. If no language is supplied, the store’s default language is used.
 
+#### Supported Languages
+
+BigCommerce supports a broad range of languages for multi-language search.
+
+If an unsupported language code is passed in the request, the store’s default language (typically English) will be used.
+<details>
+<summary> Click to see the full list of supported languages.
+</summary>
+
+| Language Name        | Language Code |
+|----------------------|--------------|
+| Arabic               | ar           |
+| Armenian             | hy           |
+| Basque               | eu           |
+| Bengali              | bn           |
+| Bulgarian            | bg           |
+| Catalan              | ca           |
+| Chinese              | zh           |
+| Czech                | cs           |
+| Danish               | da           |
+| Dutch                | nl           |
+| English              | en           |
+| Estonian             | et           |
+| Finnish              | fi           |
+| French               | fr           |
+| Galician             | gl           |
+| German               | de           |
+| Greek                | el           |
+| Hindi                | hi           |
+| Hungarian            | hu           |
+| Indonesian           | id           |
+| Irish                | ga           |
+| Italian              | it           |
+| Japanese             | ja           |
+| Korean               | ko           |
+| Kurdish              | ku           |
+| Latvian              | lv           |
+| Lithuanian           | lt           |
+| Norwegian            | no           |
+| Persian (Farsi)      | fa           |
+| Portuguese           | pt           |
+| Punjabi              | pb           |
+| Romanian             | ro           |
+| Russian              | ru           |
+| Spanish (Spain)      | es           |
+| Swedish              | sv           |
+| Thai                 | th           |
+| Turkish              | tr           |
+
+</details>
+
+#### Fallback to Base Content
+
+If a translation is missing for a product’s content in the shopper’s selected language, the API automatically returns the “base” content (store’s default language) for those attributes, ensuring products remain discoverable even when translations are incomplete.
+
+**Why this matters:**
+- Improves result coverage—products aren’t hidden if a translation is missing.
+- Ensures continuity during rollout or partial localization phases.
+
+#### Setting Up Multi-language Search: Recommended Order
+
+1. **Add the new language to your storefront/channel** – This enables you to provide translations.
+2. **Set the language to “Inactive”** – Prevents incomplete content from appearing on the storefront.
+3. **Localize your product content** – Add translations for product names, descriptions, etc. If a translation isn’t provided, the base content will display.
+4. **Activate the language** – Make the language available for shoppers when translations are complete.
+
+#### Limitations, Recommendations, and Recovery
+
+- **API Availability:** Multi-language search is available only via the Storefront GraphQL API (used for headless storefronts such as Catalyst).
+- **Locale Management:** Search results respect the locale passed into the GraphQL request. Add only one locale per language code (e.g., just `en-US` for English, not `en-US` and `en-GB`); adding more than one can cause search results to be overwritten. If this occurs, remove extra locales and refresh your catalog.
+- **Supported Languages:** Use only supported languages. Unsupported languages will default to the store’s base language and may cause search issues. Remove unsupported languages and refresh your catalog if needed.
+- **Default Language Stability:** Do not change your store’s default language after translations are set; doing so can leave your storefront empty. If this happens, reset the correct default and refresh your catalog.
+- **Catalog Updates:** The catalog does not automatically refresh when you add a new language; products must be updated or republished for inclusion in search results for that language.
+- **Cache Refresh:** If you recently added a language or updated translations but don’t see changes, clear your storefront or CDN cache (if you use a separate CDN from BigCommerce).
+
+#### Example Query
+
 <Tabs items={['Request', 'Response']}>
 <Tab>
 
-```graphql
+```graphql filename="Example Multi-Language Search" showLineNumbers copy
 query SearchProductsInLanguage {
   search {
     searchProducts(filters: { searchTerm: "shirt" }) {
@@ -279,7 +356,7 @@ query SearchProductsInLanguage {
 </Tab>
 <Tab>
 
-```json
+```json filename="Example Multi-Language Response" showLineNumbers copy
 {
   "data": {
     "search": {
@@ -1235,3 +1312,5 @@ If a merchant has not enabled product filtering, you will receive an empty array
 
 - [GraphQL Storefront API overview](/docs/storefront/graphql)
 - [GraphQL Storefront playground](/graphql-storefront/playground)
+- [Store Search Product Fields](https://support.bigcommerce.com/s/article/Store-Search?language=en_US#best-practices)
+- [Multi-language Support in GraphQL](https://developer.bigcommerce.com/docs/storefront/graphql/multi-language-support)

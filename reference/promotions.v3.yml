@@ -89,13 +89,13 @@ paths:
       responses:
         '201':
           $ref: '#/components/responses/PromotionsResponse'
-        '400': 
+        '400':
           description: The request payload was invalid.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse400'
-        '403': 
+        '403':
           description: The request payload was invalid.
           content:
             application/json:
@@ -196,6 +196,72 @@ paths:
         '204':
           description: The deletion was successful or the specified resource does not exist.
           content: {}
+
+  '/promotions/{promotion_id}/codegen':
+    post:
+      tags:
+        - Coupon Codes (Bulk)
+      summary: Generate Bulk Coupon Codes
+      description: |-
+        Generate a batch of coupon codes for a particular bulk coupon promotion.
+        
+        **Note:**
+        * batch_size (number of codes generated per request) is limited to 250. If batch_size is not an integer or larger than 250, it will return a 422 error code.
+        * The default rate limit for this endpoint is 10 concurrent requests.
+      operationId: generatePromotionCodesBatch
+      parameters:
+        - $ref: '#/components/parameters/ContentType'
+        - $ref: '#/components/parameters/Accept'
+        - $ref: '#/components/parameters/PromotionIdPath'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              required:
+                - batch_size
+              type: object
+              properties:
+                batch_size:
+                  type: integer
+                  description: The number of coupon codes to generate in each batch. The maximum value is 250.
+                  example: 5
+                  minimum: 1
+                  maximum: 250
+                max_uses:
+                  type: integer
+                  description: The maximum number of times each coupon code can be used. The default value is 1. The value 0 means unlimited usage.
+                  example: 10
+                  minimum: 0
+                  maximum: 100000
+                max_uses_per_customer:
+                  type: integer
+                  description: The maximum number of times a specific customer can use each coupon code. The default value is 1. The value 0 means unlimited usage.
+                  example: 5
+                  minimum: 0
+                  maximum: 100000
+        required: true
+      responses:
+        '201':
+          $ref: '#/components/responses/BulkCouponCodesResponse'
+        '400':
+          description: Invalid request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse400'
+        '403':
+          description: Forbidden.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse403'
+        '422':
+          description: The request payload is invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   '/promotions/{promotion_id}/codes':
     parameters:
       - $ref: '#/components/parameters/Accept'
@@ -207,7 +273,7 @@ paths:
         Get codes for a particular promotion.
 
         **Note:**
-        The default rate limit for this endpoint is 40 concurrent requests.
+        The default rate limit for this endpoint is 10 concurrent requests.
       operationId: getPromotionCodes
       parameters:
         - $ref: '#/components/parameters/PromotionIdPath'
@@ -1133,14 +1199,12 @@ components:
           properties:
             previous:
               type: string
-  
               description: >
                 Link to the previous page returned in the response.
                 This property is omitted when the result set is empty or on the first page.
               example: '?limit=5&before=eyJpZCI6IjIzNzU1NyJ9'
             next:
               type: string
-  
               description: >
                 Link to the next page returned in the response.
                 This property is omitted when the result set is empty.
@@ -1321,6 +1385,18 @@ components:
         - current_uses
         - created
         - code
+
+    BulkCouponCode:
+      type: object
+      properties:
+        code:
+          type: string
+          pattern: '^[A-Z0-9]{16}$'
+          description: A unique, 16-character code that can be used to manually apply a discount. The code consists of randomly generated capital letters and numbers.
+          example: 'OMHYFQ4S26EY63UW'
+          maxLength: 16
+          minLength: 16
+
     BulkActionResponseMeta:
       title: Bulk Action Response Meta
       type: object
@@ -1642,6 +1718,55 @@ components:
               total: 5
               success: 3
               failed: 2
+
+    BulkCouponCodesResponse:
+      description: ''
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                type: object
+                properties:
+                  created:
+                    type: string
+                    format: date-time
+                    description: The date and time when the codes were created.
+                    example: '2019-01-20T22:00:00+00:00'
+                  max_uses:
+                    type: integer
+                    description: The maximum number of times each code can be used.
+                  max_uses_per_customer:
+                    type: integer
+                    description: The maximum number of times each customer can use a code.
+                  batch_size:
+                    type: integer
+                    description: The number of codes generated in the batch.
+                  codes:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/BulkCouponCode'
+              meta:
+                type: object
+                properties: {}
+                description: 'Empty meta object, which may be used at a later time.'
+          examples:
+            example-1:
+              value:
+                data:
+                  max_uses: 10
+                  max_uses_per_customer: 5
+                  created: '2019-01-20T22:00:00+00:00'
+                  batch_size: 5
+                  codes:
+                    - code: WFYUYQM1W1ZYGK7S
+                    - code: TQ4PBBEK9SCZ212Z
+                    - code: B2YKV43O18LPJGNS
+                    - code: OSGJJBV3WBRC3G7X
+                    - code: XA8JS9T2N0C2TGS3
+                meta: {}
+
     PromotionCodeResponse:
       description: ''
       content:

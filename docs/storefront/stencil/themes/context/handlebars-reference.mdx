@@ -352,7 +352,6 @@ results in: '["aa", "bb", "cc"]'
 - [See it in GitHub](https://github.com/bigcommerce/paper-handlebars/blob/master/helpers/pluck.js)
 - [See it in Cornerstone](https://github.com/bigcommerce/cornerstone/search?l=HTML&q=pluck)
 
-
 ### cdn
 
 ```handlebars showLineNumbers
@@ -365,7 +364,6 @@ A URL transformer for content delivery networks.
 
 - `assetPath` (String): Path to the file containing static assets.
 
-
 #### Example
 
 ```handlebars showLineNumbers
@@ -373,20 +371,36 @@ A URL transformer for content delivery networks.
 <!-- => https://cdn.bcapp/3dsf74g/stencil/123/img/image.jpg -->
 ```
 
-To reference static assets staged locally outside your `<theme-name>` directory and uploaded using WebDAV, place the `webdav:` prefix before each corresponding `assetPath` parameter. For example, the following link:
+To reference static assets staged locally outside your `<theme-name>` directory and uploaded using WebDAV, use the `webdav:` prefix before the `assetPath`. For example:
+
+```handlebars showLineNumbers
+<a href="{{cdn 'webdav:docs/msds.pdf'}}">
+```
+
+is transformed to:
+
+```handlebars showLineNumbers
+<a href="https://cdn.bcapp/3dsf74g/content/docs/msds.pdf">
+```
+
+Most non-image file types behave this way.  
+However, image files with the `.jpg`, `.jpeg`, `.png`, or `.gif` extensions are handled differently:
 
 ```handlebars showLineNumbers
 <img src="{{cdn 'webdav:img/image.jpg'}}">
 ```
 
-will be transformed to a result like this:
-
+becomes
 
 ```handlebars showLineNumbers
-<img src="https://cdn.bcapp/3dsf74g/content/img/image.jpg">
+<img src="https://cdn.bcapp/3dsf74g/images/stencil/original/content/img/image.jpg">
 ```
 
-In this example, the `image.jpg` file was uploaded to the WebDAV `/content/` directory making `/content` the WebDAV root directory. Because our presumed local directory is `assets/`, we can omit that path when referencing its contained files or subdirectories.
+In both examples, the files were uploaded to the WebDAV `/content/` directory, which acts as the root for `cdn` calls using the `webdav:` prefix.
+
+<Callout type="info">
+To serve WebDAV assets outside the `/content/` directory, avoid folder traversal or manual URL replacement with the `cdn` helper. Instead, use the [`getImageManagerImage`](#getImageManagerImage) helper, which serves content from the `/dav/product_images/uploaded_images/` directory.
+</Callout>
 
 #### CDN custom endpoints
 

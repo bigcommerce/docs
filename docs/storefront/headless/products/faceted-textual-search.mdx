@@ -54,9 +54,14 @@ To use faceted and textual search, specify a filter in the argument for `SearchP
 )
 ...
 ```
+
 These filters affect **both** the products and facets that are returned. For example, filtering by rating returns only products within the specified rating range and only facets that have products within the rating range.
 
 See the [GraphQL Storefront playground](/graphql-storefront/playground) for descriptions of each filter. 
+
+<Callout type="info">
+All search queries automatically respect your store’s language settings if multi-language is enabled. See [Multi-language Product Search](#multi-language-product-search).
+</Callout>
 
 ## Get products
 
@@ -137,6 +142,7 @@ query {
   }
 }
 ```
+
 </Tab>
 </Tabs>
 
@@ -173,6 +179,7 @@ query {
   }
 }
 ```
+
 </Tab>
 <Tab>
 
@@ -226,6 +233,162 @@ If you sort by price, the products sort by either their `salePrice` or `basePric
   For a list of product fields that `searchTerm` searches, see the [Store Search Product Fields](https://support.bigcommerce.com/s/article/Store-Search?language=en_US#best-practices) article.
 </Callout>
 
+### Multi-language Product Search
+
+The Storefront GraphQL API supports product search in multiple languages. When multi-language is enabled and translations are provided in the BigCommerce admin, the API returns product names, descriptions, and search keywords in the shopper’s preferred language—determined by the `Accept-Language` HTTP header or customer settings.
+
+**Searchable fields include:**
+- Product name
+- Product description
+- Product search keywords
+
+No special query arguments are required; localization is automatic based on the request context. If no language is supplied, the store’s default language is used.
+
+#### Supported Languages
+
+BigCommerce supports a broad range of languages for multi-language search.
+
+If an unsupported language code is passed in the request, the store’s default language (typically English) will be used.
+<details>
+<summary> Click to see the full list of supported languages.</summary>
+
+| Language Name        | Language Code |
+|----------------------|--------------|
+| Arabic               | ar           |
+| Armenian             | hy           |
+| Basque               | eu           |
+| Bengali              | bn           |
+| Bulgarian            | bg           |
+| Catalan              | ca           |
+| Chinese              | zh           |
+| Czech                | cs           |
+| Danish               | da           |
+| Dutch                | nl           |
+| English              | en           |
+| Estonian             | et           |
+| Finnish              | fi           |
+| French               | fr           |
+| Galician             | gl           |
+| German               | de           |
+| Greek                | el           |
+| Hindi                | hi           |
+| Hungarian            | hu           |
+| Indonesian           | id           |
+| Irish                | ga           |
+| Italian              | it           |
+| Japanese             | ja           |
+| Korean               | ko           |
+| Kurdish              | ku           |
+| Latvian              | lv           |
+| Lithuanian           | lt           |
+| Norwegian            | no           |
+| Persian (Farsi)      | fa           |
+| Portuguese           | pt           |
+| Punjabi              | pb           |
+| Romanian             | ro           |
+| Russian              | ru           |
+| Spanish (Spain)      | es           |
+| Swedish              | sv           |
+| Thai                 | th           |
+| Turkish              | tr           |
+
+</details>
+
+#### Fallback to Base Content
+
+If a translation is missing for a product’s content in the shopper’s selected language, the API automatically returns the "base" content (store’s default language) for those attributes. This ensures that products remain discoverable even when translations are incomplete.
+
+**Why this matters:**
+- Improves result coverage—products aren’t hidden if a translation is missing.
+- Ensures continuity during rollout or partial localization phases.
+- The product may appear partially or entirely in another language if translations are missing.
+
+#### Setting Up Multi-language Search: Recommended Order
+
+1. **Add the new language to your storefront/channel** – This enables you to provide translations.
+2. **Set the language to "Inactive"** – Prevents incomplete content from appearing on the storefront.
+3. **Localize your product content** – Add translations for product names, descriptions, etc. If a translation isn’t provided, the base content will display.
+4. **Activate the language** – Make the language available for shoppers when translations are complete.
+
+#### Limitations, Recommendations, and Recovery
+
+- **API Availability:** Multi-language search is available only via the Storefront GraphQL API (used for headless storefronts such as Catalyst).
+- **Locale Management:** Search results respect the locale passed into the GraphQL request. Add only one locale per language code (e.g., just `en-US` for English, not `en-US` and `en-GB`); adding more than one can cause search results to be overwritten. If this occurs, remove extra locales and refresh your catalog.
+- **Supported Languages:** Use only supported languages. Unsupported languages will default to the store’s base language and may cause search issues. Remove unsupported languages and refresh your catalog if needed.
+- **Default Language Stability:** Do not change your store’s default language after translations are set; doing so can leave your storefront empty. If this happens, reset the correct default and refresh your catalog.
+- **Catalog Updates:** The catalog does not automatically refresh when you add a new language; products must be updated or republished for inclusion in search results for that language.
+- **Cache Refresh:** If you recently added a language or updated translations but don’t see changes, clear your storefront or CDN cache (if you use a separate CDN from BigCommerce).
+
+#### Example Query
+
+<Tabs items={['Request', 'Response']}>
+<Tab>
+
+```graphql filename="Example Multi-Language Search" showLineNumbers copy
+query SearchProductsInLanguage {
+  search {
+    searchProducts(filters: { searchTerm: "shirt" }) {
+      products(first: 10) {
+        edges {
+          node {
+            entityId
+            name
+            description
+            customFields {
+              name
+              value
+            }
+            options {
+              displayName
+              values {
+                label
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+</Tab>
+<Tab>
+
+```json filename="Example Multi-Language Response" showLineNumbers copy
+{
+  "data": {
+    "search": {
+      "searchProducts": {
+        "products": {
+          "edges": [
+            {
+              "node": {
+                "entityId": 123,
+                "name": "Chemise",
+                "description": "Chemise en coton pour homme.",
+                "customFields": [
+                  { "name": "Matière", "value": "Coton" }
+                ],
+                "options": [
+                  {
+                    "displayName": "Taille",
+                    "values": [{ "label": "M" }, { "label": "L" }]
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+```
+
+</Tab>
+</Tabs>
+
 ## Search and filtering with product attributes
 
 You can also search and filter to include only products that have a specific product attribute.
@@ -244,6 +407,7 @@ This GraphQL query is searching for products using a **filter on a product attri
 
 <Tabs items={['Request', 'Response']}>
 <Tab>
+
 ```graphql filename="Example Product Attributes" showLineNumbers copy
 query GetFacets {
   site {
@@ -289,8 +453,10 @@ query GetFacets {
   }
 }
 ```
+
 </Tab>
 <Tab>
+
 ```json filename="Example Product Attributes" showLineNumbers copy
 {
   "data": {
@@ -360,6 +526,7 @@ query GetFacets {
   }
 }
 ```
+
 </Tab>
 </Tabs>
 
@@ -435,6 +602,7 @@ query {
   }
 }
 ```
+
 </Tab>
 <Tab>
 
@@ -500,6 +668,7 @@ query {
   }
 }
 ```
+
 </Tab>
 </Tabs>
 
@@ -569,6 +738,7 @@ query AND_Categories {
   }
 }
 ```
+
 </Tab>
 <Tab>
 
@@ -616,6 +786,7 @@ query AND_Categories {
   }
 }
 ```
+
 </Tab>
 </Tabs>
 
@@ -663,6 +834,7 @@ query OR_Categories {
   }
 }
 ```
+
 </Tab>
 <Tab>
 
@@ -897,6 +1069,7 @@ query OR_Categories {
   }
 }
 ```
+
 </Tab>
 </Tabs>
 
@@ -987,6 +1160,7 @@ query {
   }
 }
 ```
+
 </Tab>
 <Tab>
 
@@ -1078,6 +1252,7 @@ query {
     }
   }
 ```
+
 </Tab>
 </Tabs>
 
@@ -1136,3 +1311,5 @@ If a merchant has not enabled product filtering, you will receive an empty array
 
 - [GraphQL Storefront API overview](/docs/storefront/graphql)
 - [GraphQL Storefront playground](/graphql-storefront/playground)
+- [Store Search Product Fields](https://support.bigcommerce.com/s/article/Store-Search#best-practices)
+- [Multi-language Support in GraphQL](https://developer.bigcommerce.com/docs/storefront/graphql/multi-language-support)

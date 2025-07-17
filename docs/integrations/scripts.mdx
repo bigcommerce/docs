@@ -58,6 +58,35 @@ The following table describes the locations you can associate with Scripts API o
 
 To associate scripts with a checkout page, you need the [Modify Checkout Content OAuth scope](/docs/start/authentication/api-accounts#oauth-scopes).
 
+## Creating scripts for Catalyst storefronts
+
+Catalyst is BigCommerce's modern storefront framework built on Next.js. When creating scripts for Catalyst storefronts, there are several important considerations that differ from traditional Stencil themes.
+
+### No Handlebars support
+
+Scripts in Catalyst do not support Handlebars templating. While you can use inline scripts, they must contain static content and cannot use Handlebars helpers or access theme context variables that are available in Stencil themes. Any dynamic content must be handled through JavaScript after the script loads.
+
+### Client-side navigation considerations
+
+Catalyst storefronts are built on Next.js, which supports client-side navigation. This means that scripts are not guaranteed to fire on every page navigation, unlike traditional page loads. When users navigate between pages, the browser may not reload the entire page, which can prevent scripts from executing as expected.
+
+If you need your script to execute on each navigation, you should hook into client-side events to detect page changes. You can listen for Next.js router events or use other client-side navigation detection methods to ensure your script runs when needed.
+
+### Deferred script loading
+
+Scripts on Catalyst are loaded using Next.js's `next/script` component, which loads scripts in a deferred manner. Your script should be designed to support asynchronous loading and should not rely on firing immediately like a traditional `<script>` tag baked into HTML would.
+
+This means your script should:
+- Handle being loaded after the initial page render
+- Not assume the DOM is in a specific state when it executes
+- Use appropriate event listeners or checks to ensure required elements are available
+
+For more information about how Next.js handles script loading, see the [Next.js Script component documentation](https://nextjs.org/docs/pages/api-reference/components/script) and the [Next.js Scripts guide](https://nextjs.org/docs/app/guides/scripts).
+
+### Version requirements
+
+Script support was added to Catalyst in version 1.1. Catalyst storefronts running versions prior to 1.1 do not render scripts added through the Scripts API. Before deploying scripts, verify that the target Catalyst storefront is running version 1.1 or later.
+
 ## Blueprint themes
 
 Storefront-wise, all stores have access to Stencil themes and headless storefronts. In addition to those two frameworks, older stores may use our legacy theme engine, Blueprint, which does not support rendering scripts inserted using the Scripts API or the Script manager.

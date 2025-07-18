@@ -1,0 +1,114 @@
+---
+title: GraphQL Storefront API Scripts overview
+keywords: graphql, storefront scripts, graphql scripts query, script manager api, fetch storefront scripts
+---
+# GraphQL Storefront API: Scripts overview
+
+## Introduction
+
+The GraphQL Storefront API's `scripts` query allows you to fetch storefront scripts configured in your BigCommerce control panel. This feature is designed to help merchants and developers programmatically retrieve both inline and external scripts that are executed on the storefront, providing visibility and control over scripts used for analytics, integrations, and custom storefront functionality.
+
+## What is a storefront script
+
+A storefront script is a snippet of JavaScript or an external script URL that can be injected into your storefront pages. Storefront scripts are managed per storefront through the BigCommerce control panel and can be used for a wide variety of purposes, such as analytics tracking, integrations with third-party services, or adding custom functionality to storefront pages.
+
+## Prerequisites
+
+Before using the `scripts` query, ensure you have the following:
+
+* A BigCommerce store with scripts configured via the control panel
+* A valid Storefront API access token with sufficient permissions to query storefront data
+
+To learn more about authenticating GraphQL Storefront API requests, see the [Authentication and Example Requests](/docs/start/authentication#access-tokens).
+
+## Getting started
+
+The `scripts` query provides a simple way to retrieve all scripts set up for your storefront. You can use this query to audit which scripts are currently active, fetch metadata such as consent category and visibility, and distinguish between inline and external scripts. The API supports filtering, pagination, and provides detailed information about each script, including its location on the page (e.g., `<head>`, `<footer>`), integrity hashes, and type.
+
+Begin with the following steps:
+
+1. Obtain a Storefront API access token from the control panel.
+2. Use a GraphQL client such as [Altair](https://altairgraphql.dev/).
+3. Set the request URL to your store’s GraphQL endpoint (e.g., `https://store-{store_hash}.mybigcommerce.com/graphql`).
+4. Send an `Authorization` header with your Storefront API token.
+5. Use the request body to send the `scripts` query.
+
+<Tabs items={['Request', 'Response']}>
+<Tab>
+The following example query will fetch the full set of storefront scripts.
+```graphql filename="Example query: Get storefront scripts" showLineNumbers copy
+query Scripts {
+  site {
+    content {
+      scripts {
+        edges {
+          node {
+            ... on InlineScript {
+              scriptTag
+              entityId
+              consentCategory
+              visibility
+              integrityHashes {
+                hash
+              }
+              location
+            }
+            ... on SrcScript {
+              src
+              entityId
+              consentCategory
+              visibility
+              integrityHashes {
+                hash
+              }
+              location
+            }
+          }
+        }
+      }
+    }
+  }
+}
+```
+</Tab>
+<Tab>
+Here is an example response from the GraphQL API. The `scriptTag` field for inline scripts will show the exact content you entered in the control panel, including the `<script>` tags themselves.
+
+```json filename="Example response: Get storefront scripts" showLineNumbers copy
+{
+  "data": {
+    "scripts": {
+      "edges": [
+        {
+          "node": {
+            "entityId": "865591b4-15da-4bd2-88b0-0e86da748748",
+            "consentCategory": "ANALYTICS",
+            "visibility": "STOREFRONT",
+            "integrityHashes": [{ "hash": "hash" }],
+            "location": "HEAD",
+            "scriptTag": "<script>console.log('Hello from inline script!');</script>"
+          }
+        },
+        {
+          "node": {
+            "entityId": "865591b4-15da-4bd2-88b0-0e86da748748",
+            "consentCategory": "ANALYTICS",
+            "visibility": "STOREFRONT",
+            "integrityHashes": [{ "hash": "hash" }],
+            "location": "HEAD",
+            "src": "https://example.com/script.js"
+          }
+        }
+      ]
+    }
+  }
+}
+```
+</Tab>
+</Tabs>
+## Resources
+* **[BigCommerce GraphQL Storefront API Reference](/docs/storefront/graphql/)** - Official API reference for the Storefront GraphQL API
+* **[Scripts REST API](/docs/rest-management/scripts)** - BigCommerce REST API endpoints for storefront script management
+* **[Storefront Scripts Overview (Help Center)](https://support.bigcommerce.com/s/article/Using-Script-Manager)** - BigCommerce Support documentation on Script Manager
+* **[Storefront API Authentication](/docs/start/authentication/graphql-storefront)** - Instructions for authenticating requests to the Storefront GraphQL API
+* **[GraphQL Playground](/graphql-playground)** - Interactive GraphQL IDE for testing queries against the Storefront API

@@ -1,20 +1,121 @@
 openapi: 3.0.0
 info:
-  title: Order
+  title: Orders
   version: v3
-  description: Order information manage.
+  description: |-
+    The B2B Server to Server Orders API allows you to retrieve order information and update B2B-specific details like Purchase Order (PO) number and extra fields. You can also assign pre-existing orders to a Company account, ensuring that buyers can access their orders placed prior to B2B Company registration.
+
+    Note that this resource does **not** allow you to create new orders, update an order’s basic information, or add attributes like shipments and order-level fees. Use the BigCommerce [Orders V2 API](/docs/rest-management/orders) to handle these tasks in your integration.
+
+    When using B2B Orders endpoints to retrieve or update specific orders, use the **BigCommerce Order ID** as the unique identifier. The **B2B Edition Order ID**, presented as the `id` value of certain B2B Orders responses, is not a supported identifier for the `bcOrderId` field.
+
+    The `statusCode` field in some endpoint responses is the unique identifier assigned to each BigCommerce order status. To learn more about order statuses and their corresponding codes, see [Order Statuses](/docs/rest-management/orders/order-status).
+
+    ## Legacy Extra Fields
+
+    The response body of certain endpoints, such as [Get All Orders](#get-all-orders) and [Create an Order](#create-an-order), include the following legacy Company extra fields used by older stores:
+
+    - `extraInt1`
+    - `extraInt2`
+    - `extraInt3`
+    - `extraInt4`
+    - `extraInt5`
+    - `extraStr1`
+    - `extraStr2`
+    - `extraStr3`
+    - `extraStr4`
+    - `extraStr5`
+    - `extraText`
+
+    These fields return `null` values in newer stores. We recommend using the [Get Company Extra Fields](/b2b-edition/apis/rest-storefront/company/companies#get-company-extra-fields) endpoint to retrieve Company extra field information.
+
+    ## USD Currency Conversion
+
+    The `usdIncTax` field converts the order's total price from the currency it was placed into USD, even if you do not offer USD as a transactional currency. The following endpoints include the field in their response body:
+
+    - [Get All Orders](#get-all-orders)
+    - [Create an Order](#create-an-order)
+    - [Get an Order](#get-an-order)
+    - [Update an Order](#update-an-order)
   contact: {}
 servers:
   - url: 'https://api-b2b.bigcommerce.com/api/v3/io'
 tags:
-  - name: Order
-    description: Customer's Orders management.
+  - name: Orders
+    description: Managing orders placed by buyers on stores using B2B Edition.
 paths:
   /orders:
     get:
-      summary: Get Orders
+      summary: Get All Orders
       tags:
-        - Order
+        - Orders
+      operationId: get-orders
+      security:
+        - authToken: []
+      description: |-
+        Retrieves limited information for all orders, including B2B-specific information like Company IDs and order extra fields. The response includes orders placed by B2C customers and guest shoppers. Use [Get Order Products](#get-order-products) to retrieve an order's product details, or use the BigCommerce [Orders V2 API](/docs/rest-management/orders) to retrieve all order details except those specific to B2B Edition, like Company ID and extra fields.
+
+        Use the parameters to filter the returned orders by attributes like associated Company ID, date created, or storefront channel. You can also set the `showExtra` parameter to `true` in order to return extra field values associated with the order.
+      parameters:
+        - name: companyId
+          schema:
+            type: integer
+          in: query
+          example: 123456
+          description: Unique numeric ID of the Company account.
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/offset'
+        - $ref: '#/components/parameters/orderBy'
+        - $ref: '#/components/parameters/sortBy'
+        - $ref: '#/components/parameters/bcOrderId' 
+        - name: minModified
+          in: query
+          description: Enter a [Unix timestamp](https://www.unixtimestamp.com/) to retrieve all orders updated after that time.
+          example: 1622619778
+          allowEmptyValue: true
+          schema:
+            type: integer
+            format: time
+        - name: maxModified
+          in: query
+          description: Enter a [Unix timestamp](https://www.unixtimestamp.com/) to retrieve all orders updated before that time.
+          example: 1622619778
+          allowEmptyValue: true
+          schema:
+            type: integer
+            format: time
+        - name: minCreated
+          in: query
+          description: Enter a [Unix timestamp](https://www.unixtimestamp.com/) to retrieve all orders created after that time.
+          example: 1622619778
+          allowEmptyValue: true
+          schema:
+            type: integer
+            format: time
+        - name: maxCreated
+          in: query
+          description: Enter a [Unix timestamp](https://www.unixtimestamp.com/) to retrieve all orders created before that time.
+          example: 1622619778
+          allowEmptyValue: true
+          schema:
+            type: integer
+            format: time
+        - name: showExtra
+          schema:
+            type: boolean
+            default: false
+          example: false
+          in: query
+          description: Indicates whether or not extra fields should be included in the response.
+        - name: channelIds[]
+          schema:
+            type: array
+            items:
+              type: number
+            default: 1
+          in: query
+          description: BigCommerce channel IDs
+          example: 1,12345678
       responses:
         '200':
           description: OK
@@ -43,120 +144,105 @@ paths:
                         type: array
                         items:
                           allOf:
-                            - $ref: https://raw.githubusercontent.com/bigcommerce/docs/main/docs/b2b-edition/models/order/order.yaml
-                            - $ref: https://raw.githubusercontent.com/bigcommerce/docs/main/docs/b2b-edition/models/extra_fields/extra_field_values.yaml
+                            - $ref: '#/components/schemas/orderData_ALL'
               examples:
                 without-extra-fields:
                   value:
                     code: 200
                     meta:
                       message: SUCCESS
+                      totalCount: 9
+                      limit: 1
+                      offset: 0
                     data:
-                      - id: 1
-                        createdAt: 1574999690
-                        updatedAt: 1574999690
-                        bcOrderId: 11
-                        totalIncTax: 10.5
-                        poNumber: bj256
-                        cartId: 1
-                        companyId: 12
-                        usdIncTax: 11
+                      - id: 12345
+                        bcOrderId: 123
+                        totalIncTax: 2210.47
+                        poNumber: 04152025-0002
+                        status: Awaiting Payment
+                        customStatus: Invoice Sent
+                        cartId: 095a15a6-8a27-4c20-b357-36b82e9d5929
+                        items: 50
+                        usdIncTax: 2210.47
+                        companyId: 12345
                         currencyCode: USD
-                        items: 4
-                        status: completed
-                        customStatus: my-completed
-                        money: '{"currency_location": "left", "currency_token": "$", "decimal_token": ".", "decimal_places": 2, "thousands_token": ","}'
+                        money:
+                          - currencyLocation: left
+                            currencyToken: $
+                            decimalToken: .
+                            decimalPlaces: 2
+                            thousandsToken: ","
+                        statusCode: 7
+                        isArchived: false
                         channelId: 1
                         channelName: string
+                        createdAt: 1574999690
+                        updatedAt: 1574999690
                 with-extra-fields:
                   value:
                     code: 200
                     meta:
                       message: SUCCESS
+                      totalCount: 9
+                      limit: 1
+                      offset: 0
                     data:
-                      - id: 1
-                        createdAt: 1574999690
-                        updatedAt: 1574999690
-                        bcOrderId: 11
-                        totalIncTax: 10.5
-                        poNumber: bj256
-                        cartId: 1
-                        companyId: 12
-                        usdIncTax: 11
+                      - id: 12345
+                        bcOrderId: 123
+                        totalIncTax: 2210.47
+                        poNumber: 04152025-0002
+                        status: Awaiting Payment
+                        customStatus: Invoice Sent
+                        cartId: 095a15a6-8a27-4c20-b357-36b82e9d5929
+                        items: 50
+                        usdIncTax: 2210.47
+                        companyId: 12345
                         currencyCode: USD
-                        items: 4
-                        status: completed
-                        customStatus: my-completed
-                        money: '{"currency_location": "left", "currency_token": "$", "decimal_token": ".", "decimal_places": 2, "thousands_token": ","}'
+                        money:
+                          - currencyLocation: left
+                            currencyToken: $
+                            decimalToken: .
+                            decimalPlaces: 2
+                            thousandsToken: ","
+                        statusCode: 7
+                        isArchived: false
                         channelId: 1
                         channelName: string
-                        extraFields: 
-                          - fieldName: "test field"
-                            fieldValue: "test"
-      operationId: get-orders
-      security:
-        - authToken: []
-      description: Get all orders
-      parameters:
-        - schema:
-            type: integer
-          in: query
-          name: companyId
-          description: Company ID field
-        - $ref: '#/components/parameters/limit'
-        - $ref: '#/components/parameters/offset'
-        - $ref: '#/components/parameters/orderBy'
-        - $ref: '#/components/parameters/sortBy'
-        - name: minModified
-          in: query
-          description: Minimum modified timestamp
-          allowEmptyValue: true
-          schema:
-            type: number
-            format: time
-        - name: maxModified
-          in: query
-          description: Maximum modified timestamp
-          allowEmptyValue: true
-          schema:
-            type: number
-        - name: minCreated
-          in: query
-          description: Minimum created timestamp
-          allowEmptyValue: true
-          schema:
-            type: number
-        - name: maxCreated
-          in: query
-          description: Maximum created timestamp
-          allowEmptyValue: true
-          schema:
-            type: number
-        - schema:
-            type: boolean
-            default: false
-            example: false
-          in: query
-          name: showExtra
-          description: Show extra field in response
-        - schema:
-            type: integer
-            example: 1
-          in: query
-          name: bcOrderId
-          description: Unique order ID in BigCommerce store
-        - schema:
-            type: array
-            items:
-              type: number
-          in: query
-          name: channelIds
-          description: BigCommerce channel IDs
+                        extraInt1: null
+                        extraInt2: null
+                        extraInt3: null
+                        extraInt4: null
+                        extraInt5: null
+                        extraStr1: null
+                        extraStr2: null
+                        extraStr3: null
+                        extraStr4: null
+                        extraStr5: null
+                        extraText: null
+                        extraInfo:
+                          - billingAddressId: 12345
+                            shippingAddressId: 12345
+                        extraFields:
+                          - fieldName: "Fintech ID"
+                            fieldValue: "1234567890"
+                        createdAt: 1574999690
+                        updatedAt: 1574999690
     post:
       tags:
-        - Order
+        - Orders
       summary: Create an Order
       operationId: post-orders
+      security:
+        - authToken: []
+      description: |-
+        Generates an order record in B2B Edition after a Company user places an order. This occurs automatically; however, you can populate extra information on a B2B order by using a [webhook](/docs/integrations/webhooks) that first listens for BigCommerce order creation and then calls the Create an Order endpoint. The request must be made within 10 seconds of an order's creation for it to be successful.
+
+        This endpoint **does not** create a new order in your store. Use the [Orders V2 API](/docs/rest-management/orders) to add new orders via the API.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/createOrder'
       responses:
         '200':
           description: OK
@@ -164,127 +250,33 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: https://raw.githubusercontent.com/bigcommerce/docs/main/docs/b2b-edition/models/utils/response-object.yaml
-                  - type: object
-                    properties:
+                  - $ref: "#/components/schemas/responseSuccess"
+                  - properties:
                       data:
-                        allOf:
-                          - $ref: https://raw.githubusercontent.com/bigcommerce/docs/main/docs/b2b-edition/models/order/order.yaml
-                description: Successful created
-              examples:
-                example-1:
-                  value:
-                    code: 200
-                    meta:
-                      message: SUCCESS
-                    data:
-                      createdAt: 1574999690
-                      updatedAt: 1574999690
-                      bcOrderId: 11
-                      totalIncTax: 10.5
-                      poNumber: bj256
-                      cartId: 1
-                      companyId: 12
-                      usdIncTax: 11
-                      currencyCode: USD
-                      items: 4
-                      status: completed
-                      customStatus: my-completed
-                      money: '{"currency_location": "left", "currency_token": "$", "decimal_token": ".", "decimal_places": 2, "thousands_token": ","}'
-                      id: 1
-                      channelName: msf1
+                        $ref: '#/components/schemas/orderData_ALL'
         '400':
           $ref: '#/components/responses/400'
-      description: Create an order
-      requestBody:
-        content:
-          application/json:
-            schema:
-              allOf:
-                - type: object
-                  properties:
-                    bcOrderId:
-                      type: integer
-                      description: Order ID in Bigcommerce
-                    customerId:
-                      type: integer
-                      description: Customer ID of order creator
-                    poNumber:
-                      type: string
-                      description: PO payment method message.
-                  required:
-                    - bcOrderId
-                    - customerId
-                - $ref: https://raw.githubusercontent.com/bigcommerce/docs/main/docs/b2b-edition/models/extra_fields/extra_field_values.yaml
-            examples:
-              example-1:
-                value:
-                  bcOrderId: 0
-                  customerId: 0
-                  poNumber: bc156
-                  extraFields: 
-                    - fieldName: "test field"
-                      fieldValue: "test"
   '/orders/{bcOrderId}':
-    parameters:
-      - $ref: '#/components/parameters/bcOrderId'
     get:
       summary: Get an Order
       tags:
-        - Order
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: https://raw.githubusercontent.com/bigcommerce/docs/main/docs/b2b-edition/models/utils/response-object.yaml
-                  - type: object
-                    properties:
-                      data:
-                        allOf:
-                          - $ref: https://raw.githubusercontent.com/bigcommerce/docs/main/docs/b2b-edition/models/order/order.yaml
-                          - $ref: https://raw.githubusercontent.com/bigcommerce/docs/main/docs/b2b-edition/models/extra_fields/extra_field_values.yaml
-              examples:
-                example-1:
-                  value:
-                    code: 200
-                    meta:
-                      message: SUCCESS
-                    data:
-                      createdAt: 1574999690
-                      updatedAt: 1574999690
-                      bcOrderId: 11
-                      totalIncTax: 10.5
-                      poNumber: bj256
-                      cartId: 1
-                      companyId: 12
-                      usdIncTax: 11
-                      currencyCode: USD
-                      items: 4
-                      status: completed
-                      customStatus: my-completed
-                      money: '{"currency_location": "left", "currency_token": "$", "decimal_token": ".", "decimal_places": 2, "thousands_token": ","}'
-                      id: 1
-                      extraFields: [{
-                          "fieldName": "test field",
-                          "fieldValue": "test"
-                        }]
-                      channelId: 1
-                      channelName: string
-        '404':
-          $ref: '#/components/responses/404'
+        - Orders
       operationId: get-orders-orderId
-      description: Get an order detail info
+      description: |-
+        Retrieves limited information for a specific order based on the `bcOrderId` provided. The response includes the same fields as the Get All Orders endpoint, including B2B extra fields and PO numbers.
+
+        The `bcOrderId` parameter must include a valid BigCommerce Order ID (**not** the B2B Edition order ID returned in certain Orders endpoints) for the request to be successful.
       security:
         - authToken: []
-    put:
-      tags:
-        - Order
-      summary: Update an Order
-      operationId: put-orders-orderId
-      description: Update an order. Update order's poNumnber and extraFields. You should send at least one field.
+      parameters:
+          - name: bcOrderId
+            in: path
+            schema:
+              type: integer
+            description: The BigCommerce order ID.
+            example: 123
+            allowEmptyValue: false
+            required: true
       responses:
         '200':
           description: OK
@@ -292,73 +284,73 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: https://raw.githubusercontent.com/bigcommerce/docs/main/docs/b2b-edition/models/utils/response-object.yaml
-                  - type: object
-                    properties:
+                  - properties:
+                      code:
+                        type: integer
+                        description: "HTTP Response Code"
+                        default: '200'
                       data:
-                        allOf:
-                          - $ref: https://raw.githubusercontent.com/bigcommerce/docs/main/docs/b2b-edition/models/order/order.yaml
-              examples:
-                example-1:
-                  value:
-                    code: 200
-                    meta:
-                      message: SUCCESS
-                    data:
-                      createdAt: 1574999690
-                      updatedAt: 1574999690
-                      bcOrderId: 11
-                      totalIncTax: 10.5
-                      poNumber: bj256
-                      cartId: 1
-                      companyId: 12
-                      usdIncTax: 11
-                      currencyCode: USD
-                      items: 4
-                      status: completed
-                      customStatus: my-completed
-                      money: '{"currency_location": "left", "currency_token": "$", "decimal_token": ".", "decimal_places": 2, "thousands_token": ","}'
-                      id: 1
-                      extraFields: 
-                        - fieldName: "test field"
-                          fieldValue: "test"           
+                        type: array
+                        items:
+                          allOf:
+                            - $ref: '#/components/schemas/orderData_DETAIL'
         '404':
-          $ref: '#/components/responses/404'
+          description: |-
+            Not Found
+
+            This error occurs when an invalid order ID is provided in the `bcOrderId` parameter.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 404
+                  data:
+                    type: object
+                    properties: {}
+                  meta:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: "Order Does Not Exist."
+                        description: Error message of this response
+                required:
+                  - code
+                  - data  
+    put:
+      tags:
+        - Orders
+      summary: Update an Order
+      operationId: put-orders-orderId
+      description: |-
+        Updates B2B information on a specific order based on the `bcOrderId` provided.
+
+        The `bcOrderId` parameter must include a valid BigCommerce Order ID (**not** the B2B Edition order ID returned in certain Orders endpoints) for the request to be successful. You must also include at least one of the following fields in the request body:
+
+        - `poNumber`
+        - `extraFields` (array with `fieldName` and `fieldValue`)
+            - This array must be included if your store has required order extra fields.
+      parameters:
+        - name: bcOrderId
+          in: path
+          schema:
+            type: integer
+          description: The BigCommerce order ID.
+          example: 123
+          allowEmptyValue: false
+          required: true
       requestBody:
         content:
           application/json:
             schema:
-              allOf:
-                - type: object
-                  properties:
-                    bcOrderId:
-                      type: integer
-                      description: Order ID in Bigcommerce
-                    customerId:
-                      type: integer
-                      description: Customer ID of order creator
-                    poNumber:
-                      type: string
-                      description: PO payment method message.
-                  required:
-                    - bcOrderId
-                    - customerId
-                - $ref: https://raw.githubusercontent.com/bigcommerce/docs/main/docs/b2b-edition/models/extra_fields/extra_field_values.yaml
-            examples:
-              example-1:
-                value:
-                  bcOrderId: 0
-                  customerId: 0
-                  poNumber: bc156
-                  extraFields: 
-                    - fieldName: "test field"
-                      fieldValue: "test"
-  '/customers/{customerId}/orders/company':
-    put:
-      tags:
-        - Order
-      summary: Update Orders Company Attribute
-      operationId: put-orders-company
+              properties:
+                poNumber:
+                  $ref: "#/components/schemas/poNumber"
+                extraFields:
+                  $ref: "#/components/schemas/extraField_BASIC/properties/extraFields"
       responses:
         '200':
           description: OK
@@ -366,30 +358,99 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: https://raw.githubusercontent.com/bigcommerce/docs/main/docs/b2b-edition/models/utils/response-object.yaml
-                  - type: object
-                    properties:
+                  - properties:
+                      code:
+                        type: integer
+                        description: "HTTP Response Code"
+                        default: '200'
                       data:
-                        type: object
-                        properties:
-                          total:
-                            type: integer
-                            description: Converted orders amount.
-              examples:
-                example-1:
-                  value:
-                    code: 200
-                    meta:
-                      message: SUCCESS
-                    data:
-                      total: 10
+                        type: array
+                        items:
+                          allOf:
+                            - $ref: '#/components/schemas/orderData_DETAIL'
+                      message:
+                        type: string
+                        default: "SUCCESS"     
         '404':
-          $ref: '#/components/responses/404'
+          description: |-
+            Not Found
+
+            This error occurs when an invalid order ID is provided in the `bcOrderId` parameter.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 404
+                  data:
+                    type: object
+                    properties: {}
+                  meta:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: "Not Found Error"
+                        description: Error message of this response
+                required:
+                  - code
+                  - data
+        '422':
+          description: |-
+            Required Extra Field Missing
+
+            This error occurs if your store has required order extra fields, but the `extraFields` array is not included in the request body.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 422
+                  data:
+                    type: object
+                    properties:
+                      errMsg:
+                        type: string
+                        example: "[fieldName] is a required extra field"
+                        description: Error message of this response
+                  meta:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: "[fieldName] is a required extra field"
+                        description: Error message of this response
+                required:
+                  - code
+                  - data
+  '/customers/{customerId}/orders/company':
+    put:
+      tags:
+        - Orders
+      summary: Reassign Orders to a Different Company
+      operationId: put-orders-company
       description: |-
-        Update the orders belonging to a B3 company to another B3 company.
-        Convert orders from the user's former BigCommerce group into the user's present BigCommerce group.
+        Reassigns all orders from a specific B2B Edition Company user to a different Company account. This adds the orders to the Company's Buyer Portal. This **does not** automatically reassign the Company user account to the Company, however.
+        
+        ### Independent vs. Dependent Companies Behavior
+
+        This request uses the `bcGroupId` field to assign orders by customer group ID instead of the Company ID. As a result, it is only supported if your store uses the legacy Dependent Companies behavior. Do not use this request if your store uses [Independent Companies behavior](https://support.bigcommerce.com/s/article/Companies-and-Customer-Groups).
+
+        For a successful response, you must include the `bcGroupId` field with a BigCommerce customer group ID value that corresponds to a Company account.
       security:
         - authToken: []
+      parameters:
+        - schema:
+            type: integer
+          name: customerId
+          in: path
+          required: true
+          description: The ID of a BigCommerce customer account with a corresponding Company user account.
+          example: 321
       requestBody:
         content:
           application/json:
@@ -398,24 +459,11 @@ paths:
               properties:
                 bcGroupId:
                   type: integer
-                  description: User's former group ID in Bigcommerce.
+                  description: The unique identifier for the BigCommerce customer group that corresponds to the Company account that you are assigning to the order.
+                  example: 123
               required:
                 - bcGroupId
         description: ''
-    parameters:
-      - schema:
-          type: integer
-        name: customerId
-        in: path
-        required: true
-        description: BigCommerce customer ID.
-  '/orders/{bcOrderId}/products':
-    parameters:
-      - $ref: '#/components/parameters/bcOrderId'
-    get:
-      summary: Get Order Products
-      tags:
-        - Order
       responses:
         '200':
           description: OK
@@ -423,90 +471,68 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: https://raw.githubusercontent.com/bigcommerce/docs/main/docs/b2b-edition/models/utils/response-object.yaml
-                  - type: object
-                    properties:
-                      data:
-                        type: array
-                        items:
-                          allOf:
-                            - $ref: https://raw.githubusercontent.com/bigcommerce/docs/main/docs/b2b-edition/models/order/order-product.yaml
-                            - type: object
-                              properties:
-                                productId:
-                                  type: integer
-                                  description: Product ID field in BigCommerce.
-                                  example: 1
-              examples:
-                example-1:
-                  value:
-                    code: 200
-                    meta:
-                      message: SUCCESS
-                    data:
-                      - id: 1
-                        createdAt: 1574999690
-                        updatedAt: 1574999690
-                        productName: LGM Spicy Chili Crisp
-                        variantSKU: 7.41 Ounce (Pack of 12)
-                        variantId: 12
-                        options: '[{"id": 715, "option_id": 41, "order_product_id": 670, "product_option_id": 121, "display_name": "Gauge", "display_value": "12", "value": "123", "type": "Multiple choice", "name": "Gauge1576218034-477", "display_style": "Dropdown"}, {"id": 716, "option_id": 42, "order_product_id": 670, "product_option_id": 122, "display_name": "Leg 1 (inches)", "display_value": "5", "value": "5", "type": "Text field", "name": "Leg-1-(inches)1576218034-477", "display_style": ""}]'
-                        productBrandName: LGM
-                        quantity: 10
-                        productId: 1
-        '404':
-          $ref: '#/components/responses/404'
-      operationId: get-orders-orderId-products
-      description: Get order's product detail.
-      security:
-        - authToken: []
-  '/customers/{customerId}/orders/b2b':
-    parameters:
-      - schema:
-          type: integer
-        name: customerId
-        in: path
-        required: true
-        description: BigCommerce customer ID.
-    put:
-      tags:
-        - Order
-      summary: Update Customer BigCommerce Orders
-      operationId: put-customers-customerId-orders-bc
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: https://raw.githubusercontent.com/bigcommerce/docs/main/docs/b2b-edition/models/utils/response-object.yaml
-                  - type: object
-                    properties:
+                  - properties:
+                      code:
+                        type: integer
+                        description: "HTTP Response Code"
+                        default: '200'
                       data:
                         type: object
                         properties:
                           total:
                             type: integer
-                            description: Converted orders amount.
-              examples:
-                example-1:
-                  value:
-                    code: 200
-                    meta:
-                      message: SUCCESS
-                    data:
-                      total: 11
+                            description: The total number of orders transferred to the Company account.
+                            example: 1
+                      message:
+                        type: string
+                        default: "SUCCESS"
         '404':
-          $ref: '#/components/responses/404'
-      description: 'Add Company identifier for BigCommerce Customer Individual Orders, which can be used to convert BigCommerce Customer Individual Orders to Company-level Orders.'
+          description: |-
+            Not Found
+  
+            This error occurs when the `customerId   parameter or the   bcGroupId  field do not correspond to a valid customer account or customer group respectively. Confirm that the `customerId` corresponds to an existing Company user, and that the `bcGroupId` corresponds to a customer group dedicated to a single Company account.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 404
+                  data:
+                    type: object
+                    properties: {}
+                  meta:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: "User does not exist or action not supported for this user"
+                        description: Error message of this response
+                required:
+                  - code
+                  - data
+  '/orders/{bcOrderId}/products':
+    get:
+      summary: Get Order Products
+      tags:
+        - Orders
+      operationId: get-orders-orderId-products
+      description: |-
+        Retrieves product details of a specific order based on the `bcOrderId` provided. The `bcOrderId` parameter must include a valid BigCommerce Order ID (**not** the B2B Edition order ID returned in certain Orders endpoints) for the request to be successful.
+
+        This does not include all product information, such as pricing and physical dimensions. You can retrieve this information by using the [List Order Products](/docs/rest-management/orders/order-products#list-order-products) endpoint of the BigCommerce Orders API.
       security:
         - authToken: []
-  /orders/extra-fields:
-    get:
-      summary: Get Order Extra Field Configs
-      tags:
-        - Order
+      parameters:
+        - name: bcOrderId
+          in: path
+          schema:
+            type: integer
+          description: The BigCommerce order ID.
+          example: 123
+          allowEmptyValue: false
+          required: true
       responses:
         '200':
           description: OK
@@ -514,22 +540,141 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: https://raw.githubusercontent.com/bigcommerce/docs/main/docs/b2b-edition/models/utils/response-object.yaml
-                  - type: object
-                    properties:
+                  - properties:
+                      code:
+                        type: integer
+                        description: "HTTP Response Code"
+                        default: '200'
                       data:
                         type: array
                         items:
-                          $ref: https://raw.githubusercontent.com/bigcommerce/docs/main/docs/b2b-edition/models/extra_fields/extra_fields.yaml
-                      meta:
-                        $ref: https://raw.githubusercontent.com/bigcommerce/docs/main/docs/b2b-edition/models/utils/pagination.yaml
-      operationId: get-orders-extra-fields
-      description: Get order extra field configs
+                          allOf:
+                            - $ref: "#/components/schemas/orderProducts"
+                      message:
+                        type: string
+                        default: "SUCCESS"   
+        '404':
+          description: |-
+            Not Found
+
+            This error occurs when you provide an invalid `bcOrderId` value.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 404
+                  data:
+                    type: object
+                    properties: {}
+                  meta:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: "The order does not exist."
+                        description: Error message of this response
+                required:
+                  - code
+                  - data
+  '/customers/{customerId}/orders/b2b':
+    put:
+      tags:
+        - Orders
+      summary: Assign Customer Orders to Company
+      operationId: put-customers-customerId-orders-bc
+      description: |-
+        Associates orders from a buyer to their Company account based on the `customerId` entered. This endpoint is useful if a buyer has orders they placed before applying for or being added to a Company account.
+
+        The `customerId` parameter must include a valid BigCommerce customer ID for the request to be successful. This is different from the B2B Edition Company user ID returned by some B2B API endpoints, such as the `id` field in [Get Users](/b2b-edition/apis/rest-management/user#get-users).
+      security:
+        - authToken: []
       parameters:
-        - $ref: https://raw.githubusercontent.com/bigcommerce/docs/main/docs/b2b-edition/specs/api-v3/user/user.yaml#/components/parameters/offset
-        - $ref: https://raw.githubusercontent.com/bigcommerce/docs/main/docs/b2b-edition/specs/api-v3/user/user.yaml#/components/parameters/limit
+        - schema:
+            type: integer
+          name: customerId
+          in: path
+          required: true
+          description: The ID of a BigCommerce customer account with a corresponding Company user account.
+          example: 321
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - properties:
+                      code:
+                        type: integer
+                        description: "HTTP Response Code"
+                        default: '200'
+                      data:
+                        type: object
+                        properties:
+                          total:
+                            type: integer
+                            description: The total number of orders transferred to the Company account.
+                            example: 1
+                      message:
+                        type: string
+                        default: "SUCCESS"   
+        '404':
+          description: |-
+            Not Found
+
+            This error occurs when you provide a `customerId` that does not correspond to a Company user’s customer account.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 404
+                  data:
+                    type: object
+                    properties: {}
+                  meta:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: "User does not exist or action not support for this user."
+                        description: Error message of this response
+                required:
+                  - code
+                  - data
+  /orders/extra-fields:
+    get:
+      summary: Get Order Extra Field Configs
+      tags:
+        - Orders
+      operationId: get-orders-extra-fields
+      description: |-
+        Returns a list of available extra fields configurations for B2B orders.
+
+        We recommend caching the response results to avoid frequent API requests.
+      parameters:
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/offset'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/responseArray"
+                  - properties:
+                      data:
+                        type: array
+                        items:
+                          allOf:
+                            - $ref: '#/components/schemas/orderExtraFields'
 components:
-  schemas: {}
   parameters:
     limit:
       name: limit
@@ -541,15 +686,17 @@ components:
         default: 10
         maximum: 200
         minimum: 1
-      description: Pagination limit
+      description: Determines the number of records to return per page. If left blank, this defaults to `10`.
     offset:
       name: offset
       in: query
+      required: false
       schema:
         type: integer
         example: 5
         minimum: 0
-      description: Pagination offset
+        default: 0
+      description: The number of results to skip before returning the first result. If left blank, this defaults to `0`.
     orderBy:
       name: orderBy
       in: query
@@ -560,8 +707,8 @@ components:
           - DESC
           - ASC
         default: DESC
-        example: ASC
-      description: Order by
+        example: "ASC"
+      description: Establish a descending or ascending order of results. The order defaults to descending if the parameter is not included.
     orderId:
       name: orderId
       in: path
@@ -571,26 +718,660 @@ components:
       description: Unique order ID
     bcOrderId:
       name: bcOrderId
-      in: path
-      required: true
       schema:
         type: integer
-      description: Unique order ID in BigCommerce Store
+        example: 123
+      in: query
+      description: The BigCommerce order ID. This parameter **does not** accept the B2B Edition order ID returned in certain [Server to Server Orders](/b2b-edition/apis/rest-management/order) endpoints.
     sortBy:
       name: sortBy
       in: query
       required: false
       schema:
         type: string
-        default: updatedAt
+        default: "updatedAt"
         enum:
           - createdAt
           - updatedAt
         example: updatedAt
-      description: The response sorted by which field
+      description: Sorts results by creation date or the last updated date. It defaults to the last updated date if no parameter is provided.
+  schemas:
+    id:
+      type: integer
+      description: The unique identifier of the order in B2B Edition.
+      example: 12345
+      readOnly: true
+    bcOrderId:
+      type: integer
+      description: The BigCommerce order ID.
+      example: 123
+      readOnly: true
+    bcOrderId_REQUEST:
+      properties:
+        bcOrderId:
+          type: integer
+          description: The BigCommerce order ID.
+          example: 123
+    totalIncTax:
+      type: number
+      format: float
+      example: 2210.47
+      minimum: 0
+      description: The order's total value including tax.
+    poNumber:
+      type: string
+      example: "04152025-0002"
+      description: The order's Purchase Order (PO), if used.
+    status:
+      type: string
+      example: "Awaiting Payment"
+      description: The default name of the order status. See [Order Statuses](/docs/rest-management/orders/order-status) for a complete list of accepted status names. - 
+      readOnly: true
+    customStatus:
+      type: string
+      example: "Invoice Sent"
+      description: The customized name of the order status.
+      readOnly: true
+    cartId:
+      type: integer
+      example: 095a15a6-8a27-4c20-b357-36b82e9d5929
+      description: The unique identifier of the cart generated for the order.
+      readOnly: true
+    items:
+      type: integer
+      example: 50
+      format: int32
+      description: The total quantity of products in the order.
+      readOnly: true
+    usdIncTax:
+      type: number
+      example: 2210.47
+      format: float
+      description: The order's total value in USD, including tax.
+      readOnly: true
+    companyId:
+      type: integer
+      format: int32
+      description: The unique numeric ID of the Company account.
+      example: 12345
+      readOnly: true
+    currencyCode:
+      type: string
+      example: "USD"
+      description: The three-letter code corresponding to the order’s currency.
+      readOnly: true
+    money:
+      type: array
+      description: Contains detailed information regarding the order's currency.
+      items:
+        properties:
+          currencyLocation:
+            type: string
+            description: Determines whether the currency symbol is added to the left or the right of order pricing.
+            example: "left"
+            enum:
+              - left
+              - right
+          currencyToken:
+            type: string
+            description: The currency symbol.
+            example: "$"
+          decimalToken:
+            type: string
+            description: The character used to separate the whole number from the decimal in order pricing.
+            example: "."
+          decimalPlaces:
+            type: integer
+            description: The number of decimal places used in order pricing.
+            example: 2
+          thousandsToken:
+            type: string
+            description: The character used to separate the hundredths and thousandths places in order pricing."
+            example: ","
+    statusCode:
+      type: integer
+      description: The numeric code associated with the order status. See [Order Statuses](/docs/rest-management/orders/order-status) for a complete list of accepted status names.
+      example: 7
+      readOnly: true
+    isArchived:
+      type: boolean
+      description: Indicates whether the order is archived.
+      example: false
+      readOnly: true
+      enum:
+        - true
+        - false
+    channelId:
+      type: integer
+      description: The storefront channel ID where the order was placed.
+      example: 1
+    channelName:
+      type: string
+      description: The name of the storefront channel where the order was placed.
+      example: "B2B Store"
+    legacyExtraFields:
+      properties:
+        extraInt1:
+          type: integer
+          description: A legacy integer extra field configuration that does not return data in newer stores.
+          example: 12345
+          nullable: true
+          readOnly: true
+        extraInt2:
+          type: integer
+          description: A legacy integer extra field configuration that does not return data in newer stores.
+          example: 12345
+          nullable: true
+          readOnly: true
+        extraInt3: 
+          type: integer
+          description: A legacy integer extra field configuration that does not return data in newer stores.
+          example: 12345
+          nullable: true
+          readOnly: true
+        extraInt4:
+          type: integer
+          description: A legacy integer extra field configuration that does not return data in newer stores.
+          example: 12345
+          nullable: true
+          readOnly: true
+        extraInt5:
+          type: integer
+          description: A legacy integer extra field configuration that does not return data in newer stores.
+          example: 12345
+          nullable: true
+          readOnly: true
+        extraStr1:
+          type: string
+          description: A legacy string extra field configuration that does not return data in newer stores.
+          example: "Great Buys Incorporated"
+          nullable: true
+          readOnly: true
+        extraStr2:
+          type: string
+          description: A legacy string extra field configuration that does not return data in newer stores.
+          example: "Great Buys Incorporated"
+          nullable: true
+          readOnly: true
+        extraStr3:
+          type: string
+          description: A legacy string extra field configuration that does not return data in newer stores.
+          example: "Great Buys Incorporated"
+          nullable: true
+          readOnly: true
+        extraStr4:
+          type: string
+          description: A legacy string extra field configuration that does not return data in newer stores.
+          example: "Great Buys Incorporated"
+          nullable: true
+          readOnly: true
+        extraStr5:
+          type: string
+          description: A legacy string extra field configuration that does not return data in newer stores.
+          example: "Great Buys Incorporated"
+          nullable: true
+          readOnly: true
+        extraText:
+          type: string
+          description: A legacy text extra field configuration that does not return data in newer stores.
+          example: "Great Buys Incorporated"
+          nullable: true
+          readOnly: true
+    extraInfo:
+      type: array
+      description: Contains billing and shipping address identifiers.
+      items:
+        properties:
+          billingAddressId:
+            type: integer
+            description: The unique identifier for billing address in the Company account.
+            example: 12345
+          shippingAddressId:
+            type: integer
+            description: The unique identifier for shipping address in the Company account.
+            example: 12345
+    extraField_BASIC:
+      properties:
+        extraFields:
+          type: array
+          description: Contains extra field information associated with the order.
+          items:
+            properties:
+              fieldName:
+                type: string
+                description: The name of the order extra field.
+                example: "Fintech ID"
+              fieldValue:
+                type: string
+                description: The value of the order extra field.
+                example: "1234567890"
+    createdAt:
+      type: integer
+      format: time
+      description: The [Unix timestamp](https://www.unixtimestamp.com/) for when the order was created. This is a read-only field.
+      example: 1744735719
+    updatedAt:
+      type: integer
+      format: time
+      description: The [Unix timestamp](https://www.unixtimestamp.com/) for when the order was last updated. This is a read-only field.
+      example: 1744735734
+    customerId:
+      type: integer
+      description: The ID of a BigCommerce customer account with a corresponding Company user account.
+      example: 321
+    isInvoiceOrder:
+      type: integer
+      description: Indicates whether or not the order is an invoice payment. Standard orders are `0`, while invoice payment orders are `1`.
+      example: 0
+      readOnly: true
+    invoiceId:
+      type: integer
+      description: The unique identifier for the invoice associated with an invoice payment order, if applicable.
+      example: 12345
+      readOnly: true
+      nullable: true
+    invoiceNumber:
+      type: integer
+      description: The invoice number associated with an invoice payment order, if applicable.
+      example: 12345678
+      readOnly: true
+      nullable: true
+    invoiceStatus:
+      type: integer
+      description: |-
+        The status code of the invoice associated with an invoice payment order, if applicable. The numeric codes correspond to the following statuses:
+
+        - 0 - Open
+        - 1 - Partially Paid
+        - 2 - Paid
+      example: 2
+      readOnly: true
+      nullable: true
+    meta_full:
+      type: object
+      properties:
+        pagination:
+          type: object
+          properties:
+            totalCount:
+              type: integer
+              description: The total number of records available.
+              example: 100
+            limit:
+              type: integer
+              description: The number of records returned per page.
+              example: 10
+            offset:
+              type: integer
+              description: The number of records skipped before returning the first record.
+              example: 0
+        message:
+          type: string
+          default: "SUCCESS"
+    orderProducts:
+      properties:
+        id:
+          type: integer
+          description: The unique identifier for the base product.
+          example: 12345
+          readOnly: true
+        productId:
+          type: integer
+          description: The unique identifier for the base product.
+          example: 12345
+          readOnly: true
+        createdAt:
+          type: integer
+          format: time
+          description: The [Unix timestamp](https://www.unixtimestamp.com/) for when the order was created. This is a read-only field.
+          example: 1744735719
+          readOnly: true
+        updatedAt:
+          type: integer
+          format: time
+          description: The [Unix timestamp](https://www.unixtimestamp.com/) for when the order was last updated. This is a read-only field.
+          example: 1744735734
+          readOnly: true
+        productName:
+          type: string
+          description: The name of the product.
+          example: "The Planter by Rustic Roots"
+        variantSku:
+          type: string
+          description: The product's SKU.
+          example: "CER-POT-2-SL"
+        variantId:
+          type: integer
+          description: The unique variant ID for the product.
+          example: 74669
+        productBrandName:
+          type: string
+          description: The product's brand.
+          example: "Rustic Roots"
+        quantity:
+          type: integer
+          description: Quantity number of product in this order.
+          example: 5
+        options:
+          type: array
+          description: Contains information about the product's options.
+          items:
+            properties:
+              id:
+                type: integer
+                description: The unique numerical ID of the option; increments sequentially.
+                example: 129
+              optionId:
+                type: integer
+                description: The numeric ID of the associated option.
+                example: 4243
+              productOptionId:
+                type: integer
+                description: The numeric ID of the option within the order.
+                example: 258
+              orderProductId:
+                type: integer
+                description: The unique identifier for the order product.
+                example: 3773
+              displayName:
+                type: string
+                description: Alias for `displayNameCustomer`. The product option name that is shown to customer in the storefront.
+                example: "Color"
+              displayNameCustomer:
+                type: string
+                description: The product option name that is shown to customer in the storefront.
+                example: "Color"
+              displayNameMerchant:
+                type: string
+                description: The internal option name in the control panel.
+                example: "Color"
+              displayValue:
+                type: string
+                description: Alias for `displayValueCustomer`. The product option value that is shown to customer in storefront.
+                example: "Slate"
+              displayValueCustomer:
+                type: string
+                description: The product option value that is shown to customer in storefront.
+                example: "Slate"
+              displayValueMerchant:
+                type: string
+                description: The internal option value name in the control panel.
+                example: "Slate"
+              value:
+                type: integer
+                description: The unique identifier for the product’s selected option value.
+                example: 18836
+              type:
+                type: string
+                description: The type of option, which determines how it will display on the storefront.
+                example: "Multiple choice"
+              name:
+                type: string
+                description: The option's name, as used internally. Options given an existing name have a numeric string added to them.
+                example: "Color1736973439-63261"
+              displayStyle:
+                type: string
+                description: Indicates how a multiple choice option is displayed on the storefront.
+                example: "Rectangle"
+    orderExtraFields:
+      properties:
+        id:
+          type: integer
+          description: The unique identifier for a order extra field.
+          example: 9798
+        uuid:
+          type: integer
+          description: An external ID assigned to the order extra field in a third-party system, such as an ERP.
+          example: 123456
+        fieldName:
+          type: string
+          description: The name of the order extra field.
+          example: "Fintech ID"
+        fieldType:
+          type: integer
+          description: |-
+            The type of data that can be added as the extra field's value. This field uses numeric values to represent the data type, as follows:
+
+            - 0 - Text
+            - 1 - Multi-line text
+            - 2 - Number
+            - 3 - dropdown
+          example: 0
+          enum:
+            - 0
+            - 1
+            - 2
+            - 3
+        isRequired:
+          type: boolean
+          description: Indicates whether or not the extra field must be filled out on orders.
+          example: true
+        isUnique:
+          type: boolean
+          description: Indicates whether or not unique values are required for the extra field. Specifically if `true`, no two orders may have the same value for the field.
+          example: false
+        visibleToEnduser:
+          type: boolean
+          description: Indicates whether or not the extra field is visible on the storefront.
+          example: true
+        configType:
+          type: integer
+          description: Indicates whether an extra field is built-in (`1`) or user-defined (`2`).
+          example: 2
+        defaultValue:
+          type: string
+          description: The default value configured for the extra field.
+          example: "Enter your Fintech ID here."
+        labelName:
+          type: string
+          description: The label name of the extra field, which is displayed to buyers.
+          example: "Fintech ID"
+        maximumLength:
+          type: number
+          description: The maximum character length of the value entered for the extra field. This only applies to extra fields with a `fieldType` of `0` (text).
+          example: 100
+        numberOfRows:
+          type: number
+          description: The maximum number or text rows for the value entered for the extra field. This only applies to extra fields with a `fieldType` of `1` (multi-line text).
+          example: 5
+        maximumValue:
+          type: number
+          description: The maximum numeric value that can be entered for the extra field. This only applies to extra fields with a `fieldType` of `2` (number).
+          example: 1000
+        listOfValues:
+          type: array
+          description: The available options that can be selected for the extra field. This only applies to extra fields with a `fieldType` of `3` (dropdown).
+          items:
+            type: string
+            example:
+              - "Retail"
+              - "Automotive"
+              - "Manufacturing"
+    orderData_ALL:
+      properties:
+        id:
+          $ref: "#/components/schemas/id"
+        bcOrderId:
+          $ref: "#/components/schemas/bcOrderId"
+        totalIncTax:
+          $ref: "#/components/schemas/totalIncTax"
+        poNumber:
+          $ref: "#/components/schemas/poNumber"
+        status:
+          $ref: "#/components/schemas/status"
+        customStatus:
+          $ref: "#/components/schemas/customStatus"
+        cartId:
+          $ref: "#/components/schemas/cartId"
+        items:
+          $ref: "#/components/schemas/items"
+        usdIncTax:
+          $ref: "#/components/schemas/usdIncTax"
+        companyId:
+          $ref: "#/components/schemas/companyId"
+        currencyCode:
+          $ref: "#/components/schemas/currencyCode"
+        money:
+          $ref: "#/components/schemas/money"
+        statusCode:
+          $ref: "#/components/schemas/statusCode"
+        isArchived:
+          $ref: "#/components/schemas/isArchived"
+        channelId:
+          $ref: "#/components/schemas/channelId"
+        channelName:
+          $ref: "#/components/schemas/channelName"
+        extraInt1:
+          $ref: "#/components/schemas/legacyExtraFields/properties/extraInt1"
+        extraInt2:
+          $ref: "#/components/schemas/legacyExtraFields/properties/extraInt2"
+        extraInt3:
+          $ref: "#/components/schemas/legacyExtraFields/properties/extraInt3"
+        extraInt4:
+          $ref: "#/components/schemas/legacyExtraFields/properties/extraInt4"
+        extraInt5:
+          $ref: "#/components/schemas/legacyExtraFields/properties/extraInt5"
+        extraStr1:
+          $ref: "#/components/schemas/legacyExtraFields/properties/extraStr1"
+        extraStr2:
+          $ref: "#/components/schemas/legacyExtraFields/properties/extraStr2"
+        extraStr3:
+          $ref: "#/components/schemas/legacyExtraFields/properties/extraStr3"
+        extraStr4:
+          $ref: "#/components/schemas/legacyExtraFields/properties/extraStr4"
+        extraStr5:
+          $ref: "#/components/schemas/legacyExtraFields/properties/extraStr5"
+        extraText:
+          $ref: "#/components/schemas/legacyExtraFields/properties/extraText"
+        extraInfo:
+          $ref: "#/components/schemas/extraInfo"
+        extraFields:
+          $ref: "#/components/schemas/extraField_BASIC/properties/extraFields"
+        createdAt:
+          $ref: "#/components/schemas/createdAt"
+        updatedAt:
+          $ref: "#/components/schemas/updatedAt"
+    orderData_DETAIL:
+      properties:
+        id:
+          $ref: "#/components/schemas/id"
+        bcOrderId:
+          $ref: "#/components/schemas/bcOrderId"
+        totalIncTax:
+          $ref: "#/components/schemas/totalIncTax"
+        poNumber:
+          $ref: "#/components/schemas/poNumber"
+        status:
+          $ref: "#/components/schemas/status"
+        customStatus:
+          $ref: "#/components/schemas/customStatus"
+        cartId:
+          $ref: "#/components/schemas/cartId"
+        items:
+          $ref: "#/components/schemas/items"
+        usdIncTax:
+          $ref: "#/components/schemas/usdIncTax"
+        companyId:
+          $ref: "#/components/schemas/companyId"
+        currencyCode:
+          $ref: "#/components/schemas/currencyCode"
+        money:
+          $ref: "#/components/schemas/money"
+        statusCode:
+          $ref: "#/components/schemas/statusCode"
+        isArchived:
+          $ref: "#/components/schemas/isArchived"
+        channelId:
+          $ref: "#/components/schemas/channelId"
+        channelName:
+          $ref: "#/components/schemas/channelName"
+        isInvoiceOrder:
+          $ref: "#/components/schemas/isInvoiceOrder"
+        invoiceId:
+          $ref: "#/components/schemas/invoiceId"
+        invoiceNumber:
+          $ref: "#/components/schemas/invoiceNumber"
+        invoiceStatus:
+          $ref: "#/components/schemas/invoiceStatus"
+        extraInt1:
+          $ref: "#/components/schemas/legacyExtraFields/properties/extraInt1"
+        extraInt2:
+          $ref: "#/components/schemas/legacyExtraFields/properties/extraInt2"
+        extraInt3:
+          $ref: "#/components/schemas/legacyExtraFields/properties/extraInt3"
+        extraInt4:
+          $ref: "#/components/schemas/legacyExtraFields/properties/extraInt4"
+        extraInt5:
+          $ref: "#/components/schemas/legacyExtraFields/properties/extraInt5"
+        extraStr1:
+          $ref: "#/components/schemas/legacyExtraFields/properties/extraStr1"
+        extraStr2:
+          $ref: "#/components/schemas/legacyExtraFields/properties/extraStr2"
+        extraStr3:
+          $ref: "#/components/schemas/legacyExtraFields/properties/extraStr3"
+        extraStr4:
+          $ref: "#/components/schemas/legacyExtraFields/properties/extraStr4"
+        extraStr5:
+          $ref: "#/components/schemas/legacyExtraFields/properties/extraStr5"
+        extraText:
+          $ref: "#/components/schemas/legacyExtraFields/properties/extraText"
+        extraInfo:
+          $ref: "#/components/schemas/extraInfo"
+        extraFields:
+          $ref: "#/components/schemas/extraField_BASIC/properties/extraFields"
+        createdAt:
+          $ref: "#/components/schemas/createdAt"
+        updatedAt:
+          $ref: "#/components/schemas/updatedAt"
+    createOrder:
+      properties:
+        bcOrderId:
+          $ref: "#/components/schemas/bcOrderId_REQUEST/properties/bcOrderId"
+        customerId:
+          $ref: "#/components/schemas/customerId"
+        poNumber:
+          $ref: "#/components/schemas/poNumber"
+        extraFields:
+          $ref: "#/components/schemas/extraField_BASIC/properties/extraFields"
+      required:
+        - bcOrderId
+        - customerId
+    responseObject:
+      type: object
+      properties:
+        code:
+          type: integer
+          description: "HTTP Response Code"
+          default: '200'
+        data:
+          type: object
+        meta:
+          $ref: "#/components/schemas/meta_full"
+    responseArray:
+      type: object
+      properties:
+        code:
+          type: integer
+          description: "HTTP Response Code"
+          default: '200'
+        data:
+          type: array
+          items:
+            type: object
+        meta:
+          $ref: "#/components/schemas/meta_full"
+    responseSuccess:
+      allOf:
+        - $ref: "#/components/schemas/responseObject"
+        - properties:
+            code:
+              default: 200
   responses:
     '400':
-      description: Request Error
+      description: |-
+        Bad Request
+
+        This error occurs if the order has existed for longer than 10 seconds before making the request.
       content:
         application/json:
           schema:
@@ -600,72 +1381,20 @@ components:
               code:
                 type: number
               data:
-                type: array
-                items:
-                  type: object
-                  properties: {}
+                type: object
               meta:
                 type: object
                 properties:
                   message:
                     type: string
                     minLength: 1
+                    default: "The order already exists."
                 required:
                   - message
             required:
               - code
               - data
               - meta
-            x-examples:
-              example-1:
-                code: 400
-                data: []
-                meta:
-                  message: The order already exists.
-          examples:
-            example-1:
-              value:
-                code: 400
-                data: []
-                meta:
-                  message: The order already exists.
-    '404':
-      description: Resource not found error
-      content:
-        application/json:
-          schema:
-            description: ''
-            type: object
-            x-examples:
-              example-1:
-                code: 404
-                data: {}
-                meta:
-                  message: Not Found Error
-            properties:
-              code:
-                type: integer
-                example: 404
-              data:
-                type: object
-                properties: {}
-              meta:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: Not Found Error
-                    description: Error message of this response
-            required:
-              - code
-              - data
-          examples:
-            example-1:
-              value:
-                code: 404
-                data: {}
-                meta:
-                  message: Not Found Error
   examples: {}
   securitySchemes:
     authToken:

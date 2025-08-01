@@ -1,21 +1,52 @@
 openapi: '3.0.0'
 info:
-  title: Address
+  title: Addresses
   version: v3
-  description: BigCommerce B2B Edition Address
+  description: |-
+    B2B Edition Company users can store several billing and shipping addresses to their Company account. This allows buyers in the Company to quickly supply address information to quotes, invoices, and orders.
+
+    The v3 Server to Server Addresses API allows you to manage billing and shipping addresses on behalf of your Company accounts. Use these endpoints to retrieve addresses, edit their details, and create new ones.
   contact:
     name: BigCommerce
     url: 'https://www.bigcommerce.com'
     email: support@bigcommerce.com
 servers:
   - url: 'https://api-b2b.bigcommerce.com/api/v3/io'
+tags:
+  - name: Addresses
 paths:
   /countries:
     parameters: []
     get:
-      summary: Get Countries
+      summary: Get a Country
       tags:
-        - Address
+        - Addresses
+      operationId: get-addresses-countries-countryName-code
+      description: |-
+        Retrieves country information based on the country name or two-letter code entered in the parameters. The response can be used to provide a valid country name or code in Company addresses.
+
+        Use the `searchType` parameter to specify whether you are searching by a country's name or its two-letter ISO code, and then add the appropriate value for the country to the `q` parameter. Use `https://store-{store_hash}.mybigcommerce.com/internalapi/v1/store/countries` to return a list of valid country names and codes for the `q` value.
+      parameters:
+        - schema:
+            type: integer
+            enum:
+              - 0
+              - 1
+            default: 0
+            example: 0
+          in: query
+          name: searchType
+          description: Determines whether you are searching by a country's name (`0`) or its two-letter ISO code (`1`).
+          required: true
+        - schema:
+            type: string
+            example: US (the searchType should be 1);  United States (the searchType should be 0)
+          in: query
+          name: q
+          description: The country's name or its two-letter ISO code, depending on the specified `searchType`. Use `https://store-{store_hash}.mybigcommerce.com/internalapi/v1/store/countries` to return a list of valid country names and codes.
+          required: true
+      security:
+        - authToken: []
       responses:
         '200':
           description: OK
@@ -23,19 +54,11 @@ paths:
           content:
             application/json:
               schema:
-                description: ''
                 type: object
-                x-examples:
-                  example-1:
-                    code: 200
-                    data:
-                      - countryCode: US
-                        countryName: United States
-                    meta:
-                      message: SUCCESS
                 properties:
                   code:
                     type: number
+                    default: 200
                   data:
                     required:
                       - countryCode
@@ -43,34 +66,23 @@ paths:
                     type: object
                     properties:
                       countryCode:
-                        type: string
-                        minLength: 1
+                        $ref: '#/components/schemas/countryCode'
                       countryName:
-                        type: string
-                        minLength: 1
+                        $ref: '#/components/schemas/countryName'
                   meta:
                     type: object
-                    required:
-                      - message
                     properties:
                       message:
-                        type: string
-                        minLength: 1
+                        $ref: '#/components/schemas/meta_full/properties/message'
                 required:
                   - code
                   - data
                   - meta
-              examples:
-                example-1:
-                  value:
-                    code: 200
-                    data:
-                      countryCode: US
-                      countryName: United States
-                    meta:
-                      message: SUCCESS
         '404':
-          description: Not Found
+          description: |-
+            Not Found
+
+            This error occurs if the `country` value is missing or invalid. Confirm that the value is formatted in accordance with the specified `searchType`.
           content:
             application/json:
               schema:
@@ -94,12 +106,6 @@ paths:
                   - code
                   - data
                   - meta
-                x-examples:
-                  example-1:
-                    code: 404
-                    data: {}
-                    meta:
-                      message: Resource not found
               examples:
                 example-1:
                   value:
@@ -107,89 +113,112 @@ paths:
                     data: {}
                     meta:
                       message: Resource not found
-      operationId: get-addresses-countries-countryName-code
-      description: Get a country's info from its code/name.
-      parameters:
-        - schema:
-            type: string
-            enum:
-              - '0'
-              - '1'
-            default: '0'
-            example: '0'
-          in: query
-          name: searchType
-          description: 'The search type, 0: Get the country code from the input country name; 1: Get the country name from the input country code.'
-          required: true
-        - schema:
-            type: string
-            example: US (the searchType should be 1);  United States (the searchType should be 0)
-          in: query
-          name: q
-          description: Input country name/code
-          required: true
-      security:
-        - authToken: []
   /states:
     parameters: []
     get:
-      summary: Get States
+      summary: Get a State
       tags:
-        - Address
+        - Addresses
+      operationId: get-addresses-states-stateName-code
+      description: |-
+        Retrieves state or province information based on the state name or two-letter code entered in the parameters. The response can be used to provide a valid state name or code in Company addresses.
+
+        Use the `country` parameter to specify the country associated with the queried state. If left blank, the endpoint uses the United States by default.
+        
+        Note that only the countries listed below will return state or province values. When [creating](#create-a-company-address) or [updating](#update-an-address) addresses in these countries, you must include state information.
+
+        * Argentina  
+        * Australia  
+        * Austria  
+        * Brazil  
+        * Canada  
+        * Chile  
+        * Germany  
+        * India  
+        * Indonesia  
+        * Ireland  
+        * Italy  
+        * Japan  
+        * Malaysia  
+        * Mexico  
+        * Myanmar  
+        * New Zealand  
+        * Philippines  
+        * Qatar  
+        * Romania  
+        * South Africa  
+        * Spain  
+        * Switzerland  
+        * United Arab Emirates  
+        * United States (default)
+
+        Use the `searchType` parameter to specify whether you are searching by a state's name or its two-letter ISO code, and then add the appropriate value for the state to the `q` parameter. Use `https://store-{store_hash}.mybigcommerce.com/internalapi/v1/store/countries` to return a list of valid state names and codes for each country.
+      security:
+        - authToken: []
+      parameters:
+        - schema:
+            type: integer
+            enum:
+              - 0
+              - 1
+            default: 0
+            example: 0
+          in: query
+          name: searchType
+          description: Determines whether you are searching by a state or province's name (`0`) or its two-letter ISO code (`1`). This parameter also defines the value type for the `country` parameter.
+          required: true
+        - schema:
+            type: string
+            example: TX (the searchType should be 1);  Texas (the searchType should be 0)
+          in: query
+          name: q
+          description: |-
+            The state's name or its two-letter ISO code, depending on the specified `searchType`. Use `https://store-{store_hash}.mybigcommerce.com/internalapi/v1/store/countries` to return a list of valid country names and codes.
+
+            **Note:** The state information entered for the parameter must correspond to the country specified in the `country` value.
+          required: true
+        - schema:
+            type: string
+            example: US(the  searchType should be 1), United States(the searchType should be 0)
+            default: US / United States
+          in: query
+          name: country
+          description: The country's name or its two-letter ISO code, depending on the specified `searchType`. Use `https://store-{store_hash}.mybigcommerce.com/internalapi/v1/store/countries` to return a list of valid country names and codes.
       responses:
         '200':
           description: OK
           content:
             application/json:
               schema:
-                description: ''
                 type: object
-                x-examples:
-                  example-1:
-                    code: 200
-                    data:
-                      - stateCode: TX
-                        stateName: Texas
-                    meta:
-                      message: SUCCESS
                 properties:
                   code:
                     type: number
+                    default: 200
                   data:
-                    type: object
                     required:
                       - stateCode
-                      - stateName
+                      - stateyName
+                    type: object
                     properties:
-                      stateCode:
-                        type: string
-                        minLength: 1
-                      stateName:
-                        type: string
-                        minLength: 1
+                      countryCode:
+                        $ref: '#/components/schemas/stateCode'
+                      countryName:
+                        $ref: '#/components/schemas/stateName'
                   meta:
                     type: object
-                    required:
-                      - message
                     properties:
                       message:
-                        type: string
-                        minLength: 1
+                        $ref: '#/components/schemas/meta_full/properties/message'
                 required:
                   - code
                   - data
                   - meta
-              examples:
-                Get states success:
-                  value:
-                    code: 200
-                    data:
-                      stateCode: TX
-                      stateName: Texas
-                    meta:
-                      message: SUCCESS
         '404':
-          description: Not Found
+          description: |-
+            Not Found
+
+            This error occurs if the state name or code does not match the country specified in the country parameter. When querying states/provinces outside of the United States, you must use the `country` parameter, and its value must be formatted in accordance with the `searchBy` parameter.
           content:
             application/json:
               schema:
@@ -213,12 +242,6 @@ paths:
                   - code
                   - data
                   - meta
-                x-examples:
-                  example-1:
-                    code: 404
-                    data: {}
-                    meta:
-                      message: Resource not found
               examples:
                 Resource not found:
                   value:
@@ -226,150 +249,16 @@ paths:
                     data: {}
                     meta:
                       message: Please enter a valid state name or state abbreviation for the country.
-      operationId: get-addresses-states-stateName-code
-      description: Get a state's info from its code/name.
-      security:
-        - authToken: []
-      parameters:
-        - schema:
-            type: string
-            enum:
-              - '0'
-              - '1'
-            default: '0'
-            example: '0'
-          in: query
-          name: searchType
-          description: 'The search type, 0: Get the state code from the input state name; 1: Get the state name from the input state code.'
-          required: true
-        - schema:
-            type: string
-            example: TX (the searchType should be 1);  Texas (the searchType should be 0)
-          in: query
-          name: q
-          description: Input state name/code
-          required: true
-        - schema:
-            type: string
-            example: 'US(the  searchType should be 1), United States(the searchType should be 0)'
-            default: US / United States
-          in: query
-          name: country
-          description: 'Country code or name,it should correspond to the search type you have chosen.'
   /addresses:
     get:
-      summary: Get Addresses
+      summary: Get All Addresses
       tags:
-        - Address
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  code:
-                    type: number
-                  data:
-                    type: array
-                    uniqueItems: true
-                    minItems: 1
-                    items:
-                      $ref: https://raw.githubusercontent.com/bigcommerce/docs/main/docs/b2b-edition/models/address/address.yaml
-                  meta:
-                    type: object
-                    required:
-                      - message
-                      - pagination
-                    properties:
-                      message:
-                        type: string
-                        minLength: 1
-                      pagination:
-                        type: object
-                        required:
-                          - limit
-                          - offset
-                          - totalCount
-                        properties:
-                          limit:
-                            type: number
-                          offset:
-                            type: number
-                          totalCount:
-                            type: number
-                required:
-                  - code
-                  - data
-                  - meta
-              example:
-                code: 200
-                data:
-                  - addressId: '6'
-                    addressLine1: 123 Main Street
-                    addressLine2: Blvd
-                    city: Austin
-                    country:
-                      countryCode: US
-                      countryName: United States
-                    firstName: Jane
-                    isBilling: true
-                    isDefaultBilling: true
-                    isDefaultShipping: true
-                    isShipping: true
-                    lastName: Doe
-                    phoneNumber: '11111111111'
-                    state:
-                      stateCode: TX
-                      stateName: Texas
-                    zipCode: '78751'
-                meta:
-                  message: SUCCESS
-                  pagination:
-                    limit: 1
-                    offset: 1
-                    totalCount: 989
-        '404':
-          description: Not Found
-          content:
-            application/json:
-              schema:
-                description: ''
-                type: object
-                x-examples:
-                  example-1:
-                    code: 200
-                    data: {}
-                    meta:
-                      message: Resource not found
-                properties:
-                  code:
-                    type: integer
-                  data:
-                    type: object
-                    properties: {}
-                  meta:
-                    type: object
-                    required:
-                      - message
-                    properties:
-                      message:
-                        type: string
-                        minLength: 1
-                required:
-                  - code
-                  - data
-                  - meta
-              examples:
-                example-1:
-                  value:
-                    code: 404
-                    data: {}
-                    meta:
-                      message: Resource not found
+        - Addresses
       operationId: get-companies
-      description: Get an addresses
+      description: |-
+        Retrieves a list of addresses across all Company accounts. Use the parameters to filter results by different attributes like creation date, Company account, and country.
+
+        By default, the response does not include address extra fields and values. To include this information, use the `isIncludeExtraFields` parameter and provide a value of `1`.
       security:
         - authToken: []
       parameters:
@@ -377,852 +266,116 @@ paths:
         - $ref: '#/components/parameters/offset'
         - name: minModified
           in: query
-          description: Minimum modified timestamp
+          description: Enter a [Unix timestamp](https://www.unixtimestamp.com/) to retrieve all addresses updated after that time.
           allowEmptyValue: true
           schema:
-            type: number
+            type: integer
             format: time
+            example: 1622619778
         - name: maxModified
           in: query
-          description: Maximum modified timestamp
+          description: Enter a [Unix timestamp](https://www.unixtimestamp.com/) to retrieve all addresses updated before that time.
           allowEmptyValue: true
           schema:
-            type: number
+            type: integer
+            format: time
+            example: 1622619778
         - name: minCreated
           in: query
-          description: Minimum created timestamp
+          description: Enter a [Unix timestamp](https://www.unixtimestamp.com/) to retrieve all addresses created after that time.
           allowEmptyValue: true
           schema:
-            type: number
+            type: integer
+            format: time
+            example: 1622619778
         - name: maxCreated
           in: query
-          description: Maximum created timestamp
+          description: Enter a [Unix timestamp](https://www.unixtimestamp.com/) to retrieve all addresses created before that time.
           allowEmptyValue: true
           schema:
-            type: number
+            type: integer
+            format: time
+            example: 1622619778
         - schema:
             type: integer
-            example: 12
+            example: 123456
           in: query
           name: companyId
-          description: Company ID
+          description: Enter the unique numeric ID of the Company account to return its addresses.
         - schema:
             type: boolean
+            example: true
           in: query
           name: isBilling
+          description: Indicate whether you want to filter for or against billing addresses in the response.
         - schema:
             type: boolean
+            example: true
           in: query
           name: isShipping
+          description: Indicate whether you want to filter for or against shipping addresses in the response.
         - schema:
-            type: string
-            default: '0'
+            type: integer
+            default: 0
             enum:
-              - '0'
-              - '1'
+              - 0
+              - 1
           in: query
           name: isIncludeExtraFields
-          description: Is show extra fields in the response.
+          description: Indicate whether you want to include (`1`) or exclude (`0`) address extra fields in the response.
         - schema:
             type: string
           in: query
           name: firstName
-          description: Address first name filter
+          description: Filter for addresses with a specific first name.
+          example: "Marie"
         - schema:
             type: string
           in: query
           name: lastName
-          description: Address last name filter
+          description: Filter for addresses with a specific last name.
+          example: "Curie"
         - schema:
             type: string
           in: query
           name: address
-          description: Address address filter
+          description: Enter the first or second address line to return relevant addresses.
+          example: "512 Bluebonnet Lane"
         - schema:
             type: string
           in: query
           name: city
-          description: Address city filter
+          description: Filter for addresses from a specific city.
+          example: "Austin"
         - schema:
             type: string
           in: query
           name: country
-          description: Address country filter
+          description: Filter for addresses from a specific country. Use the country's full name or its two-letter ISO code.
+          example: "United States"
         - schema:
             type: string
           in: query
           name: state
-          description: Address state filter
+          description: Filter for addresses from a specific state or province. Use the state's full name or its two-letter ISO code.
+          example: "Texas"
         - schema:
             type: string
           in: query
           name: zipCode
-          description: Address zip code filter
+          description: Filter for addresses from a specific postal code.
+          example: "78704"
         - schema:
             type: string
           in: query
           name: phoneNumber
-          description: Address phone number filter
+          description: Filter for addresses with a specific phone number.
+          example: "512-200-1234"
         - schema:
             type: string
           in: query
           name: 'externalId[]'
-          description: External ID filter
-    parameters: []
-    post:
-      summary: Create a Company Address
-      operationId: post-companies-companyId-addresses
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                description: ''
-                type: object
-                x-examples:
-                  example-1:
-                    code: 200
-                    data:
-                      addressId: '147340'
-                    meta:
-                      message: SUCCESS
-                properties:
-                  code:
-                    type: integer
-                  data:
-                    type: object
-                    required:
-                      - addressId
-                    properties:
-                      addressId:
-                        type: string
-                        minLength: 1
-                  meta:
-                    type: object
-                    required:
-                      - message
-                    properties:
-                      message:
-                        type: string
-                        minLength: 1
-                required:
-                  - code
-                  - data
-                  - meta
-              examples:
-                example-1:
-                  value:
-                    code: 200
-                    data:
-                      addressId: '147340'
-                    meta:
-                      message: SUCCESS
-      description: Create a company's address
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: https://raw.githubusercontent.com/bigcommerce/docs/main/docs/b2b-edition/models/address/address.yaml
-            examples: {}
-      tags:
-        - Address
-      security:
-        - authToken: []
-  '/addresses/{addressId}':
-    parameters:
-      - schema:
-          type: string
-        name: addressId
-        in: path
-        required: true
-    get:
-      summary: Get an Address
-      tags:
-        - Address
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: object
-                x-examples:
-                  example-1:
-                    code: 200
-                    data:
-                      addressId: 6
-                      addressLine1: 123 Main Street
-                      addressLine2: Blvd
-                      city: Austin
-                      country:
-                        countryCode: US
-                        countryName: United States
-                      firstName: Jane
-                      isBilling: true
-                      isDefaultBilling: true
-                      isDefaultShipping: true
-                      isShipping: true
-                      lastName: Doe
-                      phoneNumber: '11111111111'
-                      state:
-                        stateCode: TX
-                        stateName: Texas
-                      zipCode: '78751'
-                      companyId: 12
-                    meta:
-                      message: SUCCESS
-                properties:
-                  code:
-                    type: number
-                  data:
-                    $ref: https://raw.githubusercontent.com/bigcommerce/docs/main/docs/b2b-edition/models/address/address.yaml
-                  meta:
-                    type: object
-                    required:
-                      - message
-                    properties:
-                      message:
-                        type: string
-                        minLength: 1
-                required:
-                  - code
-                  - data
-                  - meta
-              examples: {}
-        '404':
-          description: Not Found
-          content:
-            application/json:
-              schema:
-                description: ''
-                type: object
-                x-examples:
-                  example-1:
-                    code: 200
-                    data: {}
-                    meta:
-                      message: Resource not found
-                properties:
-                  code:
-                    type: number
-                  data:
-                    type: object
-                    properties: {}
-                  meta:
-                    type: object
-                    required:
-                      - message
-                    properties:
-                      message:
-                        type: string
-                        minLength: 1
-                required:
-                  - code
-                  - meta
-              examples:
-                example-1:
-                  value:
-                    code: 404
-                    data: {}
-                    meta:
-                      message: Resource not found
-      operationId: get-companies-companyId-addresses-addressId
-      description: Get an address detail info
-      security:
-        - authToken: []
-    put:
-      summary: Update an Address
-      operationId: put-companies-companyId-addresses-addressId
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                description: ''
-                type: object
-                properties:
-                  code:
-                    type: number
-                  data:
-                    type: object
-                    properties:
-                      addressId:
-                        type: string
-                        minLength: 1
-                    required:
-                      - addressId
-                  meta:
-                    type: object
-                    properties:
-                      message:
-                        type: string
-                        minLength: 1
-                    required:
-                      - message
-                required:
-                  - code
-                  - data
-                  - meta
-                x-examples:
-                  example-1:
-                    code: 200
-                    data:
-                      addressId: '147340'
-                    meta:
-                      message: SUCCESS
-              examples:
-                example-1:
-                  value:
-                    code: 200
-                    data:
-                      addressId: '147340'
-                    meta:
-                      message: SUCCESS
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                id:
-                  type: integer
-                  example: 1
-                  format: int32
-                  description: Unique numeric ID of this Address.
-                  readOnly: true
-                addressLine1:
-                  type: string
-                  minLength: 1
-                  example: 1600 Pennsylvania Avenue NW
-                  maxLength: 200
-                  description: Address line 1 of the Address Model.
-                addressLine2:
-                  type: string
-                  minLength: 1
-                  example: 'Washington, DC 22202'
-                  maxLength: 200
-                  description: Address line 2 of the Address Model.
-                city:
-                  type: string
-                  minLength: 1
-                  example: Austin
-                  maxLength: 100
-                  description: City of the Address Model.
-                firstName:
-                  type: string
-                  minLength: 1
-                  example: Jane
-                  maxLength: 100
-                  description: First name of the Address Model.
-                lastName:
-                  type: string
-                  minLength: 1
-                  example: Doe
-                  maxLength: 100
-                  description: Last name of the Address Model.
-                isBilling:
-                  type: boolean
-                  description: Is this address use for billing
-                isDefaultBilling:
-                  type: boolean
-                  description: Is default billing address of company
-                isDefaultShipping:
-                  type: boolean
-                  description: Is default shipping address of company
-                isShipping:
-                  type: boolean
-                  description: Is this address use for shipping
-                phoneNumber:
-                  type: string
-                  minLength: 1
-                  example: '11111111111'
-                  maxLength: 50
-                  description: Contact phone number of this address
-                zipCode:
-                  type: string
-                  minLength: 1
-                  maxLength: 50
-                  example: '78751'
-                  description: Zip code
-                companyId:
-                  type: integer
-                  example: 1840
-                  description: The company ID of this address owner
-                countryName:
-                  type: string
-                  description: Country name of the Address Model.
-                  minLength: 1
-                  maxLength: 150
-                  example: United States
-                countryCode:
-                  type: string
-                  description: Country code of the Address Model.
-                  minLength: 1
-                  maxLength: 50
-                  example: US
-                stateCode:
-                  type: string
-                  description: State code of the Address Model.
-                  example: TX
-                  minLength: 1
-                  maxLength: 50
-                stateName:
-                  type: string
-                  description: State name of the Address Model.
-                  example: Texas
-                  minLength: 1
-                  maxLength: 150
-                label:
-                  type: string
-                  description: Label of the Address Model
-                extraFields:
-                  type: array
-                  description: Extra fields of the address
-                  items:
-                    type: object
-                    properties:
-                      fieldName:
-                        type: string
-                        description: Field name that config in you store
-                      fieldValue:
-                        type: string
-                        description: Value of the extra field.
-                externalId:
-                  type: string
-            examples:
-              example-1:
-                value:
-                  id: 1
-                  addressLine1: string
-                  addressLine2: 'Washington, DC 22202'
-                  city: Austin
-                  firstName: Jane
-                  lastName: Doe
-                  isBilling: true
-                  isDefaultBilling: true
-                  isDefaultShipping: true
-                  isShipping: true
-                  phoneNumber: '11111111111'
-                  zipCode: '78751'
-                  companyId: 1840
-                  countryName: United States
-                  countryCode: US
-                  stateCode: TX
-                  stateName: Texas
-                  label: test
-                  extraFields: []
-                  externalId: '2'
-        description: ''
-      tags:
-        - Address
-      description: Update an address attributes
-      security:
-        - authToken: []
-    delete:
-      summary: Delete an Address
-      operationId: delete-companies-companyId-addresses-addressId
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                description: ''
-                type: object
-                properties:
-                  code:
-                    type: number
-                  data:
-                    type: object
-                    properties:
-                      addressId:
-                        type: string
-                        minLength: 1
-                    required:
-                      - addressId
-                  meta:
-                    type: object
-                    properties:
-                      message:
-                        type: string
-                        minLength: 1
-                    required:
-                      - message
-                required:
-                  - code
-                  - data
-                  - meta
-                x-examples:
-                  example-1:
-                    code: 200
-                    data:
-                      addressId: '147340'
-                    meta:
-                      message: SUCCESS
-              examples:
-                example-1:
-                  value:
-                    code: 200
-                    data:
-                      addressId: '147340'
-                    meta:
-                      message: SUCCESS
-      tags:
-        - Address
-      description: Delete an address
-      security:
-        - authToken: []
-  /addresses/bulk:
-    post:
-      summary: Bulk Create Addresses
-      operationId: post-addresses
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                description: ''
-                type: object
-                properties:
-                  code:
-                    type: number
-                  data:
-                    type: object
-                    properties: {}
-                  meta:
-                    type: object
-                    properties:
-                      message:
-                        type: string
-                        minLength: 1
-                    required:
-                      - message
-                required:
-                  - code
-                  - data
-                  - meta
-                x-examples:
-                  example-1:
-                    code: 200
-                    data: {}
-                    meta:
-                      message: SUCCESS
-              examples:
-                example-1:
-                  value:
-                    code: 0
-                    data: {}
-                    meta:
-                      message: string
-        '400':
-          description: 'Bad Request, some addresses created failed'
-          content:
-            application/json:
-              schema:
-                type: object
-                description: ''
-                properties:
-                  code:
-                    type: number
-                  data:
-                    type: object
-                    required:
-                      - errors
-                    properties:
-                      errors:
-                        minItems: 1
-                        uniqueItems: true
-                        type: array
-                        items:
-                          type: object
-                          properties:
-                            id:
-                              minLength: 1
-                              type: string
-                            _detail:
-                              type: string
-                          required:
-                            - id
-                            - _detail
-                  meta:
-                    type: object
-                    required:
-                      - message
-                    properties:
-                      message:
-                        minLength: 1
-                        type: string
-                required:
-                  - code
-                  - data
-                  - meta
-              examples:
-                example-1:
-                  value:
-                    code: 0
-                    data:
-                      errors:
-                        - id: string
-                          _detail: string
-                    meta:
-                      message: string
-            example-1:
-              example:
-                code: 400
-                data:
-                  errors:
-                    - id: '42'
-                      detail: ''
-                meta:
-                  message: 'Some companies updated failed, you can see these in errors.'
-        '404':
-          description: The resource was not found.
-          content:
-            application/json:
-              schema:
-                description: ''
-                type: object
-                x-examples:
-                  example-1:
-                    code: 0
-                    data:
-                      errors:
-                        - id: string
-                          detail: string
-                    meta:
-                      message: string
-                properties:
-                  code:
-                    type: number
-                  data:
-                    type: object
-                    required:
-                      - errors
-                    properties:
-                      errors:
-                        type: array
-                        uniqueItems: true
-                        minItems: 1
-                        items:
-                          type: object
-                          properties:
-                            id:
-                              type: string
-                              minLength: 1
-                            _detail:
-                              type: string
-                              minLength: 1
-                          required:
-                            - id
-                            - _detail
-                  meta:
-                    type: object
-                    required:
-                      - message
-                    properties:
-                      message:
-                        type: string
-                        minLength: 1
-                required:
-                  - code
-                  - data
-                  - meta
-              examples:
-                example-1:
-                  value:
-                    code: 0
-                    data:
-                      errors:
-                        - id: string
-                          _detail: string
-                    meta:
-                      message: string
-            example-1:
-              example:
-                code: 404
-                data:
-                  errors:
-                    - id: '42'
-                      detail: ''
-                meta:
-                  message: 'Some company resources are not found, and the companyIds are in the errors.'
-        '409':
-          description: Address was in conflict with another address. This is the result of duplicate unique values.
-          content:
-            application/json:
-              schema:
-                type: object
-                description: ''
-                properties:
-                  code:
-                    type: number
-                  data:
-                    type: object
-                    required:
-                      - errors
-                    properties:
-                      errors:
-                        minItems: 1
-                        uniqueItems: true
-                        type: array
-                        items:
-                          type: object
-                          properties:
-                            id:
-                              minLength: 1
-                              type: string
-                            _detail:
-                              type: string
-                          required:
-                            - id
-                            - _detail
-                  meta:
-                    type: object
-                    required:
-                      - message
-                    properties:
-                      message:
-                        minLength: 1
-                        type: string
-                required:
-                  - code
-                  - data
-                  - meta
-              examples:
-                example-1:
-                  value:
-                    code: 0
-                    data:
-                      errors:
-                        - id: string
-                          _detail: string
-                    meta:
-                      message: string
-            example-1:
-              example:
-                code: 409
-                data:
-                  errors:
-                    - id: '42'
-                      detail: ''
-                meta:
-                  message: Company was in conflict with another company
-        '413':
-          description: 'Request Entity Too Large. In normal conditions, bulk create or update method support 10 entities in one request.'
-          content:
-            application/json:
-              schema:
-                $ref: https://raw.githubusercontent.com/bigcommerce/docs/main/docs/b2b-edition/models/utils/response-413.yaml
-              examples:
-                example-1:
-                  value:
-                    code: 413
-                    meta:
-                      message: Request Entity Too Large
-                    data: {}
-        '422':
-          description: Address was not valid. This is the result of missing required fields or invalid data. See the response for more details.
-          content:
-            application/json:
-              schema:
-                description: ''
-                type: object
-                x-examples:
-                  example-1:
-                    code: 0
-                    data:
-                      errors:
-                        - id: string
-                          detail: string
-                    meta:
-                      message: string
-                properties:
-                  code:
-                    type: number
-                  data:
-                    type: object
-                    required:
-                      - errors
-                    properties:
-                      errors:
-                        type: array
-                        uniqueItems: true
-                        minItems: 1
-                        items:
-                          allOf:
-                            - type: object
-                              properties:
-                                id:
-                                  type: integer
-                                _detail:
-                                  type: string
-                                  minLength: 1
-                              required:
-                                - id
-                                - _detail
-                            - $ref: https://raw.githubusercontent.com/bigcommerce/docs/main/docs/b2b-edition/models/address/address.yaml
-                  meta:
-                    type: object
-                    required:
-                      - message
-                    properties:
-                      message:
-                        type: string
-                        minLength: 1
-                required:
-                  - code
-                  - data
-                  - meta
-              examples:
-                example-1:
-                  value:
-                    code: 0
-                    data:
-                      errors:
-                        - id: 1
-                          _detail: string
-                          addressLine1: 1600 Pennsylvania Avenue NW
-                          addressLine2: 'Washington, DC 22202'
-                          city: Austin
-                          country:
-                          countryCode: US
-                          countryName: United States
-                          firstName: Jane
-                          lastName: Doe
-                          isBilling: true
-                          isDefaultBilling: true
-                          isDefaultShipping: true
-                          isShipping: true
-                          phoneNumber: '11111111111'
-                          state:
-                            stateCode: TX
-                            stateName: Texas
-                          zipCode: '78751'
-                          companyId: "1840"
-                    meta:
-                      message: string
-      tags:
-        - Address
-      description: Bulk create addresses
-      security:
-        - authToken: []
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: array
-              items:
-                $ref: https://raw.githubusercontent.com/bigcommerce/docs/main/docs/b2b-edition/models/address/address.yaml
-            examples: {}
-    parameters: []
-  /addresses/extra-fields:
-    get:
-      summary: Get Address Extra Field Configs
-      tags:
-        - Address
+          description: Filter by an external ID assigned to addresses in a third-party system, such as an ERP.
       responses:
         '200':
           description: OK
@@ -1230,36 +383,226 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: https://raw.githubusercontent.com/bigcommerce/docs/main/docs/b2b-edition/models/utils/response-object.yaml
+                  - $ref: "#/components/schemas/responseSuccess"
                   - properties:
                       data:
-                        type: array
-                        items:
-                          $ref: https://raw.githubusercontent.com/bigcommerce/docs/main/docs/b2b-edition/models/extra_fields/extra_fields.yaml
-                      meta:
-                        $ref: https://raw.githubusercontent.com/bigcommerce/docs/main/docs/b2b-edition/models/utils/pagination.yaml
-                    type: object
-              examples:
-                example-1:
-                  value:
-                    code: 200
-                    data:
-                      - id: 1
-                        uuid: 2af143b0-3a78-4d16-af42-1f0f9a7bc85a
-                        fieldName: fax
-                        fieldType: 0
-                        isRequired: false
-                        isUnique: false
-                    meta:
-                      message: Success
-                      pagination:
-                        limit: 10
-                        offset: 0
-        '422':
-          description: Unprocessable Entity (WebDAV)
+                        $ref: '#/components/schemas/addressFields_GET'                  
+                required:
+                  - code
+                  - data
+                  - meta
+    parameters: []
+    post:
+      summary: Create a Company Address
+      operationId: post-companies-companyId-addresses
+      description: |-
+        Creates an address for a Company account. Use [Bulk Create Addresses](#bulk-create-addresses) to create multiple addresses in a single request.
+
+        ## Considerations
+
+        In addition to the minimum-required fields presented in the request body example, you may need to supply a `stateName` or a `stateCode` if the address is in a [designated country](#get-a-state).
+
+        If you have set one or more address extra fields as mandatory, you must include the `extraFields` object in the request body. If an extra field is configured to accept only unique values, each `fieldValue` must be distinct for a successful request.
+
+        You can create Company addresses without assigning them as billing or shipping addresses. However, Company users cannot use addresses at checkout without a billing or shipping designation.
+      tags:
+        - Addresses
+      security:
+        - authToken: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              allOf:
+                - $ref: "#/components/schemas/address_REQUEST"
+              required:
+                - firstName
+                - lastName
+                - addressLine1
+                - city
+                - stateName
+                - countryName
+                - companyId
+            examples:
+              Minimum-required fields:
+                value:
+                  firstName: "Marie"
+                  lastName: "Curie"
+                  addressLine1: "512 Bluebonnet Lane"
+                  city: "Austin"
+                  stateName: "Texas"
+                  countryName: "United States"
+                  companyId: 364336
+              All fields:
+                value:
+                  firstName: "Marie"
+                  lastName: "Curie"
+                  phoneNumber: "512-200-1234"
+                  zipCode: "78704"
+                  addressLine1: "512 Bluebonnet Lane"
+                  addressline2: "Building 1"
+                  city: "Austin"
+                  stateName: "Texas"
+                  countryName: "United States"
+                  stateCode: "TX"
+                  countryCode: "US"
+                  companyId: 364336
+                  isBilling: false
+                  isShipping: true
+                  isDefaultBilling: false
+                  isDefaultShipping: false
+                  label: "Austin Warehouse"
+                  externalId: "123456"
+                  extraFields:
+                    fieldName: "Tax Provider Tax Code"
+                    fieldValue: "G"
+      responses:
+        '200':
+          description: OK
           content:
             application/json:
               schema:
+                $ref: '#/components/schemas/response_POSTPUT'
+                required:
+                  - code
+                  - data
+                  - meta
+        '422':
+          description: |-
+            Unprocessable Content
+
+            This error occurs if you exclude a required field from the request body. See the error message in the response to identify the required field.
+          content:
+            application/json:
+              schema:
+                description: ''
+                type: object
+                properties:
+                  code:
+                    type: number
+                  data:
+                    type: object
+                    properties:
+                      errMsg:
+                        type: object
+                        description: Lists the required fields that were missing from the request.
+                  meta:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        minLength: 1
+                    required:
+                      - message
+                required:
+                  - code
+                  - data
+                  - meta
+              examples:
+                Missing lastName:
+                  value:
+                    code: 422
+                    data:
+                      errMsg:
+                        last_name: [
+                          "This field may not be null."
+                        ]
+                    meta:
+                      message: "Parameter Error"
+  '/addresses/{addressId}':
+    parameters:
+      - schema:
+          type: string
+        name: addressId
+        in: path
+        required: true
+        description: "The unique numeric identifier of the Company address."
+        example: 123
+    get:
+      summary: Get an Address
+      tags:
+        - Addresses
+      operationId: get-companies-companyId-addresses-addressId
+      description: Retrieves detailed information on a single Company address.
+      security:
+        - authToken: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    default: 200
+                  data:
+                    $ref: '#/components/schemas/addressFields_GET'
+                  meta:
+                    type: object
+                    required:
+                      - message
+                    properties:
+                      message:
+                        $ref: '#/components/schemas/meta_full/properties/message'
+                required:
+                  - code
+                  - data
+                  - meta
+        '404':
+          description: |-
+            Not Found
+
+            This error occurs if the `addressId` is invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/responseNotFound'
+    put:
+      summary: Update an Address
+      operationId: put-companies-companyId-addresses-addressId
+      tags:
+        - Addresses
+      description: |-
+        Edits details of an existing Company address.
+
+        There are no required fields for this endpoint, but you must include `isBilling` or `isShipping` to change the value of `isDefaultBilling` or `isDefaultShipping` respectively.
+
+        When changing the `countryName`, you must also update the `countryCode`. Updating the `countryCode` by itself will automatically adjust the `countryName`. If you are changing the `countryCode` to a [country that supports states](#get-a-state), you must also include the `stateCode` with a valid two-letter code value for the state.
+      security:
+        - authToken: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/address_REQUEST"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/response_POSTPUT'
+        '404':
+          description: |-
+            Not Found
+
+            This error occurs if you supply an invalid addressId in the request path.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/responseNotFound'
+        '422':
+          description: |-
+            Unprocessable Content
+
+            This error occurs if you enter invalid information in the request body. It can also occur if you supply the `isDefaultBilling` or `isDefaultShipping` fields without also including `isBilling` and `isShipping` respectively.
+          content:
+            application/json:
+              schema:
+                description: ''
                 type: object
                 properties:
                   code:
@@ -1269,32 +612,388 @@ paths:
                     properties:
                       errMsg:
                         type: string
+                        description: Lists the required fields that were missing from the request.
+                        example: "Check is default fields and corresponding field."
+                    required:
+                      - errMsg
                   meta:
                     type: object
                     properties:
                       message:
                         type: string
+                        minLength: 1
+                        default: "Processing data contains logical errors"
+                    required:
+                      - message
+                required:
+                  - code
+                  - data
+                  - meta
+    delete:
+      summary: Delete an Address
+      operationId: delete-companies-companyId-addresses-addressId
+      tags:
+        - Addresses
+      description: Permanently removes an address from a Company account. Deleting addresses does not remove them from existing quotes, invoices, and orders, but the address is no longer available for future records.
+      security:
+        - authToken: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/response_POSTPUT'
+        '404':
+          description: |-
+            Not Found
+
+            This error occurs if the `addressId` is invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/responseNotFound'
+  /addresses/bulk:
+    post:
+      summary: Bulk Create Addresses
+      operationId: post-addresses
+      tags:
+        - Addresses
+      description: |-
+        Creates multiple addresses for **up to 10** addresses at a time. You can create addresses for different Company accounts in a single request by entering a different `companyid` value for each address object.
+
+        See [Create a Company Address](#create-a-company-address) for considerations related to creating one or more addresses.
+      security:
+        - authToken: []
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              allOf:
+                - $ref: "#/components/schemas/address_REQUEST"
+              required:
+                - firstName
+                - lastName
+                - addressLine1
+                - city
+                - stateName
+                - countryName
+                - companyId
+            examples:
+              Two addresses:
+                value: [
+                    {
+                      firstName: "Marie",
+                      lastName: "Curie",
+                      phoneNumber: "512-200-1234",
+                      zipCode: "78704",
+                      addressLine1: "512 Bluebonnet Lane",
+                      addressline2: "Building 1",
+                      city: "Austin",
+                      stateName: "Texas",
+                      countryName: "United States",
+                      stateCode: "TX",
+                      countryCode: "US",
+                      companyId: 123456,
+                      isBilling: false,
+                      isShipping: true,
+                      isDefaultBilling: false,
+                      isDefaultShipping: false,
+                      label: "Austin Warehouse",
+                      externalId: "123456",
+                      extraFields: {
+                        fieldName: "Tax Provider Tax Code",
+                        fieldValue: "G"
+                        }
+                    },
+                    {
+                      firstName: "Isaac",
+                      lastName: "Newton",
+                      phoneNumber: "512-100-1000",
+                      zipCode: "78726",
+                      addressLine1: "737 Lone Star Road",
+                      addressline2: "Suite 200",
+                      city: "Austin",
+                      stateName: "Texas",
+                      countryName: "United States",
+                      stateCode: "TX",
+                      countryCode: "US",
+                      companyId: 123456,
+                      isBilling: true,
+                      isShipping: false,
+                      isDefaultBilling: false,
+                      isDefaultShipping: false,
+                      label: "Austin HQ",
+                      externalId: "123456",
+                      extraFields: {
+                        fieldName: "Tax Provider Tax Code",
+                        fieldValue: "G"
+                        }
+                    }
+                ]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/responseSuccess"
+                  - properties:
+                      data:
+                        $ref: '#/components/schemas/addressFields_GET'                  
+                required:
+                  - code
+                  - data
+                  - meta
               examples:
-                example-1:
+                Two addresses:
+                  value: {
+                    code: 200,
+                    data: [
+                      {
+                        addressId: 123456,
+                        firstName: "Marie",
+                        lastName: "Curie",
+                        phoneNumber: "512-200-1234",
+                        zipCode: "78704",
+                        addressLine1: "512 Bluebonnet Lane",
+                        addressline2: "Building 1",
+                        city: "Austin",
+                        stateName: "Texas",
+                        countryName: "United States",
+                        stateCode: "TX",
+                        countryCode: "US",
+                        companyId: 123456,
+                        isBilling: false,
+                        isShipping: true,
+                        isDefaultBilling: false,
+                        isDefaultShipping: false,
+                        label: "Austin Warehouse",
+                        externalId: "123456",
+                        extraFields: [
+                          {
+                            fieldName: "Tax Provider Tax Code",
+                            fieldValue: "G",
+                            fieldType: 0
+                          }
+                        ]
+                      },
+                      {
+                        addressId: 123457,
+                        firstName: "Isaac",
+                        lastName: "Newton",
+                        phoneNumber: "512-100-1000",
+                        zipCode: "78726",
+                        addressLine1: "737 Lone Star Road",
+                        addressline2: "Suite 200",
+                        city: "Austin",
+                        stateName: "Texas",
+                        countryName: "United States",
+                        stateCode: "TX",
+                        countryCode: "US",
+                        companyId: 123456,
+                        isBilling: true,
+                        isShipping: false,
+                        isDefaultBilling: false,
+                        isDefaultShipping: false,
+                        label: "Austin HQ",
+                        externalId: "123456",
+                        extraFields: [
+                          {
+                            fieldName: "Tax Provider Tax Code",
+                            fieldValue: "G",
+                            fieldType: 0
+                          }
+                        ]
+                      }
+                    ],
+                    meta: {
+                      message: "Success"
+                    }
+                  }
+        '413':
+          description: |-
+            This occurs if you include more than 10 address objects in the request body. To create more than 10 addresses, split your requests into batches.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: number
+                    default: 413
+                  data:
+                    type: object
+                    properties:
+                      errMsg:
+                        type: object
+                        example: "Add up to ten data at a time"
+                  meta:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        minLength: 1
+                        default: "Request Entity Too Large"
+                    required:
+                      - message
+                required:
+                  - code
+                  - data
+                  - meta
+        '422':
+          description: |-
+            This error occurs if you exclude a required field. See the error message in the response to identify the required field. The response body presents error messages for each address in an array with the same sort order as the addresses in the request body.
+          content:
+            application/json:
+              schema:
+                description: ''
+                type: object
+                properties:
+                  code:
+                    type: number
+                  data:
+                    type: object
+                    properties:
+                      errMsg:
+                        type: object
+                        description: Lists the required fields that were missing from the request.
+                  meta:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        minLength: 1
+                    required:
+                      - message
+                required:
+                  - code
+                  - data
+                  - meta
+              examples:
+                Missing lastName:
                   value:
                     code: 422
                     data:
-                      errMsg: A valid integer is required
+                      errMsg: [
+                        {},
+                        {
+                          last_name: [
+                            "This field may not be null."
+                          ]
+                        }
+                      ]
                     meta:
-                      message: Parameter Error
+                      message: "Parameter Error"
+  /addresses/extra-fields:
+    get:
+      summary: Get Address Extra Field Configs
+      tags:
+        - Addresses
       operationId: get-addresses-extra-fields
-      description: Get address extra fields configs
+      description: |-
+        Returns a list of available extra fields configurations for Company addresses.
+
+        We recommend caching the response results to avoid frequent API requests.
       security:
         - authToken: []
       parameters:
-        - $ref: https://raw.githubusercontent.com/bigcommerce/docs/main/docs/b2b-edition/specs/storefront/storefront.yaml#/components/parameters/offset
-        - $ref: https://raw.githubusercontent.com/bigcommerce/docs/main/docs/b2b-edition/specs/storefront/storefront.yaml#/components/parameters/limit
+        - $ref: '#/components/parameters/offset'
+        - $ref: '#/components/parameters/limit'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    default: 200
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: number
+                          description: "The unique identifier for an address extra field."
+                          example: 123456
+                        uuid:
+                          type: string
+                          format: uuid
+                          description: "An external ID assigned to the address extra field in a third-party system, such as an ERP."
+                          example: "123456"
+                        fieldName:
+                          $ref: '#/components/schemas/extraFields_BASIC/properties/fieldName'
+                        fieldType:
+                          $ref: '#/components/schemas/extraFields_BASIC/properties/fieldType'
+                        isRequired:
+                          type: boolean
+                          description: |-
+                            Indicates whether or not the extra field must be filled out in order to create a new address.
+
+                            If `true`, the extra field is required. If `false`, the extra field is optional.
+                        isUnique:
+                          type: boolean
+                          description: "Indicates whether or not unique values are required for the extra field. Specifically if `true`, no two addresses may have the same value for the field."
+                        visibleToEnduser:
+                          type: boolean
+                          description: |-
+                            Indicates whether or not the extra field is visible on the storefront.
+
+                            If `true`, the extra field is visible on the storefront. If `false`, the extra field is only visible in the B2B Edition control panel.
+                        configType:
+                          type: number
+                          description: |-
+                            Indicates whether an extra field is built-in or user-defined.
+
+                            If the value is `1`, the extra field is built-in. If the value is `2`, the extra field is user-defined.
+                          enum:
+                            - 1
+                            - 2
+                          example: 1
+                        defaultValue:
+                          type: string
+                          description: "The default value configured for the extra field."
+                          example: "Code G"
+                        maximumLength:
+                          type: string
+                          description: "The maximum character length of the value entered for the extra field. This only applies to extra fields with a `fieldType` of `0` (text)."
+                          example: "100"
+                        numberOfRows:
+                          type: string
+                          description: "The maximum number or text rows for the value entered for the extra field. This only applies to extra fields with a `fieldType` of `1` (multi-line text)."
+                          example: "5"
+                        maximumValue:
+                          type: string
+                          description: "The maximum numeric value that can be entered for the extra field. This only applies to extra fields with a `fieldType` of `2` (number)."
+                          example: "1000"
+                        listOfValue:
+                          type: array
+                          description: "The available options that can be selected for the extra field. This only applies to extra fields with a `fieldType` of `3` (dropdown)."
+                          items:
+                            type: string
+                          example:
+                            - Retail
+                            - Automotive
+                            - Manufacturing
+                  meta:
+                    $ref: '#/components/schemas/meta_full'
+                required:
+                  - code
+                  - data
+                  - meta
 components:
   parameters:
     limit:
       name: limit
       in: query
-      description: 'Pagination limit default: 10'
+      description: Determines the number of records to return per page. If left blank, this defaults to `10`.
       allowEmptyValue: true
       schema:
         maximum: 250
@@ -1303,20 +1002,305 @@ components:
         exclusiveMinimum: true
         type: integer
         default: 10
+        example: 15
     offset:
       name: offset
       in: query
-      description: 'Pagination offset default: 0'
+      description:  The number of results to skip before returning the first result. If left blank, this defaults to `0`.
       allowEmptyValue: true
       schema:
         type: integer
         minimum: 0
-  schemas: {}
+        default: 0
+        example: 5
+  schemas:
+    countryName:
+      type: string
+      description: "The full name of the country."
+      example: "United States"
+    countryCode:
+      type: string
+      description: "The two-letter ISO code for the country."
+      example: "US"
+    stateName:
+      type: string
+      description: "The full name of the state or province."
+      example: "Texas"
+    stateCode:
+      type: string
+      description: "The two-letter ISO code for the state or province."
+      example: "TX"
+    addressFields_GET:
+      type: object
+      properties:
+        addressId:
+          type: integer
+          description: "The unique numeric identifier of the Company address."
+          example: 123
+        firstName:
+          type: string
+          description: "The first name on the address."
+          example: "Marie"
+        lastName:
+          type: string
+          description: "The last name on the address."
+          example: "Curie"
+        phoneNumber:
+          type: string
+          description: "The phone number on the address."
+          example: "512-200-1234"
+        zipCode:
+          type: string
+          description: "The postal code on the address."
+          example: "78704"
+        addressLine1:
+          type: string
+          description: "The first line of the address."
+          example: "512 Bluebonnet Lane"
+        addressLine2:
+          type: string
+          description: "The second line of the address."
+          example: "Building 1"
+        city:
+          type: string
+          description: "The city on the address."
+          example: "Austin"
+        stateName:
+          type: string
+          description: "The full name of the state or province on the address."
+          example: "Texas"
+        countryName:
+          type: string
+          description: "The full name of the country on the address."
+          example: "United States"
+        stateCode:
+          type: string
+          description: "The two-letter ISO code for the state or province on the address."
+          example: "TX"
+        countryCode:
+          type: string
+          description: "The two-letter ISO code for the country on the address."
+          example: "US"
+        companyId:
+          type: integer
+          description: "The unique numeric ID of the Company account."
+          example: 123456
+        isBilling:
+          type: boolean
+          description: "Indicates whether the address is a billing address."
+          example: true
+        isShipping:
+          type: boolean
+          description: "Indicates whether the address is a shipping address."
+          example: true
+        isDefaultBilling:
+          type: boolean
+          description: "Indicates whether the address is the default billing address."
+          example: true
+        isDefaultShipping:  
+          type: boolean
+          description: "Indicates whether the address is the default shipping address."
+          example: true
+        label:
+          type: string
+          description: "The label used on the storefront to identify the address."
+          example: "Austin Warehouse"
+        externalId:
+          type: string
+          description: "An external ID assigned to the address in a third-party system, such as an ERP."
+          example: "123456"
+        extraFields:
+          type: array
+          description: "Contains extra field information for the address."
+          items:
+            $ref: '#/components/schemas/extraFields_BASIC'
+    extraFields_BASIC:
+      type: object
+      properties:
+        fieldName:
+          type: string
+          description: "The name of the address extra field."
+          example: "Tax Provider Tax Code"
+        fieldValue:
+          type: string
+          description: "The value assigned to the address extra field."
+          example: "G"
+        fieldType:
+          type: integer
+          description: |-
+            The type of data that can be added as the extra field's value. This field uses numeric values to represent the data type, as follows:
+
+            - 0 - Text
+            - 1 - Multi-line text
+            - 2 - Number
+            - 3 - dropdown
+          example: 0
+          enum:
+            - 0
+            - 1
+            - 2
+            - 3
+    address_REQUEST:
+      properties:
+        firstName:
+          $ref: '#/components/schemas/addressFields_GET/properties/firstName'
+        lastName:
+          $ref: '#/components/schemas/addressFields_GET/properties/lastName'
+        phoneNumber:
+          $ref: '#/components/schemas/addressFields_GET/properties/phoneNumber'
+        zipCode:
+          $ref: '#/components/schemas/addressFields_GET/properties/zipCode'
+        addressLine1:
+          $ref: '#/components/schemas/addressFields_GET/properties/addressLine1'
+        addressLine2:
+          $ref: '#/components/schemas/addressFields_GET/properties/addressLine2'
+        city:
+          $ref: '#/components/schemas/addressFields_GET/properties/city'
+        stateName:
+          type: string
+          description: "The full name of the state or province on the address. This must correspond to `stateCode` in the request if the state or province is [required for the country](#get-a-state)."
+          example: "Texas"
+        countryName:
+          type: string
+          description: "The full name of the country on the address. Use [Get a Country](#get-a-country) to retrieve valid country names."
+          example: "United States"
+        stateCode:
+          type: string
+          description: "The two-letter ISO code for the state or province on the address. Omit this field when adding state or province information for an [unsupported country](#get-a-state)."
+          example: "TX"
+        countryCode:
+          type: string
+          description: "The two-letter ISO code for the country on the address. Use [Get a Country](#get-a-country) to retrieve valid country codes."
+          example: "US"
+        companyId:
+          $ref: '#/components/schemas/addressFields_GET/properties/companyId'
+        isBilling:
+          $ref: '#/components/schemas/addressFields_GET/properties/isBilling'
+        isShipping:
+          $ref: '#/components/schemas/addressFields_GET/properties/isShipping'
+        isDefaultBilling:
+          $ref: '#/components/schemas/addressFields_GET/properties/isDefaultBilling'
+        isDefaultShipping:
+          $ref: '#/components/schemas/addressFields_GET/properties/isDefaultShipping'
+        label:
+          $ref: '#/components/schemas/addressFields_GET/properties/label'
+        externalId:
+          $ref: '#/components/schemas/addressFields_GET/properties/externalId'
+        extraFields:
+          type: array
+          description: "Enter extra field information for the address."
+          items:
+            type: object
+            properties:
+              fieldName:
+                $ref: '#/components/schemas/extraFields_BASIC/properties/fieldName'
+              fieldValue:
+                $ref: '#/components/schemas/extraFields_BASIC/properties/fieldValue'
+    meta_full:
+      type: object
+      properties:
+        pagination:
+          type: object
+          properties:
+            totalCount:
+              type: integer
+              description: The total number of records available.
+              example: 1
+            limit:
+              type: integer
+              description: The number of records returned per page.
+              example: 10
+            offset:
+              type: integer
+              description: The number of records skipped before returning the first record.
+              example: 0
+        message:
+          type: string
+          default: "SUCCESS"
+    responseObject:
+      type: object
+      properties:
+        code:
+          type: integer
+          description: "HTTP Response Code"
+          default: '200'
+        data:
+          type: object
+        meta:
+          $ref: "#/components/schemas/meta_full"
+    responseArray:
+      type: object
+      properties:
+        code:
+          type: integer
+          description: "HTTP Response Code"
+          default: '200'
+        data:
+          type: array
+          items:
+            type: object
+        meta:
+          $ref: "#/components/schemas/meta_full"
+    responseSuccess:
+      allOf:
+        - $ref: "#/components/schemas/responseObject"
+        - properties:
+            code:
+              default: 200
+    response_POSTPUT:
+      type: object
+      properties:
+        code:
+          type: integer
+          default: 200
+        data:
+          type: object
+          required:
+            - addressId
+          properties:
+            addressId:
+              $ref: '#/components/schemas/addressFields_GET/properties/companyId'
+        meta:
+          type: object
+          required:
+            - message
+          properties:
+            message:
+              $ref: '#/components/schemas/meta_full/properties/message'
+      required:
+        - code
+        - data
+        - meta
+    responseNotFound:
+      type: object
+      properties:
+        code:
+          type: number
+          default: 404
+        data:
+          type: object
+          properties:
+            errMsg:
+              type: string
+              default: "Address matching query does not exist."
+          required:
+            - errMsg
+        meta:
+          type: object
+          required:
+            - message
+          properties:
+            message:
+              type: string
+              minLength: 1
+              default: "Not Found Error"
+      required:
+        - code
+        - data
+        - meta
   securitySchemes:
     authToken:
       name: authToken
       description: Required to authenticate requests. Include the token in a header parameter called `authToken`.
       type: apiKey
       in: header
-tags:
-  - name: Address

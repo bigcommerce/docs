@@ -144,5 +144,5 @@ Track IDs of all created test resources during migration, and use API DELETE cal
 - [Using Postman with BigCommerce APIs](https://developer.bigcommerce.com/docs/start/api-clients/postman)  
 - [Community Thread: Data Validation Scripts & Tips](https://community.bigcommerce.com/t5/Developers/Best-ways-to-validate-product-data-before-import/td-p/146590)  
 - [WebDAV Overview and Usage](https://support.bigcommerce.com/s/article/File-Access-WebDAV)  
-- [Sample Product Import CSV](https://support.bigcommerce.com/s/article/Sample-Product-CSV-Import-File)  
+- [Sample Product Import CSV](https://storage.googleapis.com/bigcommerce-production-dev-center/Knowledge%20Base/Products/Import%20Export%20v3%20Guide/v3-product-import-template.csv)  
 - [API Accounts and OAuth Scopes](https://developer.bigcommerce.com/docs/start/authentication/api-accounts)

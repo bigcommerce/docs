@@ -1,0 +1,99 @@
+import { Callout } from 'nextra/components';
+
+# Manually Installing Scripts
+
+## Introduction
+
+In this guide, you'll learn how scripts can be manually added to Catalyst. This is a common need for apps in the BigCommerce marketplace. Luckily it's very straightforward to do!
+
+<Callout type="info" emoji="ℹ️">
+  Marketplace apps may automatically inject scripts into your store using the
+  Scripts API. We plan on Catalyst supporting this in the future, once the
+  GraphQL API supports returning all those scripts in a single request. Until
+  this occurs, use this guide to help you add scripts manually to Catalyst.
+</Callout>
+
+If you want to see a real-world example of an app's script being added to Catalyst, check out the [Adding Mailchimp to Catalyst](https://www.catalyst.dev/docs/guides/mailchimp-newsletter) guide.
+
+## Overview of the Next.js Script component
+
+The preferred method of adding scripts to Catalyst is the `<Script />` component from `next/script`, which is designed to optimize the loading of third-party scripts. It enables us to control when and how scripts are loaded. Using it properly can improve the performance and user experience of your site by loading less Javascript up front and enabling the critical site elements to become interactive in less time.
+
+In its most basic form, it looks very similar to a normal script tag:
+
+```tsx {1,6} copy
+import Script from 'next/script';
+
+export default function YourComponent() {
+  return (
+    <>
+      <Script src="https://example.com/script.js" />
+    </>
+  );
+}
+```
+
+Without any props, the script will load using an `afterInteractive` strategy. That means it'll load the script after the page initially starts to render interactive elements in the browser.
+
+There are multiple strategies compatible with Catalyst:
+
+- [`beforeInteractive`](https://nextjs.org/docs/app/api-reference/components/script#beforeinteractive): Load before any Next.js code and before any page hydration occurs. (_e.g. bot detectors and cookie consent managers_)
+- [`afterInteractive`](https://nextjs.org/docs/app/api-reference/components/script#afterinteractive): (default) Load early but after some hydration on the page occurs. (_e.g. tag managers and analytics_)
+- [`lazyOnload`](https://nextjs.org/docs/app/api-reference/components/script#lazyonload): Load during browser idle time. (_e.g. chat support plugins, social media widgets, and marketing pop-ups_)
+
+What is not listed here is the `worker` strategy, which loads the script on a different thread, within a web worker. This is because that strategy is experimental and not yet compatible with two modern technologies Catalyst depends on: Next.js App Router and React Server Components.
+
+For comprehensive details on the Script component, [check out the Next.js documentation](https://nextjs.org/docs/app/api-reference/components/script).
+
+## Installing scripts all pages
+
+To load a script on every page, add it to the default layout, which is shared across all pages:
+
+```tsx {1,25} filename="core/app/[locale]/(default)/layout.tsx" copy
+import Script from 'next/script';
+import { setRequestLocale } from 'next-intl/server';
+import { PropsWithChildren } from 'react';
+
+import { Footer } from '~/components/footer';
+import { Header } from '~/components/header';
+
+interface Props extends PropsWithChildren {
+  params: Promise<{ locale: string }>;
+}
+
+export default async function DefaultLayout({ params, children }: Props) {
+  const { locale } = await params;
+
+  setRequestLocale(locale);
+
+  return (
+    <>
+      <Header />
+
+      <main>{children}</main>
+
+      <Footer />
+
+      <Script src="https://your-script-url.com/script.js" />
+    </>
+  );
+}
+
+export const experimental_ppr = true;
+```
+
+The script will now be loaded once per session.
+
+## Installing scripts on a specific page
+
+The instructions above are focused on the most common use case, which is installing scripts that will be on all pages. That's why we used the shared default layout file.
+
+The same code could be used within a page route file instead of the layout, if you want to target only a single type of page.
+
+For instance, if you wanted a script for product reviews to load only on product pages, you would add it to `core/app/[locale]/(default)/product/[slug]/page.tsx`
+
+## Enabling scripts that run code on every page load
+
+Sometimes scripts have logic that runs each time a page is visited. If you find that the script you install is working on the first page you visit, but not the second, it's likely dependent on additional logic like this.
+
+The `<Script/>` component has an `onReady` prop that accepts a function that will run every time a page is loaded, even if the script is already loaded. You can view more details about this property [on the Next.js docs](https://nextjs.org/docs/app/api-reference/components/script#onready).

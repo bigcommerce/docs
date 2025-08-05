@@ -1,0 +1,75 @@
+import { Callout } from "nextra/components";
+
+# Adding Mailchimp to Catalyst
+
+## Introduction
+
+In this guide, we're assuming you have installed the [Mailchimp app](https://www.bigcommerce.com/apps/mailchimp/) on your BigCommerce store and already have the script URL Mailchimp provides, as detailed in the [Install scripts section of the Mailchimp docs](https://mailchimp.com/help/connect-or-disconnect-mailchimp-for-bigcommerce/#heading+install+scripts).
+
+<Callout type="warning">
+  Make sure you've read the [Local development
+  documentation](https://www.catalyst.dev/local-development) to get your development environment setup
+  before continuing.
+</Callout>
+
+If you want more details on the `<Script/>` component we use in this guide, check out our [Manually installing scripts](https://www.catalyst.dev/docs/guides/manually-installing-scripts) guide.
+
+## Installing the script
+
+Now that you have your Catalyst environment running and your Mailchimp script URL in hand, you are ready to add it to your site.
+
+The script needs to load on every page, so we're going to add it to the default layout, which is shared across all pages:
+
+```tsx {1,25-28} filename="core/app/[locale]/(default)/layout.tsx" copy
+import Script from 'next/script';
+import { setRequestLocale } from 'next-intl/server';
+import { PropsWithChildren } from 'react';
+
+import { Footer } from '~/components/footer';
+import { Header } from '~/components/header';
+
+interface Props extends PropsWithChildren {
+  params: Promise<{ locale: string }>;
+}
+
+export default async function DefaultLayout({ params, children }: Props) {
+  const { locale } = await params;
+
+  setRequestLocale(locale);
+
+  return (
+    <>
+      <Header />
+
+      <main>{children}</main>
+
+      <Footer />
+
+      <Script
+        src="https://chimpstatic.com/mcjs-connected/js/users/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.js"
+        strategy="lazyOnload"
+      />
+    </>
+  );
+}
+
+export const experimental_ppr = true;
+```
+
+Notice we used the `lazyOnload` strategy! This will prevent the script from loading until the browser has processed all the critical interactive elements and scripts.
+
+If you have active Mailchimp pop-ups, when you load your site after making these changes, you'll see the script is loading correctly. Here is a demo of an email signup pop-up offering a discount that was displayed using this method:
+
+![Mailchimp popup loading within Catalyst via script](https://storage.googleapis.com/bigcommerce-developers/catalyst-docs/mailchimp-catalyst-loading.gif)
+
+If you don't see a popup, you might not have one configured. You can still see if the Mailchimp script is loading correctly by checking your local storage. In your browser you should see `mcform` keys in **Application -> Local storage**:
+
+![Mailchimp localstorage values](https://storage.googleapis.com/bigcommerce-developers/catalyst-docs/mailchimp-localhost-storage.png)
+
+Because you added the script within the default shared layout file, navigating between pages on the site doesn't re-render the widget. The script is only loaded once per session, instead of once every page:
+
+![Mailchimp navigation experience](https://storage.googleapis.com/bigcommerce-developers/catalyst-docs/mailchimp-catalyst-navigating.gif)
+
+## Wrapping up
+
+That's it! The Mailchimp script is now loaded in an optimized way.

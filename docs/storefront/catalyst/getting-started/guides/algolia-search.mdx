@@ -1,0 +1,404 @@
+# Integrating Third-party Search with Algolia
+
+## Introduction
+
+In this guide, we&apos;ll walk through how to integrate [Algolia](https://www.algolia.com/) with Catalyst to enable powerful, fast search functionality. You&apos;ll learn how to:
+
+- Connect your BigCommerce data with Algolia
+- Replace Catalyst&apos;s default search experience
+- Use the Algolia React InstantSearch library to build a searchable product UI
+
+By the end of this guide, you&apos;ll have a fully functioning custom search experience powered by Algolia, with facets and product cards styled to match your Catalyst store.
+
+![Algolia Demo](https://storage.googleapis.com/bigcommerce-production-dev-center/images/catalyst/third-party-search/algolia-demo.gif)
+
+## Prerequisites
+
+Before getting started, you&apos;ll need:
+
+- An Algolia account
+- A locally running Catalyst instance
+
+Follow our [Getting Started](/docs/storefront/catalyst/getting-started) guide and then our [local development](/docs/storefront/catalyst/getting-started/local-development) documentation to ensure you're able to run your Catalyst application locally.
+
+<Callout>
+  Be sure to **Use sample data** when creating your new Catalyst channel if you
+  do not have any existing products you would like to use for your Catalyst
+  channel already.
+</Callout>
+
+## Create an application in Algolia
+
+In your Algolia dashboard, create a new application. You can use **Build** plan to get started for free.
+
+![Create new algolia application](https://storage.googleapis.com/bigcommerce-production-dev-center/images/catalyst/third-party-search/create-application.jpeg)
+
+1. Choose a region based on your location (e.g., **US East**)
+2. Click **Next: Review & Confirm**
+3. Click **Create Application**
+
+You should see a **Congratulations** page which indicates your application was created successfully.
+
+## Connect Algolia to BigCommerce
+
+Next, we'll need to create an Algolia index for your Catalyst channel's products. An Algolia index is where the data used by Algolia is stored. From the [Algolia docs](https://www.algolia.com/doc/guides/sending-and-managing-data/prepare-your-data/in-depth/prepare-data-in-depth/#algolia-index):
+
+> An index is the equivalent of a table in a database but optimized for search and discovery operations.
+
+Luckily, the [Algolia Single-Click App](https://www.bigcommerce.com/apps/algolia-search-discovery) for BigCommerce makes the process of creating an Algolia index for your Catalyst channel's products easy.
+
+<Callout type="warning">
+  Due to the [10 KB limit on Algolia Record sizes for the Build
+  plan](https://support.algolia.com/hc/en-us/articles/4406981897617-Is-there-a-size-limit-for-my-index-records),
+  you will need to unassign the **3 Plant Bundle** product from your Catalyst
+  channel's catalog if you elected to **Use sample data** when creating your new
+  Catalyst channel. Otherwise, the indexing of your data will fail.
+</Callout>
+
+1. Navigate to the [Algolia Single-Click App](https://www.bigcommerce.com/apps/algolia-search-discovery)
+2. Click **Get this App** and log into your BigCommerce store
+3. Click **Install**
+4. Review and accept the API scopes that the Algolia app requires to properly function
+5. Click **Login With Algolia** and log into your Algolia account
+6. Select the application you just created from the dropdown and click **Next step: Channel selection**
+7. Choose your BigCommerce channel
+8. Name your Algolia index using **Product level indexing** as the **Record type** and click **Save**
+9. Click **Yes, index now** to start indexing your products
+
+You can find you newly created Index in Algolia under **Data Sources -> Indices**.
+
+![View index in Algolia](https://storage.googleapis.com/bigcommerce-production-dev-center/images/catalyst/third-party-search/algolia-index.jpeg)
+
+## Environment variables
+
+In your Algolia dashboard, navigate to the **Overview** tab and copy your Application ID and Search API Key.
+
+![View index in Algolia](https://storage.googleapis.com/bigcommerce-production-dev-center/images/catalyst/third-party-search/algolia-overview.jpeg)
+
+Add the following environment variables to your `.env.local` file:
+
+```bash copy
+# ...existing env variables...
+
+ALGOLIA_APPLICATION_ID="<YOUR_ALGOLIA_APPLICATION_ID>"
+ALGOLIA_SEARCH_API_KEY="<YOUR_ALGOLIA_SEARCH_API_KEY>"
+ALGOLIA_INDEX_NAME="<YOUR_ALGOLIA_INDEX_NAME>"
+```
+
+These will be used by the Algolia search client in your frontend.
+
+## Install Algolia dependencies
+
+Install the following dependencies in the `core/` workspace of your local Catalyst project:
+
+```bash copy
+pnpm --filter "./core" add react-instantsearch algoliasearch
+```
+
+<Callout type="info">
+  The [`--filter` flag](https://pnpm.io/filtering) is used by `pnpm` to specify
+  the workspace to install the dependencies in.
+</Callout>
+
+## Implementation
+
+We'll need to:
+
+1. Create a new Algolia client
+2. Modify the existing search results data transformer
+3. Modify the existing search server action to fetch search results from Algolia
+
+### 1. Algolia client
+
+Create a new directory `core/lib/algolia` and, inside, add a new file `client.ts`. Then, create and export a new Algolia client:
+
+```tsx filename="core/lib/algolia/client.ts" copy
+import { algoliasearch } from 'algoliasearch';
+
+if (!process.env.ALGOLIA_APPLICATION_ID) {
+  throw new Error('ALGOLIA_APPLICATION_ID is required');
+}
+
+if (!process.env.ALGOLIA_SEARCH_API_KEY) {
+  throw new Error('ALGOLIA_SEARCH_API_KEY is not set');
+}
+
+const algoliaClient = algoliasearch(
+  process.env.ALGOLIA_APPLICATION_ID,
+  process.env.ALGOLIA_SEARCH_API_KEY
+);
+
+export default algoliaClient;
+```
+
+### 2. Modify the search results data transformer
+
+Now, you'll need to transform data from Algolia to the type of data that Catalyst is expecting. For this, you'll need a type definition for the Algolia data and an `algoliaResultsTransformer` function to transform the data. Open `core/data-transformers/search-results-transformer.ts` and replace its contents with the following.
+
+```tsx filename="core/data-transformers/search-results-transformer.ts" copy
+// 1. Remove the imports required by the existing searchResultsTransformer
+import { getFormatter, getTranslations } from 'next-intl/server';
+
+import { SearchResult } from '@/vibes/soul/primitives/navigation';
+
+import { pricesTransformer } from './prices-transformer';
+
+// 2. Define the AlgoliaHit type returned by the Algolia API via the algoliaClient
+export interface AlgoliaHit {
+  objectID: string;
+  name: string;
+  url: string;
+  product_images: Array<{
+    description: string;
+    is_thumbnail: boolean;
+    url_thumbnail: string;
+  }>;
+  categories_without_path: string[];
+  default_price: string;
+  prices: Record<string, number>;
+  sales_prices: Record<string, number>;
+  calculated_prices: Record<string, number>;
+  retail_prices: Record<string, number>;
+}
+
+// 3. Implement the algoliaResultsTransformer function
+export async function algoliaResultsTransformer(
+  hits: AlgoliaHit[]
+): Promise<SearchResult[]> {
+  // 4. Get the formatter and translations for the current locale
+  const format = await getFormatter();
+  const t = await getTranslations('Components.Header.Search');
+
+  // 5. Transform the Algolia hits into SearchResult objects
+  const products = hits.map((hit) => {
+    const price = pricesTransformer(
+      {
+        price: {
+          value: hit.calculated_prices.USD ?? 0,
+          currencyCode: 'USD',
+        },
+        basePrice: {
+          value: parseInt(hit.default_price, 10),
+          currencyCode: 'USD',
+        },
+        retailPrice: {
+          value: hit.retail_prices.USD ?? 0,
+          currencyCode: 'USD',
+        },
+        salePrice: {
+          value:
+            hit.sales_prices.USD && hit.sales_prices.USD > 0
+              ? hit.sales_prices.USD
+              : parseInt(hit.default_price, 10),
+          currencyCode: 'USD',
+        },
+        priceRange: {
+          min: {
+            value: hit.prices.USD ?? 0,
+            currencyCode: 'USD',
+          },
+          max: {
+            value: hit.prices.USD ?? 0,
+            currencyCode: 'USD',
+          },
+        },
+      },
+      format
+    );
+
+    return {
+      id: hit.objectID,
+      title: hit.name,
+      href: hit.url,
+      price,
+      image: {
+        src:
+          hit.product_images.find((image) => image.is_thumbnail)
+            ?.url_thumbnail ?? '',
+        alt: hit.product_images[0]?.description ?? '',
+      },
+    };
+  });
+
+  // 6. Create the product results SearchResult object
+  const productResults: SearchResult = {
+    type: 'products',
+    title: t('products'),
+    products,
+  };
+
+  // 7. For the returned product results, create a unique list of categories.
+  //    For example, if you had two products, one with categories ['Electronics',
+  //    'Computers'] and another with ['Electronics', 'Cameras'], this step would
+  //    produce ['Electronics', 'Computers', 'Cameras'].
+  const uniqueCategories = Array.from(
+    new Set(hits.flatMap((product) => product.categories_without_path))
+  );
+
+  // 8. Create the category results SearchResult object
+  const categoryResults: SearchResult = {
+    type: 'links',
+    title: t('categories'),
+    links: uniqueCategories.map((category) => {
+      return {
+        label: category,
+        href: `/${category.toLowerCase().replace(/\s+/g, '-')}`,
+      };
+    }),
+  };
+
+  // 9. Create an array to hold the final results
+  const results = [];
+
+  // 10. If there are any categories, add them to the results
+  if (categoryResults.links.length > 0) {
+    results.push(categoryResults);
+  }
+
+  // 11. If there are any products, add them to the results
+  if (products.length > 0) {
+    results.push(productResults);
+  }
+
+  return results;
+}
+```
+
+### 3. Modify the search Server Action
+
+To use the transformer you just created, you'll need to update the `core/components/header/_actions/search.ts` file which handles search on the server. Open that file and replace its contents with the following:
+
+```tsx filename="core/components/header/_actions/search.ts" copy
+'use server';
+
+import { BigCommerceGQLError } from '@bigcommerce/catalyst-client';
+import { SubmissionResult } from '@conform-to/react';
+import { parseWithZod } from '@conform-to/zod';
+import { strict } from 'assert';
+import { getTranslations } from 'next-intl/server';
+import { z } from 'zod';
+
+import { SearchResult } from '@/vibes/soul/primitives/navigation';
+
+// 1. Import required Algolia dependencies, including the transformer and client
+import {
+  AlgoliaHit,
+  algoliaResultsTransformer,
+} from '~/data-transformers/search-results-transformer';
+import algoliaClient from '~/lib/algolia/client';
+
+export async function search(
+  prevState: {
+    lastResult: SubmissionResult | null;
+    searchResults: SearchResult[] | null;
+    emptyStateTitle?: string;
+    emptyStateSubtitle?: string;
+  },
+  formData: FormData
+): Promise<{
+  lastResult: SubmissionResult | null;
+  searchResults: SearchResult[] | null;
+  emptyStateTitle: string;
+  emptyStateSubtitle: string;
+}> {
+  const t = await getTranslations('Components.Header.Search');
+  const submission = parseWithZod(formData, {
+    schema: z.object({ term: z.string() }),
+  });
+  const emptyStateTitle = t('noSearchResultsTitle', {
+    term: submission.status === 'success' ? submission.value.term : '',
+  });
+  const emptyStateSubtitle = t('noSearchResultsSubtitle');
+
+  if (submission.status !== 'success') {
+    return {
+      lastResult: submission.reply(),
+      searchResults: prevState.searchResults,
+      emptyStateTitle,
+      emptyStateSubtitle,
+    };
+  }
+
+  if (submission.value.term.length < 3) {
+    return {
+      lastResult: submission.reply(),
+      searchResults: null,
+      emptyStateTitle,
+      emptyStateSubtitle,
+    };
+  }
+
+  try {
+    // 2. Ensure the Algolia index name is set
+    strict(process.env.ALGOLIA_INDEX_NAME);
+
+    // 3. Send the search term from the form submission to Algolia instead of
+    //    BigCommerce
+    const algoliaResults = await algoliaClient.searchSingleIndex<AlgoliaHit>({
+      indexName: process.env.ALGOLIA_INDEX_NAME,
+      searchParams: {
+        query: submission.value.term,
+        // 4. Add any filters you want to apply to the search results
+        filters: 'is_visible:true',
+      },
+    });
+
+    return {
+      lastResult: submission.reply(),
+      // 5. Transform the Algolia hits into SearchResult objects
+      searchResults: await algoliaResultsTransformer(algoliaResults.hits),
+      emptyStateTitle,
+      emptyStateSubtitle,
+    };
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error(error);
+
+    if (error instanceof BigCommerceGQLError) {
+      return {
+        lastResult: submission.reply({
+          formErrors: error.errors.map(({ message }) => message),
+        }),
+        searchResults: prevState.searchResults,
+        emptyStateTitle,
+        emptyStateSubtitle,
+      };
+    }
+
+    if (error instanceof Error) {
+      return {
+        lastResult: submission.reply({ formErrors: [error.message] }),
+        searchResults: prevState.searchResults,
+        emptyStateTitle,
+        emptyStateSubtitle,
+      };
+    }
+
+    return {
+      lastResult: submission.reply({
+        formErrors: [t('error')],
+      }),
+      searchResults: prevState.searchResults,
+      emptyStateTitle,
+      emptyStateSubtitle,
+    };
+  }
+}
+```
+
+### 4. Check your work
+
+Ensure you've saved all your changes and then run the development server:
+
+```bash copy
+pnpm dev
+```
+
+Open `http://localhost:3000` and try searching for **Plant**. You should see the Algolia search results rendered in your Catalyst storefront!
+
+![Algolia Demo](https://storage.googleapis.com/bigcommerce-production-dev-center/images/catalyst/third-party-search/algolia-demo.gif)
+
+## Next Steps
+
+- Optimize your Algolia settings for [ranking](https://www.algolia.com/doc/guides/managing-results/must-do/custom-ranking) and [typo tolerance](https://www.algolia.com/doc/guides/managing-results/optimize-search-results/typo-tolerance/in-depth/configuring-typo-tolerance)
+- Expand your [facets](https://www.algolia.com/doc/guides/managing-results/refine-results/faceting) for improved filtering

@@ -1,0 +1,155 @@
+## Images in Next.js
+
+Next.js includes an [Image component](https://nextjs.org/docs/app/api-reference/components/image) that provides automatic optimization for rendering images. This component includes features like automatic generation of a `srcset` for responsive images, as well as lazy loading behavior.
+
+Images rendered via this component are essentially “proxied” through your own Next.js application to provide image transformation capabilities. **Depending on your hosting provider, this means incurring costs for image transformations.**
+
+## The Catalyst Image Component
+
+For loading images from the BigCommerce platform, Catalyst provides [`<Image />`](https://github.com/bigcommerce/catalyst/blob/main/core/components/image/index.tsx) as a wrapper for Next's `<Image />` component to allow you to use BigCommerce CDN URLs directly.
+
+Since the BigCommerce CDN is already optimized to provide image transformation, making use of this Catalyst component avoids relying on Next.js for this capability, both reducing load on the application and eliminating related hosting costs, while still utilizing the same flexible syntax.
+
+If the image doesn't come from the BigCommerce CDN, this component defaults back to the default Next.js image loader.
+
+Import `<Image />` as shown below.
+
+```tsx
+import { Image } from '~/components/image';
+```
+
+## GraphQL-Sourced Image URLs
+
+By default, `<Image />` is used to render many images from BigCommerce data loaded via the GraphQL Storefront API.
+
+These image URLs - for example, an image URL queried from a product’s `defaultImage` field - are BigCommerce CDN URLs and so are ready for `<Image />`’s custom loader:
+
+```tsx
+<Image
+    alt={product.name}
+    src={product.defaultImage.urlTemplate}
+    sizes=”(min-width: 42rem) 50vw, 100vw”
+/>
+```
+
+See Best Practices below for more information about `urlTemplate` and `sizes`.
+
+## Using store assets uploaded via WebDAV
+
+Two helper functions are provided in [lib/store-assets](https://github.com/bigcommerce/catalyst/blob/main/core/lib/store-assets.ts) to help build URLs for assets living in your store's object storage.
+
+`contentAssetUrl()` can be used to generate a URL to an arbitrary file asset in the `/content/` folder in WebDAV on your store.
+
+Usage:
+
+```javascript
+<Link href={contentAssetUrl('pdfs/user-manual.pdf')} >
+   User Manual
+</Link>
+```
+
+For image assets uploaded to `/content`, you may use `contentImageUrl()` to build a resizeable image URL that can be used with `<Image>`.
+
+Usage:
+
+```javascript
+<Image
+    alt="an assortment of brandless products against a blank background"
+    src={contentImageUrl('newsletter-images/april.png')}
+/>
+```
+
+You may optionally request a specific size for the image, using a size parameter of the form `123w`, `123x123`, or `original`.
+
+Usage:
+
+```javascript
+<Image
+    src={contentImageUrl('newsletter-images/april.png', '1000w')}
+/>
+```
+
+
+## Using Images uploaded to the Image Manager
+
+Use the `imageManagerImageUrl()` function to build a CDN URL for an image asset that has been uploaded to the Image Manager. This returns a resizeable URL template that can be used with `<Image>`.
+
+Usage:
+
+```javascript
+<Image
+    alt="an assortment of brandless products against a blank background"
+    src={imageManagerImageUrl('slideshow-bg-01.jpg')}
+/>
+```
+
+You may optionally request a specific size for the image, using a size parameter of the form `123w`, `123x123`, or `original`.
+
+Usage:
+
+```javascript
+<Image
+    src={imageManagerImageUrl('slideshow-bg-01.jpg', '1000w')}
+/>
+```
+
+## Best Practices
+
+### Using `sizes`
+
+Whenever feasible, utilize the [sizes](https://nextjs.org/docs/pages/api-reference/components/image#sizes) prop of `<Image />` to describe how the image’s size should vary depending on viewport size:
+
+```tsx
+<Image src={product.defaultImage.urlTemplate}
+  sizes=”(min-width: 42rem) 50vw, 100vw” />
+```
+
+With this `sizes` information, an appropriate `srcset` of CDN URLs will also be generated, ensuring a responsive image that can load the image resolution optimized for the user’s screen size.
+
+### GraphQL Queries
+
+When fetching image URLs using the GraphQL Storefront API, a typical `url` field takes `width` (and optionally `height`) as an argument:
+
+```graphql
+query GetProduct(
+  $productId: Int!
+) {
+  site {
+    product(entityId: $productId) {
+      defaultImage {
+        url(width: 700)
+      }
+    }
+  }
+}
+```
+
+With a size specified, the URL returned will be similar to the following:
+
+```
+https://cdn11.bigcommerce.com/s-{store hash}/images/stencil/700w/image.png
+```
+
+As a CDN URL, this is ready for use with `<Image />`. However, in order to take full advantage of Next.js’s responsive image capability, a better practice is to query the `urlTemplate` field (available on the GraphQL [Image type](https://developer.bigcommerce.com/graphql-storefront/reference#definition-Image)):
+
+```graphql
+query GetProduct(
+  $productId: Int!
+) {
+  site {
+    product(entityId: $productId) {
+      defaultImage {
+        urlTemplate
+      }
+    }
+  }
+}
+```
+
+The URL returned in this case lacks the explicit size, instead including a placeholder:
+
+```
+https://cdn11.bigcommerce.com/s-{store hash}/images/stencil/{:size}/image.png
+```
+
+`<Image />` will handle using this templatized URL to generate the appropriate `srcset` of CDN URLs according to the `sizes` configuration.

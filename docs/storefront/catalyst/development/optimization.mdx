@@ -1,0 +1,111 @@
+# Optimization
+
+Optimization of your Catalyst storefront falls into two major categories:
+
+* **Resource utilization:** Optimizing CPU usage and reducing total inbound and outbound network requests is important for making your storefront scalable to high traffic scenarios, as well as managing cost on cloud hosting providers that implement usage-based billing.
+* **Page performance:** Your storefront should implement an optimized strategy for the frontend user experience, with critical page data loading as fast as possible.
+
+The default Catalyst experience includes a number of optimizations to address both of these categories and ensure highly performant storefronts. 
+
+The following checklist will familiarize you with the built-in optimization mechanisms Catalyst uses, practices you should keep in mind when building your own customizations, and other considerations for optimizing your storefront.
+
+## Next.js Data Cache
+
+Fetching data from external web APIs can be one of the most expensive processes in a web application, both from a resource utilization and page performance perspective. This is particularly relevant for a headless frontend like Catalyst, which is powered exclusively by data fetched in this way.
+
+Catalyst makes use of the Next.js Data Cache to avoid unnecessary duplicate API requests, and you should take advantage of this pattern where feasible in your own custom requests. See [Caching](/docs/storefront/catalyst/development/caching) for more details.
+
+## BigCommerce CDN for Images
+
+Next.js offers robust image transformation capabilities with its [Image component](https://nextjs.org/docs/app/api-reference/components/image). However, depending on your hosting provider, image transformation may come with its own utilization costs.
+
+BigCommerce merchants already have access to a fully featured CDN with their store license, and this CDN can handle image transformations rather than relying on your host’s infrastructure. Catalyst combines common Next.js patterns with this BigCommerce CDN, avoiding extra image transformation costs.
+
+Use the Catalyst [`<Image>`](https://github.com/bigcommerce/catalyst/blob/main/core/components/image/index.tsx) component for all BigCommerce-sourced images, and consider hosting any static images in your store’s [WebDAV](https://support.bigcommerce.com/s/article/File-Access-WebDAV) storage. See [CDN and Images](/docs/storefront/catalyst/development/cdn-and-images) for more details.
+
+## KV Storage for Route Caching
+
+The `with-routes` middleware in Catalyst enables SEO-friendly URLs by fetching information about the current URL path from BigCommerce.
+
+This enables a URL like this:
+
+```
+/fancy-high-top
+```
+
+... to be resolved to the URL pattern expected by the appropriate Next.js route, such as this path containing a product ID:
+
+```
+/product/123
+```
+
+This involves an additional blocking API request per page.  To avoid unnecessary requests and maintain optimal page performance, this highly reusable data should be cached.
+
+For caching route data in the Next.js middleware layer, Catalyst will automatically make use of a KV storage solution if it is configured in your environment. See [Middleware](/docs/storefront/catalyst/development/middleware) for more details.  Any Catalyst production deployment should have KV storage configured.
+
+## JavaScript Bundling Configuration
+
+Next.js makes use of [Webpack](https://webpack.js.org/) and [Speedy Web Compiler](https://swc.rs/) (SWC) to transpile and bundle JavaScript.
+
+Catalyst makes use of the default Next.js bundling configuration. However, configuring for fewer generated JS files can lower hosting costs by reducing the total requests required per page, often as a tradeoff with page performance.  You can explore Webpack and SWC plugins to fine-tune your bundling configuration.
+
+## Suspense and Streaming
+
+A key strategy for optimizing page performance is to display the most critical content to a user as soon as possible, streaming in less critical content without blocking the initial page render.
+
+[`<Suspense>`](https://react.dev/reference/react/Suspense) in React makes this pattern easy by displaying a fallback until a component is fully rendered, and React Server Components in Next.js make it possible to use this pattern with server-rendered content.
+
+Here is a simple example of utilizing `<Suspense>` with a component that handles its own data fetching:
+
+```tsx {5-7}
+async function OuterComponent() {
+  return (
+    <>
+      ...
+      <Suspense fallback={<FallbackComponent />}>
+        <DataFetchingComponent />
+      </Suspense>
+    </>
+  );
+}
+```
+
+Catalyst enhances the capabilities of `<Suspense>` with the custom `<Stream>` component, which is useful when a component relies on data fetching outside itself. `<Stream>` makes it possible to write clean component props that don’t need to be concerned with whether data is being fetched asynchronously.
+
+Here is an example:
+
+```tsx {8-14}
+async function OuterComponent() {
+  const streamableProducts = Streamable.from(async() => {
+    return await fetchProducts();
+  });
+
+  return (
+    <>
+      <Stream fallback={<FallbackComponent />} 
+        value={streamableProducts}>
+      
+        {(products) => (    
+          <ProductsComponent products={products} />
+        )}
+      </Stream>
+    </>
+  );
+}
+
+function ProductsComponent({
+  products
+}: {
+  products: Product[];
+) {
+  ...
+}
+```
+
+## Firewall Configuration
+
+A significant impact can be made on your storefront’s resource utilization simply by stopping unwanted traffic, such as from bots, before it even reaches your application.
+
+Many hosting providers offer sophisticated firewall configuration to block bot traffic or implement rate limiting.
+
+For Vercel, see the documentation on [WAF Managed Rulesets](https://vercel.com/docs/vercel-firewall/vercel-waf/managed-rulesets#configure-bot-protection-managed-ruleset) and [WAF Custom Rules](https://vercel.com/docs/vercel-firewall/vercel-waf/custom-rules).

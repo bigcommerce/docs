@@ -1,0 +1,201 @@
+# Catalyst Multi-Storefront Setup
+
+Catalyst allows you to localize the shopping experience when you sell internationally in order to increase shopper conversion. In such cases, you may want to localize many aspects of the storefront experience including the language, products sold, currency, and more. 
+
+This tutorial shows you how to localize the shopping experience in the US supporting the `en` locale and in Switzerland  supporting `de` and  `fr`  locales  within the same Catalyst app. 
+
+By the end of this tutorial, you should have a Catalyst app where: 
+
+1. **The products sold in the US are not the same as the products sold in Switzerland.** <br />
+    Localizing products ensures that imagery and branding resonate with the local culture, values, and norms of a region.
+
+2. **The pricing features are localized for each country.** <br />
+    Localizing prices helps fulfill price expectations and tailor the shopping experience to pricing differences that vary by region. Displaying prices in local currency reduces friction in the purchasing process. 
+
+3. **The translations are localized for each country.** <br />
+    US Storefront has English (en) translations. The Switzerland storefront has French (fr) translations and German (de) translations.
+    Localizing language helps shoppers understand product details and connect with your brand. 
+
+
+There are two means of localizing the data to keep in mind:  
+
+- **[Static data](#static-data)**: This involves language translations for text elements, which are created for a specific locale that you enable in your Catalyst storefront.
+
+- **[Dynamic data](#dynamic-data)**: This involves both channel and global data pulled from the BigCommerce backend.
+
+    *Channel data* - Many of the features that you localize, like catalog and pricing, are first created for your global store and then assigned to storefront channels. You can then assign the storefront channel to a locale in the Catalyst App so that channel-specific data gets propagated to those locales. 
+
+    *Global data* - Other features, like tax, belong to the global store and require that you create zones, or regions, where you want tax rules to apply. Localizing global data is out of scope for this tutorial.    
+
+
+## Prerequisites
+
+Storefront channels are sales channels where shoppers can browse and purchase products. You need [Multi-Storefront enabled](https://support.bigcommerce.com/s/article/Enabling-Multi-Storefront?language=en_US) on your store so that you can create a storefront channel for the US and a separate storefront channel for Switzerland to configure within your Catalyst app. One of the storefront channels should be your Catalyst channel. To have two active storefront seats, you may need to [buy more storefront seats](https://support.bigcommerce.com/s/article/Enabling-Multi-Storefront?language=en_US#purchasing) or upgrade your BigCommerce plan. 
+
+* If you don't already have a Catalyst storefront, follow the [Getting Started with Catalyst](/docs/storefront/catalyst/getting-started) documentation to create your Catalyst app using [One-Click Catalyst](/docs/storefront/catalyst/getting-started/workflows/one-click-catalyst). To follow along, choose the option to use sample catalog data. Then, follow the [Local Development](/docs/storefront/catalyst/getting-started/local-development) documentation to pull down the code and run locally. This Catalyst storefront will be the default channel for your Catalyst app, which is the channel that gets automatically added to your `.env.local` file.
+- For the secondary channel, follow the [Getting Started with Catalyst](/docs/storefront/catalyst/getting-started) flow a second time. This will create a second Catalyst storefront. The Catalyst storefront you created in the first step will be your primary channel. 
+
+<Callout>
+  Your secondary Catalyst storefront creates several things that we **don't
+  need** in this example including two Makeswift sites, an "Edit in Makeswift"
+  button, and a deploy preview. You can fully ignore these pieces for this
+  secondary storefront. Additionally, you can delete the Makeswift sites
+  entirely by logging into Makeswift. Keep in mind, the names for the Makeswift
+  sites will match the name of your Catalyst storefront so be sure to delete the
+  sites associated with the secondary storefront, not the primary one.
+</Callout>
+
+Under Channels, make your channel active by clicking the ellipses **(...)** next to the storefront and clicking **Make active**.
+
+
+## Enable locales
+
+First, you need all the locales you plan to use enabled in your Catalyst storefront, in this case, `en`, `fr`, and `de`. Note that you only need to add locales to the Catalyst channel you created as it is the default channel for your Catalyst app, not both channels you are using.
+
+To add locales for your Catalyst storefront in the control panel:
+
+1. Under the **Channels** tab, choose your Catalyst storefront and click on the **Localization** tab.
+2. Click **Add new** and save your language selections. Make sure the new languages are active using the settings here.
+
+![Locales](https://storage.googleapis.com/bigcommerce-production-dev-center/images/catalyst/multi-storefront/locales.png)
+
+## Configure channels in your Catalyst app
+
+In your Catalyst app, you need to configure the channel where Catalyst pulls data from for each locale you want to use. When you switch to the locale in your storefront selector, channel data gets propagated to that locale. 
+
+First, identify the channel ID of your storefront channels:
+
+1. Under the **Channels** tab, choose your Catalyst storefront.
+2. Locate the numeric value in the URL that follows the channel path segment. This is your Channel ID.   
+
+```
+https://store-{{store_hash}}.mybigcommerce.com/manage/channel/{{channel_id}}/app?id=53284
+```
+
+You'll need to do the same for your secondary storefront channel as well.
+
+In this example, we'll use 1063175 and 1718564 as the channel Ids. The plan is to sell to the US through the channel with an ID of 1063175 and use the English `en` locale. We’ll then sell to Switzerland through the other storefront channel with ID 1718564 and have two locales, `fr` and `de`.
+
+In your Catalyst app, adjust the `localeToChannelsMappings` object in your `channels.config.ts` file:
+
+```ts
+const localeToChannelsMappings: Record<string, string> = {
+  en: '1063175',
+  fr: '1718564',
+  de: '1718564'
+};
+```
+
+<Callout type="info">
+One current limitation is that you can only assign a specific locale to one storefront (2 storefronts can not have the same locale). However, for some locales, you can add a subtag to the locale code to indicate the region, for example, `en-US` (U.S. English) and `en-AU` (Australian English). You can find a list of all locale codes (with subtags) that BigCommerce supports when you add locales to your storefront.  
+</Callout>
+
+## Localize your data
+
+
+### Static data
+
+Each locale that we want to include on our storefronts – in our case  `en`, `fr`, and `de` – has text elements that need language translations. Learn more about how to [translate those text elements into multiple languages](/docs/storefront/catalyst/content-management/internationalization/multi-language/setup#translating-static-strings) in the tutorial.
+
+If you're using Makeswift, you'll need to add the same locales that you added in your Control Panel. 
+
+![Makeswift locales](https://storage.googleapis.com/bigcommerce-production-dev-center/images/catalyst/multi-storefront/makeswift%20locales.png)
+
+For more details on customizing content in Makeswift, check out the [Translating Makeswift content](/docs/storefront/catalyst/content-management/internationalization/multi-language/setup#translating-makeswift-content) section.
+
+
+### Dynamic data
+
+
+#### Catalog 
+
+If you followed the getting started guide with sample data, your Catalyst storefront should already include products and categories that were added to your catalog. Your data might be different if you didn’t use sample data. Here are the products from your catalog that this demo will use: 
+
+![Catalyst products](https://storage.googleapis.com/bigcommerce-production-dev-center/images/catalyst/multi-storefront/catalyst%20products.png)
+
+To sell different products in the US and Switzerland, you need to assign US products to the US channel and Swiss products to the other channel. 
+
+To illustrate, we’re going to assign the following products to the US channel and remove them from the Swiss channel.    
+
+* ZZ Plant
+* Spray Bottle
+* Snake Plant
+
+![US products](https://storage.googleapis.com/bigcommerce-production-dev-center/images/catalyst/multi-storefront/us%20products.png)
+
+We’re also going to assign the following products to the Swiss channel and remove them from the US channel. 
+
+* Sansevieria
+* Pothos
+* Palm
+
+![Swiss products](https://storage.googleapis.com/bigcommerce-production-dev-center/images/catalyst/multi-storefront/swiss%20products.png)
+
+To assign (or remove) catalog products to your channels in the control panel:
+
+1. Under the **Products** tab in the control panel, click on **All Products.**
+2. For a given product, click the dropdown under the **Channels** column, click **Manage channels**, check the boxes next to the channel you want to assign the product. 
+
+To follow along, make sure you have a category named **Shop All** on both channels. That category comes by default with the sample data on your Catalyst storefront. Ensure that the products you previously assigned to the channels are in the **Shop All** category for their respective channels:
+
+You can create categories for your channel in the control panel:   
+
+1. Under the **Products** tab in the control panel, click on **Categories**
+2. Click **+ Add New** and select the channel you want for the category. Make sure you enable the category’s visibility.
+3. Assign the product to the categories you created by clicking the ellipses **(...)** next to the product, clicking **Edit**, checking the category you created for the storefront, then clicking **Save**. 
+
+Start your development server.
+
+When you visit the “Shop All” category, you should see products you added to the US Channel when you are in the `EN` locale. When you switch to the `DE` or `FR` locale, you should see the products you added to the Swiss channel.   
+
+<Video src={"https://storage.googleapis.com/bigcommerce-production-dev-center/videos/catalyst/Products%20MSF%20Catalyst.mov"} />
+
+Learn how to translate the products and categories into French and German in the [Localizing a Storefront into Multiple Languages](/docs/storefront/catalyst/content-management/internationalization/multi-language/setup#translating-dynamic-data-from-bigcommerce) tutorial.
+
+#### Pricing
+
+Now we’re going to see how to localize prices for products that are common between both  storefronts selling to the US and Switzerland .  
+
+To start, make sure the following products are assigned to both the US and Swiss channels.    
+
+* Monstera
+* Jade
+* Fiddle Leaf Fig
+
+Next, you need to create a [price list](https://support.bigcommerce.com/s/article/Price-Lists?language=en_US) to specify US prices and a separate price list to specify prices for Switzerland.
+
+<Video src={"https://storage.googleapis.com/bigcommerce-production-dev-center/videos/catalyst/MSF%20Price%20list%20Swiss.mov"} />
+
+Here are the step by step instructions on creating a price list for a channel: 
+
+1. Under the **Products** tab in the control panel, click on **Price lists**, click **Create new**, and give it a name
+2. Click the ellipses **(...)** next to the price list, click **Edit**. You can filter the products you see in the control panel by the storefront channel. Enter prices for one of the channels for the three products, then click **Save**. 
+3. Click on the **Assignments** tab, click **+ Add Assignment**, and choose the channel you want to assign the price list.
+
+Here’s a sample list of prices for the US.
+
+![US Price List](https://storage.googleapis.com/bigcommerce-production-dev-center/images/catalyst/multi-storefront/us%20price%20list.png)
+
+Here’s the sample list of prices for the Swiss channel.
+
+![Swiss Price List](https://storage.googleapis.com/bigcommerce-production-dev-center/images/catalyst/multi-storefront/swiss%20price%20list.png)
+
+When you visit the `en` locale, you should see the US prices. When you visit the `fr` and `de` locales, you should see the prices for Switzerland.
+
+<Video src={"https://storage.googleapis.com/bigcommerce-production-dev-center/videos/catalyst/Catalyst%20MSF%20price%20lists.mov"} />
+
+#### Currencies
+
+Now we’re going to [localize currencies](https://support.bigcommerce.com/s/article/Using-Multiple-Currencies?language=en_US) so that your US channel uses US dollars (USD), while your Swiss channel uses Swiss Francs (CHF) and Euros (EUR):
+
+1. In the control panel, click the **Settings** tab, and click **Currencies** to view the currency settings for your global store. 
+2. If USD, EUR, or CHF aren’t listed, click **Add new currency** and enter the currency code. <br />
+    Currencies must be listed as a **Visible** on the storefront in the global settings to show up in Catalyst. Learn more about [using multiple currencies](https://support.bigcommerce.com/s/article/Using-Multiple-Currencies?language=en_US) and setting up their payment methods. 
+
+3. Assign the currency to the correct channel by clicking the channels dropdown next to the currency. 
+
+![Currencies](https://storage.googleapis.com/bigcommerce-production-dev-center/images/catalyst/multi-storefront/currencies.png)
+
+When you visit your storefront, you should see the respective currencies: 
+
+<Video src={"https://storage.googleapis.com/bigcommerce-production-dev-center/videos/catalyst/currencies%20MSF%20Catalyst.mov"} />

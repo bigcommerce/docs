@@ -1,0 +1,64 @@
+**Overview**
+# Middleware
+
+Catalyst uses [Next.js Middleware](https://nextjs.org/docs/app/building-your-application/routing/middleware) to support key features in storefront requests.
+
+## Middleware in Next.js
+
+Middleware code executes before a route is rendered and provides an entry point for common tasks like logging, authentication, or redirects.
+
+[middleware.ts](https://github.com/bigcommerce/catalyst/blob/canary/core/middleware.ts) in the storefront root directory is responsible for applying the various middleware used by Catalyst. Each web request is “intercepted” by this middleware, which handles tasks such as managing the customer’s session and rewriting the request URL, before the request is then sent on to its final route.
+
+Any URL patterns for which middleware should not be applied can be configured in the `config` exported by `middleware.ts`. By default, static files such as sitemaps and `robots.txt` are not subject to middleware.
+
+As an example, if you have created a custom route for URLs starting with `/product-configure`, and these paths don’t need to be subject to any middleware.  Updating the `config` in `middleware.ts` as follows would exclude them:
+
+```ts filename="middleware.ts"
+export const config = {
+  matcher: [
+   '/((?!product-configure|api|admin|_next/static|_next/image|_vercel|favicon.ico|xmlsitemap.php|sitemap.xml|robots.txt).*)',
+  ],
+};
+```
+
+## With auth
+
+The `with-auth` middleware is a wrapper over a minimal implementation of [Auth.js, formerly NextAuth.js](https://authjs.dev/reference). This provides Catalyst with session management for shoppers' carts and customers' logged-in states. By default, it uses JWT cookies to avoid obligatory dependency on any persistence layer on the storefront itself. You may wish to extend this functionality to store more information in a session or add a persistence layer yourself for more flexibility and control over shopper sessions.
+
+## With routes
+
+The `with-routes` middleware overrides the default [Next.js file-based routing behavior](https://nextjs.org/docs/app/building-your-application/routing) to provide support for certain BigCommerce features in a way that allows changes users make with the store control panel and APIs to have the expected effect on the storefront.
+
+Let’s look at an example. The following is a fairly typical terse, SEO-friendly URL path:
+
+```
+/fancy-high-top
+```
+
+In a hypothetical store, this might correspond with the URL path set on a product. However, the URL path itself does not contain any information to indicate it belongs to a product. And based on the file path of the route at `app/[locale]/default/product/[slug]/page.tsx`, the URL pattern Next.js actually expects is similar to the following example:
+
+```
+/product/123
+```
+
+Despite the param name `[slug]`, what the route expects in the segment is a product entity ID. The `with-routes` middleware sends the path `/fancy-high-top` to BigCommerce using the GraphQL Storefront API's [route() node](https://developer.bigcommerce.com/graphql-storefront/reference#definition-Route) to determine the entity (in this case, a product) that corresponds with the supplied path.  It then performs an internal Next.js rewrite to the entity-specific path `/product/123`, resulting in the page being rendered by the appropriate route.
+
+The net effect is to provide full freedom for the custom URL configuration BigCommerce provides. This allows for any desired URL pattern from `/fancy-high-top` to `/product/fancy-high-top` to `/shoes/high-tops/fancy-high-top`.
+
+This ensures that any URL assigned to an object's [node](https://developer.bigcommerce.com/graphql-storefront/reference#definition-Node) using either the store control panel or APIs works as expected on the Catalyst storefront, including [301 redirects](https://support.bigcommerce.com/s/article/MSF-301-Redirects#adding).
+
+The `with-routes` middleware also checks the [storefront status](https://developer.bigcommerce.com/graphql-storefront/reference#definition-StorefrontStatusType) so that when a control panel or API user takes a storefront down for **MAINTENANCE** or sets it to **LAUNCHED**, the live storefront reflects the change without waiting for a rebuild of the Next.js application.
+
+### Performance and KV Store Configuration
+
+The `with-routes` middleware results in a performance penalty, as it involves an extra, blocking API request required to render site pages. 
+
+Path-entity relationships are very cacheable, but Next.js middleware cannot use typical `cache()` functionality, so an alternative caching backend is required. Catalyst uses a [caching implementation](https://github.com/bigcommerce/catalyst/tree/main/core/lib/kv) that’s flexible for multiple KV adapters. By default, [Vercel KV](https://vercel.com/docs/storage/vercel-kv) is supported and is automatically enabled when you connect a Vercel KV instance to a Catalyst storefront. 
+
+**Key takeaway: For optimal performance with Catalyst’s built-in routing behavior, in production you should configure a KV store.**
+
+We plan to support other caching backends in future releases, such as a generic adapter for traditional Redis backends. Creating your own adapter for your chosen KV is typically a simple process.
+
+If you don't want to use the control panel or API-configured URLs on your Catalyst storefront and don't want to support storefront status checks, you can remove the `with-routes` middleware and gain a performance improvement.
+
+For linking purposes, you may want to tightly control your URLs such that they are known in advance at build time, or engineer routing solutions in other ways.

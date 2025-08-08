@@ -1,0 +1,48 @@
+# Customer Session
+
+[Auth.js](https://authjs.dev/) manages session persistence by issuing a session cookie that embeds a JWT along with session data. In Catalyst, this session data includes the [customer access token](https://developer.bigcommerce.com/docs/start/authentication/graphql-storefront#customer-access-tokens), which allows your app to authenticate shoppers without storing session data on the server. 
+
+In any request, the session cookie authenticates the customer with the Catalyst app, while a customer access token authenticates them with BigCommerce so that you can add customer-specific context to many GraphQL operations. BigCommerce uses the customer access token to associate the request with the authenticated shopper and return personalized customer data.
+
+Here's how the flow works in Catalyst:
+
+1. **Anonymous session**: BigCommerce generates an anonymous session as soon as any shopper hits the storefront for the first time. Catalyst then updates this session with a customer access token when a shopper logs in.
+2. **Customer Access Token Issuance**: BigCommerce automatically issues a customer access token upon successful login (via password or JWT). 
+
+3. **Storage in Auth.js Session**: The customer access token is automatically stored within the session managed by Auth.js. With Auth.js, the `callbacks.jwt` function ensures that this token is embedded within the JWT when the user logs in, while the `callbacks.session` function makes the token accessible in the session object.
+4. **Session Retrieval**: When your app needs session data, it calls the `auth()` function, which retrieves the session object containing the customer access token.
+5. **Authentication Flow** for when your app needs to interact with BigCommerce on behalf of the customer:
+    * You must retrieve the customer access token from the session cookie so that your app can use it. Catalyst comes with a `getSessionCustomerAccessToken` utility function to help you do so.
+    * In the request to BigCommerce, you need to then include the customer access token and define the caching strategy accordingly. If you are fetching a query with customer-specific information, you need to set the `cache` value to `no-store` so guest shoppers don't receive customer-specific information. For a full example, see the [Catalyst Client](/docs/storefront/catalyst/reference/client) reference. 
+
+<br />
+```ts
+import { getSessionCustomerAccessToken } from '~/auth';
+
+const customerAccessToken = await getSessionCustomerAccessToken();
+
+const response = await client.fetch({
+  document:  // query or mutation
+  customerAccessToken,
+  fetchOptions: customerAccessToken ? { cache: 'no-store' } : { next: { revalidate } },
+});
+```
+
+## Built-in functionality supported by the customer context
+
+The customer context derived from the customer access token supports a variety of built-in functionalities. 
+These functionalities are tied to the authenticated customer's session and allow for personalized and secure interactions with the BigCommerce API.
+
+1. **Order History** – Retrieve the customer's order history, including order status, total amount, shipping details, and line items.
+2. **Personalized Cart Data** – Access the customer's cart, including line items, quantities, pricing, and selected options.
+3. **Customer Group-Based Pricing** – Apply customer group-specific pricing rules to products and cart items.
+4. **Customer Group-Based Catalog Visibility** – Restrict or allow access to specific products or categories based on the customer's group.
+5. **Account Information** – Retrieve customer account details such as name, email, and company information.
+6. **Address Management** – Access and manage customer shipping and billing addresses.
+7. **Checkout Redirection** – Generate a personalized checkout URL for the customer.
+8. **Tax and Currency Settings** – Apply tax and currency settings based on the customer's location and account.
+9. **Personalized Promotions** – Apply promotions and discounts specific to the customer or their group.
+10. **Wishlist and Saved Items** – Access and manage the customer's wishlist or saved items.
+11. **Customer-Specific Product Recommendations** – Provide personalized product recommendations based on the customer's purchase history or preferences.
+12. **Customer-Specific Shipping Options** – Display shipping options tailored to the customer's address and preferences.
+13. **Customer-Specific Tax Exemptions** – Apply tax exemptions for eligible customers (e.g., wholesale customers or tax-exempt organizations).

@@ -1,0 +1,38 @@
+# Catalyst Multi-Storefront Overview
+
+Catalyst supports selling internationally to multiple countries, where each country has its own language, currency, payment method, etc. This requires a multi-storefront setup.
+
+This overview describes how to manage the regional configurations in the backend data and incorporate them into the frontend through locale-specific URLs.
+
+## Storefront content
+
+In a multi-storefront setup, you can manage localization settings and content for each storefront in the control panel using the [Channel Manager](https://support.bigcommerce.com/s/article/Selling-Everywhere-with-Channel-Manager).
+
+The storefront content to localize includes the following:
+
+* [Products and categories](https://support.bigcommerce.com/s/article/Getting-Started-with-Localization-on-Multi-Storefronts?language=en_US#localizing-products)
+* [Currency](https://support.bigcommerce.com/s/article/Getting-Started-with-Localization-on-Multi-Storefronts?language=en_US#currency)
+* [Pricing via price lists](https://support.bigcommerce.com/s/article/Getting-Started-with-Localization-on-Multi-Storefronts?language=en_US#localizing-products)
+* [Date and physical dimension formats](https://support.bigcommerce.com/s/article/Getting-Started-with-Localization-on-Multi-Storefronts?language=en_US#localizing-settings)
+* Checkout
+* Order statuses
+* [Promotions](https://support.bigcommerce.com/s/article/Getting-Started-with-Localization-on-Multi-Storefronts?language=en_US#promotions-comms)
+* [Emails](https://support.bigcommerce.com/s/article/Getting-Started-with-Localization-on-Multi-Storefronts?language=en_US#promotions-comms)
+* Payment methods
+* Shipping options
+* Tax settings
+
+Learn more in the [Getting Started with Localization on Multi-Storefronts](https://support.bigcommerce.com/s/article/Getting-Started-with-Localization-on-Multi-Storefronts) support article.
+
+You can localize the storefront theme using [static translations](/docs/storefront/catalyst/content-management/internationalization/theme-translations).
+
+## Locale-specific URLs
+
+Catalyst supports the following locale-specific URLs that you can use to localize your storefronts. Learn more about the pro and cons for each [locale-specific URL](https://developers.google.com/search/docs/specialty/international/managing-multi-regional-sites#locale-specific-urls) in the Google Documentation.
+
+Catalyst can service multiple languages by connecting multiple channels to the storefronts and routing each language through different subpaths. For best practices on how to set up localized websites, see the [Managing multi-regional and multilingual sites](https://developers.google.com/search/docs/specialty/international/managing-multi-regional-sites) guide in the Google Documentation.
+
+| URL structure | Example | Recommended use case | How to implement for Catalyst |
+| :-- | :-- | :-- | :-- |
+| Root domain <br /><br /> Subdomain <br /><br /> gTLD | `store.com` <br /><br /> `fr.store.com` <br /><br /> `store.co.uk` | International selling, where you want to personlize the language, currency, payment method, and more. | Create a [storefront channel](/docs/storefront/multi-storefront) and point it to a domain, subdomain, or gTLD. |
+| Domain subpath | `store.com/fr` | Providing multiple languages within a country. | The subpath can point to a different channel. |

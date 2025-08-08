@@ -1,0 +1,96 @@
+import { Callout } from 'nextra-theme-docs';
+
+# Catalyst Multi-Language Overview
+
+Catalyst supports translating content into multiple languages on a single storefront.
+
+This reference describes tools for managing translations for dynamic product catalog data. It includes managing language settings, detecting shopper preferences based on browser settings or shopper input, and switching between languages on the storefront.
+
+For information on how to manage translations for the storefront theme, see the [Theme Translations](/docs/storefront/catalyst/content-management/internationalization/theme-translations) guide.
+
+## Content management
+
+BigCommerce supports multiple locales for shoppers in different regions.
+
+* [Get a list of all locales](https://developer.bigcommerce.com/docs/store-operations/settings/locales#query-locales-supported-by-the-platform) supported by the BigCommerce platform using the GraphQL Admin API.
+* [Add locales](https://developer.bigcommerce.com/docs/store-operations/settings/locales#add-a-locale) to your Catalyst channel using the GraphQL Admin API. There is a max of five locales per channel.
+* Add translations for products to multiple locales added to Catalyst channel. Learn about how to use the GraphQL Admin API to [add translations to a single channel and locale](https://developer.bigcommerce.com/docs/store-operations/catalog/msf-international-enhancements) or use BigCommerce's [Translations UI App](https://support.bigcommerce.com/s/article/The-BigCommerce-Translations-App).
+
+    It's possible to modify product URLs in Catalyst so that each variant has a unique URL based on the selected options, essentially creating separate product pages for each variant. However, this isn't done automatically and requires custom code. You can link to a specific product variant using query parameters, which update dynamically as options are selected on the product detail page (PDP).
+* Add translations for categories and locations to multiple locales added to Catalyst channel. Learn about how to use the [GraphQL Admin API](https://developer.bigcommerce.com/docs/store-operations/translations) to add translations to a single channel and locale or use BigCommerce's [Translations UI App](https://support.bigcommerce.com/s/article/The-BigCommerce-Translations-App).
+
+## Default Catalyst features
+
+### Manage language settings
+
+You can select a default language and any additional languages on a single Catalyst storefront through the Control Panel, the [Locales features](https://developer.bigcommerce.com/docs/store-operations/settings/locales#add-a-locale) of the GraphQL Admin API, and the CLI:
+
+* In the Control Panel, [Localization settings for a storefront](https://support.bigcommerce.com/s/article/Getting-Started-with-Localization-on-Multi-Storefronts?language=en_US#localizing-settings) are available in the channel manager for Catalyst channels. Locales enabled on your Catalyst storefront are propagated to Makeswift, where you can create and [translate pages in the Makeswift Visual Editor](https://docs.makeswift.com/product/localization#localization). Learn more about [managing pages in Makeswift](https://support.bigcommerce.com/s/article/Makeswift?language=en_US#managing-pages) through the BigCommerce integration.
+* If you want to manage languages through the API, see the [Customize language settings](#customize-language-settings) section.
+* If you want to manage languages through the CLI, see the [Language settings using the CLI](#configuring-language-settings-using-the-cli) section.
+
+### Detect and switch between shopper languages
+
+Out of the box, the Catalyst storefront displays translated product data for the language that the shopper selected in the pre-configured language selector. The [Catalyst Client](/docs/storefront/catalyst/reference/client) automatically fetches the localized data from the GraphQL Storefront API, which lets you query data from your enabled storefront languages.
+
+The Catalyst storefront sends an `Accept-Language` HTTP request header to indicate the shopper’s preferred language or locale. This header allows the system to identify the appropriate translation to display. The translations for checkout are dynamically applied based on the locale specified in this header.
+
+## Customization
+
+Catalyst provides built-in features, but you can further customize its functionality to fit your needs.
+
+### Customize language settings
+
+You can manage language settings within a channel using the GraphQL Admin API or the Catalyst CLI. This includes:
+
+* Adding and removing languages
+* Setting a default language
+* Activating or deactivating specific languages
+
+By default, Catalyst does not include multilingual support when installing a storefront via the CLI. However, you can enable and manage locales using the GraphQL Admin API or the CLI. For detailed instructions, refer to the [Locale Configuration Guide](https://developer.bigcommerce.com/docs/store-operations/settings/locales).
+
+### Configuring language settings using the CLI
+
+<Callout type="info">
+These steps apply only when creating a new channel.
+</Callout>
+1. Run the Catalyst CLI
+    To create a new Catalyst project, run the following command:
+
+      ```shell copy
+      npm create @bigcommerce/catalyst@latest
+      ```
+
+2. Configure project settings
+
+      * **Enter project name** - When prompted, provide a name for your project.
+      * **Authorize and create a channel** -  Complete the authorization process, create a new channel, and specify its name. <br />
+      * **Select a default language** - Choose a default language from the list by entering a 2-letter or 4-letter locale code. (e.g., `en`, `en-US`). The CLI will display available options based on your input. <br />
+      * **Add additional languages (optional)** - If needed:
+        * Enter "Yes" when prompted.
+        * Select up to four additional locale codes, separated by commas.
+        * The CLI will suggest available options based on your input.
+        * The selected languages will be added as active languages for the channel.
+
+For a list of webhooks that are triggered when locales are added, updated, and deleted, see the [Settings Webhook Events](https://developer.bigcommerce.com/docs/integrations/webhooks/events/channels#settings).
+
+### Supported languages
+
+Catalyst supports multiple languages, allowing you to tailor the storefront experience for different regions. You can view the [full list of supported languages](https://developer.bigcommerce.com/docs/storefront/cart-checkout/localization#adding-your-own-translation-values) that we automatically provide.
+
+### Create a custom language selector
+
+You can create a custom language selector using the GraphQL Storefront API. The GraphQL Storefront queries allow you to retrieve the available locales and identify the default locale and query content in shopper preferred locale.
+
+To render dynamic product data, GraphQL Storefront API supports fetching language-specific content for products. For more information, see the [Multi-Language Support in GraphQL Storefront API](https://developer.bigcommerce.com/docs/storefront/graphql/multi-language-support) guide.
+
+### Translate checkout & transactional emails
+
+You can localize your checkout page by translating fixed text elements, known as static strings, into multiple languages. Static string translations are managed using [JSON files in your Catalyst project](/docs/storefront/catalyst/content-management/internationalization/theme-translations), where each file contains the language-specific translations. For translation keys that checkout supports, see the [Enabling Multi-Language Checkout](https://developer.bigcommerce.com/docs/storefront/cart-checkout/localization#adding-your-own-translation-values) article. You can also use translation keys to translate emails using the [Email Template](https://developer.bigcommerce.com/docs/rest-content/email-templates#update-a-template) endpoints of the REST Content API.
+
+By default, BigCommerce offers translations for the checkout page and emails in 19 languages. You can view the [full list of supported languages](https://developer.bigcommerce.com/docs/storefront/cart-checkout/localization#adding-your-own-translation-values) that we automatically provide.
+
+## Resources
+
+* [Locale Configuration](/docs/store-operations/settings/locales)
+

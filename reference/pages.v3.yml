@@ -12,7 +12,7 @@ info:
 
     A **page** appears on a **site** that is associated with a **channel**. 
 
-    Some pages, such as blog pages, contact forms, and plain-text or HTML pages, are web pages in the traditional sense. They contain markup (a `body`) and load at a relative page location on the site itself (the `url`). Other pages, such as link and feed pages, make external or non-visual content available from the menu of a parent page or by direct link.
+    Some pages, such as blog pages, contact forms, and plain-text or HTML pages, are web pages in the traditional sense. They contain markup (a `body`) and load at a relative page location on the site itself (the `url`). Other pages, such as link pages, make external or non-visual content available from the menu of a parent page or by direct link.
 
     ### Bulk operations
 
@@ -28,7 +28,6 @@ info:
     | `contact_form` | A user-customizable page that contains a contact form. | HTML |
     | `raw` | A user-defined page that contains HTML markup or other stringified code. | HTML, other code |
     | `blog` | A page that contains blog posts. Use caution; `blog`-type pages can only be created in the store control panel, but you may be able to change the type of a blog page to something else with this API. Use the [blog feature of the REST Content API](/docs/rest-content/store-content/blog-posts#create-a-blog-post) to work with blog posts and tags. | empty string |
-    | `feed` | Makes RSS-syndicated content feeds available in the menu of other pages that contain markup. | &mdash; |
     | `link` | A link to an external absolute URL that follows [RFC 3986 standards](https://www.rfc-editor.org/rfc/rfc3986). Displays in the menu of other pages that contain markup. | &mdash; |
 servers:
   - url: 'https://api.bigcommerce.com/stores/{store_hash}/v3'
@@ -92,7 +91,6 @@ paths:
                   - $ref: '#/components/schemas/typePage'
                   - $ref: '#/components/schemas/typeBlog'
                   - $ref: '#/components/schemas/typeContactForm'
-                  - $ref: '#/components/schemas/typeFeed'
                   - $ref: '#/components/schemas/typeRaw'
                   - $ref: '#/components/schemas/typeLink'
                 - title: "Create multiple pages using array"
@@ -102,7 +100,6 @@ paths:
                       - $ref: '#/components/schemas/typePage'
                       - $ref: '#/components/schemas/typeBlog'
                       - $ref: '#/components/schemas/typeContactForm'
-                      - $ref: '#/components/schemas/typeFeed'
                       - $ref: '#/components/schemas/typeRaw'
                       - $ref: '#/components/schemas/typeLink'
             examples:
@@ -137,16 +134,18 @@ paths:
                     search_keywords: string
                     url: /my-content-page
                   - channel_id: 547
-                    name: A feed page
+                    name: Content Page For Secondary Channel
                     is_visible: false
                     parent_id: 0
                     sort_order: 0
-                    type: feed
-                    meta_title: A feed page
+                    type: page
+                    body: <div>Hello World!</div>
+                    is_homepage: false
+                    meta_title: My Content page
                     meta_keywords: string
                     meta_description: string
                     search_keywords: string
-                    feed: /rss/a-feed-page
+                    url: /my-content-page-for-secondary-channel
         description: ''
         required: true
       responses:
@@ -394,24 +393,6 @@ paths:
                       is_homepage: false
                       is_customers_only: false
                       meta: {}
-                Feed:
-                  value:
-                    data:
-                      id: 21
-                      channel_id: 1
-                      name: Detergents podcast feed
-                      meta_title: ''
-                      is_visible: false
-                      parent_id: 0
-                      sort_order: 0
-                      meta_keywords: null
-                      feed: /rss/detergents
-                      type: feed
-                      meta_description: ''
-                      is_homepage: false
-                      is_customers_only: false
-                      search_keywords: ''
-                    meta: {}
         '404':
           description: Not Found.
           content:
@@ -759,7 +740,6 @@ components:
               - $ref: '#/components/schemas/typePage'
               - $ref: '#/components/schemas/typeBlog'
               - $ref: '#/components/schemas/typeContactForm'
-              - $ref: '#/components/schemas/typeFeed'
               - $ref: '#/components/schemas/typeRaw'
               - $ref: '#/components/schemas/typeLink'
         meta:
@@ -773,7 +753,6 @@ components:
             - $ref: '#/components/schemas/typePage'
             - $ref: '#/components/schemas/typeBlog'
             - $ref: '#/components/schemas/typeContactForm'
-            - $ref: '#/components/schemas/typeFeed'
             - $ref: '#/components/schemas/typeRaw'
             - $ref: '#/components/schemas/typeLink'
         meta:
@@ -824,7 +803,6 @@ components:
             - page
             - raw
             - contact_form
-            - feed
             - link
             - blog
         body:
@@ -848,10 +826,6 @@ components:
         meta_title:
           type: string
           nullable: true
-        feed:
-          type: string
-          description: |
-            The URL of the RSS feed. Required in a `POST` request if the page type is `feed`.
         link:
           type: string
           description: |
@@ -946,7 +920,6 @@ components:
             - page
             - raw
             - contact_form
-            - feed
             - link
             - blog
         is_homepage:
@@ -1016,22 +989,6 @@ components:
                 | `orderno` | A field that lets customers specify a subject order number. |
                 | `rma` | A customer’s submitted RMA (Return Merchandise Authorization) number. |
               example: 'fullname,companyname,phone,orderno,rma'
-    typeFeed:
-      description: |-
-        `type: feed`.  Makes RSS-syndicated content feeds available in the menu of other pages that contain markup. No page body.
-      title: feed
-      allOf:
-        - $ref: '#/components/schemas/anyTypePage'
-        - $ref: '#/components/schemas/pageMeta'
-        - $ref: '#/components/schemas/searchKeywords'
-        - type: object
-          properties:
-            feed:
-              type: string
-              description: |
-                The URL of the RSS feed. Required in a `POST` request if the page type is `feed`.
-          required:
-            - feed
     typeRaw:
       description: |-
         `type: raw`. A user-defined page with a body that contains HTML markup or other stringified code.
@@ -1120,7 +1077,6 @@ components:
                   - $ref: '#/components/schemas/typePage'
                   - $ref: '#/components/schemas/typeBlog'
                   - $ref: '#/components/schemas/typeContactForm'
-                  - $ref: '#/components/schemas/typeFeed'
                   - $ref: '#/components/schemas/typeRaw'
                   - $ref: '#/components/schemas/typeLink'
               meta:

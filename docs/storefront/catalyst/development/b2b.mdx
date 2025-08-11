@@ -1,0 +1,164 @@
+# B2B Edition
+
+Following these steps will help you integrate Catalyst with B2B Edition's Open Source Buyer Portal, which is a traditional client-side rendered React application. The steps below also document the process for running the B2B Buyer Portal React application locally, so that you can customize the experience inside of the Buyer Portal if required.
+
+This implementation primarily handles authentication with the B2B Storefront API and triggering the render of the Buyer Portal on top of Catalyst. It is similar to the experience currently available for BigCommerce's Stencil storefront framework.
+
+If you are looking to integrate directly into Catalyst's routes and components, this can be done by integrating [B2B Edition's APIs](https://developer.bigcommerce.com/b2b-edition/apis). We've seen this happen organically and are working on streamlining this path as well.
+
+<Callout type="info">
+Using the default B2B Edition implementation with Catalyst requires support for proxy Customer Access Tokens (CAT). All new B2B Edition stores support this functionality by default. If your store had B2B Edition **prior to July 2025**, you must contact support to enable this feature.
+</Callout>
+## Creating and deploying the storefront
+
+**Prerequisites**
+
+To create a B2B storefront on the Catalyst platform, you will need the following:
+
+- A target store. 
+- Multi-storefront BC and B2B. 
+- Git and a GitHub account. 
+- Node.js and PNPM. 
+- A Vercel account. Using your GitHub account to sign up is recommended for ease. 
+- A V3 BC API token. 
+- A V3 B2B API token. You can retrieve this from the B2B control panel under the "API Accounts" tab by clicking "Create API account." Ensure it is a V3 API token. 
+
+### 1. Using Catalyst CLI
+
+Carefully follow the process at [Manual Installation](/docs/storefront/catalyst/development/manual-installation). Ensure you have met the prerequisites linked at the top of that page. Replace the Catalyst CLI command with: `pnpm create @bigcommerce/catalyst@latest --gh-ref integrations/b2b-buyer-portal`.
+
+Supply a name for your project and answer all subsequent questions. Connect your BigCommerce account and select the target store. Installing sample data is optional. 
+
+Once the directory is created (it should match your project name), open it and push the fork to your GitHub account.
+
+### 2. Deploy your fork in Vercel
+
+Before proceeding with deployment, ensure you set the following environment variables in Vercel. Without these, the build process will not finish successfully. 
+
+The full list of environment variables should include all those listed in the `.env.example` file. If a `.env.local` file was created in the previous step, you can pick the values from there. 
+
+Environment variables to add:
+
+- BIGCOMMERCE_STORE_HASH
+- BIGCOMMERCE_STOREFRONT_TOKEN: Use your store API key to get a storefront token. Refer to the BigCommerce developer documentation for [creating a token](https://developer.bigcommerce.com/docs/rest-authentication/tokens#create-a-token). 
+- BIGCOMMERCE_CHANNEL_ID 
+- ENABLE_ADMIN_ROUTE: Default to `true`. 
+- AUTH_SECRET: Generate it using `openssl rand -hex 32`. 
+- TURBO_REMOTE_CACHE_SIGNATURE_KEY: Generate using openssl rand -hex 32. 
+- TRAILING_SLASH: Default to `false`. 
+
+Also add the B2B related environment variables:
+
+- B2B_API_HOST: https://api-b2b.bigcommerce.com.
+  - This is the domain of the B2B API. NOTE: Make sure this value does not have a trailing slash.
+- B2B_API_TOKEN: The V3 B2B API token obtained during the preparation step. 
+
+Once all environment variables are set, we can proceed with deployment. 
+
+1. Sign in to your Vercel account. You should be redirected to your projects dashboard.
+2. Click on `Add new > Project`. 
+3. Select the repository you created a fork for.  If this is your first time deploying with Vercel, you will need to grant access to one or more repositories. It is recommended to give Vercel access only to specific repositories. 
+4. In the "New Project" form, ensure the framework preset is set to Next.js and the root directory is core. Make sure the project points to the `integrations/b2b-buyer-portal` branch.
+5. Click `Deploy`. 
+
+If you need to redeploy your project, go to `Deployments > Create` deployment and specify the desired branch.  You can also configure Vercel to automatically monitor for changes and deploy them by going to `Project -> Settings -> Environments` and selecting the desired branch for tracking. 
+
+### 3. Updating Site URL in the Catalyst channel
+
+By default, BigCommerce creates an automated deploy for merchants. You need to update the URL with your .vercel.app domain where your Catalyst app is hosted. 
+
+Use the following curl command to get all site URLs:
+
+```sh
+curl -X GET \
+  https://api.bigcommerce.com/stores/<STORE-HASH>/v3/sites \
+  -H 'Content-Type: application/json' \
+  -H 'X-Auth-Token: <YOUR-BC-TOKEN-HERE>'
+```
+
+The response will return a list of site objects in your store. Search for the site object where the channel_id matches your Catalyst channel.
+
+Update the site's URL using the site_id with the following curl command. Make sure to supply your correct .vercel.app domain in the -d argument with the key url: 
+
+```sh
+curl -X PUT \
+  https://api.bigcommerce.com/stores/<STORE-HASH>/v3/sites/<SITE-ID> \
+  -H 'Content-Type: application/json' \
+  -H 'X-Auth-Token: <YOUR-BC-TOKEN-HERE>' \
+  -d '{
+    "url": "<YOUR-VERCEL-DOT-APP-DOMAIN>"
+  }' | jq
+```
+
+### 4. Enable B2B in the B2B control panel
+
+In the B2B Edition dashboard, navigate to Storefronts and click the ellipsis (...) next to your Catalyst Headless Storefront Channel. Click “Enable B2B” and ensure the channel updates to “B2B Enabled”
+
+If you have an existing B2B storefront, you may need to [provision B2B Edition on additional storefronts](https://support.bigcommerce.com/s/article/B2B-Edition-and-Multi-Storefront?language=en_US) in order to enable B2B on your Catalyst channel.
+
+### 5. Configure auth routes and enable storefront redirection
+
+To allow shoppers to log in (and log out) from the Stencil checkout page and persist their login state back to the Catalyst/headless storefront, follow the step-by-step instructions detailed here: [Checkout Session Syncing Solutions](/docs/storefront/catalyst/development/session-sync).
+
+## Deploying Catalyst with your custom Buyer Portal
+
+For a required headless setup using JSX and the Next.js `<Script />` tag, the change needs to be added to the following file and lines of code:
+
+- File: core/b2b/script-production.tsx 
+
+- Lines of Code: You will typically embed the Buyer Portal within a JSX component, specifically, within the return statement of your React component, you would include the script tags to load the Buyer Portal:
+
+```jsx
+  return (
+    <>
+      <Script>
+        {`
+        window.b3CheckoutConfig = {
+          routes: {
+            dashboard: '/#/dashboard',
+          },
+        }
+        window.B3 = {
+          setting: {
+            store_hash: 'REPLACE_WITH_YOUR_STORE_HASH',  
+            channel_id: REPLACE_WITH_YOUR_CHANNEL_ID,
+          },
+        }
+        `}
+      </Script>
+      <Script
+        type="module"
+        crossOrigin=""
+        src="<YOUR_APP_URL_HERE>/index.*.js"
+      ></Script>
+      <Script
+        noModule
+        crossOrigin=""
+        src="<YOUR_APP_URL_HERE>/polyfills-legacy.*.js"
+      ></Script>
+      <Script
+        noModule
+        crossOrigin=""
+        src="<YOUR_APP_URL_HERE>/index-legacy.*.js"
+      ></Script>
+    </>
+  );
+```
+
+Make sure to replace values according to your configuration. If you need further guidance on deploying a custom buyer portal, you can read the documentation here: [Buyer Portal Headless Guide](https://github.com/bigcommerce/b2b-buyer-portal/blob/main/docs/headless.md).
+
+## Running the project locally
+
+This step is only required if the merchant wants to run the Buyer Portal locally or customize the Buyer Portal experience.
+
+- Clone and run the B2B Buyer Portal React application locally: B2B Buyer Portal GitHub Repository
+- Set the LOCAL_BUYER_PORTAL_HOST environment variable to the host of the B2B Buyer Portal React application. The default is http://localhost:3001.
+- Ensure you configure the Buyer Portal type in your control panel to Custom (step 5 in the B2B Buyer Portal Headless Guide)
+- Run pnpm dev from your local Catalyst repository.
+- Attempt to log in and confirm you are redirected to the Buyer Portal.
+
+<br/>
+
+<Callout type="info">
+If you have any questions or feedback, we'd enjoy hearing it! Start a GitHub Discussion or contact the B2B Edition team at [b2b@bigcommerce.com](mailto:b2b@bigcommerce.com)
+</Callout>

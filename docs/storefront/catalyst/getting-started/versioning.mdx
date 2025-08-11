@@ -1,0 +1,125 @@
+# Versioning
+
+Catalyst follows a structured versioning approach to distinguish between stable releases and ongoing development.
+
+To stay updated on our releases, check out the Catalyst [releases page](https://github.com/bigcommerce/catalyst/releases) and the [changelog](https://github.com/bigcommerce/catalyst/blob/canary/core/CHANGELOG.md) on GitHub.
+
+## How we use branches
+
+The `canary` branch contains the latest code in development and is the default branch for the Catalyst repository instead of `main`. Note that the most recent commit in `canary` may not be stable.
+
+For the most recent stable code, refer to [How we use tags](#how-we-use-tags) below.
+
+## How we use tags
+
+We create Github Releases from Git tags to indicate distributable releases of Catalyst. To get the latest stable release of Catalyst, you can use the following tags:
+
+- Catalyst - `@bigcommerce/catalyst-core@latest`
+- Catalyst (with Makeswift) - `@bigcommerce/catalyst-core@makeswift-latest`
+
+<Callout type="warning">
+  Until version 1.0 of Catalyst is released, the release deployed using
+  [One-Click Catalyst](/docs/storefront/catalyst/getting-started/workflows/one-click-catalyst) will be from the
+  `@bigcommerce/catalyst-core@makeswift-canary` tag and **is not guranteed to be
+  stable**. After 1.0 is released, this will move to use the
+  `@bigcommerce/catalyst-core@makeswift-latest` which will be stable.
+</Callout>
+
+You can also find a list of all [Catalyst release tags](https://github.com/bigcommerce/catalyst/tags) in the Catalyst repository.
+
+## How we handle versioning
+
+Catalyst is moving from a [ZeroVer](https://0ver.org/) versioning strategy to [SemVer](https://semver.org/).
+
+Each release includes a changeset that outlines changes, categorizing them as patch, minor, or major changes based on [SemVer](https://semver.org/) versioning.
+Backwards-incompatible changes will now be tagged with major version bumps.
+While the exact definition of "backwards incompatible" can vary in a customizable product, we'll aim to provide clear communication on updates that might require extra effort to integrate.
+
+These breaking or major changes include:
+
+- Updates that affect the shopper experience.
+- Modifications to the theme interface.
+- Significant internal refactors that, while not altering functionality, create substantial merge conflicts when updating Catalyst.
+
+Minor changes include:
+
+- Adding new functionality that does not interfere with existing features.
+- UI adjustments that do not modify prop interfaces.
+
+Patch changes include:
+
+- Small patches and bug fixes.
+
+## How to handle updates
+
+Catalyst is designed as a starting point for your storefront. We expect merchants to customize it extensively to meet their branding requirements and unique business needs. It's important to understand that the more customizations you add, the more challenging it becomes to merge in new updates and resolve merge conflicts; we understand that this is a very unfortunate trade-off, and as Catalyst continues to evolve, we commit to continuously improving our update guidance to help you keep your project up to date with less effort.
+
+As of Catalyst v1.0.0, we are now including migration guides along with each PR merged into the `canary` and `integrations/makeswift` branches of the Catalyst repository, to make merge conflicts easier to reason about. Migration guides, when relevant, can be found in both the `.changeset/\*.md` file associated with the commit ([example](https://github.com/bigcommerce/catalyst/pull/2370/files#diff-a28d229d79df76c759f288d0cc0c8412e7955d22c5ce46c7b63f3ce6f1982c81)), as well as the PR description that introduced the commit ([example](https://github.com/bigcommerce/catalyst/pull/2370#issue-3118949159)).
+
+Additionally, we have [documented the steps that we follow](https://github.com/bigcommerce/catalyst/blob/canary/CONTRIBUTING.md#keeping-integrationsmakeswift-in-sync-with-canary) whenever we need to pull in updates from `canary` into `integrations/makeswift`. While these steps primarily serve as documentation on how to update the Makeswift integration branch, you may find it helpful to follow those same steps whenever you need to update your own custom Catalyst fork\!
+
+While the exact steps you need to follow vary widely depending on how you've configured your own local Catalyst Git project. Here is one example of the workflow we'd recommend based on the following assumption(s):
+
+- You have a remote named `upstream` pointing to the [`bigcommerce/catalyst` repository on GitHub](https://github.com/bigcommerce/catalyst). If you do not, you can add it with `git remote add upstream ssh://git@github.com/bigcommerce/catalyst.git`, or if you are not using SSH, you can use `git remote add upstream https://github.com/bigcommerce/catalyst.git`.
+
+### Steps to update your local Catalyst project
+
+1. Fetch the latest tags from the `upstream` remote:
+
+   ```bash copy
+   git fetch upstream --tags
+   ```
+
+2. Checkout and pull the latest changes from the primary development branch in your local Catalyst project:
+
+   ```bash copy
+   git checkout your-primary-development-branch
+   git pull origin your-primary-development-branch
+   ```
+
+3. Create a new interim branch to work on your updates and resolve any merge conflicts:
+
+   ```bash copy
+   git checkout -b your-interim-sync-branch
+   ```
+
+4. Merge the latest `@bigcommerce/catalyst-makeswift@latest` tag into your interim branch:
+
+   ```bash
+   git merge @bigcommerce/catalyst-makeswift@latest
+   ```
+
+<Callout type="warning">
+  If you originally created your Catalyst project based on the version of
+  Catalyst without Makeswift, you will need to merge the latest
+  `@bigcommerce/catalyst-core@latest` tag into your interim branch instead of
+  the `@bigcommerce/catalyst-makeswift@latest` tag.
+</Callout>
+
+5. Resolve any merge conflicts that arise. After resolving any merge conflicts, open a new PR in GitHub to merge your `your-interim-sync-branch` into `your-primary-development-branch`. This PR should be code reviewed and approved by your team before the next steps.
+
+6. Once your PR is approved, the next step is to incorporate the merge commit from `your-interim-sync-branch` into `your-primary-development-branch`. There are a few ways to do this, and the best approach for you will depend on your workflow. Here are a couple of options:
+   
+   - **Option 1: Merge your interim branch into your primary development branch using the GitHub UI:** This is the recommended approach if you are not comfortable with using the command line.
+
+   - **Option 2: Rebase your primary development branch on top of your interim branch release:** This is the recommended approach if you are comfortable with using the command line, and want to keep your commit history clean.
+
+   ```bash copy
+   git checkout your-primary-development-branch
+   git rebase your-interim-sync-branch
+   ```
+
+<Callout type="info" emoji="ℹ️">
+  Regardless of which option you choose, your goal is to incorporate the merge
+  commit (the commit with two parent commits) from `your-interim-sync-branch`
+  into `your-primary-development-branch`. This has the effect of establishing a
+  new merge base for your primary development branch, so that the next time you
+  pull in updates from `upstream`, you will not have to resolve any merge
+  conflicts that you've already resolved in your interim branch.
+</Callout>
+
+7. If you went with option 2 above, you have one more step to complete. Push your changes to the remote `your-primary-development-branch`, which will automatically close the PR you opened in step 5:
+
+   ```bash copy
+   git push origin your-primary-development-branch
+   ```

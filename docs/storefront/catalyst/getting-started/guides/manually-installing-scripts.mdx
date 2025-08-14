@@ -95,3 +95,91 @@ For instance, if you wanted a script for product reviews to load only on product
 Sometimes scripts have logic that runs each time a page is visited. If you find that the script you install is working on the first page you visit, but not the second, it's likely dependent on additional logic like this.
 
 The `<Script/>` component has an `onReady` prop that accepts a function that will run every time a page is loaded, even if the script is already loaded. You can view more details about this property [on the Next.js docs](https://nextjs.org/docs/app/api-reference/components/script#onready).
+
+## Handling prerendered pages
+
+With modern browsers supporting [Speculation Rules API](https://developer.mozilla.org/en-US/docs/Web/API/Speculation_Rules_API) for prerendering, pages (especially checkout pages) may be prerendered before users actually navigate to them. This can cause analytics scripts to fire prematurely.
+
+### Detecting prerendering in your scripts
+
+When adding analytics or event-tracking scripts to Catalyst, you should check if the page is being prerendered:
+
+```tsx {1,8-19} filename="core/app/[locale]/(default)/layout.tsx" copy
+import Script from 'next/script';
+
+export default function DefaultLayout({ children }) {
+  return (
+    <>
+      {children}
+      <Script
+        src="https://your-analytics-service.com/script.js"
+        onReady={() => {
+          // Initialize analytics with prerendering support
+          if (typeof window !== 'undefined') {
+            if (document.prerendering) {
+              // Defer analytics until page becomes active
+              document.addEventListener('prerenderingchange', () => {
+                // Now it's safe to trigger analytics
+                window.yourAnalytics?.track('page_view');
+              }, { once: true });
+            } else {
+              // Page is already active
+              window.yourAnalytics?.track('page_view');
+            }
+          }
+        }}
+      />
+    </>
+  );
+}
+```
+
+### Example: Analytics script with prerendering support
+
+Here's a complete example of adding an analytics script to checkout pages that properly handles prerendering:
+
+```tsx {1,25-39} filename="core/app/[locale]/(default)/checkout/page.tsx" copy
+import Script from 'next/script';
+
+export default function CheckoutPage() {
+  return (
+    <>
+      {/* Your checkout page content */}
+      <div>Checkout content...</div>
+      
+      {/* Analytics script with prerendering support */}
+      <Script
+        id="checkout-analytics"
+        strategy="afterInteractive"
+        dangerouslySetInnerHTML={{
+          __html: `
+            function initializeCheckoutAnalytics() {
+              function triggerCheckoutEvents() {
+                // Your analytics code here
+                console.log('Checkout page analytics triggered');
+                // e.g., gtag('event', 'begin_checkout');
+                // e.g., fbq('track', 'InitiateCheckout');
+              }
+
+              if (document.prerendering) {
+                // Defer until page becomes active
+                document.addEventListener('prerenderingchange', triggerCheckoutEvents, { once: true });
+              } else {
+                // Page is already active
+                triggerCheckoutEvents();
+              }
+            }
+
+            // Initialize when script loads
+            initializeCheckoutAnalytics();
+          `
+        }}
+      />
+    </>
+  );
+}
+```
+
+This approach ensures that analytics events only fire when users actually visit the page, not when it's being prerendered in the background.
+
+For more information about prerendering, see the [Speculation Rules API documentation](https://developer.mozilla.org/en-US/docs/Web/API/Speculation_Rules_API) and the [prerender pages guide](https://developer.chrome.com/docs/web-platform/prerender-pages#eagerness).

@@ -377,11 +377,26 @@ function subscribeOnBodlEvents() {
   if (typeof window.bodlEvents.checkout.checkoutBegin === 'function') {
     // run the checkoutBegin function to get the payload
     window.bodlEvents.checkout.checkoutBegin((payload) => {
-      // log the event payload
-      console.log(
-        'window.bodlEvents.checkout.checkoutBegin ~ payload',
-        payload
-      );
+      // Check if page is being prerendered before tracking analytics
+      if (document.prerendering) {
+        // Defer analytics tracking until page becomes active
+        document.addEventListener('prerenderingchange', () => {
+          console.log(
+            'window.bodlEvents.checkout.checkoutBegin ~ payload (after prerendering)',
+            payload
+          );
+          // Now trigger your actual analytics tracking
+          // e.g., gtag('event', 'begin_checkout', payload);
+        }, { once: true });
+      } else {
+        // Page is already active, safe to track immediately
+        console.log(
+          'window.bodlEvents.checkout.checkoutBegin ~ payload',
+          payload
+        );
+        // Trigger your actual analytics tracking
+        // e.g., gtag('event', 'begin_checkout', payload);
+      }
     });    
   }
 
@@ -457,8 +472,83 @@ Accept: application/json
 }
 ```
 
+## Handling prerendered pages
+
+When pages are prerendered using [Speculation Rules API](https://developer.mozilla.org/en-US/docs/Web/API/Speculation_Rules_API), BODL events may fire before users actually navigate to the page. This is particularly important for checkout analytics where premature event firing can skew conversion tracking.
+
+### Prerendering detection for BODL events
+
+All BODL event handlers should check for prerendering before triggering analytics:
+
+```javascript
+function handleBodlEvent(eventName, payload) {
+  if (document.prerendering) {
+    // Page is being prerendered - defer analytics
+    document.addEventListener('prerenderingchange', () => {
+      // Now it's safe to trigger analytics
+      triggerAnalytics(eventName, payload);
+    }, { once: true });
+  } else {
+    // Page is already active
+    triggerAnalytics(eventName, payload);
+  }
+}
+
+function triggerAnalytics(eventName, payload) {
+  // Your analytics implementation here
+  console.log(`Analytics event: ${eventName}`, payload);
+  // e.g., gtag('event', eventName, payload);
+  // e.g., fbq('track', eventName, payload);
+}
+```
+
+### Updated BODL implementation with prerendering support
+
+Here's an updated version of the example script that includes prerendering detection:
+
+```javascript
+function subscribeOnBodlEvents() {
+  // Helper function to handle prerendering
+  function handleBodlEvent(eventName, payload) {
+    if (document.prerendering) {
+      document.addEventListener('prerenderingchange', () => {
+        console.log(`${eventName} ~ payload (after prerendering)`, payload);
+        // Add your analytics tracking here
+      }, { once: true });
+    } else {
+      console.log(`${eventName} ~ payload`, payload);
+      // Add your analytics tracking here
+    }
+  }
+
+  if (!window?.bodlEvents) {
+    console.log('BODL not available');
+    return;
+  }
+
+  // Checkout events with prerendering support
+  if (typeof window.bodlEvents.checkout?.checkoutBegin === 'function') {
+    window.bodlEvents.checkout.checkoutBegin((payload) => {
+      handleBodlEvent('checkout.checkoutBegin', payload);
+    });
+  }
+
+  if (typeof window.bodlEvents.checkout?.orderPurchased === 'function') {
+    window.bodlEvents.checkout.orderPurchased((payload) => {
+      handleBodlEvent('checkout.orderPurchased', payload);
+    });
+  }
+
+  // Apply the same pattern to other BODL events as needed
+}
+
+window.addEventListener('load', subscribeOnBodlEvents, false);
+```
+
 ## Resources
 
 - [Scripts overview](/docs/integrations/scripts)
 - [REST Management API: Scripts reference](/docs/rest-management/scripts)
 - [Using Script Manager (Help Center)](https://support.bigcommerce.com/s/article/Using-Script-Manager)
+- [Speculation Rules API documentation](https://developer.mozilla.org/en-US/docs/Web/API/Speculation_Rules_API)
+- [Prerender pages guide](https://developer.chrome.com/docs/web-platform/prerender-pages#eagerness)

@@ -113,7 +113,7 @@ paths:
 
         > #### Note
         > * If historical orders processed on another eCommerce platform are being migrated to BigCommerce, supply the `external_source` field with the code **M-MIG**. This code will exclude the historical orders from the store’s GMV/order count, which factors into pricing.
-        
+
       summary: Update an Order
       tags:
         - Orders
@@ -386,7 +386,7 @@ paths:
         > #### Note
         > * If historical orders processed on another eCommerce platform are being migrated to BigCommerce, supply the `external_source` field with the code **M-MIG**. This code will exclude the historical orders from the store’s GMV/order count, which factors into pricing.
         
-        
+
       summary: Create an Order
       tags:
         - Orders
@@ -1446,8 +1446,8 @@ components:
       name: include
       in: query
       description: |-
-        * `consignments` - include the response returned from the request to the `/orders/{order_id}/consignments` endpoint. You should also specify `consignment_structure=object` as a request parameter when including consignments. The default array structure provided is legacy and may not be supported in the future.
-        * `consignments.line_items` - include the response returned from the request to the `/orders/{order_id}/products` endpoint in consignments. This implies `include=consignments`. You should also specify `consignment_structure=object` as a request parameter when including consignments. The default array structure provided is legacy and will be removed in the future.
+        * `consignments` - include the response returned from the request to the `/orders/{order_id}/consignments` endpoint. Current default array structure is legacy and will be deprecated from **1 Feb 2026**. Specify `consignment_structure=object` as a request parameter when including consignments.
+        * `consignments.line_items` - include the response returned from the request to the `/orders/{order_id}/products` endpoint in consignments. This will also includes the resources associated with `include=consignments`. Current default array structure is legacy and will be deprecated from **1 Feb 2026**. Specify `consignment_structure=object` as a request parameter when including consignments.
         * `fees` - include the response returned from the request to the `/orders/{order_id}/fees` endpoint.
       style: form
       explode: false
@@ -2983,6 +2983,7 @@ components:
       type: object
       description: ''
       x-internal: false
+      additionalProperties: false
       properties:
         id:
           description: Numeric ID of this product within this order.
@@ -4158,8 +4159,13 @@ components:
           type: string
         customer_locale:
           type: string
-          example: en
-          description: The customer’s locale.
+          example: en, asa, en-US, es-419
+          description: |
+            The customer’s locale. The supported formats are:
+            - 2-char lowercase characters. e.g., `en`
+            - 3-char lowercase characters. e.g., `asa`
+            - 5-char the language code is 2 lowercase characters and the region code is 2 uppercase characters, with `-` in the middle. e.g., `en-US`
+            - 6-char the language code is 2 lowercase character and the region code is three digit number, with `-` in the middle. e.g., `es-419`
         external_order_id:
           type: string
           example: external-order-id
@@ -4414,7 +4420,9 @@ components:
             Allowed values: `www` (Desktop) | `iphone` (Iphone) | `ipad` (Ipad) | `android` (Android) | `mobile` (Mobile) | `manual` (manual order) | `external` (Orders API) | `checkout_api` (Checkout API) | `buybutton` (Buy Button) | `amazon` (Amazon) | `ebay` (Ebay) | `facebookshop` (Facebook Shop) | `facebookcheckout` (Facebook Checkout) | `facebookmarketplace` (Facebook Marketplace) | `pinterest` (Pinterest) | `socialshop` (Social Shop)
           type: string
         consignments:
-          $ref: '#/components/schemas/orderConsignments_Resource'
+          oneOf:
+            - $ref: '#/components/schemas/orderConsignments_Resource'
+            - $ref: '#/components/schemas/orderConsignment_Get'
         products:
           $ref: '#/components/schemas/products_Resource'
         shipping_addresses:
@@ -4876,8 +4884,13 @@ components:
               type: string
             customer_locale:
               type: string
-              example: en
-              description: The customer’s locale.
+              example: en, asa, en-US, es-419
+              description: |
+                The customer’s locale. The supported formats are:
+                - 2-char lowercase characters. e.g., `en`
+                - 3-char lowercase characters. e.g., `asa`
+                - 5-char the language code is 2 lowercase characters and the region code is 2 uppercase characters, with `-` in the middle. e.g., `en-US`
+                - 6-char the language code is 2 lowercase character and the region code is three digit number, with `-` in the middle. e.g., `es-419`
             external_order_id:
               type: string
               nullable: true
@@ -5395,9 +5408,13 @@ components:
           example: recipient@email.com
           description: The recipient email of the gift certificate.
         line_items:
-          type: array
-          items:
-            $ref: '#/components/schemas/products_Resource'
+              oneOf:
+                - type: array
+                  items:
+                    $ref: '#/components/schemas/products_Resource'
+                - type: array
+                  items:
+                    $ref: '#/components/schemas/orderProducts'
     pickupConsignment_Get:
       allOf:
         - type: object
@@ -5416,9 +5433,13 @@ components:
             location:
               $ref: '#/components/schemas/pickupConsignmentLocation_Get'
             line_items:
-              type: array
-              items:
-                $ref: '#/components/schemas/products_Resource'
+              oneOf:
+                - type: array
+                  items:
+                    $ref: '#/components/schemas/products_Resource'
+                - type: array
+                  items:
+                    $ref: '#/components/schemas/orderProducts'
       x-examples:
         example-1:
           id: 99
@@ -5477,9 +5498,13 @@ components:
         - type: object
           properties:
             line_items:
-              type: array
-              items:
-                $ref: '#/components/schemas/products_Resource'
+              oneOf:
+                - type: array
+                  items:
+                    $ref: '#/components/schemas/products_Resource'
+                - type: array
+                  items:
+                    $ref: '#/components/schemas/orderProducts'
             items_total:
               type: number
               example: 1
@@ -5652,9 +5677,13 @@ components:
           example: recipient@email.com
           description: The recipient email of the digital consignment.
         line_items:
-          type: array
-          items:
-            $ref: '#/components/schemas/products_Resource'
+          oneOf:
+            - type: array
+              items:
+                $ref: '#/components/schemas/products_Resource'
+            - type: array
+              items:
+                $ref: '#/components/schemas/orderProducts'
       x-examples:
         example-1:
           recipient_email: recipient@email.com

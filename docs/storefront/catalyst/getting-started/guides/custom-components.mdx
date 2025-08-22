@@ -1,0 +1,711 @@
+# Creating Custom Components
+
+## Introduction
+
+In this guide, we'll learn how to combine [VIBES](https://vibes.site/), [Makeswift](https://makeswift.com/), and [Next.js](https://nextjs.org/) primitives to create a custom Catalyst product carousel component that:
+
+- Can be visually edited inside of Makeswift
+- Fetches dynamic data from BigCommerce
+- Customers can interact with to view products you sell on your store
+
+<Callout type="warning">
+  Make sure you've read the [Local development
+  documentation](/docs/storefront/catalyst/getting-started/local-development) to get your development environment setup
+  before continuing.
+</Callout>
+
+## Create a "Hello World" component
+
+Before we start building our Product Carousel, let's create a `HelloWorld` component to make sure our development environment is working, and to get a feel for some of the code we'll be writing.
+
+Let's create a new folder in the `core/components` directory:
+
+```bash copy
+mkdir core/components/hello-world
+```
+
+Then let's create an `index.tsx` file inside of the new folder:
+
+```bash copy
+touch core/components/hello-world/index.tsx
+```
+
+Now, let's add the following code to the `index.tsx` file:
+
+```tsx filename="core/components/hello-world/index.tsx" copy
+export function HelloWorld() {
+  return <div>Hello World</div>;
+}
+```
+
+Great! Nothing out of the ordinary here, just a simple React component that renders a `<div>` containing a static string, “Hello World”.
+
+## Registering the component with Makeswift
+
+Now that we have our component, we need to register it with Makeswift so that it can be used in the editor.
+
+Let's create a new folder inside the existing directory, `core/lib/makeswift/components`:
+
+```bash copy
+mkdir core/lib/makeswift/components/hello-world
+```
+
+Inside of the folder let's create a new file called `hello-world.makeswift.tsx`:
+
+```bash copy
+touch core/lib/makeswift/components/hello-world/hello-world.makeswift.tsx
+```
+
+Now, let's add the following code to the `hello-world.makeswift.tsx` file:
+
+```tsx filename="core/lib/makeswift/components/hello-world/hello-world.makeswift.tsx" copy
+import { runtime } from "~/lib/makeswift/runtime";
+
+import { HelloWorld } from "~/components/hello-world";
+
+runtime.registerComponent(HelloWorld, {
+  type: "hello-world",
+  label: "Basic / Hello World",
+});
+```
+
+Here, we'll use the `registerComponent` method from the Makeswift runtime, which takes two parameters; a valid React component and a configuration object with properties for `type`, `label`, `icon`, `hidden`, and `props`. For now, we've defined just `type` and `label`. You can read more about the properties in the [Makeswift documentation](https://docs.makeswift.com/developer/reference/runtime/register-component#arguments).
+
+Next, let's go ahead and import our new Makeswift registration file in `core/lib/makeswift/components.ts`. It's important to know that any new component needs to be imported into this file for it to be available in the Makeswift.
+
+```ts {5} filename="core/lib/makeswift/components.ts"
+// ...
+import "./components/slideshow/slideshow.makeswift";
+import "./components/sticky-sidebar/sticky-sidebar.makeswift";
+import "./components/product-detail/register";
+import "./components/hello-world/hello-world.makeswift";
+```
+
+## Running the development server and viewing in Makeswift
+
+Now that we've registered our component, let's run the dev server and view it in the Makeswift editor.
+
+```bash copy
+pnpm run dev
+```
+
+This will run the Catalyst storefront at `localhost:3000` by default, but we instead want to see the new component in Makeswift. To do this, open your Makeswift development site which should be connected to your locally running code. For more information on how to find your Makeswift development site URL, see the [Running Locally](/docs/storefront/catalyst/getting-started/local-development) guide.
+
+Once in Makeswift, you should see your new component in the sidebar.
+
+![Hello World in Makeswift](https://storage.googleapis.com/bigcommerce-production-dev-center/images/catalyst/custom-components/hello-world-makeswift.gif)
+
+## Props and controls
+
+Before extending this `HelloWorld` component example to become our new product carousel component, I want to touch on two important concepts: Props and Controls.
+
+As we know, React components can take props. For example, inside of the hello world component, `core/components/hello-world/index.tsx`, let's add a name property which is a string:
+
+```tsx {1,2} filename="core/components/hello-world/index.tsx" copy
+export function HelloWorld({ name }: { name: string }) {
+  return <div>Hello {name}</div>;
+}
+```
+
+Since our new prop `name` is required, you'll notice in the component registration file that Typescript is complaining that the `name` prop has not been defined as a Makeswift control. This is where the `props` property of the second parameter of the `registerComponent` method comes into play. I can go ahead and add a `TextInput` control to the `name` prop:
+
+```tsx {1,10-15} filename="core/lib/makeswift/components/hello-world/hello-world.makeswift.tsx" copy
+import { TextInput } from "@makeswift/runtime/controls";
+
+import { runtime } from "~/lib/makeswift/runtime";
+
+import { HelloWorld } from "~/components/hello-world";
+
+runtime.registerComponent(HelloWorld, {
+  type: "hello-world",
+  label: "Basic / Hello World",
+  props: {
+    name: TextInput({
+      label: "Name",
+      defaultValue: "World",
+    }),
+  },
+});
+```
+
+The `registerComponent` method uses some Typescript magic to map the props defined in the `props` object to the props taken as parameters in the React component. Every time you add a new Makeswift control, you need to make sure that an appropriately named property exists in the registered React component.
+
+Now, if we reload our Makeswift editor, you'll notice that you can click on the component and edit the name prop in your Makeswift editor. This is the underlying strength of Makeswift; users can make easy changes to your website, using whatever prop interfaces you have exposed to them.
+
+![Edit Hello World in Makeswift](https://storage.googleapis.com/bigcommerce-production-dev-center/images/catalyst/custom-components/hello-world-edit-makeswift.gif)
+
+## Creating the `MyProductCarousel` component
+
+Next up, let's follow a similar process to create a `MyProductCarousel` component. Instead of building the primitive Carousel UI component from scratch, we'll leverage the [`ProductCarousel` component in VIBES](https://vibes.site/docs/soul/product-carousel). This component is already included for you in the Catalyst source code.
+
+First, we'll want to create a new Makeswift component registration file inside of `core/lib/makeswift/components`. We'll first create the folder to hold the file, called `my-product-carousel/`:
+
+```bash copy
+mkdir core/lib/makeswift/components/my-product-carousel
+```
+
+Then the file we create inside that folder will be called `my-product-carousel.makeswift.tsx`:
+
+```bash copy
+touch core/lib/makeswift/components/my-product-carousel/my-product-carousel.makeswift.tsx
+```
+
+## Creating the wrapper component
+
+Next, let's go ahead and import both the `ProductCarousel` and `ProductsCarouselSkeleton` components from `@/vibes/soul/sections/products-carousel`. This is the primitive component that comes from VIBES.
+
+Remember that our `HelloWorld` component accepted a single prop called `name`. Notice that the `ProductCarousel` component from VIBES is already configured to take a number of props, including `products` which is required.
+
+Next, let's get the `MyProductCarousel` component to render inside of my Makeswift editor, similar to what we did with our `HelloWorld` component.
+
+For this, I'll start by importing `runtime` from `~/lib/makeswift/runtime`.
+
+Next, we'll create a wrapper component. We can call this wrapper something along the lines of `MSMyProductCarousel`. The purpose of this wrapper is to fetch product data, display a skeleton loader while the component fetches data, validate the data that is fetched, and then if possible, pass the returned product data to the VIBES `ProductCarousel` component.
+
+```tsx filename="core/lib/makeswift/components/my-product-carousel/my-product-carousel.makeswift.tsx" copy
+import { ProductCarousel, ProductsCarouselSkeleton } from '@/vibes/soul/sections/product-carousel';
+import { runtime } from '~/lib/makeswift/runtime';
+
+import { useProducts } from '../../utils/use-products';
+
+runtime.registerComponent(
+  function MSMyProductCarousel() {
+    const { products, isLoading } = useProducts({
+      collection: 'featured',
+      additionalProductIds: [],
+    });
+
+    if (isLoading) {
+      return <ProductsCarouselSkeleton />;
+    }
+
+    if (products == null || products.length === 0) {
+      return <ProductsCarouselSkeleton />;
+    }
+
+    return <ProductCarousel className="w-full" products={products} />;
+  },
+  {
+    type: 'my-product-carousel',
+    label: 'Catalog / My Product Carousel',
+  },
+);
+```
+
+Our wrapper component doesn't take props yet, but we'll add that shortly. Notice we have hard-coded values assigned for `collection` and `additionalProductIds`. In the future, anytime you're implementing a component that takes props, you should think about whether or not those component props should be controllable inside Makeswift. Later, we'll create Makeswift controls for `collection` and `additionalProductIds` so that these can be controlled and edited visually without adjusting code.
+
+Note that we pulled in the `useProducts` hook to fetch product data. If you look at the source code of that hook, you'll notice that it's a client-side Fetch making a request to a proxy API endpoint `/api/products/group/${collection}`. The reason we need to make a request to a proxy API endpoint is because this hook will run only in the browser, and since the BigCommerce GraphQL Storefront API is a server-to-server API, we can't call it directly from the client. We must create an API endpoint that our client can proxy requests through. If you want your client-side Makeswift component to render data from your BigCommerce storefront, you'll need to make sure you create a proxy API endpoint for the data you want to fetch.
+
+Next, let's go ahead and import our new Makeswift registration file in `core/lib/makeswift/components.ts`, right under the import for our `hello-world.makeswift` component.
+
+```ts {3} filename="core/lib/makeswift/components.ts"
+// ...
+import './components/hello-world/hello-world.makeswift';
+import './components/my-product-carousel/my-product-carousel.makeswift';
+```
+
+## Previewing in Makeswift
+
+Great! Back in Makeswift, drag out a box right above the “Shop by category” section, and then, from the component tray, drag out the `MyProductCarousel` component inside of that box.
+
+![My Product Carousel in Makeswift](https://storage.googleapis.com/bigcommerce-production-dev-center/images/catalyst/custom-components/carousel-preview-in-makeswift.gif)
+
+<Callout type="warning">
+  If you do not see any products in the carousel, it is because the `featured`
+  collection is empty. Mark some products as featured in your BigCommerce
+  channel settings, or try changing the `collection` prop to `best-selling` or
+  `newest`.
+</Callout>
+
+## Adding the style control
+
+Up next, let's add our first Makeswift control to the component, the `Style()` control.
+
+```tsx {1,23,27,30,35-37} filename="core/lib/makeswift/components/my-product-carousel/my-product-carousel.makeswift.tsx" copy
+import { Style } from '@makeswift/runtime/controls';
+
+import { ProductCarousel, ProductsCarouselSkeleton } from '@/vibes/soul/sections/product-carousel';
+import { runtime } from '~/lib/makeswift/runtime';
+
+import { useProducts } from '../../utils/use-products';
+
+interface MSMyProductCarouselProps {
+  className: string;
+}
+
+runtime.registerComponent(
+  function MSMyProductCarousel({ className }: MSMyProductCarouselProps) {
+    const { products, isLoading } = useProducts({
+      collection: 'featured',
+      additionalProductIds: [],
+    });
+
+    if (isLoading) {
+      return <ProductsCarouselSkeleton className={className} />;
+    }
+
+    if (products == null || products.length === 0) {
+      return <ProductsCarouselSkeleton className={className} />;
+    }
+
+    return <ProductCarousel className={className} products={products} />;
+  },
+  {
+    type: 'my-product-carousel',
+    label: 'Catalog / My Product Carousel',
+    props: {
+      className: Style(),
+    },
+  },
+);
+```
+
+Note we're also adding the `MSMyProductCarouselProps` interface to define props which includes `className`.
+
+If you reload your Makeswift editor, you'll notice that you can now edit the `className` prop by clicking on the component and then adjusting the width, height, and other properties in the right sidebar:
+
+![My Product Carousel in Makeswift](https://storage.googleapis.com/bigcommerce-production-dev-center/images/catalyst/custom-components/carousel-style-control.gif)
+
+## Adding props for collection
+
+Great! Next, let's take a look at how we can create a dropdown menu of valid options for a user to select what `collection` they want their product carousel to display from the Makeswift editor.
+
+```tsx {1,13,19,22,41-50} filename="core/lib/makeswift/components/my-product-carousel/my-product-carousel.makeswift.tsx" copy
+import { Select, Style } from '@makeswift/runtime/controls';
+
+import { ProductCarousel, ProductsCarouselSkeleton } from '@/vibes/soul/sections/product-carousel';
+import { runtime } from '~/lib/makeswift/runtime';
+
+import { useProducts } from '../../utils/use-products';
+
+interface MSMyProductCarouselProps {
+  className: string;
+  collection: 'featured' | 'best-selling' | 'newest' | 'none';
+}
+
+runtime.registerComponent(
+  function MSMyProductCarousel({ className, collection }: MSMyProductCarouselProps) {
+    const { products, isLoading } = useProducts({
+      collection,
+      additionalProductIds: [],
+    });
+
+    if (isLoading) {
+      return <ProductsCarouselSkeleton className={className} />;
+    }
+
+    if (products == null || products.length === 0) {
+      return <ProductsCarouselSkeleton className={className} />;
+    }
+
+    return <ProductCarousel className={className} products={products} />;
+  },
+  {
+    type: 'my-product-carousel',
+    label: 'Catalog / My Product Carousel',
+    props: {
+      className: Style(),
+      collection: Select({
+        label: 'Product collection',
+        options: [
+          { value: 'none', label: 'None (static only)' },
+          { value: 'best-selling', label: 'Best selling' },
+          { value: 'newest', label: 'Newest' },
+          { value: 'featured', label: 'Featured' },
+        ],
+        defaultValue: 'featured',
+      }),
+    },
+  },
+);
+```
+
+First, we need to add a new property to our interface definition called `collection` whose type is defined as a union of valid strings.
+
+Then , we can import `Select()` control, and ensure that each of the `options[value]`'s map to each valid string defined in our `collection` union type.
+
+Now, we can remove the default value originally passed to `collection` in the `useProducts` hook, and are now populating the value with the `collection` prop taken by the component.
+
+## Adding additional product ID's
+
+Now let's do the same for `additionalProductIds`. This one is a bit more involved.
+
+```tsx {1-8,16,22-24,31,33-35,38,66-89} filename="core/lib/makeswift/components/my-product-carousel/my-product-carousel.makeswift.tsx" copy
+import { Combobox, Group, List, Select, Style, TextInput } from '@makeswift/runtime/controls';
+
+import { ProductCarousel, ProductsCarouselSkeleton } from '@/vibes/soul/sections/product-carousel';
+import { runtime } from '~/lib/makeswift/runtime';
+
+import { searchProducts } from '../../utils/search-products';
+import { useProducts } from '../../utils/use-products';
+
+interface MSMyProductCarouselProps {
+  className: string;
+  collection: 'featured' | 'best-selling' | 'newest' | 'none';
+  additionalProducts: Array<{
+    entityId?: string;
+  }>;
+}
+
+runtime.registerComponent(
+  function MSMyProductCarousel({
+    className,
+    collection,
+    additionalProducts,
+  }: MSMyProductCarouselProps) {
+    const additionalProductIds = additionalProducts.map(({ entityId }) => entityId ?? '');
+    const { products, isLoading } = useProducts({
+      collection,
+      additionalProductIds,
+    });
+
+    if (isLoading) {
+      return <ProductsCarouselSkeleton className={className} />;
+    }
+
+    if (products == null || products.length === 0) {
+      return <ProductsCarouselSkeleton className={className} />;
+    }
+
+    return <ProductCarousel className={className} products={products} />;
+  },
+  {
+    type: 'my-product-carousel',
+    label: 'Catalog / My Product Carousel',
+    props: {
+      className: Style(),
+      collection: Select({
+        label: 'Product collection',
+        options: [
+          { value: 'none', label: 'None (static only)' },
+          { value: 'best-selling', label: 'Best selling' },
+          { value: 'newest', label: 'Newest' },
+          { value: 'featured', label: 'Featured' },
+        ],
+        defaultValue: 'featured',
+      }),
+      additionalProducts: List({
+        label: 'Additional products',
+        type: Group({
+          label: 'Product',
+          props: {
+            title: TextInput({ label: 'Title', defaultValue: 'Product title' }),
+            entityId: Combobox({
+              label: 'Product',
+              async getOptions(query) {
+                const products = await searchProducts(query);
+
+                return products.map((product) => ({
+                  id: product.entityId.toString(),
+                  label: product.name,
+                  value: product.entityId.toString(),
+                }));
+              },
+            }),
+          },
+        }),
+        getItemLabel(product) {
+          return product?.entityId.label || 'Product';
+        },
+      }),
+    },
+  },
+);
+```
+
+In this case, we can **compose** a few different controls to provide a good editor UX (`List()`, `Group()`, `TextInput()`, `Combobox()`). Each of these controls serve different purposes. You can learn more about each control in the [Makeswift documentation](https://docs.makeswift.com/developer/reference/controls/list).
+
+You'll notice we're using yet another utility function to fetch product data from a proxy API endpoint. It's very important to understand that the React hook fetches data so that the Component can render products to the screen, while the utility function used in `getOptions` is used to render options to choose from when typing in the combobox to select an additional product to add to your carousel.
+
+`getItemLabel` is a function that simply helps make the `List()` UI items under "Additional products” more readable. `getItemLabel` is a function that receives an item for each item returned by `getOptions`.
+
+## Add limit control
+
+Great! Now, I'm thinking that our marketing team should also be able to control how many products the carousel renders. Following the pattern we've been following, let's update the interface definition, bring in some controls from the Makeswift runtime, and then use those controls to tell Makeswift how to provide a value for our new `limit` prop; finally, we'll need to use the `limit` prop inside of our component to limit the number of products returned by the API.
+
+```tsx {5,23,33,41,70} filename="core/lib/makeswift/components/my-product-carousel/my-product-carousel.makeswift.tsx" copy
+import {
+  Combobox,
+  Group,
+  List,
+  Number,
+  Select,
+  Style,
+  TextInput,
+} from '@makeswift/runtime/controls';
+
+import { ProductCarousel, ProductsCarouselSkeleton } from '@/vibes/soul/sections/product-carousel';
+import { runtime } from '~/lib/makeswift/runtime';
+
+import { searchProducts } from '../../utils/search-products';
+import { useProducts } from '../../utils/use-products';
+
+interface MSMyProductCarouselProps {
+  className: string;
+  collection: 'featured' | 'best-selling' | 'newest' | 'none';
+  limit: number;
+  additionalProducts: Array<{
+    entityId?: string;
+  }>;
+}
+
+runtime.registerComponent(
+  function MSMyProductCarousel({
+    className,
+    collection,
+    limit,
+    additionalProducts,
+  }: MSMyProductCarouselProps) {
+    const additionalProductIds = additionalProducts.map(({ entityId }) => entityId ?? '');
+    const { products, isLoading } = useProducts({
+      collection,
+      collectionLimit: limit,
+      additionalProductIds,
+    });
+
+    if (isLoading) {
+      return <ProductsCarouselSkeleton className={className} />;
+    }
+
+    if (products == null || products.length === 0) {
+      return <ProductsCarouselSkeleton className={className} />;
+    }
+
+    return <ProductCarousel className={className} products={products} />;
+  },
+  {
+    type: 'my-product-carousel',
+    label: 'Catalog / My Product Carousel',
+    props: {
+      className: Style(),
+      collection: Select({
+        label: 'Product collection',
+        options: [
+          { value: 'none', label: 'None (static only)' },
+          { value: 'best-selling', label: 'Best selling' },
+          { value: 'newest', label: 'Newest' },
+          { value: 'featured', label: 'Featured' },
+        ],
+        defaultValue: 'featured',
+      }),
+      limit: Number({ label: 'Max collection items', defaultValue: 12 }),
+      additionalProducts: List({
+        label: 'Additional products',
+        type: Group({
+          label: 'Product',
+          props: {
+            title: TextInput({ label: 'Title', defaultValue: 'Product title' }),
+            entityId: Combobox({
+              label: 'Product',
+              async getOptions(query) {
+                const products = await searchProducts(query);
+
+                return products.map((product) => ({
+                  id: product.entityId.toString(),
+                  label: product.name,
+                  value: product.entityId.toString(),
+                }));
+              },
+            }),
+          },
+        }),
+        getItemLabel(product) {
+          return product?.entityId.label || 'Product';
+        },
+      }),
+    },
+  },
+);
+```
+
+## Updating types
+
+Now, if we take a moment to pause and look at the prop interface for `ProductCarousel` from VIBES, you'll notice that there are a bunch of props defined (such as `aspectRatio`, `colorScheme`, etc.) that are missing from our `MyProductCarousel` prop interface we defined as `MSMyProductCarouselProps`. Let's go ahead and update that.
+
+Remember, any time you're making a component for editing in Makeswift, you want to think: “Should any of the props my component takes be editable by someone using this component inside of Makeswift?” In our case, it would be great to give Makeswift editors the ability to control whether a carousel `showsButtons` or hides its overflow. In fact, I want Makeswift users to be able to edit almost any of the props that my VIBES `ProductCarousel` component takes.
+
+While we can manually add each of these props to our `MSMyProductCarouselProps` interface definition, we can use the [`ComponentPropsWithoutRef` utility type from React](https://react-typescript-cheatsheet.netlify.app/docs/react-types/componentprops) to make our job easier. This utility extracts the prop types from a component while excluding any internal ref-related props, giving us a clean type that matches the component's public interface.
+
+Let's change our `MSMyProductCarouselProps` definition to use this instead.
+
+```tsx {1,5-7} filename="core/lib/makeswift/components/my-product-carousel/my-product-carousel.makeswift.tsx"
+import { ComponentPropsWithoutRef } from 'react';
+
+// ...
+
+type MSMyProductCarouselProps = ComponentPropsWithoutRef<typeof ProductCarousel> & {
+  className: string;
+  collection: 'featured' | 'best-selling' | 'newest' | 'none';
+  limit: number;
+  additionalProducts: Array<{
+    entityId?: string;
+  }>;
+};
+
+// ...
+```
+
+This will tell our `MSMyProductCarouselProps` type definition that it should treat any prop accepted by `ProductCarousel` as a valid prop for `MSMyProductCarouselProps`, as well as `collection` and `additionalProducts`.
+
+You might notice the errors that Typescript is flagging. Namely, `Property 'products' is missing in type …`. This makes sense! The `ProductCarousel` component from VIBES requires a `products` prop, but our `MSMyProductCarousel` component does not (since we fetch `products` inside of the `MSMyProductCarousel` wrapper component to pass to `ProductCarousel`). Let's use the `Omit` utility type from Typescript to remove `products` from our type definition:
+
+```tsx {3-6} filename="core/lib/makeswift/components/my-product-carousel/my-product-carousel.makeswift.tsx"
+// ...
+
+type MSMyProductCarouselProps = Omit<
+  ComponentPropsWithoutRef<typeof ProductCarousel>,
+  'products'
+> & {
+  className: string;
+  collection: 'none' | 'best-selling' | 'newest' | 'featured';
+  limit: number;
+  additionalProducts: Array<{
+    entityId?: string;
+  }>;
+};
+
+// ...
+```
+
+Great! Typescript is happy, and now our `MSMyProductCarousel` component accepts any valid prop that `ProductCarousel` from VIBES also accepts. We can test this by removing the `className` prop from `MSMyProductCarouselProps` - notice that Typescript does not complain. This is because `className` is already a valid prop accepted by `ProductCarousel`, and since our wrapper component prop type definition extends the props from `ProductCarousel`, we do not need to redundantly define it explicitly.
+
+## Additional controls
+
+At this point, we can add a number of extra controls to fill in the rest of our props:
+
+```tsx {2,39,59,102-130} filename="core/lib/makeswift/components/my-product-carousel/my-product-carousel.makeswift.tsx" copy
+import {
+  Checkbox,
+  Combobox,
+  Group,
+  List,
+  Number,
+  Select,
+  Style,
+  TextInput,
+} from '@makeswift/runtime/controls';
+import { ComponentPropsWithoutRef } from 'react';
+
+import { ProductCarousel, ProductsCarouselSkeleton } from '@/vibes/soul/sections/product-carousel';
+import { runtime } from '~/lib/makeswift/runtime';
+
+import { searchProducts } from '../../utils/search-products';
+import { useProducts } from '../../utils/use-products';
+
+type MSMyProductCarouselProps = Omit<
+  ComponentPropsWithoutRef<typeof ProductCarousel>,
+  'products'
+> & {
+  collection: 'none' | 'best-selling' | 'newest' | 'featured';
+  limit: number;
+  additionalProducts: Array<{
+    entityId?: string;
+  }>;
+};
+
+runtime.registerComponent(
+  function MSMyProductCarousel({
+    className,
+    collection,
+    limit,
+    additionalProducts,
+    ...props
+  }: MSMyProductCarouselProps) {
+    const additionalProductIds = additionalProducts.map(({ entityId }) => entityId ?? '');
+    const { products, isLoading } = useProducts({
+      collection,
+      collectionLimit: limit,
+      additionalProductIds,
+    });
+
+    if (isLoading) {
+      return <ProductsCarouselSkeleton className={className} />;
+    }
+
+    if (products == null || products.length === 0) {
+      return <ProductsCarouselSkeleton className={className} />;
+    }
+
+    return <ProductCarousel {...props} className={className} products={products} />;
+  },
+  {
+    type: 'my-product-carousel',
+    label: 'Catalog / My Product Carousel',
+    props: {
+      className: Style(),
+      collection: Select({
+        label: 'Product collection',
+        options: [
+          { value: 'none', label: 'None (static only)' },
+          { value: 'best-selling', label: 'Best selling' },
+          { value: 'newest', label: 'Newest' },
+          { value: 'featured', label: 'Featured' },
+        ],
+        defaultValue: 'featured',
+      }),
+      limit: Number({ label: 'Max collection items', defaultValue: 12 }),
+      additionalProducts: List({
+        label: 'Additional products',
+        type: Group({
+          label: 'Product',
+          props: {
+            title: TextInput({ label: 'Title', defaultValue: 'Product title' }),
+            entityId: Combobox({
+              label: 'Product',
+              async getOptions(query) {
+                const products = await searchProducts(query);
+
+                return products.map((product) => ({
+                  id: product.entityId.toString(),
+                  label: product.name,
+                  value: product.entityId.toString(),
+                }));
+              },
+            }),
+          },
+        }),
+        getItemLabel(product) {
+          return product?.entityId.label || 'Product';
+        },
+      }),
+      aspectRatio: Select({
+        label: 'Aspect ratio',
+        options: [
+          { value: '1:1', label: 'Square' },
+          { value: '5:6', label: '5:6' },
+          { value: '3:4', label: '3:4' },
+        ],
+        defaultValue: '5:6',
+      }),
+      colorScheme: Select({
+        label: 'Text color scheme',
+        options: [
+          { value: 'light', label: 'Light' },
+          { value: 'dark', label: 'Dark' },
+        ],
+        defaultValue: 'light',
+      }),
+      showScrollbar: Checkbox({
+        label: 'Show scrollbar',
+        defaultValue: true,
+      }),
+      showButtons: Checkbox({
+        label: 'Show buttons',
+        defaultValue: true,
+      }),
+      hideOverflow: Checkbox({
+        label: 'Hide overflow',
+        defaultValue: true,
+      }),
+    },
+  },
+);
+```
+
+Now, you can see that all of the props are exposed in Makeswift for the user to control.
+
+![My Product Carousel in Makeswift](https://storage.googleapis.com/bigcommerce-production-dev-center/images/catalyst/custom-components/final.gif)
+
+## Wrapping up
+
+There you have it! You just created your first Catalyst component that is visually editable in Makeswift, can source data from your BigCommerce catalog, and is built with a combination of VIBES UI components and Next.js primitives.

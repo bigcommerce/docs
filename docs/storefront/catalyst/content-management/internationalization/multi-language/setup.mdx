@@ -1,0 +1,229 @@
+# Localizing a Storefront into Multiple Languages
+
+This tutorial walks you through how to translate your default Catalyst storefront into another language or locale, in this case French, for features that are available out of the box. It covers three different places where you can update translations for a locale:
+
+- [Static string translations in components](#translating-static-strings)
+- [Dynamic data from BigCommerce](#translating-dynamic-data-from-bigcommerce)
+- [Makeswift content](#translating-makeswift-content)
+
+## Prerequisites
+
+Follow the [Getting Started with Catalyst](/docs/storefront/catalyst/getting-started) documentation to create your Catalyst storefront using [One-Click Catalyst](/docs/storefront/catalyst/getting-started/workflows/one-click-catalyst). To follow along, choose the option to use sample catalog data. Then, follow the [Local Development](/docs/storefront/catalyst/getting-started/local-development) documentation to pull down the code and run locally.
+
+## Adding a locale in Catalyst
+
+You can add additional languages to your storefront when you initially create your Catalyst storefront through the Control Panel. If you didn’t do so, you have a couple of options.
+
+You can enable more locales for your storefront through the Control Panel:
+
+1. Under the **Channels** tab, choose your Catalyst Storefront and click on the **Localization** tab.
+2. Click **Add new Language** and save your language selection. You can use the settings here to enable the newly-added locale.
+
+Your new locale should now show up in your locally running application.
+
+<Callout type="warning">
+  Although newly added locales show up automatically when running locally, this
+  is not the case for your deployed site. Within Catalyst, locales are only
+  synced at build-time. This means, you will need to redeploy your Catalyst
+  application for new locales to show up in your deployed site.
+</Callout>
+
+Go ahead and start your development server. When you visit the running application in the browser (`localhost:3000` by default), in the top right corner, you should see a language selector that lets you toggle between locales, for example:
+
+<Video src={"https://storage.googleapis.com/bigcommerce-production-dev-center/videos/catalyst/storefront%20selector.mov"} />
+
+The selector lists all the enabled locales in your storefront. The storefront in this tutorial uses English as the default language and French (`fr`) as an additional language.
+
+You might have to restart your development server to see the new locale in your storefront selector. 
+
+## Locale-specific URLs
+
+Now, try switching to your newly-added locale, in my case `FR`, in the storefront selector. Notice the locale prefix, e.g. `fr`, has been applied to the pathname in the URL, `http://localhost:3000/fr`. This is because Catalyst uses [prefix-based routing](https://next-intl.dev/docs/routing/middleware#locale-detection) from the [`next-intl`](https://next-intl.dev/) library which means the locale prefix will be added to the pathname of each localized page.
+
+## Translating static strings
+
+The Catalyst source code includes text elements that can be translated using predefined static strings. These static translations are housed in the `core/messages` folder in your Catalyst app. You can then access the static translations within your components using the `next-intl` library.
+
+Let’s explore more of how this works! Static string translations are already provided for the locales that Catalyst supports out of the box, like `FR`, so let’s start there.  
+
+1. In the `core/messages` folder, open the pre-populated translation file for French, `fr.json`. You should see predefined translation keys — for example, those used in an empty cart message — along with their translations.
+
+    ```json
+    {
+      "Cart": {
+        "Empty": {
+          "title": "Votre panier est vide.",
+          "subtitle": "Ajoutez quelques produits pour commencer.",
+          "cta": "Continuer mes achats"
+        },
+      }
+    }
+    ```
+2. Open the Cart page component, `core/app/[locale]/(default)/cart/page.tsx`, for an example of how you can access the translations within a server component by calling `getTranslations`. `next-intl` imports translations based on the [current locale that it detects](https://next-intl.dev/docs/routing/middleware#locale-detection)`.`
+
+    ```tsx
+    import { getTranslations } from 'next-intl/server';
+
+    export default async function Cart() {
+      // load all the translation strings from core/messages under the 'Cart' namespace.
+
+      const t = await getTranslations('Cart');
+    
+      // pass translated strings into your components
+      const emptyState = (
+        <>
+          <Slot label="Cart top content" snapshotId="cart-top-content" />
+            <CartEmptyState
+            cta={{ label: t('Empty.cta'), href: '/shop-all' }}
+            subtitle={t('Empty.subtitle')}
+            title={t('Empty.title')}
+            />
+          <Slot label="Cart bottom content" snapshotId="cart-bottom-content" />
+        </>
+      );
+    }
+    ```
+
+3. If you click on the cart, you should see a translated empty cart message if you switch your locale to `FR`.  
+
+<Video src={"https://storage.googleapis.com/bigcommerce-production-dev-center/videos/catalyst/static%20french%20translations.mov"} />
+
+As you’ve noticed, after you enable a supported locale, the text for some components on your page will already be translated into this language. But if your locale is unsupported, you’ll need to [define your own static string translations](/docs/storefront/catalyst/content-management/internationalization/static-translations#translation-file) in this directory.  
+
+When you create more components, you’ll want to access the translations from your file. Learn more about [how to use the translations](/docs/storefront/catalyst/content-management/internationalization/static-translations#using-keys-in-react-components) inside your Client and Server Components. 
+
+## Translating dynamic data from BigCommerce
+
+Catalyst fetches dynamic data from the BigCommerce backend. Each time Catalyst makes a GraphQL request to BigCommerce, the locale is sent with it. This ensures you get the right locale-specific content. It’s all handled automatically by the data-fetching client, so you don’t have to do anything extra.
+
+### Translating product data
+
+The text in a given component comes from the translations in the source code but product data comes from BigCommerce. We still need to fetch product data dynamically, like the product name, variants, description, and more.
+
+You can translate dynamic product data by sending GraphQL mutations with the [GraphQL Admin API](https://developer.bigcommerce.com/docs/store-operations/catalog/msf-international-enhancements/overview).  Let’s start by translating the name and description of your sample products by sending a mutation to [set basic product information](https://developer.bigcommerce.com/docs/store-operations/catalog/msf-international-enhancements/product-basic-info#set-basic-product-information-for-a-locale). We’ll be running sample translation data using Postman.
+
+**_Steps for making the GraphQL Admin API request_**
+
+1. Download the [Product Translations file](https://storage.googleapis.com/bigcommerce-production-dev-center/template-files/catalyst/product-translations.json).
+
+   This JSON file contains French translations for sample products that come with your Catalyst storefront. You will need to change the product IDs in the sample file to use the actual product IDs from your store. The English translations are included for reference, but aren’t used in the requests.
+   <br />
+2. Download the [Sample Postman environment](https://storage.googleapis.com/bigcommerce-production-dev-center/template-files/catalyst/sample.postman_environment.json) and [import it into Postman](https://learning.postman.com/docs/getting-started/importing-and-exporting/importing-data/). It includes the following [environment variables](https://learning.postman.com/docs/sending-requests/variables/managing-environments/#add-environment-variables), which you’ll need to populate:
+    - `store_hash` - the store hash from your `env.local` file
+    - `channel_id` - the channel ID from your `env.local` file
+    - `access_token` - a Store Level V2/V3 API token with the `Products` OAuth scope that you can get by [creating an API Account](https://support.bigcommerce.com/s/article/Store-API-Accounts?language=en_US#creating)
+
+	 Make sure to [make this environment active](https://learning.postman.com/docs/sending-requests/variables/managing-environments/#switch-between-environments) in Postman.
+   <br />
+3. Download and import the [Postman collection for translations](https://storage.googleapis.com/bigcommerce-production-dev-center/template-files/catalyst/translations.postman_collection.json).
+
+   The Postman collection includes requests for products, categories, and brands, but we’ll focus on the product ones for now. 
+   <br />
+4. Run the requests in the [Postman Collection Runner](https://learning.postman.com/docs/collections/running-collections/intro-to-collection-runs/). Select only the **Product Basic Information** mutation in the run sequence and upload the Product Translations file from Step 1.
+
+<Video src={"https://storage.googleapis.com/bigcommerce-production-dev-center/videos/catalyst/postman-product-translations.mov"} />
+
+Your products should now have French translations for their names and descriptions. When you visit the product page at the path `/fr/chinese-evergreen`, you should see the translated product name and description:
+
+![Product localized in French](https://storage.googleapis.com/bigcommerce-production-dev-center/images/catalyst/multi-language/product%20french.png)
+
+#### Textual search 
+
+BigCommerce indexes the localized name, description, and search keywords for a product. This means you can match search queries to translated product content through these fields after you add translations. You’ve already translated the names and descriptions, so let’s move on to search keywords. 
+
+Search keywords are custom terms you can define so that a product is more visible in your storefront’s textual search. They aren’t visible on the storefront and don’t affect SEO, but help match more search queries to relevant products. 
+
+Your sample data doesn’t include predefined search keywords for your products. You can add them by sending a GraphQL mutation to [set the storefront details for a locale](https://developer.bigcommerce.com/docs/store-operations/catalog/msf-international-enhancements/product-attributes#set-storefront-details-for-a-locale). 
+
+Let’s try it out. In the same Postman Collection you imported earlier, open the [Postman Collection Runner](https://learning.postman.com/docs/collections/running-collections/intro-to-collection-runs/) again. This time, select the **Product Search Keywords** mutation in the run sequence. You can use the same [Product Translations file](https://storage.googleapis.com/bigcommerce-production-dev-center/template-files/catalyst/product-translations.json) you downloaded earlier since it also includes translations for search keywords.
+
+<Video src={"https://storage.googleapis.com/bigcommerce-production-dev-center/videos/catalyst/postman-product-search-keyword-translations.mov"} />
+
+With the sample data, when you search for the “communes” keyword, the Chinese Evergreen sample product should appear:
+
+<Video src={"https://storage.googleapis.com/bigcommerce-production-dev-center/videos/catalyst/multi-lang-search.mov"} />
+
+The textual search is powered by BigCommerce’s GraphQL Storefront API. Learn more about the [capabilities and limitations of textual search](https://developer.bigcommerce.com/docs/storefront/headless/products/faceted-textual-search#multi-language-product-search), including fallback content for products that haven’t been translated.
+
+### Translating categories
+
+Similar to products, category data is fetched dynamically from BigCommerce, including its name, description, page title, meta description, and search keywords. You can translate category data by sending GraphQL mutations with the [GraphQL Admin API](https://developer.bigcommerce.com/docs/store-operations/translations/categories).
+
+Follow along to run sample translation data using Postman.
+
+**_Steps for making the GraphQL Admin API request_**
+
+1. Download the [Category Translations file](https://storage.googleapis.com/bigcommerce-production-dev-center/template-files/catalyst/category-translations.json).
+
+   This file contains French translations for sample categories that come with your Catalyst storefront. You will need to change the category IDs in the sample file to use the actual category IDs from your store. The English translations are included for reference, but aren’t used in the requests.
+   <br />
+2. Open the same [Postman collection for translations](https://storage.googleapis.com/bigcommerce-production-dev-center/template-files/catalyst/translations.postman_collection.json) that you imported when you were translating product data. You can use the same sample Postman environment you imported earlier.
+
+3. Run the requests in the [Postman Collection Runner](https://learning.postman.com/docs/collections/running-collections/intro-to-collection-runs/). Select only the **Categories** mutation in the run sequence and upload the Categories Translations file from Step 1. 
+
+<Video src={"https://storage.googleapis.com/bigcommerce-production-dev-center/videos/catalyst/postman-category-translations.mov"} />
+
+Once again, you should notice the category headings change in the header once you refresh the page, along with any uploaded category metadata if you view the page source.
+
+![Categories localized in French](https://storage.googleapis.com/bigcommerce-production-dev-center/images/catalyst/multi-language/categories%20french.png)
+
+### Translating brands
+
+A brand is an attribute that groups your products by label and supports SEO. Brand data is fetched dynamically from BigCommerce, including its name, page title, meta keywords, meta description, and search keywords. 
+Before translating brands, we’re going to first add a brand to a product, so that the brand is available on your storefront:
+
+1. Under the **Products** tab, click on **Products**.    
+2. Click on the ellipses **(...)** next to the product you want to add a brand. Click **Edit**.
+3. In the **Basic Information** section, select the Rustic Roots brand in the dropdown. This brand came with the sample catalog data.    
+
+To add translations, you can send [GraphQL mutations](https://developer.bigcommerce.com/docs/store-operations/translations/brands) using the GraphQL Admin API. Follow along to run sample translation data using Postman.
+
+**_Steps for making the GraphQL Admin API request_**
+
+1. Download the [Brand Translations file](https://storage.googleapis.com/bigcommerce-production-dev-center/template-files/catalyst/brand-translations.json).
+
+   This file contains French translations for sample brands that come with your Catalyst storefront. You will need to change the brand IDs in the sample file to use the actual brand IDs from your store. The English translations are included for reference, but aren’t used in the requests.
+   <br />
+2. Open the same [Postman collection for translations](https://storage.googleapis.com/bigcommerce-production-dev-center/template-files/catalyst/translations.postman_collection.json) that you imported when you were translating product data. You can use the same sample Postman environment you imported earlier.
+3. Run the requests in the [Postman Collection Runner](https://learning.postman.com/docs/collections/running-collections/intro-to-collection-runs/). Select only the **Brands** mutation in the run sequence and upload the Brand Translations file from Step 1.
+
+<Video src={"https://storage.googleapis.com/bigcommerce-production-dev-center/videos/catalyst/postman-brand-translations.mov"} />
+
+When you visit the brand page at the path `/fr/rustic-roots`, you should see the translated brand name, along with any translated brand metadata if you view the page source:
+
+![Brand localized in French](https://storage.googleapis.com/bigcommerce-production-dev-center/images/catalyst/multi-language/brands%20french.png)
+
+## Translating Makeswift content
+
+The Catalyst storefront you created with [One-Click Catalyst](/docs/storefront/catalyst/getting-started/workflows/one-click-catalyst) comes integrated with a Makeswift site. In the [Makeswift editor](https://docs.makeswift.com/product/builder-basics), you can add localized text for any component that you’re editing in Makeswift. 
+
+To try this out, make sure your development server is still running and visit the Makeswift editor by clicking the **Edit in Makeswift** button from your Control Panel. In the Makeswift editor, switch to your Development (Dev) Makeswift site.  
+
+To add a locale in Makeswift, open your site settings and go to the **Locales** tab. Then, click the **+ Add locale** button. In this case, we’ve added `fr`.
+
+<Callout type="info">
+Locales that you add initially when creating your storefront using One-Click Catalyst are automatically propagated. Any changes to locale after your storefront need to be manually added or updated in Makeswift.
+</Callout>
+
+<Video src={"https://storage.googleapis.com/bigcommerce-production-dev-center/videos/catalyst/makeswift-locales.mov"} />
+
+You should now be able to switch to the French locale in Makeswift.
+
+![Switch locales in Makeswift](https://storage.googleapis.com/bigcommerce-production-dev-center/images/catalyst/multi-language/makeswift%20switch%20locales.jpg)
+
+With the French locale selected, you’ll notice a message that informs you that the localized page inherits from the default locale. To stop inheriting from the default and start customizing the content for the localized page, click the **Edit for this locale** button.
+
+Now you can now customize the content specifically for the French locale. Note that this does not affect the content in the base locale. In the canvas, click on the Slideshow component and change its text in the properties sidebar. You can also localize other properties like the slideshow image and its alt text. 
+
+<Video src={"https://storage.googleapis.com/bigcommerce-production-dev-center/videos/catalyst/makeswift%20french%20locale%20content.mp4"} />
+
+For non-default locales, make sure you [toggle the page to be online](https://docs.makeswift.com/product/page/metadata#metadata) in the sidebar.   
+
+
+## Wrap up
+
+Now, you should have a Catalyst app that fully supports multiple languages. Remember as you continue to build out and customize your app, you’ll need to keep in mind the three scenarios we covered.
+
+* Static string translations in components
+* Dynamic data from BigCommerce
+* Makeswift content

@@ -1,8 +1,37 @@
 openapi: 3.0.0
 info:
-  title: Order
+  title: Orders
   version: '1.0'
-  description: Company based order management.
+  description: |-
+
+    The Orders Storefront REST and GraphQL APIs allow you to retrieve order details from Company accounts. By authenticating requests as a Company user, you can retrieve information on the orders visible in their Buyer Portal.
+
+    In order to return order information, you must generate a storefront authToken for a buyer with the following [Company user permissions](/b2b-edition/apis/rest-management/company#company-roles-and-permissions):
+
+    - **Get orders**
+    - **Get order detail**
+
+    The storefront experience of placing an order, for both B2B and B2C customers, relies on the BigCommerce checkout or use of the standard BigCommerce APIs. As a result, the B2B Orders API does not include endpoints for creating new orders or adding existing orders. Use the [BigCommerce Orders V2 API](/docs/rest-management/orders) to accomplish these tasks.
+
+    When specifying an order as a parameter of an endpoint, provide the **BigCommerce order ID** as the unique identifier. The **B2B Edition Order ID**, presented as the `id` value of certain B2B Orders API responses, is not a supported identifier for the `bcOrderId` field.
+
+    ## Legacy Extra Fields
+
+    The [Get All Orders](#get-all-orders) and [Get Order Details](#get-order-details) endpoints include the following legacy Company extra fields used by older stores:
+
+    - `extraInt1`
+    - `extraInt2`
+    - `extraInt3`
+    - `extraInt4`
+    - `extraInt5`
+    - `extraStr1`
+    - `extraStr2`
+    - `extraStr3`
+    - `extraStr4`
+    - `extraStr5`
+    - `extraText`
+
+    These fields return `null` values in newer stores. We recommend using the [Get Company Extra Fields](/b2b-edition/apis/rest-storefront/company/companies#get-company-extra-fields) endpoint to retrieve Company extra field information.
   contact:
     name: BigCommerce
     url: 'https://www.bigcommerce.com'
@@ -14,334 +43,243 @@ security:
 paths:
   /orders:
     get:
-      summary: Get Orders
+      summary: Get All Orders
+      operationId: get-orders
+      description: |-
+        Retrieves information for all orders placed by the Company user.
+
+        Filter the order list using parameters. Common use cases include:
+
+        - Retrieving orders placed within a specific date range (using `beginDateAt` and `endDateAt`)
+        - Retrieving orders with a specific Purchase Order (PO) number
+        - Retrieving orders in a specific status
+
+        Use [Get Order Details](#get-order-details) to retrieve more detailed information about a specific order, such as product attributes, shipping method, and granular pricing.
+
+        Equivalent Storefront GraphQL API Query: `allOrders`. For more information, see the [GraphQL Playground](https://api-b2b.bigcommerce.com/graphql/playground).
+      tags:
+        - Orders
+      parameters:
+        - $ref: '#/components/parameters/beginDateAt'
+        - $ref: '#/components/parameters/endDateAt'
+        - name: orderBy
+          description: Sorts results by total value including tax or creation date. It defaults to the creation date if no parameter is provided.
+          required: false
+          example: "totalIncTax"
+          schema:
+            type: string
+            default: "createdAt"
+            enum:
+              - "createdAt"
+              - "totalIncTax"
+          in: query
+        - name: sortBy
+          description: Establish a descending or ascending order of results. The order defaults to descending if the parameter is not included.
+          required: false
+          example: "DESC"
+          schema:
+            type: string
+            default: "DESC"
+            enum:
+              - "DESC"
+              - "ASC"
+          in: query
+        - $ref: '#/components/parameters/offset'
+        - $ref: '#/components/parameters/limit'
+        - name: isShowMy
+          description: |-
+            Indicates whether or not to include orders placed by other buyers in the Company account. `0` indicates that only orders placed by the authenticated user are returned, while `1` indicates that orders placed by other buyers in the Company account are also included.
+
+            **Note:** This is only supported if you have generated a storefront authToken for a Company user in the predefined **Admin** or **Senior Buyer** role. Junior Buyers, as well as custom buyer roles, are not compatible with this parameter.
+          required: false
+          example: 0
+          schema:
+            type: integer
+            default: 0
+            enum:
+              - 0
+              - 1
+          in: query
+        - name: includeExtra
+          description: Indicates whether or not extra field information is included in the response. It defaults to including extra fields if the parmeter is omitted. `0` indicates that extra fields are included, while `1` indicates that extra fields are not included.
+          required: false
+          example: 1
+          schema:
+            type: integer
+            default: 0
+            enum:
+              - 0
+              - 1
+          in: query
+        - $ref: '#/components/parameters/q'
+        - name: companyName
+          description: Enter a full or partial Company name to retrieve relevant orders.
+          required: false
+          example: "Great Buys Incorporated"
+          schema:
+            type: string
+          in: query
+        - name: orderNumber
+          description: The BigCommerce order ID. This parameter does not accept the B2B Edition order ID returned in certain [Server to Server Orders endpoints](/b2b-edition/apis/rest-management/order).
+          required: false
+          example: 12345
+          schema:
+            type: integer
+          in: query
+        - name: poNumber
+          description: The order's Purchase Order (PO), if used.
+          required: false
+          example: "03302025-0001"
+          schema:
+            type: string
+          in: query
+        - name: 'status[]'
+          description: |-
+            Enter the original order status name to return orders in that status. This parameter does not accept custom order status names or status codes as valid values. See [Order Statuses](/docs/rest-management/orders/order-status) for a complete list of accepted status names.
+
+            This parameter is not an array, but you can filter for multiple order statuses by including additional status[] parameters in the query. For example, `?status[]=Awaiting Payment&status[]=Completed`.
+          required: false
+          example: "Awaiting Payment"
+          schema:
+            type: string
+          in: query
       responses:
         '200':
           description: OK
           content:
             application/json:
               schema:
-                description: ''
-                type: object
-                x-examples:
-                  example-1:
-                    code: 200
-                    message: SUCCESS
-                    data:
-                      list:
-                        - orderId: 635
-                          companyName: levi-test
-                          createdAt: '1622616050'
-                          updatedAt: '1622616050'
-                          isInvoiceOrder: 0
-                          orderStatus: Awaiting Payment
-                          customOrderStatus: Awaiting Pay Kido Test
-                          statusCode: 0
-                          totalIncTax: 450.45
-                          currencyCode: CNY
-                          money:
-                            currency_location: left
-                            currency_token: ¥
-                            decimal_token: .
-                            decimal_places: 2
-                            thousands_token: ','
-                          firstName: levi
-                          lastName: tuo
-                          poNumber: ''
-                      paginator:
-                        totalCount: 1
-                        offset: 0
-                        limit: 10
-                properties:
-                  code:
-                    type: number
-                  message:
-                    type: string
-                    minLength: 1
-                  data:
-                    type: object
-                    required:
-                      - list
-                      - paginator
-                    properties:
-                      list:
-                        type: array
-                        uniqueItems: true
-                        minItems: 1
-                        items:
-                          type: object
-                          properties:
-                            orderId:
-                              type: number
-                              description: Unique order ID in BigCommerce store
-                            companyName:
-                              type: string
-                              minLength: 1
-                              description: Company name
-                            createdAt:
-                              type: string
-                              minLength: 1
-                              description: Create timestamp of this order
-                            updatedAt:
-                              type: string
-                              minLength: 1
-                              description: User last modified timestamp
-                            isInvoiceOrder:
-                              type: number
-                              description: If order is invoice order
-                            orderStatus:
-                              type: string
-                              minLength: 1
-                              description: Order status
-                            customOrderStatus:
-                              type: string
-                              minLength: 1
-                              description: Custom order status
-                            statusCode:
-                              type: number
-                              description: Order status code
-                            totalIncTax:
-                              type: number
-                              description: Total inc tax
-                            currencyCode:
-                              type: string
-                              minLength: 1
-                              description: Currency money code
-                            money:
-                              type: object
-                              properties:
-                                currency_location:
-                                  type: string
-                                  minLength: 1
-                                  description: Currency location
-                                currency_token:
-                                  type: string
-                                  minLength: 1
-                                  description: Currency token code
-                                decimal_token:
-                                  type: string
-                                  minLength: 1
-                                  description: Decimal token
-                                decimal_places:
-                                  type: number
-                                  description: Decimal places
-                                thousands_token:
-                                  type: string
-                                  minLength: 1
-                                  description: Thousands token
-                              required:
-                                - currency_location
-                                - currency_token
-                                - decimal_token
-                                - decimal_places
-                                - thousands_token
-                            firstName:
-                              type: string
-                              minLength: 1
-                              description: Company first name
-                            lastName:
-                              type: string
-                              minLength: 1
-                              description: Company last name
-                            poNumber:
-                              type: string
-                              description: PO number
-                            extraFields:
-                              type: array
-                              items:
-                                type: object
-                                properties:
-                                  fieldName:
-                                    type: string
-                                    description: Extra field name
-                                  fieldValue:
-                                    type: string
-                                    description: Extra field value
-                          required:
-                            - orderId
-                            - companyName
-                            - createdAt
-                            - updatedAt
-                            - isInvoiceOrder
-                            - orderStatus
-                            - customOrderStatus
-                            - statusCode
-                            - totalIncTax
-                            - currencyCode
-                            - firstName
-                            - lastName
-                            - poNumber
-                      paginator:
+                allOf:
+                  - $ref: "#/components/schemas/responseSuccess"
+                  - properties:
+                      data:
                         type: object
                         required:
-                          - totalCount
-                          - offset
-                          - limit
+                          - list
+                          - paginator
                         properties:
-                          totalCount:
-                            type: number
-                          offset:
-                            type: number
-                          limit:
-                            type: number
+                          list:
+                            type: array
+                            description: Contains information fields associated with each order in the response.
+                            uniqueItems: true
+                            minItems: 1
+                            items:
+                              type: object
+                              allOf:
+                                - $ref: '#/components/schemas/orderData_ALL'
+                              required:
+                                - orderId
+                                - companyName
+                                - createdAt
+                                - updatedAt
+                                - isInvoiceOrder
+                                - orderStatus
+                                - customOrderStatus
+                                - statusCode
+                                - totalIncTax
+                                - currencyCode
+                                - firstName
+                                - lastName
+                                - poNumber
+                          paginator:
+                            $ref: '#/components/schemas/paginator'
                 required:
                   - code
                   - message
                   - data
               examples:
-                example-1:
+                without-extra-fields:
                   value:
                     code: 200
                     message: SUCCESS
                     data:
                       list:
-                        - orderId: 635
-                          companyName: company name
-                          createdAt: '1622616050'
-                          updatedAt: '1622616050'
+                        - orderId: 123
+                          companyName: "Great Buys Incorporated"
+                          createdAt: "1743105969"
+                          updatedAt: "1743105981"
                           isInvoiceOrder: 0
-                          orderStatus: Awaiting Payment
-                          customOrderStatus: Awaiting Pay Kido Test
-                          statusCode: 0
-                          totalIncTax: 450.45
-                          currencyCode: CNY
+                          orderStatus: "Awaiting Payment"
+                          customOrderStatus: "Invoice Sent"
+                          statusCode: 7
+                          totalIncTax: 3167.41
+                          currencyCode: "USD"
                           money:
-                            currency_location: left
-                            currency_token: ¥
-                            decimal_token: .
+                            currency_location: "left"
+                            currency_token: "$"
+                            decimal_token: "."
                             decimal_places: 2
-                            thousands_token: ','
-                          firstName: Jo
-                          lastName: Sweet
-                          poNumber: ''
-                          extraFields: [{
-                              fieldName: 'test field',
-                              fieldValue: 'test'
-                            }]
+                            thousands_token: ","
+                          firstName: "Marie"
+                          lastName: "Curie"
+                          poNumber: "20250327-0001"
+                          referenceNumber: "REF-12345"
+                          channelName: "B2B Store"
                       paginator:
                         totalCount: 1
                         offset: 0
                         limit: 10
-      operationId: get-orders
-      parameters:
-        - schema:
-            type: string
-          in: query
-          name: beginDateAt
-          description: Begin query date
-        - schema:
-            type: string
-          in: query
-          name: endDateAt
-          description: End query date
-        - schema:
-            type: string
-            default: createdAt
-          in: query
-          name: orderBy
-          description: Order by
-        - schema:
-            type: string
-            default: DESC
-          in: query
-          name: sortBy
-          description: Sort order by desc or asc
-        - schema:
-            type: string
-            default: '0'
-          in: query
-          name: offset
-          description: Pagination offset
-        - schema:
-            type: string
-            default: '10'
-          in: query
-          name: limit
-          description: Pagination limit
-        - schema:
-            type: string
-            default: '0'
-          in: query
-          name: isShowMy
-          description: Is show my orders
-        - schema:
-            type: string
-            default: '0'
-          in: query
-          name: includeExtra
-          description: Include extra field
-        - schema:
-            type: string
-          in: query
-          name: q
-          description: Query string
-        - schema:
-            type: string
-          in: query
-          name: companyName
-          description: Company name
-        - schema:
-            type: string
-          in: query
-          name: orderNumber
-          description: Order number
-        - schema:
-            type: string
-          in: query
-          name: poNumber
-          description: PO number
-        - schema:
-            type: string
-          in: query
-          name: 'status[]'
-          description: Order status
-      description: |-
-        Get orders.
-        Equivalent Storefront GraphQL API Query: `allOrders`. For more information, see the [GraphQL Playground](https://api-b2b.bigcommerce.com/graphql/playground).
-      tags:
-        - Order
+                with-extra-fields:
+                  value:
+                    code: 200
+                    message: SUCCESS
+                    data:
+                      list:
+                        - orderId: 123
+                          companyName: "Great Buys Incorporated"
+                          createdAt: "1743105969"
+                          updatedAt: "1743105981"
+                          isInvoiceOrder: 0
+                          orderStatus: "Awaiting Payment"
+                          customOrderStatus: "Invoice Sent"
+                          statusCode: 7
+                          totalIncTax: 3167.41
+                          currencyCode: "USD"
+                          money:
+                            currency_location: "left"
+                            currency_token: "$"
+                            decimal_token: "."
+                            decimal_places: 2
+                            thousands_token: ","
+                          firstName: "Marie"
+                          lastName: "Curie"
+                          poNumber: "20250327-0001"
+                          referenceNumber: "REF-12345"
+                          channelName: "B2B Store"
+                          extraInt1: null,
+                          extraInt2: null,
+                          extraInt3: null,
+                          extraInt4: null,
+                          extraInt5: null,
+                          extraStr1: null,
+                          extraStr2: null,
+                          extraStr3: null,
+                          extraStr4: null,
+                          extraStr5: null,
+                          extraText: null,
+                          extraInfo:
+                            billingAddressId: 693471
+                            shippingAddressId: 693471
+                          extraFields:
+                            - fieldName: "Fintech ID"
+                              fieldValue: "eg934lert984356bf9"
+                      paginator:
+                        totalCount: 1
+                        offset: 0
+                        limit: 10
     post:
       summary: Create an Order
       operationId: post-orders
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                description: ''
-                type: object
-                properties:
-                  code:
-                    type: number
-                  message:
-                    type: string
-                    minLength: 1
-                  data:
-                    type: object
-                    properties:
-                      orderId:
-                        type: string
-                        minLength: 1
-                    required:
-                      - orderId
-                required:
-                  - code
-                  - message
-                  - data
-                x-examples:
-                  example-1:
-                    code: 200
-                    message: SUCCESS
-                    data:
-                      orderId: '123'
-              examples:
-                example-1:
-                  value:
-                    code: 200
-                    message: SUCCESS
-                    data:
-                      orderId: '1234'
+      description: |-
+        Generates an order record in B2B Edition after a Company user places an order.
+
+        This occurs automatically; however, you can populate extra information on a B2B order by using a [webhook](/docs/integrations/webhooks) that first listens for BigCommerce order creation and then calls the Create an Order endpoint. The request must be made within 10 seconds of an order's creation for it to be successful.
+
+        Note that this  **does not** create a new order in your store. Use the [Orders V2 API](/docs/rest-management/orders) to add new orders via the API.
+
+        Equivalent Storefront GraphQL API Mutation: `createOrder`. For more information, see the [GraphQL Playground](https://api-b2b.bigcommerce.com/graphql/playground).
+      tags:
+        - Orders
       requestBody:
         content:
           application/json:
@@ -349,860 +287,734 @@ paths:
               type: object
               properties:
                 orderId:
-                  type: string
-                  description: Unique order ID in BigCommerce store
+                  $ref: '#/components/schemas/orderId_REQUEST'
                 poNumber:
-                  type: string
-                  description: PO number
+                  $ref: '#/components/schemas/poNumber'
                 isSaveOrderComment:
-                  type: string
-                  description: If save order comment
+                  $ref: '#/components/schemas/isSaveOrderComment'
                 extraFields:
-                  type: array
-                  items:
-                    type: object
-                    properties:
-                      fieldName:
-                        type: string
-                        description: Extra field name
-                      fieldValue:
-                        type: string
-                        description: Extra field value
+                  $ref: '#/components/schemas/extraFields'
               required:
                 - orderId
-      description: |-
-        Create an order in the BigCommerce store.
-        Equivalent Storefront GraphQL API Mutation: `createOrder`. For more information, see the [GraphQL Playground](https://api-b2b.bigcommerce.com/graphql/playground).
-      tags:
-        - Order
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/responseArray"
+                  - properties:
+                      data:
+                        items:
+                          properties:
+                            orderId:
+                              $ref: '#/components/schemas/orderId'
+                          required:
+                            - orderId
+                required:
+                  - code
+                  - message
+                  - data
+        '400':
+          description: |-
+            Bad Request
+
+            This error occurs if the `orderId` value does not correspond to an existing order that was placed by the Company user. It can also occur if the storefront authToken used to authenticate the request does not have the required permissions to create an order.
+            
+            The error code in the response body appears as `40013` instead of `400`. This is because it is a 400 response for the Orders resource, which has a numeric identifier of 13.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 40013
+                  message:
+                    type: string
+                    description: Error message for the request
+                    example: "User does not have permission to place an order"
+                  data:
+                    type: object
+                    properties: {}
+                required:
+                  - code
+                  - message
+                  - data
   /orders/images:
     get:
       summary: Get Order Images
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                description: ''
-                type: object
-                x-examples:
-                  example-1:
-                    code: 200
-                    message: Success
-                    data:
-                      - orderId: '123'
-                        imageUrl: 'https://cdn11.bigcommerce.com/s-1i6zpxpe3g/products/111/images/371/smithjournal1.1554505753.386.513.jpg?c=2'
-                properties:
-                  code:
-                    type: number
-                  message:
-                    type: string
-                    minLength: 1
-                  data:
-                    type: array
-                    uniqueItems: true
-                    minItems: 1
-                    items:
-                      type: object
-                      properties:
-                        orderId:
-                          type: string
-                          minLength: 1
-                          description: Order ID
-                        imageUrl:
-                          type: string
-                          minLength: 1
-                          description: Image URL address
-                      required:
-                        - orderId
-                        - imageUrl
-                required:
-                  - code
-                  - message
-                  - data
-              examples:
-                example-1:
-                  value:
-                    code: 200
-                    message: Success
-                    data:
-                      - orderId: '123'
-                        imageUrl: url
       operationId: get-orders-images
-      parameters:
-        - schema:
-            type: string
-          in: query
-          name: 'orderIds[]'
-          description: Unique order ID
       description: |-
-        Get order images.
+        Retrieves product image URLs based on the `orderIds[]` value in the parameters. You can return images for multiple orders by adding a separate `orderIds[]` parameter for each order.
+
         Equivalent Storefront GraphQL API Query: `orderImages`. For more information, see the [GraphQL Playground](https://api-b2b.bigcommerce.com/graphql/playground).
       tags:
-        - Order
-      x-internal: true
-  '/orders/{orderId}/products':
-    parameters:
-      - schema:
-          type: string
-        name: orderId
-        in: path
-        required: true
-        description: Unique order ID in BigCommerce store
-    get:
-      summary: Get Order Products
+        - Orders
+      parameters:
+        - name: 'orderIds[]'
+          description: |-
+            The BigCommerce order ID. This parameter does not accept the B2B Edition order ID returned in certain [Server to Server Orders endpoints](/b2b-edition/apis/rest-management/order).
+
+            This parameter is not an array, but you can filter for multiple order statuses by including additional `orderIds[]` parameters in the query. For example, `?orderIds[]=123&orderIds[]=124`.
+          schema:
+            type: string
+            example: "123"
+          required: true
+          in: query
       responses:
         '200':
           description: OK
           content:
             application/json:
               schema:
-                description: ''
-                type: object
-                x-examples:
-                  example-1:
-                    code: 200
-                    message: Success
-                    data:
-                      - productId: '104'
-                        quantity: '2'
-                        variantId: '142'
-                        optionList:
-                          - option_id: 147
-                            option_value: '95'
-                properties:
-                  code:
-                    type: number
-                  message:
-                    type: string
-                    minLength: 1
-                  data:
-                    type: array
-                    uniqueItems: true
-                    minItems: 1
-                    items:
-                      type: object
-                      properties:
-                        productId:
-                          type: string
-                          minLength: 1
-                          description: Unique order product ID
-                        quantity:
-                          type: string
-                          minLength: 1
-                          description: Product quantity in this order
-                        variantId:
-                          type: string
-                          minLength: 1
-                          description: Unique variant ID
-                        optionList:
-                          type: array
-                          uniqueItems: true
-                          minItems: 1
-                          items:
-                            type: object
-                            properties:
-                              option_id:
-                                type: number
-                                description: Product option ID
-                              option_value:
-                                type: string
-                                minLength: 1
-                                description: Product option value
-                            required:
-                              - option_id
-                              - option_value
-                      required:
-                        - productId
-                        - quantity
-                        - variantId
+                allOf:
+                  - $ref: "#/components/schemas/responseArray"
+                  - properties:
+                      data:
+                        items:
+                          properties:
+                            orderId:
+                              $ref: '#/components/schemas/orderId'
+                            imageUrl:
+                              type: string
+                              minLength: 1
+                              description: The image URL for a product in the order.
+                              example: "https://mybcstore.com/images/products/12345/main.jpg"
+                          required:
+                            - orderId
+                            - imageUrl
                 required:
                   - code
                   - message
                   - data
-              examples:
-                example-1:
-                  value:
-                    code: 200
-                    message: Success
-                    data:
-                      - productId: '104'
-                        quantity: '2'
-                        variantId: '142'
-                        optionList:
-                          - option_id: 147
-                            option_value: '95'
+  '/orders/{orderId}/products':
+    get:
+      summary: Get Order Products
       operationId: get-orders-orderId-products
       description: |-
-        Get order products by orderId.
+        Retrieves basic product information for a specific B2B order.
+
+        The request returns unique identifiers for a product, but it does not include more detailed information like pricing and physical dimensions. Use [Get Order Details](#get-order-details) to return full information on products from a particular order, or use [Get Ordered Product List](#get-ordered-product-list) to return information about products purchased by a Company user across multiple orders.
+
         Equivalent Storefront GraphQL API Query: `orderProducts`. For more information, see the [GraphQL Playground](https://api-b2b.bigcommerce.com/graphql/playground).
       tags:
-        - Order
-  '/orders/{orderId}/details':
-    parameters:
-      - schema:
-          type: string
-        name: orderId
-        in: path
-        required: true
-        description: Unique order ID in BigCommerce store
-    get:
-      summary: Get Order Detail
+        - Orders
+      parameters:
+        - $ref: '#/components/parameters/orderId'
       responses:
         '200':
           description: OK
           content:
             application/json:
               schema:
-                description: ''
+                allOf:
+                  - $ref: "#/components/schemas/responseArray"
+                  - properties:
+                      data:
+                        items:
+                          properties:
+                            productId:
+                              $ref: '#/components/schemas/productId'
+                            quantity:
+                              $ref: '#/components/schemas/quantity'
+                            variantId:
+                              $ref: '#/components/schemas/variantId'
+                            optionList:
+                              $ref: '#/components/schemas/optionList_SIMPLE'
+                          required:
+                            - productId
+                            - quantity
+                            - variantId
+                required:
+                  - code
+                  - message
+                  - data
+        '404':
+          description: |-
+            Not Found
+
+            This error occurs if the `orderId` value corresponds to an order that was not placed by the Company user, or if the order was placed while representing a subsidiary Company account.
+          content:
+            application/json:
+              schema:
                 type: object
-                x-examples:
-                  example-1:
-                    code: 200
-                    message: SUCCESS
-                    data:
-                      id: 636
-                      customer_id: 8186
-                      date_created: 'Wed, 02 Jun 2021 07:01:56 +0000'
-                      date_modified: 'Wed, 02 Jun 2021 07:01:57 +0000'
-                      date_shipped: ''
-                      status_id: 7
-                      status: Awaiting Payment
-                      subtotal_ex_tax: '91.9000'
-                      subtotal_inc_tax: '91.9000'
-                      subtotal_tax: '0.0000'
-                      base_shipping_cost: '0.0000'
-                      shipping_cost_ex_tax: '0.0000'
-                      shipping_cost_inc_tax: '0.0000'
-                      shipping_cost_tax: '0.0000'
-                      shipping_cost_tax_class_id: 2
-                      base_handling_cost: '0.0000'
-                      handling_cost_ex_tax: '0.0000'
-                      handling_cost_inc_tax: '0.0000'
-                      handling_cost_tax: '0.0000'
-                      handling_cost_tax_class_id: 2
-                      base_wrapping_cost: '0.0000'
-                      wrapping_cost_ex_tax: '0.0000'
-                      wrapping_cost_inc_tax: '0.0000'
-                      wrapping_cost_tax: '0.0000'
-                      wrapping_cost_tax_class_id: 3
-                      total_ex_tax: '91.9000'
-                      total_inc_tax: '91.9000'
-                      total_tax: '0.0000'
-                      items_total: 2
-                      items_shipped: 0
-                      payment_method: Purchase Orders
-                      payment_provider_id: null
-                      payment_status: ''
-                      refunded_amount: '0.0000'
-                      order_is_digital: false
-                      store_credit_amount: '0.0000'
-                      gift_certificate_amount: '0.0000'
-                      ip_address: 193.176.211.29
-                      geoip_country: Hong Kong
-                      geoip_country_iso2: HK
-                      currency_id: 3
-                      currency_code: CNY
-                      currency_exchange_rate: '1.0000000000'
-                      default_currency_id: 3
-                      default_currency_code: CNY
-                      staff_notes: ''
-                      customer_message: ''
-                      discount_amount: '0.0000'
-                      coupon_discount: '0.0000'
-                      shipping_address_count: 1
-                      is_deleted: false
-                      ebay_order_id: '0'
-                      cart_id: a5a603a2-04be-47fc-8298-27a5995251d9
-                      billing_address:
-                        first_name: test
-                        last_name: order
-                        company: test-order
-                        street_1: address
-                        street_2: ''
-                        city: HA
-                        state: ''
-                        zip: '80022'
-                        country: American Samoa
-                        country_iso2: AS
-                        phone: ''
-                        email: levi.tuo@silksoftware.com
-                        form_fields: []
-                      is_email_opt_in: false
-                      credit_card_type: null
-                      order_source: www
-                      channel_id: 1
-                      external_source: ''
-                      products:
-                        - id: 1461
-                          order_id: 636
-                          product_id: 104
-                          variant_id: 142
-                          order_address_id: 544
-                          name: '[Sample] Utility Caddy'
-                          name_customer: '[Sample] Utility Caddy'
-                          name_merchant: '[Sample] Utility Caddy'
-                          sku: e1-1
-                          upc: ''
-                          type: physical
-                          base_price: '45.9500'
-                          price_ex_tax: '45.9500'
-                          price_inc_tax: '45.9500'
-                          price_tax: '0.0000'
-                          base_total: '91.9000'
-                          total_ex_tax: '91.9000'
-                          total_inc_tax: '91.9000'
-                          total_tax: '0.0000'
-                          weight: '1.0000'
-                          width: '0.0000'
-                          height: '0.0000'
-                          depth: '0.0000'
-                          quantity: 2
-                          base_cost_price: '0.0000'
-                          cost_price_inc_tax: '0.0000'
-                          cost_price_ex_tax: '0.0000'
-                          cost_price_tax: '0.0000'
-                          is_refunded: false
-                          quantity_refunded: 0
-                          refund_amount: '0.0000'
-                          return_id: 0
-                          wrapping_name: ''
-                          base_wrapping_cost: '0.0000'
-                          wrapping_cost_ex_tax: '0.0000'
-                          wrapping_cost_inc_tax: '0.0000'
-                          wrapping_cost_tax: '0.0000'
-                          wrapping_message: ''
-                          quantity_shipped: 0
-                          event_name: null
-                          event_date: ''
-                          fixed_shipping_cost: '0.0000'
-                          ebay_item_id: ''
-                          ebay_transaction_id: ''
-                          option_set_id: 16
-                          parent_order_product_id: null
-                          is_bundled_product: false
-                          bin_picking_number: ''
-                          external_id: null
-                          fulfillment_source: ''
-                          applied_discounts: []
-                          product_options:
-                            - id: 1595
-                              option_id: 32
-                              order_product_id: 1461
-                              product_option_id: 147
-                              display_name: Size
-                              display_name_customer: Size
-                              display_name_merchant: Size
-                              display_value: Small
-                              display_value_customer: Small
-                              display_value_merchant: Small
-                              value: '95'
-                              type: Multiple choice
-                              name: Jar Size
-                              display_style: Rectangle
-                          configurable_fields: []
-                      shipping_addresses:
-                        url: 'https://api.bigcommerce.com/stores/1i6zpxpe3g/v2/orders/636/shipping_addresses'
-                        resource: /orders/636/shipping_addresses
-                      coupons:
-                        url: 'https://api.bigcommerce.com/stores/1i6zpxpe3g/v2/orders/636/coupons'
-                        resource: /orders/636/coupons
-                      external_id: null
-                      external_merchant_id: null
-                      tax_provider_id: BasicTaxProvider
-                      customer_locale: en
-                      store_default_currency_code: CNY
-                      store_default_to_transactional_exchange_rate: '1.0000000000'
-                      custom_status: Awaiting Pay Kido Test
-                      shippingAddress:
-                        - id: 544
-                          order_id: 636
-                          first_name: test
-                          last_name: order
-                          company: test-order
-                          street_1: address
-                          street_2: ''
-                          city: HA
-                          zip: '80022'
-                          country: American Samoa
-                          country_iso2: AS
-                          state: ''
-                          email: levi.tuo@silksoftware.com
-                          phone: ''
-                          items_total: 2
-                          items_shipped: 0
-                          shipping_method: Free Shipping
-                          base_cost: '0.0000'
-                          cost_ex_tax: '0.0000'
-                          cost_inc_tax: '0.0000'
-                          cost_tax: '0.0000'
-                          cost_tax_class_id: 2
-                          base_handling_cost: '0.0000'
-                          handling_cost_ex_tax: '0.0000'
-                          handling_cost_inc_tax: '0.0000'
-                          handling_cost_tax: '0.0000'
-                          handling_cost_tax_class_id: 2
-                          shipping_zone_id: 4
-                          shipping_zone_name: American Samoa
-                          shipping_quotes:
-                            url: 'https://api.bigcommerce.com/stores/1i6zpxpe3g/v2/orders/636/shipping_addresses/544/shipping_quotes'
-                            resource: /orders/636/shipping_addresses/544/shipping_quotes
-                          form_fields: []
-                      shipments: false
-                      poNumber: ''
-                      money:
-                        currency_location: left
-                        currency_token: ¥
-                        decimal_token: .
-                        decimal_places: 2
-                        thousands_token: ','
-                      extraFields: [{
-                          fieldName: 'test field',
-                          fieldValue: 'test'
-                        }]
                 properties:
                   code:
-                    type: number
+                    type: integer
+                    example: 404
                   message:
                     type: string
-                    minLength: 1
+                    description: Error message for the request
+                    example: "Not Found Error"
                   data:
-                    allOf:
-                      - type: object
+                    type: object
+                    properties:
+                      errMsg:
+                        type: string
+                        description: Error message for the request
+                        example: "Order Does not Exist"
+                required:
+                  - code
+                  - message
+                  - data
+  '/orders/{orderId}/details':
+    get:
+      summary: Get Order Details
+      operationId: get-orders-orderId-details
+      description: |-
+        Retrieves detailed information for a specific B2B order. This endpoint's response provides more granular information than the [Get All Orders](#get-all-orders) endpoint.
+
+        If the queried order originated with a quote, the negotiated discount will either be represented as an order discount or reflected in the product prices, depending on the type of discount that was applied.
+
+        The `price_tax` field in the `products` array contains the amount of tax based on the item's non-discounted price, while `total_tax` contains the final tax amount after factoring in any discounts.
+
+        Equivalent Storefront GraphQL API Query: `order`. For more information, see the [GraphQL Playground](https://api-b2b.bigcommerce.com/graphql/playground).
+      tags:
+        - Orders
+      parameters:
+        - $ref: '#/components/parameters/orderId'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/responseSuccess"
+                  - properties:
+                      data:
+                        type: object
                         properties:
                           id:
                             type: number
-                            description: Unique order ID in BigCommerce store.
+                            description: The BigCommerce order ID.
+                            example: 123
                           customer_id:
-                            type: number
-                            description: Customer ID in BigCommerce store
+                            $ref: '#/components/schemas/customer_id'
                           date_created:
-                            type: string
-                            minLength: 1
-                            description: Create date of order
+                            $ref: '#/components/schemas/date_created'
+                          is_tax_inclusive_pricing:
+                            type: boolean
+                            description: Indicates whether or not tax values are factored into product prices.
+                            example: false
                           date_modified:
                             type: string
-                            minLength: 1
-                            description: Last modified date and time of order
+                            description: The date and time when the order was last edited.
+                            example: "Thu, 17 Apr 2025 19:08:55 +0000"
                           date_shipped:
                             type: string
-                            description: Shipped date
+                            description: The date and time when the order's shipment was generated
+                            example: "Thu, 17 Apr 2025 19:08:55 +0000"
                           status_id:
-                            type: number
-                            description: Status ID
+                            $ref: '#/components/schemas/statusCode'
                           status:
-                            type: string
-                            minLength: 1
-                            description: Status
+                            $ref: '#/components/schemas/orderStatus'
                           subtotal_ex_tax:
-                            type: string
-                            minLength: 1
+                            type: string 
+                            description: The order subtotal, excluding tax.
+                            example: "45.00"
                           subtotal_inc_tax:
                             type: string
-                            minLength: 1
+                            description: The order subtotal, including tax.
+                            example: "48.71"
                           subtotal_tax:
                             type: string
-                            minLength: 1
+                            description: The total tax amount applied to the order subtotal.
+                            example: "3.71"
                           base_shipping_cost:
-                            type: string
-                            minLength: 1
+                            $ref: '#/components/schemas/base_shipping_cost'
                           shipping_cost_ex_tax:
-                            type: string
-                            minLength: 1
+                            $ref: '#/components/schemas/shipping_cost_ex_tax'
                           shipping_cost_inc_tax:
-                            type: string
-                            minLength: 1
+                            $ref: '#/components/schemas/shipping_cost_inc_tax'
                           shipping_cost_tax:
-                            type: string
-                            minLength: 1
+                            $ref: '#/components/schemas/shipping_cost_tax'
                           shipping_cost_tax_class_id:
-                            type: number
+                            $ref: '#/components/schemas/shipping_cost_tax_class_id'
                           base_handling_cost:
-                            type: string
-                            minLength: 1
+                            $ref: '#/components/schemas/base_handling_cost'
                           handling_cost_ex_tax:
-                            type: string
-                            minLength: 1
+                            $ref: '#/components/schemas/handling_cost_ex_tax'
                           handling_cost_inc_tax:
-                            type: string
-                            minLength: 1
+                            $ref: '#/components/schemas/handling_cost_inc_tax'
                           handling_cost_tax:
-                            type: string
-                            minLength: 1
+                            $ref: '#/components/schemas/handling_cost_tax'
                           handling_cost_tax_class_id:
-                            type: number
+                            $ref: '#/components/schemas/handling_cost_tax_class_id'
                           base_wrapping_cost:
-                            type: string
-                            minLength: 1
+                            $ref: '#/components/schemas/base_wrapping_cost'
                           wrapping_cost_ex_tax:
-                            type: string
-                            minLength: 1
+                            $ref: '#/components/schemas/wrapping_cost_ex_tax'
                           wrapping_cost_inc_tax:
-                            type: string
-                            minLength: 1
+                            $ref: '#/components/schemas/wrapping_cost_inc_tax'
                           wrapping_cost_tax:
-                            type: string
-                            minLength: 1
+                            $ref: '#/components/schemas/wrapping_cost_tax'
                           wrapping_cost_tax_class_id:
-                            type: number
+                            $ref: '#/components/schemas/wrapping_cost_tax_class_id'
                           total_ex_tax:
                             type: string
-                            minLength: 1
+                            description: The order total, excluding tax.
+                            example: "62.00"
                           total_inc_tax:
                             type: string
-                            minLength: 1
+                            description: The order total, including tax.
+                            example: "67.12"
                           total_tax:
                             type: string
-                            minLength: 1
+                            description: The total tax amount applied to the order.
+                            example: "5.12"
                           items_total:
-                            type: number
+                            $ref: '#/components/schemas/items_total'
                           items_shipped:
-                            type: number
+                            $ref: '#/components/schemas/items_shipped'
                           payment_method:
                             type: string
-                            minLength: 1
-                          payment_provider_id: {}
+                            description: The name of the payment method used to place the order.
+                            example: "PO Number / Reference #"
+                          payment_provider_id:
+                            type: number
+                            description: The unique identifier of the online payment provider used for the order. If the buyer used an offline payment method, including Purchase Orders, this has a value of null.
+                            example: 1234000182
                           payment_status:
                             type: string
+                            description: The status of the transaction from the online payment provider. If the buyer used an offline payment method, this field has an empty value.
+                            example: "paid"
                           refunded_amount:
                             type: string
-                            minLength: 1
+                            description: The amount refunded from the order's transaction, if a refund has been processed.
+                            example: "0.00"
                           order_is_digital:
                             type: boolean
+                            description: Indicates whether or not the order only contains digital products
+                            example: false
                           store_credit_amount:
                             type: string
-                            minLength: 1
+                            description: The amount of store credit used to purchase the order.
+                            example: "0.00"
                           gift_certificate_amount:
                             type: string
-                            minLength: 1
+                            description: The gift certificate value used to purchase the order.
+                            example: "0.00"
                           ip_address:
                             type: string
-                            minLength: 1
+                            description: The IP address of the buyer who placed the order.
+                            example: "1.23.456.789"
+                          ip_address_v6:
+                            type: string
+                            description: The buyer's IPv6 address, if known. This field is blank by default.
+                            example: ""
                           geoip_country:
                             type: string
-                            minLength: 1
+                            description: The full name of the country of the buyer who placed the order, as determined by their IP address.
+                            example: "United States"
                           geoip_country_iso2:
                             type: string
-                            minLength: 1
+                            description: The two-letter ISO code of the country of the buyer who placed the order, as determined by their IP address.
+                            example: "US"
                           currency_id:
                             type: number
+                            description: The unique identifier for the order's display currency. Depending on the selection, this may differ from the order's transacitonal currency.
+                            example: 1
                           currency_code:
-                            type: string
-                            minLength: 1
+                            $ref: '#/components/schemas/currencyCode'
                           currency_exchange_rate:
                             type: string
-                            minLength: 1
+                            description: The exchange rate between your store’s default currency and the order's transactional currency.
+                            example: "1.00"
                           default_currency_id:
                             type: number
+                            description: The unique identifier for the order's transactional currency.
+                            example: 1
                           default_currency_code:
                             type: string
-                            minLength: 1
+                            description: The three-letter code corresponding to the order’s transactional currency.
+                            example: "USD"
                           staff_notes:
                             type: string
+                            description: Internal notes left by staff on the order.
+                            example: "Order Invoice ID is 12345."
+                            maxLength: 65535
                           customer_message:
                             type: string
+                            description: The message that the customer entered in the Order Comments field at checkout. For B2B orders, this field also includes the Purchase Order (PO) number if provided, and also includes the quote number for purchased sales quotes. The newline character `/n` is used to separate each line of text.
+                            example: "Please ship this order as soon as possible."
                           discount_amount:
                             type: string
-                            minLength: 1
+                            description: The amount discounted from the original order total. In orders converted from sales quotes, this field only display order-level discounts, not line item-level discounts.
+                            example: "0.00"
                           coupon_discount:
                             type: string
-                            minLength: 1
+                            description: The amount discounted from the original order total by a coupon.
+                            example: "0.00"
                           shipping_address_count:
                             type: number
+                            description: The number of shipping addresses provided on the order.
+                            example: 1
                           is_deleted:
                             type: boolean
+                            description: Indicates whether the order is archived in the BigCommerce control panel.
+                            example: false
                           ebay_order_id:
                             type: string
-                            minLength: 1
+                            description: If the order was placed through eBay, the eBay order ID will be included. Otherwise, the value will be 0.
+                            example: "1234567890"
                           cart_id:
                             type: string
-                            minLength: 1
+                            description: The unique identifier of the cart that was converted into the order.
+                            example: "095a15a6-8a27-4c20-b357-36b82e9d5929"
                           billing_address:
+                            $ref: '#/components/schemas/billing_address'
+                          fees:
                             type: object
-                            description: Billing address info of this order
-                            required:
-                              - first_name
-                              - last_name
-                              - company
-                              - street_1
-                              - street_2
-                              - city
-                              - state
-                              - zip
-                              - country
-                              - country_iso2
-                              - phone
-                              - email
-                              - form_fields
+                            description: Provides resources for obtaining order-level fee information.
                             properties:
-                              first_name:
+                              url:
                                 type: string
+                                description: The URL for the [Get Fees](/docs/rest-management/orders/order-fees#get-fees) enpoint, preconfigured with your store hash and order ID.
+                                example: "https://api-b2b.bigcommerce.com/stores/{store_hash}/v3/orders/123/fees"
                                 minLength: 1
-                              last_name:
+                              resource:
                                 type: string
+                                description: The path where you can use a GET request to get the order fees.
+                                example: "/v3/orders/123/fees"
                                 minLength: 1
-                              company:
-                                type: string
-                                minLength: 1
-                              street_1:
-                                type: string
-                                minLength: 1
-                              street_2:
-                                type: string
-                              city:
-                                type: string
-                                minLength: 1
-                              state:
-                                type: string
-                              zip:
-                                type: string
-                                minLength: 1
-                              country:
-                                type: string
-                                minLength: 1
-                              country_iso2:
-                                type: string
-                                minLength: 1
-                              phone:
-                                type: string
-                              email:
-                                type: string
-                                minLength: 1
-                              form_fields:
-                                type: array
-                                items:
-                                  type: object
-                                  properties:
-                                    name: 
-                                      type: string
-                                    value:
-                                      type: string
                           is_email_opt_in:
                             type: boolean
-                          credit_card_type: {}
+                            description: Indicates whether or not the buyer opted in to receive marketing emails from your store.
+                            example: false
+                          credit_card_type:
+                            type: string
+                            description: The type of credit card used to purchase the order. If a credit card payment was not used, this field has a value of `null`.
+                            enum:
+                              - "alelo"
+                              - "alia"
+                              - "american_express"
+                              - "cabal"
+                              - "carnet"
+                              - "dankort"
+                              - "diners_club"
+                              - "discover"
+                              - "elo"
+                              - "forbrugsforeningen"
+                              - "jcb"
+                              - "maestro"
+                              - "master"
+                              - "naranja"
+                              - "sodexo"
+                              - "unionpay"
+                              - "visa"
+                              - "vr"
+                              - "null"
+                            example: "visa"
                           order_source:
                             type: string
-                            minLength: 1
+                            description: Reflects the origin of the order.
+                            example: "www"
+                            enum:
+                              - "www"
+                              - "mobile"
+                              - "iphone"
+                              - "ipad"
+                              - "android"
+                              - "manual"
+                              - "external"
+                              - "checkout_api"
+                              - "buybutton"
+                              - "amazon"
+                              - "ebay"
+                              - "facebookshop"
+                              - "facebookcheckout"
+                              - "facekbookmarketplace"
+                              - "pinterest"
+                              - "socialshop"
                           channel_id:
                             type: number
+                            description: The storefront channel ID where the order was placed. If the order was placed on a storefront channel, this field has a value of `1`.
+                            example: 1
                           external_source:
                             type: string
+                            description: Identifies an external system that generated the order and submitted it to BigCommerce with the Orders API. If the order was placed on a storefront channel, the field's value is blank.
+                            example: "Acumatica"
+                          consignments:
+                            type: object
+                            description: Provides resources for obtaining consignment information for the order.
+                            properties:
+                              url:
+                                type: string
+                                description: The URL for the [Get Consignments](/docs/rest-management/orders/order-consignments#get-consignments) endpoint, preconfigured with your store hash and order ID.
+                                example: "https://api-b2b.bigcommerce.com/stores/{store_hash}/v3/orders/123/consignments"
+                                minLength: 1
+                              resource:
+                                type: string
+                                description: The path where you can use a GET request to get the order consignments.
+                                example: "/v3/orders/123/consignments"
+                                minLength: 1
                           products:
                             type: array
-                            uniqueItems: true
-                            minItems: 1
+                            description: Contains information on the order's products.
                             items:
-                              type: object
                               properties:
                                 id:
                                   type: number
+                                  description: The unique identifier for the product appearing on the order. Note that this is different from the `productId`.
+                                  example: 12345
                                 order_id:
-                                  type: number
+                                  $ref: '#/components/schemas/orderId'
                                 product_id:
-                                  type: number
+                                  $ref: '#/components/schemas/productId'
                                 variant_id:
+                                  $ref: '#/components/schemas/variantId'
+                                order_pickup_method_id:
                                   type: number
+                                  description: The unique identifier for the order's pickup method, if selected. If the order does not have a pickup method selected, the value is `0`.
+                                  example: 123456
                                 order_address_id:
-                                  type: number
+                                  $ref: '#/components/schemas/order_address_id'
                                 name:
-                                  type: string
-                                  minLength: 1
+                                  $ref: '#/components/schemas/productName'
                                 name_customer:
                                   type: string
-                                  minLength: 1
+                                  description: The customer-facing name of the product on the storefront.
+                                  example: "Sansevieria"
                                 name_merchant:
                                   type: string
-                                  minLength: 1
+                                  description: The internal name of the product in the BigCommerce control panel.
+                                  example: "Sansevieria"
                                 sku:
-                                  type: string
-                                  minLength: 1
+                                  $ref: '#/components/schemas/sku'
                                 upc:
                                   type: string
+                                  description: The product's Universal Product Code. If the product does not have a UPC, the field's value is blank.
+                                  example: "123456789012"
                                 type:
-                                  type: string
-                                  minLength: 1
+                                  $ref: '#/components/schemas/productType'
                                 base_price:
                                   type: string
-                                  minLength: 1
+                                  description: The product's unit price before any discounts are applied.
+                                  example: "24.75"
                                 price_ex_tax:
                                   type: string
-                                  minLength: 1
+                                  description: The product's unit price, excluding tax.
+                                  example: "24.75"
                                 price_inc_tax:
                                   type: string
-                                  minLength: 1
+                                  description: The product's unit price, including tax.
+                                  example: "26.50"
                                 price_tax:
                                   type: string
-                                  minLength: 1
+                                  description: The tax amount applied to the product's unit price.
+                                  example: "1.75"
                                 base_total:
                                   type: string
-                                  minLength: 1
-                                total_ex_tax:
+                                  description: The price of the quantity of products before any discounts.
+                                  example: "49.50"
+                                total_ex_tax: 
                                   type: string
-                                  minLength: 1
+                                  description: The total price of the quantity of products, excluding tax.
+                                  example: "49.50"
                                 total_inc_tax:
                                   type: string
-                                  minLength: 1
+                                  description: The total price of the quantity of products, including tax.
+                                  example: "53.00"
                                 total_tax:
                                   type: string
-                                  minLength: 1
+                                  description: The tax amount applied to the total price of the quantity of products.
+                                  example: "3.50"
                                 weight:
                                   type: string
-                                  minLength: 1
+                                  description: The weight of the product, in the unit of measurement specified in your store's settings.
+                                  example: "1.50"
                                 width:
                                   type: string
-                                  minLength: 1
+                                  description: The width of the product, in the unit of measurement specified in your store's settings.
+                                  example: "10.00"
                                 height:
                                   type: string
-                                  minLength: 1
+                                  description: The height of the product, in the unit of measurement specified in your store's settings.
+                                  example: "5.00"
                                 depth:
                                   type: string
-                                  minLength: 1
+                                  description: The depth of the product, in the unit of measurement specified in your store's settings.
+                                  example: "3.00"
                                 quantity:
                                   type: number
+                                  description: The quantity of the product ordered.
+                                  example: 2
                                 base_cost_price:
                                   type: string
-                                  minLength: 1
+                                  description: The product's cost price before any discounts are applied.
+                                  example: "20.00"
                                 cost_price_inc_tax:
                                   type: string
-                                  minLength: 1
+                                  description: The product's cost price, including tax.
+                                  example: "21.60"
                                 cost_price_ex_tax:
                                   type: string
-                                  minLength: 1
+                                  description: The product's cost price, excluding tax.
+                                  example: "20.00"
                                 cost_price_tax:
                                   type: string
-                                  minLength: 1
+                                  description: The tax amount applied to the product's cost price.
+                                  example: "1.60"
                                 is_refunded:
                                   type: boolean
+                                  description: Indicates whether the product has been refunded.
+                                  example: false
                                 quantity_refunded:
                                   type: number
+                                  description: The quantity of the product that has been refunded.
+                                  example: 0
                                 refund_amount:
                                   type: string
-                                  minLength: 1
+                                  description: The total amount refunded for the product.
+                                  example: "0.00"
                                 return_id:
                                   type: number
+                                  description: The unique identifier for the return associated with the product, if applicable. If there is no return, the value is `0`.
+                                  example: 0
+                                wrapping_id:
+                                  type: number
+                                  description: The unique identifier for the gift wrapping selected for the product, if applicable. If no gift wrapping is selected, the value is `0`.
+                                  example: 123456
                                 wrapping_name:
                                   type: string
+                                  description: The name of the gift wrapping selected for the product, if applicable. If no gift wrapping is selected, the value is blank.
+                                  example: "Birthday Wrapping"
                                 base_wrapping_cost:
                                   type: string
-                                  minLength: 1
+                                  description: The gift wrapping cost on the product before any discounts are applied.
+                                  example: "5.00"
                                 wrapping_cost_ex_tax:
                                   type: string
-                                  minLength: 1
+                                  description: The gift wrapping cost on the product, excluding tax.
+                                  example: "5.00"
                                 wrapping_cost_inc_tax:
                                   type: string
-                                  minLength: 1
+                                  description: The gift wrapping cost on the product, including tax.
+                                  example: "5.50"
                                 wrapping_cost_tax:
                                   type: string
-                                  minLength: 1
+                                  description: The tax amount applied to the gift wrapping cost on the product.
+                                  example: "0.50"
                                 wrapping_message:
                                   type: string
+                                  description: The message included with the gift wrapping, if applicable. If no gift wrapping is selected, the value is blank.
+                                  example: "Happy Birthday!"
                                 quantity_shipped:
                                   type: number
-                                event_name: {}
+                                  description: The quantity of the product that has been shipped to the buyer.
+                                  example: 2
+                                event_name:
+                                  type: string
+                                  description: The name of the promotional event or delivery date. If an event is not included on the order, the field's value is `null`.
+                                  example: "First Consignment Delivery"
                                 event_date:
                                   type: string
+                                  description: The [Unix timestamp](https://www.unixtimestamp.com/) when the event occurred. If an event is not included on the order, the field's value is blank.
+                                  example: "1622619778"
                                 fixed_shipping_cost:
                                   type: string
-                                  minLength: 1
+                                  description: The fixed shipping cost applied to the product, if applicable.
+                                  example: "0.00"
                                 ebay_item_id:
                                   type: string
+                                  description: The eBay item ID associated with the product, if applicable. If the product was not purchased through eBay, the value is blank.
+                                  example: "1234567890"
                                 ebay_transaction_id:
                                   type: string
+                                  description: The eBay transaction ID associated with the product, if applicable. If the product was not purchased through eBay, the value is blank.
+                                  example: "1234567890"
                                 option_set_id:
                                   type: number
-                                parent_order_product_id: {}
+                                  description: |-
+                                    The product's option set ID, if your store is using the legacy v2 Add/Edit Product experience.
+
+                                    If you are using the v3 experience, or if the product does not have an option set applied to it, the field's value is `null`.
+                                  example: 123456
+                                parent_order_product_id:
+                                  type: number
+                                  description: The unique identifier for the parent product, if this product is part of a pick list. Otherwise, the value is `null`.
+                                  example: 123
                                 is_bundled_product:
                                   type: boolean
+                                  description: Indicates whether the product is part of a pick list. If the product is not part of a pick list, the value is `false`.
+                                  example: false
                                 bin_picking_number:
                                   type: string
-                                external_id: {}
+                                  description: The product's Bin Picking Number. If the product does not have a BPN, the field's value is blank.
+                                  example: "123-1"
+                                external_id:
+                                  type: string
+                                  description: The order's unique identifier in an external system, such as an ERP. If no external system is connected, the field's value is `null`.
+                                  example: "ext-12345"
                                 fulfillment_source:
                                   type: string
+                                  description: The source identifier for the deprecated Fulfillment by Amazon integration. This field is no longer used.
+                                  example: ""
+                                brand:
+                                  $ref: '#/components/schemas/productBrandName'
                                 applied_discounts:
                                   type: array
+                                  description: Contains information on the discounts applied to the product.
                                   items:
                                     type: object
                                     properties:
                                       id:
                                         type: string
+                                        description: The unique identifier for the discount type. The value is `manual-discount` if the discount was applied from a sales quote or via the Orders API, and `total-coupon` for coupon discounts.
+                                        example: "manual-discount"
+                                        enum:
+                                          - "manual-discount"
+                                          - "total-coupon"
                                       amount:
                                         type: string
+                                        description: The amount discounted from the product's price.
+                                        example: "5.00"
                                       name:
                                         type: string
+                                        description: The name of the coupon. If the discount is not a coupon, then the field's value is `Manual Discount`.
+                                        example: "Spring Sale"
                                       code:
                                         type: string
+                                        description: The coupon code. If the dicsount is not a coupon, then the field's value is `null`.
+                                        example: "CPN123"
                                       target:
                                         type: string
-                                product_options:
-                                  type: array
-                                  uniqueItems: true
-                                  minItems: 1
-                                  items:
-                                    type: object
-                                    properties:
-                                      id:
-                                        type: number
-                                      option_id:
-                                        type: number
-                                      order_product_id:
-                                        type: number
-                                      product_option_id:
-                                        type: number
-                                      display_name:
-                                        type: string
-                                        minLength: 1
-                                      display_name_customer:
-                                        type: string
-                                        minLength: 1
-                                      display_name_merchant:
-                                        type: string
-                                        minLength: 1
-                                      display_value:
-                                        type: string
-                                        minLength: 1
-                                      display_value_customer:
-                                        type: string
-                                        minLength: 1
-                                      display_value_merchant:
-                                        type: string
-                                        minLength: 1
-                                      value:
-                                        type: string
-                                        minLength: 1
-                                      type:
-                                        type: string
-                                        minLength: 1
-                                      name:
-                                        type: string
-                                        minLength: 1
-                                      display_style:
-                                        type: string
-                                        minLength: 1
+                                        description: Indicates whether the discount is on the order level or the product level.
+                                        example: "order"
+                                        enum:
+                                          - "order"
+                                          - "product"
                                     required:
                                       - id
-                                      - option_id
-                                      - order_product_id
-                                      - product_option_id
-                                      - display_name
-                                      - display_name_customer
-                                      - display_name_merchant
-                                      - display_value
-                                      - display_value_customer
-                                      - display_value_merchant
-                                      - value
-                                      - type
                                       - name
-                                      - display_style
+                                      - amount
+                                      - code
+                                      - target
+                                product_options:
+                                  $ref: '#/components/schemas/product_options'
                                 configurable_fields:
                                   type: array
+                                  description: Contains information on deprecated product configurable fields, if available. 
                                   items:
                                     type: object
                                     properties:
                                       name:
                                         type: string
+                                        description: The name of the configurable field.
+                                        example: "Company name"
                                       value:
                                         type: string
+                                        description: The value entered for the configurable field.
+                                        example: "Great Buys Incorporated"
+                                discounted_total_inc_tax:
+                                  type: string
+                                  description: The total of the product quantity after discounts and tax are applied.
+                                  example: "48.00"
+                                optionList:
+                                  $ref: '#/components/schemas/optionList_SIMPLE'
                               required:
                                 - id
                                 - order_id
@@ -1252,151 +1064,182 @@ paths:
                                 - bin_picking_number
                                 - fulfillment_source
                           shipping_addresses:
-                            type: object
-                            required:
-                              - url
-                              - resource
-                            properties:
-                              url:
-                                type: string
-                                minLength: 1
-                              resource:
-                                type: string
-                                minLength: 1
+                            type: array
+                            description: Provides resources for obtaining shipping address information for the order.
+                            items:
+                              type: object
+                              properties:
+                                url:
+                                  type: string
+                                  description: The URL for the [Get Order Shipping Addresses](/orders/order-shipping-addresses#get-order-shipping-addresses) endpoint, preconfigured with your store hash and order ID.
+                                  example: "https://api.bigcommerce.com/stores/1234acd/v2/orders/123/shipping_addresses"
+                                resource:
+                                  type: string
+                                  description: The path where you can use a GET request to get the shipping addresses.
+                                  example: "/orders/123/shipping_addresses"
                           coupons:
-                            type: object
-                            required:
-                              - url
-                              - resource
-                            properties:
-                              url:
-                                type: string
-                                minLength: 1
-                              resource:
-                                type: string
-                                minLength: 1
-                          external_id: {}
-                          external_merchant_id: {}
+                            type: array
+                            description: Provides resources for obtaining coupon information for the order.
+                            items:
+                              type: object
+                              properties:
+                                url:
+                                  type: string
+                                  description: The URL for the List Order Coupons enpoint, preconfigured with your store hash and order ID.
+                                  example: "https://api.bigcommerce.com/stores/1234acd/v2/orders/123/coupons"
+                                resource:
+                                  type: string
+                                  description: The path where you can use a GET request to get the coupon details.
+                          external_id:
+                            type: string
+                            description: ID of the order in another system, if it was placed from an external channel. If the order was placed on a storefront channel, the field's value is `null`.
+                            example: "12345"
+                          external_merchant_id:
+                            type: string
+                            description: The merchant ID represents an upstream order from an external system. If the order was placed on a storefront channel, the field's value is `null`.
+                            example: "12345"
                           tax_provider_id:
                             type: string
-                            minLength: 1
+                            description: Indicate which tax provider was used for the order. If the order wass created with the API, or the tax provider is unknown, the field's value is blank.
+                            example: "AvalaraProvider"
                           customer_locale:
                             type: string
-                            minLength: 1
+                            description: The custoemr's locale.
+                            example: "en"
+                          external_order_id:
+                            type: string
+                            description: ID of the order in another system, if it was placed from an external channel. If the order was placed on a storefront channel, the field's value is blank.
+                            example: 12345
                           store_default_currency_code:
                             type: string
-                            minLength: 1
+                            description: The default currency code for the storefront.
+                            example: "USD"
                           store_default_to_transactional_exchange_rate:
                             type: string
-                            minLength: 1
+                            description: The exchange rate between your store's default currency and the order's transactional currency.
+                            example: "1.00"
                           custom_status:
-                            type: string
-                            minLength: 1
+                            $ref: '#/components/schemas/customOrderStatus'
                           shippingAddress:
                             type: array
-                            uniqueItems: true
-                            minItems: 1
+                            description: Contains information about the order's shipping address.
                             items:
                               type: object
                               properties:
                                 id:
                                   type: number
+                                  description: The unique identifier for shipping address in the Company account.
+                                  example: 85
                                 order_id:
-                                  type: number
+                                  $ref: '#/components/schemas/orderId'
                                 first_name:
                                   type: string
-                                  minLength: 1
+                                  description: The buyer's first name on the shipping address.
+                                  example: "Marie"
                                 last_name:
                                   type: string
-                                  minLength: 1
+                                  description: The buyer's last name on the shipping address.
+                                  example: "Curie"
                                 company:
                                   type: string
-                                  minLength: 1
+                                  description: The shipping address label and the Company account name.
+                                  example: "Default Billing/ Great Buys Incorporated"
                                 street_1:
                                   type: string
-                                  minLength: 1
+                                  description: The first line of the shipping address.
+                                  example: "512 Bluebonnet Lane"
                                 street_2:
                                   type: string
+                                  description: The second line of the shipping address.
+                                  example: "Suite 100"
                                 city:
                                   type: string
-                                  minLength: 1
+                                  description: The city on the shipping address.
+                                  example: "Austin"
                                 zip:
                                   type: string
-                                  minLength: 1
+                                  description: The postal code on the shipping address.
+                                  example: "78704"
                                 country:
                                   type: string
-                                  minLength: 1
+                                  description: The full name of the country on the shipping address.
+                                  example: "United States"
                                 country_iso2:
                                   type: string
-                                  minLength: 1
+                                  description: The two-letter code for the country on the shipping address.
+                                  example: "US"
                                 state:
                                   type: string
-                                email:
+                                  description: The full name of the state or province on the shipping address.
+                                  example: "Texas"
+                                email:  
                                   type: string
-                                  minLength: 1
+                                  description: The email address associated with the shipping address.
+                                  example: "mcurie@greatbuysinc.com"
                                 phone:
                                   type: string
+                                  description: The phone number on the shipping address.
+                                  example: "512-222-3333"
                                 items_total:
                                   type: number
+                                  description: The total number of items assigned to the shipping address.
+                                  example: 1
                                 items_shipped:
                                   type: number
+                                  description: The total number of items shipped to the address.
+                                  example: 1
                                 shipping_method:
-                                  type: string
-                                  minLength: 1
+                                  $ref: '#/components/schemas/shipping_method'
                                 base_cost:
-                                  type: string
-                                  minLength: 1
-                                cost_ex_tax:
-                                  type: string
-                                  minLength: 1
+                                  $ref: '#/components/schemas/base_shipping_cost'
+                                cost_exc_tax:
+                                  $ref: '#/components/schemas/shipping_cost_ex_tax'
                                 cost_inc_tax:
-                                  type: string
-                                  minLength: 1
+                                  $ref: '#/components/schemas/shipping_cost_inc_tax'
                                 cost_tax:
-                                  type: string
-                                  minLength: 1
+                                  $ref: '#/components/schemas/shipping_cost_tax'
                                 cost_tax_class_id:
-                                  type: number
+                                  $ref: '#/components/schemas/shipping_cost_tax_class_id'
                                 base_handling_cost:
-                                  type: string
-                                  minLength: 1
+                                  $ref: '#/components/schemas/base_handling_cost'
                                 handling_cost_ex_tax:
-                                  type: string
-                                  minLength: 1
+                                  $ref: '#/components/schemas/handling_cost_ex_tax'
                                 handling_cost_inc_tax:
-                                  type: string
-                                  minLength: 1
+                                  $ref: '#/components/schemas/handling_cost_inc_tax'
                                 handling_cost_tax:
-                                  type: string
-                                  minLength: 1
+                                  $ref: '#/components/schemas/handling_cost_tax'
                                 handling_cost_tax_class_id:
-                                  type: number
+                                  $ref: '#/components/schemas/handling_cost_tax_class_id'
                                 shipping_zone_id:
                                   type: number
+                                  description: The unique identifier for the shipping zone associated with the order.
+                                  example: 3
                                 shipping_zone_name:
                                   type: string
-                                  minLength: 1
+                                  description: The name of the shipping zone associated with the order.
+                                  example: "United States"
                                 shipping_quotes:
                                   type: object
+                                  description: Provides resources for obtaining shipping quote information for the order.
                                   properties:
                                     url:
                                       type: string
-                                      minLength: 1
+                                      description: The URL for the [Get Order Shipping Quotes](/docs/rest-management/orders/order-shipping-addresses-quotes#get-order-shipping-quotes) enpoint, preconfigured with your store hash and order ID.
+                                      example: "https://api.bigcommerce.com/stores/1234acd/v2/orders/123/shipping_addresses/185/shipping_quotes"
                                     resource:
                                       type: string
-                                      minLength: 1
-                                  required:
-                                    - url
-                                    - resource
+                                      description: The path where you can use a GET request to get the shipping quote details.
+                                      example: "/orders/123/shipping_addresses/185/shipping_quotes"
                                 form_fields:
                                   type: array
+                                  description: Contains information on any [custom form fields](https://support.bigcommerce.com/s/article/Editing-Form-Fields) included in the shipping address.
                                   items:
                                     type: object
                                     properties:
-                                      name: 
-                                        type: string
+                                      name:
+                                        $ref: '#/components/schemas/billing_address/properties/form_fields/items/properties/name'
                                       value:
-                                        type: string
+                                        $ref: '#/components/schemas/billing_address/properties/form_fields/items/properties/value'
                               required:
                                 - id
                                 - order_id
@@ -1428,43 +1271,151 @@ paths:
                                 - shipping_zone_id
                                 - shipping_zone_name
                           shipments:
-                            type: boolean
+                            description: Contains information about the order's shipments. If the order does not have a shipment, then `shipments` is treated as a boolean field with a value of `false`.
+                            oneOf:
+                              - type: array
+                                items:
+                                  type: object
+                                  properties:
+                                    id:
+                                      type: number
+                                      description: The unique identifier for the shipment.
+                                      example: 14
+                                    order_id:
+                                      $ref: '#/components/schemas/orderId'
+                                    customer_id:
+                                      $ref: '#/components/schemas/customer_id'
+                                    order_address_id:
+                                      $ref: '#/components/schemas/order_address_id'
+                                    date_created:
+                                      type: string
+                                      description: The date and time when the order shipment was generated.
+                                      example: "Tue, 15 Apr 2025 16:14:10 +0000"
+                                    tracking_number:
+                                      type: string
+                                      description: The shipment's tracking ID.
+                                      example: "120000095"
+                                    merchant_shipping_cost:
+                                      type: string
+                                      description: The cost of the shipping label.
+                                      example: "49.95"
+                                    shipping_method:
+                                      $ref: '#/components/schemas/shipping_method'
+                                    comments:
+                                      type: string
+                                      description: The packing slip notes.
+                                      example: "Ready to go..."
+                                    tracking_carrier:
+                                      type: string
+                                      description: The name of the shipping carrier used for the shipment.
+                                      example: "dhl"
+                                    tracking_link:
+                                      type: string
+                                      description: The URL for the buyer to track their shipment.
+                                      example: "https://www.dhl.com/us-en/home/tracking.html"
+                                    billing_address:
+                                      type: object
+                                      description: Contains billing address information for the order.
+                                      properties:
+                                        first_name:
+                                          $ref: '#/components/schemas/billing_address/properties/firstName'
+                                        last_name:
+                                          $ref: '#/components/schemas/billing_address/properties/lastName'
+                                        company:
+                                          $ref: '#/components/schemas/billing_address/properties/company'
+                                        street_1:
+                                          $ref: '#/components/schemas/billing_address/properties/street1'
+                                        street_2:
+                                          $ref: '#/components/schemas/billing_address/properties/street2'
+                                        city:
+                                          $ref: '#/components/schemas/billing_address/properties/city'
+                                        state:
+                                          $ref: '#/components/schemas/billing_address/properties/state'
+                                        zip:
+                                          $ref: '#/components/schemas/billing_address/properties/zip'
+                                        country:
+                                          $ref: '#/components/schemas/billing_address/properties/country'
+                                        country_iso_2:
+                                          $ref: '#/components/schemas/billing_address/properties/country_iso2'
+                                        phone:
+                                          $ref: '#/components/schemas/billing_address/properties/phone'
+                                        email:
+                                          $ref: '#/components/schemas/billing_address/properties/email'
+                                    shipping_address:
+                                      $ref: '#/components/schemas/shippingAddress_BASIC'
+                                    items:
+                                      type: array
+                                      description: Contains information about products in the shipment.
+                                      items:
+                                        properties:
+                                          id:
+                                            type: number
+                                            description: The unique identifier for the product appearing on the order. Note that this is different from the `productId`.
+                                            example: 12345
+                                          product_id:
+                                            $ref: '#/components/schemas/productId'
+                                          quantity:
+                                            $ref: '#/components/schemas/quantity'
+                                    generated_tracking_link:
+                                      type: string
+                                      description: The tracking link generated by one of our integrated providers, or the Aftership tracking link. This field is blank if you supplied a custom tracking link in the shipment.
+                                      example: "https://track.aftership.com/dhl/12345"
+                                    shipping_provider_display_name:
+                                      type: string
+                                      description: The human-readable name for the `shipping_provider`.
+                                      example: "Other"
+                              - type: boolean
+                                default: false
                           poNumber:
-                            type: string
+                            $ref: '#/components/schemas/poNumber'
                           money:
-                            type: object
-                            required:
-                              - currency_location
-                              - currency_token
-                              - decimal_token
-                              - decimal_places
-                              - thousands_token
-                            properties:
-                              currency_location:
-                                type: string
-                                minLength: 1
-                              currency_token:
-                                type: string
-                                minLength: 1
-                              decimal_token:
-                                type: string
-                                minLength: 1
-                              decimal_places:
-                                type: number
-                              thousands_token:
-                                type: string
-                                minLength: 1
+                            $ref: '#/components/schemas/money'
+                          referenceNumber:
+                            $ref: '#/components/schemas/referenceNumber'
+                          isInvoiceOrder:
+                            $ref: '#/components/schemas/isInvoiceOrder'
+                          canReturn:
+                            type: boolean
+                            description: Indicates whether or not the order is eligible for a return request. Note that storefront returns are not supported in the B2B Edition Buyer Portal experience.
+                            example: true
+                          channelName:
+                            $ref: '#/components/schemas/channelName'
+                          createdEmail:
+                            type: string
+                            description: The buyer's email address.
+                            example: "mcurie@greatbuysinc.com"
+                          firstName:
+                            $ref: '#/components/schemas/firstName'
+                          lastName:
+                            $ref: '#/components/schemas/lastName'
+                          updatedAt:
+                            $ref: '#/components/schemas/updatedAt'
+                          extraInt1:
+                            $ref: '#/components/schemas/extraInt1'
+                          extraInt2:
+                            $ref: '#/components/schemas/extraInt2'
+                          extraInt3:
+                            $ref: '#/components/schemas/extraInt3'
+                          extraInt4:
+                            $ref: '#/components/schemas/extraInt4'
+                          extraInt5:
+                            $ref: '#/components/schemas/extraInt5'
+                          extraStr1:
+                            $ref: '#/components/schemas/extraStr1'
+                          extraStr2:
+                            $ref: '#/components/schemas/extraStr2'
+                          extraStr3:
+                            $ref: '#/components/schemas/extraStr3'
+                          extraStr4:
+                            $ref: '#/components/schemas/extraStr4'
+                          extraStr5:
+                            $ref: '#/components/schemas/extraStr5'
+                          extraText:
+                            $ref: '#/components/schemas/extraText'
+                          extraInfo:
+                            $ref: '#/components/schemas/extraInfo'
                           extraFields:
-                              type: array
-                              items:
-                                type: object
-                                properties:
-                                  fieldName:
-                                    type: string
-                                    description: Extra field name
-                                  fieldValue:
-                                    type: string
-                                    description: Extra field value
+                            $ref: '#/components/schemas/extraFields'
                         required:
                           - id
                           - customer_id
@@ -1535,536 +1486,937 @@ paths:
                           - shipments
                           - poNumber
                           - money
+                    required:
+                      - code
+                      - message
+                      - data
+        '404':
+          description: |-
+            Not Found
+
+            This error occurs if the `orderId` value corresponds to an order that was not placed by the Company user, or if the order was placed while representing a subsidiary Company account.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 404
+                  message:
+                    type: string
+                    description: Error message for the request
+                    example: "Not Found Error"
+                  data:
+                    type: object
+                    properties:
+                      errMsg:
+                        type: string
+                        description: Error message for the request
+                        example: "Order Does not Exist"
                 required:
                   - code
                   - message
                   - data
-              examples:
-                example-1:
-                  value:
-                    code: 200
-                    message: SUCCESS
-                    data:
-                      id: 636
-                      customer_id: 8186
-                      date_created: 'Wed, 02 Jun 2021 07:01:56 +0000'
-                      date_modified: 'Wed, 02 Jun 2021 07:01:57 +0000'
-                      date_shipped: ''
-                      status_id: 7
-                      status: Awaiting Payment
-                      subtotal_ex_tax: '91.9000'
-                      subtotal_inc_tax: '91.9000'
-                      subtotal_tax: '0.0000'
-                      base_shipping_cost: '0.0000'
-                      shipping_cost_ex_tax: '0.0000'
-                      shipping_cost_inc_tax: '0.0000'
-                      shipping_cost_tax: '0.0000'
-                      shipping_cost_tax_class_id: 2
-                      base_handling_cost: '0.0000'
-                      handling_cost_ex_tax: '0.0000'
-                      handling_cost_inc_tax: '0.0000'
-                      handling_cost_tax: '0.0000'
-                      handling_cost_tax_class_id: 2
-                      base_wrapping_cost: '0.0000'
-                      wrapping_cost_ex_tax: '0.0000'
-                      wrapping_cost_inc_tax: '0.0000'
-                      wrapping_cost_tax: '0.0000'
-                      wrapping_cost_tax_class_id: 3
-                      total_ex_tax: '91.9000'
-                      total_inc_tax: '91.9000'
-                      total_tax: '0.0000'
-                      items_total: 2
-                      items_shipped: 0
-                      payment_method: Purchase Orders
-                      payment_provider_id: null
-                      payment_status: ''
-                      refunded_amount: '0.0000'
-                      order_is_digital: false
-                      store_credit_amount: '0.0000'
-                      gift_certificate_amount: '0.0000'
-                      ip_address: 193.176.211.29
-                      geoip_country: Hong Kong
-                      geoip_country_iso2: HK
-                      currency_id: 3
-                      currency_code: CNY
-                      currency_exchange_rate: '1.0000000000'
-                      default_currency_id: 3
-                      default_currency_code: CNY
-                      staff_notes: ''
-                      customer_message: ''
-                      discount_amount: '0.0000'
-                      coupon_discount: '0.0000'
-                      shipping_address_count: 1
-                      is_deleted: false
-                      ebay_order_id: '0'
-                      cart_id: a5a603a2-04be-47fc-8298-27a5995251d9
-                      billing_address:
-                        first_name: test
-                        last_name: order
-                        company: test-order
-                        street_1: address
-                        street_2: ''
-                        city: HA
-                        state: ''
-                        zip: '80022'
-                        country: American Samoa
-                        country_iso2: AS
-                        phone: ''
-                        email: example@example.com
-                        form_fields: []
-                      is_email_opt_in: false
-                      credit_card_type: null
-                      order_source: www
-                      channel_id: 1
-                      external_source: ''
-                      products:
-                        - id: 1461
-                          order_id: 636
-                          product_id: 104
-                          variant_id: 142
-                          order_address_id: 544
-                          name: '[Sample] Utility Caddy'
-                          name_customer: '[Sample] Utility Caddy'
-                          name_merchant: '[Sample] Utility Caddy'
-                          sku: e1-1
-                          upc: ''
-                          type: physical
-                          base_price: '45.9500'
-                          price_ex_tax: '45.9500'
-                          price_inc_tax: '45.9500'
-                          price_tax: '0.0000'
-                          base_total: '91.9000'
-                          total_ex_tax: '91.9000'
-                          total_inc_tax: '91.9000'
-                          total_tax: '0.0000'
-                          weight: '1.0000'
-                          width: '0.0000'
-                          height: '0.0000'
-                          depth: '0.0000'
-                          quantity: 2
-                          base_cost_price: '0.0000'
-                          cost_price_inc_tax: '0.0000'
-                          cost_price_ex_tax: '0.0000'
-                          cost_price_tax: '0.0000'
-                          is_refunded: false
-                          quantity_refunded: 0
-                          refund_amount: '0.0000'
-                          return_id: 0
-                          wrapping_name: ''
-                          base_wrapping_cost: '0.0000'
-                          wrapping_cost_ex_tax: '0.0000'
-                          wrapping_cost_inc_tax: '0.0000'
-                          wrapping_cost_tax: '0.0000'
-                          wrapping_message: ''
-                          quantity_shipped: 0
-                          event_name: null
-                          event_date: ''
-                          fixed_shipping_cost: '0.0000'
-                          ebay_item_id: ''
-                          ebay_transaction_id: ''
-                          option_set_id: 16
-                          parent_order_product_id: null
-                          is_bundled_product: false
-                          bin_picking_number: ''
-                          external_id: null
-                          fulfillment_source: ''
-                          applied_discounts: []
-                          product_options:
-                            - id: 1595
-                              option_id: 32
-                              order_product_id: 1461
-                              product_option_id: 147
-                              display_name: Size
-                              display_name_customer: Size
-                              display_name_merchant: Size
-                              display_value: Small
-                              display_value_customer: Small
-                              display_value_merchant: Small
-                              value: '95'
-                              type: Multiple choice
-                              name: Jar Size
-                              display_style: Rectangle
-                          configurable_fields: []
-                      shipping_addresses:
-                        url: 'https://api.bigcommerce.com/stores/1i6zpxpe3g/v2/orders/636/shipping_addresses'
-                        resource: /orders/636/shipping_addresses
-                      coupons:
-                        url: 'https://api.bigcommerce.com/stores/1i6zpxpe3g/v2/orders/636/coupons'
-                        resource: /orders/636/coupons
-                      external_id: null
-                      external_merchant_id: null
-                      tax_provider_id: BasicTaxProvider
-                      customer_locale: en
-                      store_default_currency_code: CNY
-                      store_default_to_transactional_exchange_rate: '1.0000000000'
-                      custom_status: Awaiting Pay Kido Test
-                      shippingAddress:
-                        - id: 544
-                          order_id: 636
-                          first_name: test
-                          last_name: order
-                          company: test-order
-                          street_1: address
-                          street_2: ''
-                          city: HA
-                          zip: '80022'
-                          country: American Samoa
-                          country_iso2: AS
-                          state: ''
-                          email: example@example.com
-                          phone: ''
-                          items_total: 2
-                          items_shipped: 0
-                          shipping_method: Free Shipping
-                          base_cost: '0.0000'
-                          cost_ex_tax: '0.0000'
-                          cost_inc_tax: '0.0000'
-                          cost_tax: '0.0000'
-                          cost_tax_class_id: 2
-                          base_handling_cost: '0.0000'
-                          handling_cost_ex_tax: '0.0000'
-                          handling_cost_inc_tax: '0.0000'
-                          handling_cost_tax: '0.0000'
-                          handling_cost_tax_class_id: 2
-                          shipping_zone_id: 4
-                          shipping_zone_name: American Samoa
-                          shipping_quotes:
-                            url: 'https://api.bigcommerce.com/stores/1i6zpxpe3g/v2/orders/636/shipping_addresses/544/shipping_quotes'
-                            resource: /orders/636/shipping_addresses/544/shipping_quotes
-                          form_fields: []
-                      shipments: false
-                      poNumber: ''
-                      money:
-                        currency_location: left
-                        currency_token: ¥
-                        decimal_token: .
-                        decimal_places: 2
-                        thousands_token: ','
-      operationId: get-orders-orderId-details
-      description: |-
-        Get order detail by orderId. Please refer to [BigCommerce API](https://developer.bigcommerce.com/api-reference/store-management/orders/orders/getanorder) for detailed parameter introduction.
-        Equivalent Storefront GraphQL API Query: `order`. For more information, see the [GraphQL Playground](https://api-b2b.bigcommerce.com/graphql/playground).
-      tags:
-        - Order
   /ordered-products:
     get:
       summary: Get Ordered Product List
+      operationId: get-ordered-products
+      description: |-
+        Retrieves information related to products that a Company user has purchased. The information returned by this endpoint is different from the detailed product information returned by [Get Order Details](#get-order-details). However, it does include unique information like how many times a product was ordered and when it was last ordered.
+
+        The response includes all products purchased by the Company user, but you can filter for a subset of products by using parameters. Common use cases include:
+
+        * Retrieving products purchased within a date range by using `beginDateAt` and `endDateAt`
+        * Retrieving products ordered a specific number of times by using `minOrderedTimes` and `maxOrderedTimes`
+        * Retrieving information on similarly-named products by entering a partial product name as a `q` value
+        * Retrieving information on a specific product by using `productID`
+
+        Equivalent Storefront GraphQL API Query: `orderedProducts`. For more information, see the [GraphQL Playground](https://api-b2b.bigcommerce.com/graphql/playground).
+      tags:
+        - Orders
+      parameters:
+        - $ref: '#/components/parameters/offset'
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/beginDateAt'
+        - $ref: '#/components/parameters/endDateAt'
+        - name: minOrderedTimes
+          schema:
+            type: number
+          in: query
+          description: Enter a number to return products that have been ordered at least that many times by the Company user.
+          example: 5
+        - name: maxOrderedTimes
+          schema:
+            type: number
+          in: query
+          description: Enter a number to return products that have been ordered at least that many times by the Company user.
+          example: 10
+        - name: productID
+          schema:
+            type: number
+          in: query
+          description: The unique identifier for the product.
+          example: 123
+        - $ref: '#/components/parameters/q'
       responses:
         '200':
           description: OK
           content:
             application/json:
               schema:
-                description: ''
-                type: object
-                x-examples:
-                  example-1:
-                    code: 200
-                    message: SUCCESS
-                    data:
-                      pagination:
-                        totalCount: 3
-                        offset: 0
-                        limit: 10
-                      list:
-                        - orderProductId: '264'
-                          productName: '[Sample] Utility Caddy'
-                          sku: e1-1
-                          productId: '104'
-                          variantId: '142'
-                          lastOrdered: '1622617316'
-                          optionList:
-                            - id: 1595
-                              option_id: 32
-                              order_product_id: 1461
-                              product_option_id: 147
-                              display_name: Size
-                              display_name_customer: Size
-                              display_name_merchant: Size
-                              display_value: Small
-                              display_value_customer: Small
-                              display_value_merchant: Small
-                              value: '95'
-                              type: Multiple choice
-                              name: Jar Size
-                              display_style: Rectangle
-                          orderedTimes: '1'
-                          lastOrderedItems: '2'
-                          productBrandName: OFS
-                        - orderProductId: '263'
-                          productName: '[Sample] Dustpan & Brush'
-                          sku: d1-2
-                          productId: '107'
-                          variantId: '131'
-                          lastOrdered: '1622616050'
-                          optionList:
-                            - id: 1594
-                              option_id: 32
-                              order_product_id: 1460
-                              product_option_id: 145
-                              display_name: Size
-                              display_name_customer: Size
-                              display_name_merchant: Size
-                              display_value: Medium
-                              display_value_customer: Medium
-                              display_value_merchant: Medium
-                              value: '96'
-                              type: Multiple choice
-                              name: Jar Size
-                              display_style: Rectangle
-                          orderedTimes: '2'
-                          lastOrderedItems: '5'
-                          productBrandName: OFS
-                        - orderProductId: '262'
-                          productName: '[Sample] Utility Caddy'
-                          sku: e1-2
-                          productId: '104'
-                          variantId: '143'
-                          lastOrdered: '1622616050'
-                          optionList:
-                            - id: 1593
-                              option_id: 32
-                              order_product_id: 1459
-                              product_option_id: 147
-                              display_name: Size
-                              display_name_customer: Size
-                              display_name_merchant: Size
-                              display_value: Medium
-                              display_value_customer: Medium
-                              display_value_merchant: Medium
-                              value: '96'
-                              type: Multiple choice
-                              name: Jar Size
-                              display_style: Rectangle
-                          orderedTimes: '2'
-                          lastOrderedItems: '6'
-                          productBrandName: OFS
-                properties:
-                  code:
-                    type: number
-                  message:
-                    type: string
-                    minLength: 1
-                  data:
-                    type: object
-                    required:
-                      - pagination
-                      - list
-                    properties:
-                      pagination:
+                allOf:
+                  - $ref: "#/components/schemas/responseSuccess"
+                  - properties:
+                      data:
                         type: object
                         required:
-                          - totalCount
-                          - offset
-                          - limit
+                          - list
+                          - paginator
                         properties:
-                          totalCount:
-                            type: number
-                          offset:
-                            type: number
-                          limit:
-                            type: number
-                      list:
-                        type: array
-                        uniqueItems: true
-                        minItems: 1
-                        items:
-                          type: object
-                          properties:
-                            orderProductId:
-                              type: string
-                              minLength: 1
-                              description: Unique order product ID
-                            productName:
-                              type: string
-                              minLength: 1
-                              description: Product name
-                            sku:
-                              type: string
-                              minLength: 1
-                              description: SKU name
-                            productId:
-                              type: string
-                              minLength: 1
-                              description: Product ID in BigCommerce store
-                            variantId:
-                              type: string
-                              minLength: 1
-                              description: Variant ID
-                            lastOrdered:
-                              type: string
-                              minLength: 1
-                              description: Last ordered time
-                            optionList:
-                              type: array
-                              uniqueItems: true
-                              minItems: 1
-                              description: Product option list
-                              items:
-                                type: object
-                                properties:
-                                  id:
-                                    type: number
-                                    description: ''
-                                  option_id:
-                                    type: number
-                                    description: Option ID of product
-                                  order_product_id:
-                                    type: number
-                                  product_option_id:
-                                    type: number
-                                  display_name:
-                                    type: string
-                                    minLength: 1
-                                  display_name_customer:
-                                    type: string
-                                    minLength: 1
-                                  display_name_merchant:
-                                    type: string
-                                    minLength: 1
-                                  display_value:
-                                    type: string
-                                    minLength: 1
-                                  display_value_customer:
-                                    type: string
-                                    minLength: 1
-                                  display_value_merchant:
-                                    type: string
-                                    minLength: 1
-                                  value:
-                                    type: string
-                                    minLength: 1
-                                  type:
-                                    type: string
-                                    minLength: 1
-                                  name:
-                                    type: string
-                                    minLength: 1
-                                  display_style:
-                                    type: string
-                                    minLength: 1
-                                required:
-                                  - id
-                                  - option_id
-                                  - order_product_id
-                                  - product_option_id
-                                  - display_name
-                                  - display_name_customer
-                                  - display_name_merchant
-                                  - display_value
-                                  - display_value_customer
-                                  - display_value_merchant
-                                  - value
-                                  - type
-                                  - name
-                                  - display_style
-                            orderedTimes:
-                              type: string
-                              minLength: 1
-                            lastOrderedItems:
-                              type: string
-                              minLength: 1
-                            productBrandName:
-                              type: string
-                              minLength: 1
-                          required:
-                            - orderProductId
-                            - productName
-                            - sku
-                            - productId
-                            - variantId
-                            - lastOrdered
-                            - orderedTimes
-                            - lastOrderedItems
-                            - productBrandName
-                required:
-                  - code
-                  - message
-                  - data
-              examples:
-                example-1:
-                  value:
-                    code: 200
-                    message: SUCCESS
-                    data:
-                      pagination:
-                        totalCount: 3
-                        offset: 0
-                        limit: 10
-                      list:
-                        - orderProductId: '264'
-                          productName: '[Sample] Utility Caddy'
-                          sku: e1-1
-                          productId: '104'
-                          variantId: '142'
-                          lastOrdered: '1622617316'
-                          optionList:
-                            - id: 1595
-                              option_id: 32
-                              order_product_id: 1461
-                              product_option_id: 147
-                              display_name: Size
-                              display_name_customer: Size
-                              display_name_merchant: Size
-                              display_value: Small
-                              display_value_customer: Small
-                              display_value_merchant: Small
-                              value: '95'
-                              type: Multiple choice
-                              name: Jar Size
-                              display_style: Rectangle
-                          orderedTimes: '1'
-                          lastOrderedItems: '2'
-                          productBrandName: OFS
-      operationId: get-ordered-products
-      parameters:
-        - schema:
-            type: string
-          in: query
-          name: offset
-          description: Pagination offset
-        - schema:
-            type: string
-          in: query
-          name: limit
-          description: Pagination limit
-        - schema:
-            type: string
-          in: query
-          name: beginDateAt
-          description: Begin date
-        - schema:
-            type: string
-          in: query
-          name: endDateAt
-          description: End date
-        - schema:
-            type: string
-          in: query
-          name: minOrderedTimes
-          description: Minimum ordered times
-        - schema:
-            type: string
-          in: query
-          name: maxOrderedTimes
-          description: Maximum ordered times
-        - schema:
-            type: string
-          in: query
-          name: productID
-          description: Product ID
-        - schema:
-            type: string
-          in: query
-          name: q
-          description: Query string
-      description: |-
-        Get ordered products.
-        Equivalent Storefront GraphQL API Query: `orderedProducts`. For more information, see the [GraphQL Playground](https://api-b2b.bigcommerce.com/graphql/playground).
-      tags:
-        - Order
+                          paginator:
+                            $ref: '#/components/schemas/paginator'
+                          list:
+                            type: array
+                            description: Contains information fields associated with each product in the response.
+                            uniqueItems: true
+                            minItems: 1
+                            items:
+                              type: object
+                              properties:
+                                orderProductId:
+                                  type: string
+                                  description: The unique identifier for the product appearing on the order. Note that this is different from the `productId`.
+                                  example: "12345"
+                                productName:
+                                  $ref: '#/components/schemas/productName'
+                                sku:
+                                  $ref: '#/components/schemas/sku'
+                                productId:
+                                  $ref: '#/components/schemas/productId'
+                                variantId:
+                                  $ref: '#/components/schemas/variantId'
+                                lastOrdered:
+                                  type: string
+                                  minLength: 1
+                                  description: The [Unix timestamp](https://www.unixtimestamp.com/) for the last time the buyer ordered the product.
+                                  example: "1744894371"
+                                optionList:
+                                  type: array
+                                  description: Contains information about the product's options.
+                                  items:
+                                    type: object
+                                    properties:
+                                      id:
+                                        $ref: '#/components/schemas/product_options/items/properties/id'
+                                      option_id:
+                                        $ref: '#/components/schemas/product_options/items/properties/optionId'
+                                      order_product_id:
+                                        $ref: '#/components/schemas/product_options/items/properties/orderProductId'
+                                      product_option_id:
+                                        $ref: '#/components/schemas/optionList_SIMPLE/items/properties/optionId'
+                                      display_name:
+                                        $ref: '#/components/schemas/product_options/items/properties/displayName'
+                                      display_name_customer:
+                                        $ref: '#/components/schemas/product_options/items/properties/displayNameCustomer'
+                                      display_name_merchant:
+                                        $ref: '#/components/schemas/product_options/items/properties/displayNameMerchant'
+                                      display_value:
+                                        $ref: '#/components/schemas/product_options/items/properties/displayValue'
+                                      display_value_customer:
+                                        $ref: '#/components/schemas/product_options/items/properties/displayValueCustomer'
+                                      display_value_merchant:
+                                        $ref: '#/components/schemas/product_options/items/properties/displayValueMerchant'
+                                      value:
+                                        $ref: '#/components/schemas/product_options/items/properties/value'
+                                      type:
+                                        $ref: '#/components/schemas/product_options/items/properties/type'
+                                      name:
+                                        $ref: '#/components/schemas/product_options/items/properties/name'
+                                      display_style:
+                                        $ref: '#/components/schemas/product_options/items/properties/displayStyle'
+                                    required:
+                                      - id
+                                      - option_id
+                                      - order_product_id
+                                      - product_option_id
+                                      - display_name
+                                      - display_name_customer
+                                      - display_name_merchant
+                                      - display_value
+                                      - display_value_customer
+                                      - display_value_merchant
+                                      - value
+                                      - type
+                                      - name
+                                      - display_style
+                                optionSelections:
+                                  $ref: '#/components/schemas/optionList_SIMPLE'
+                                orderedTimes:
+                                  type: string
+                                  minLength: 1
+                                  description: The number of times that the buyer has ordered the product.
+                                  example: "1"
+                                lastOrderedItems:
+                                  type: string
+                                  minLength: 1
+                                  description: The quantity of the product purchased in the buyer's most recent order.
+                                  example: "5"
+                                productBrandName:
+                                  $ref: '#/components/schemas/productBrandName'
+                                ordersInfo:
+                                  type: array
+                                  description: Contains information about all orders containing the product.
+                                  items:
+                                    type: object
+                                    properties:
+                                      order_id:
+                                        type: number
+                                        description: The unique identifier for the B2B Edition order record
+                                        example: 23318773
+                                      quantity:
+                                        $ref: '#/components/schemas/quantity'
+                                      ordered_at:
+                                        type: number
+                                        description: The [Unix timestamp](https://www.unixtimestamp.com/) for when the order was placed.
+                                        example: 1744894371
+                                      bc_order_id:
+                                        $ref: '#/components/schemas/orderId'
+                                imageUrl:
+                                  type: string
+                                  description: The image URL for a product in the order.
+                                  example: "https://mybcstore.com/images/products/12345/main.jpg"
+                              required:
+                                - orderProductId
+                                - productName
+                                - sku
+                                - productId
+                                - variantId
+                                - lastOrdered
+                                - orderedTimes
+                                - lastOrderedItems
+                                - productBrandName
+                    required:
+                      - code
+                      - message
+                      - data
 components:
-  schemas: {}
+  parameters:
+    beginDateAt:
+      name: beginDateAt
+      in: query
+      description: Enter a date in `%m/%d/%Y` format to retrieve all orders placed after that time. If the parameter is not included in the request, the resposne includes orders placed 30 days before the current date.
+      example: '01/01/2025'
+      required: false
+      schema:
+        type: string
+        format: date-time
+    endDateAt:
+      name: endDateAt
+      in: query
+      description: Enter a date in `%m/%d/%Y` format to retrieve all orders placed before that time. If the parameter is not included in the request, the current date is used.
+      example: '01/01/2025'
+      required: false
+      schema:
+        type: string
+        format: date-time
+    offset:
+      name: offset
+      in: query
+      description: The number of results to skip before returning the first result. If left blank, this defaults to 0.
+      example: '10'
+      required: false
+      schema:
+        type: integer
+        default: 0
+    limit:
+      name: limit
+      in: query
+      description: Determines the number of records to return per page. If left blank, this defaults to 10.
+      example: '20'
+      required: false
+      schema:
+        type: integer
+        default: 10
+    q:
+      name: q
+      in: query
+      description: Enter order information to return partial and exact matches. Accepted information fields include order ID, order status name, Purchase Order (PO) number, and total order value including tax.
+      example: 'Awaiting Payment'
+      required: false
+      schema:
+        type: string
+    orderId:
+      name: orderId
+      in: path
+      description: The BigCommerce order ID. This parameter does not accept the B2B Edition order ID returned in certain [Server to Server Orders](/b2b-edition/apis/rest-management/order) endpoints.
+      required: true
+      schema:
+        type: integer
+  schemas:
+    orderId:
+      type: integer
+      description: The BigCommerce order ID.
+      example: 123
+      readOnly: true
+    orderId_REQUEST:
+      type: integer
+      description: The BigCommerce order ID.
+      example: 123
+    companyName:
+      type: string
+      description: The name of the Company associated with the order's buyer.
+      example: 'Great Buys Incorporated'
+    createdAt:
+      type: string
+      format: time
+      description: The [Unix timestamp](https://www.unixtimestamp.com/) for when the order was created. This is a read-only field.
+      example: '1622619778'
+      readOnly: true
+    updatedAt:
+      type: string
+      format: time
+      description: The [Unix timestamp](https://www.unixtimestamp.com/) for when the order was last updated. This is a read-only field.
+      example: '1622619778'
+      readOnly: true
+    isInvoiceOrder:
+      type: integer
+      description: |-
+        Indicates whether the order is an invoice order. This is a read-only field.
+
+        `0` indicates that the order is not an invoice order, while `1` indicates that it is an invoice order.
+      example: 0
+      enum:
+        - 0
+        - 1
+      readOnly: true
+    orderStatus:
+      type: string
+      description: |-
+        The status of the order. This is a read-only field.
+
+        See [Order Statuses](/docs/rest-management/orders/order-status) for a complete list of accepted status names.
+      example: 'Awaiting Payment'
+      readOnly: true
+    customOrderStatus:
+      type: string
+      description: The customized name of the order status.
+      example: 'Invoice Sent'
+      readOnly: true
+    statusCode:
+      type: integer
+      description: |-
+        The numeric code associated with the order status.
+
+        See [Order Statuses](/docs/rest-management/orders/order-status) for a complete list of accepted status codes.
+      example: 7
+      readOnly: true
+    totalIncTax:
+      type: number
+      description: The order's total value including tax.
+      example: 1200.95
+    currencyCode:
+      type: string
+      description: The three-letter code corresponding to the order’s currency.
+      example: 'USD'
+    money:
+      type: object
+      description: |-
+        Contains detailed information regarding the order's currency.
+      properties:
+        currency_location:
+          type: string
+          description: The location of the currency symbol (left or right).
+          example: left
+          enum:
+            - left
+            - right
+        currency_token:
+          type: string
+          description: The currency symbol.
+          example: '$'
+        decimal_token:
+          type: string
+          description: The character used to separate decimal values in order pricing.
+          example: "."
+        decimal_places:
+          type: integer
+          description: The number of decimal places displayed in order pricing.
+          example: 2
+        thousands_token:
+          type: string
+          description: The character used to separate the hundredths and thousandths places in order pricing.
+          example: ','
+    firstName:
+      type: string
+      description: The buyer's first name.
+      example: 'Marie'
+    lastName:
+      type: string
+      description: The buyer's last name.
+      example: 'Curie'
+    poNumber:
+      type: string
+      description: The order's Purchase Order (PO), if used.
+      example: '03302025-0001'
+    referenceNumber:
+      type: string
+      description: The value of the Additional Payment Text Input Field enabled in B2B Edition's [Checkout settings](https://support.bigcommerce.com/s/article/B2B-Edition-Settings).
+      example: 'Quote - 12345'
+    channelName:
+      type: string
+      description: The name of the storefront channel where the order was placed.
+      example: 'B2B Store'
+    extraInt1:
+      type: integer
+      description: A legacy integer extra field configuration that does not return data in newer stores.
+      example: 12345
+      nullable: true
+      readOnly: true
+    extraInt2:
+      type: integer
+      description: A legacy integer extra field configuration that does not return data in newer stores.
+      example: 12345
+      nullable: true
+      readOnly: true
+    extraInt3: 
+      type: integer
+      description: A legacy integer extra field configuration that does not return data in newer stores.
+      example: 12345
+      nullable: true
+      readOnly: true
+    extraInt4:
+      type: integer
+      description: A legacy integer extra field configuration that does not return data in newer stores.
+      example: 12345
+      nullable: true
+      readOnly: true
+    extraInt5:
+      type: integer
+      description: A legacy integer extra field configuration that does not return data in newer stores.
+      example: 12345
+      nullable: true
+      readOnly: true
+    extraStr1:
+      type: string
+      description: A legacy string extra field configuration that does not return data in newer stores.
+      example: "Great Buys Incorporated"
+      nullable: true
+      readOnly: true
+    extraStr2:
+      type: string
+      description: A legacy string extra field configuration that does not return data in newer stores.
+      example: "Great Buys Incorporated"
+      nullable: true
+      readOnly: true
+    extraStr3:
+      type: string
+      description: A legacy string extra field configuration that does not return data in newer stores.
+      example: "Great Buys Incorporated"
+      nullable: true
+      readOnly: true
+    extraStr4:
+      type: string
+      description: A legacy string extra field configuration that does not return data in newer stores.
+      example: "Great Buys Incorporated"
+      nullable: true
+      readOnly: true
+    extraStr5:
+      type: string
+      description: A legacy string extra field configuration that does not return data in newer stores.
+      example: "Great Buys Incorporated"
+      nullable: true
+      readOnly: true
+    extraText:
+      type: string
+      description: A legacy text extra field configuration that does not return data in newer stores.
+      example: "Great Buys Incorporated"
+      nullable: true
+      readOnly: true
+    extraInfo:
+      type: array
+      description: Contains billing and shipping address identifiers.
+      items:
+        properties:
+          billingAddressId:
+            type: integer
+            description: The unique identifier for billing address in the Company account.
+            example: 12345
+          shippingAddressId:
+            type: integer
+            description: The unique identifier for shipping address in the Company account.
+            example: 12345
+    extraFields:
+      properties:
+        extraFields:
+          type: array
+          description: Contains extra field information associated with the order.
+          items:
+            properties:
+              fieldName:
+                type: string
+                description: The name of the order extra field.
+                example: "Fintech ID"
+              fieldValue:
+                type: string
+                description: The value of the order extra field.
+                example: "1234567890"
+    isSaveOrderComment:
+      type: string
+      description: |-
+        Indicates whether the order comment is saved, if one exists.
+
+        `0` indicates that the order comment is saved, while `1` indicates that it is not saved.
+      example: "0"
+      default: "0"
+    paginator:
+      type: object
+      description: Contains pagination information for the response.
+      properties:
+        totalCount:
+          type: integer
+          description: The total number of items in the response.
+          example: 1
+        offset:
+          type: integer
+          description: The number of items skipped in the response before the first result.
+          example: 0
+        limit:
+          type: integer
+          description: The maximum number of items that can be returned.
+          example: 10
+    productId:
+      type: string
+      description: The unique identifier for the base product.
+      example: "321"
+    quantity:
+      type: number
+      description: The quantity of the product in the order.
+      example: 5
+    variantId:
+      type: string
+      description: The unique identifier for the product variant.
+      example: "74669"
+    optionList_SIMPLE:
+      type: array
+      description: Contains information about the product's options.
+      items:
+        properties:
+          optionId:
+            type: integer
+            description: The unique identifier for the product's variant or modifier option.
+            example: 3773
+          optionValue:
+            type: string
+            description: The unique identifier for the product's selected option value.
+            example: "18836"
+          type:
+            type: string
+            description: The type of option, which determines how it will display on the storefront.
+            example: "Multiple choice"
+      required:
+        - option_id
+        - option_value
+    customer_id:
+      type: integer
+      description: The unique ID for the customer account.
+      example: 12
+    date_created:
+      type: string
+      description: The date and time when the order was created.
+      example: "Tue, 15 Apr 2025 16:14:10 +0000"
+    base_shipping_cost:
+      type: string
+      description: The value of the base shipping cost.
+      example: "7.00"
+    shipping_cost_ex_tax:
+      type: string
+      description: The shipping cost, excluding tax.
+      example: "7.00"
+    shipping_cost_inc_tax:
+      type: string
+      description: The shipping cost, including tax.
+      example: "7.58"
+    shipping_cost_tax:
+      type: string
+      description: The tax amount applied to the shipping cost.
+      example: "0.58"
+    shipping_cost_tax_class_id:
+      type: integer
+      description: The unique ID for the shipping tax class configured in your Basic Tax settings. If you are using an automatic tax provider like Avalara, this field does not provide applicable information.
+      example: 2
+    base_handling_cost:
+      type: string
+      description: The value of the base handling cost.
+      example: "10.00"
+    handling_cost_ex_tax:
+      type: string
+      description: The handling cost, excluding tax.
+      example: "10.00"
+    handling_cost_inc_tax:
+      type: string
+      description: The handling cost, including tax.
+      example: "10.83"
+    handling_cost_tax:
+      type: string
+      description: The tax amount applied to the handling cost.
+      example: "0.83"
+    handling_cost_tax_class_id:
+      type: integer
+      description: The unique ID for the handling tax class configured in your Basic Tax settings. If you are using an automatic tax provider like Avalara, this field does not provide applicable information.
+      example: 2
+    base_wrapping_cost:
+      type: string
+      description: The value of the base wrapping cost, if product wrapping was selected for the order.
+      example: "5.00"
+    wrapping_cost_ex_tax:
+      type: string
+      description: The wrapping cost, excluding tax.
+      example: "5.00"
+    wrapping_cost_inc_tax:
+      type: string
+      description: The wrapping cost, including tax.
+      example: "5.42"
+    wrapping_cost_tax:
+      type: string
+      description: The tax amount applied to the wrapping cost.
+      example: "0.42"
+    wrapping_cost_tax_class_id:
+      type: integer
+      description: The unique ID for the wrapping tax class configured in your Basic Tax settings. If you are using an automatic tax provider like Avalara, this field does not provide applicable information.
+      example: 2
+    items_total:
+      type: integer
+      description: The total quantity of products in the order.
+      example: 1
+    items_shipped:
+      type: integer
+      description: The total quantity of products in the order that were shipped to the buyer.
+      example: 1
+    billing_address:
+      type: object
+      description: Contains billing address information for the order.
+      properties:
+        firstName:
+          type: string
+          description: The first name on the billing address.
+          example: 'Marie'
+        lastName:
+          type: string
+          description: The last name on the billing address.
+          example: 'Curie'
+        company:
+          type: string
+          description: The billing address label and the Company account name.
+          example: 'Default Billing/ Great Buys Incorporated'
+        street1:
+          type: string
+          description: The first line of the street address.
+          example: '512 Bluebonnet Lane'
+        street2:
+          type: string
+          description: The second line of the street address, if applicable.
+          example: 'Suite 100'
+        city:
+          type: string
+          description: The city on the billing address.
+          example: 'Austin'
+        state:
+          type: string
+          description: The state or province of the billing address.
+          example: 'Texas'
+        zip:
+          type: string
+          description: The postal code on the billing address.
+          example: '78704'
+        country:
+          type: string
+          description: The full name of the country on the billing address.
+          example: 'United States'
+        country_iso2:
+          type: string
+          description: The two-letter country code on the billing address.
+          example: 'US'
+        phone:
+          type: string
+          description: The phone number on the billing address.
+          example: '512-555-1234'
+        email:
+          type: string
+          description: The email address associated with the billing address.
+          example: 'mcurie@greatbuysinc.com'
+        form_fields:
+          type: array
+          description: Contains information on any [custom form fields](https://support.bigcommerce.com/s/article/Editing-Form-Fields) included in the billing address.
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+                description: The name of the form field.
+                example: 'Tax Provider Tax Code'
+              value:
+                type: string
+                description: The form field value supplied by the buyer.
+                example: 'G'
+      required:
+        - first_name
+        - last_name
+        - company
+        - street_1
+        - street_2
+        - city
+        - state
+        - zip
+        - country
+        - country_iso2
+        - phone
+        - email
+        - form_fields
+    shippingAddress_BASIC:
+      type: object
+      description: Contains shipping address information for the order.
+      properties:
+        first_name:
+          type: string
+          description: The buyer's first name on the shipping address.
+          example: "Marie"
+        last_name:
+          type: string
+          description: The buyer's last name on the shipping address.
+          example: "Curie"
+        company:
+          type: string
+          description: The shipping address label and the Company account name.
+          example: "Default Billing/ Great Buys Incorporated"
+        street_1:
+          type: string
+          description: The first line of the shipping address.
+          example: "512 Bluebonnet Lane"
+        street_2:
+          type: string
+          description: The second line of the shipping address.
+          example: "Suite 100"
+        city:
+          type: string
+          description: The city on the shipping address.
+          example: "Austin"
+        zip:
+          type: string
+          description: The postal code on the shipping address.
+          example: "78704"
+        country:
+          type: string
+          description: The full name of the country on the shipping address.
+          example: "United States"
+        country_iso2:
+          type: string
+          description: The two-letter code for the country on the shipping address.
+          example: "US"
+        state:
+          type: string
+          description: The full name of the state or province on the shipping address.
+          example: "Texas"
+        email:  
+          type: string
+          description: The email address associated with the shipping address.
+          example: "mcurie@greatbuysinc.com"
+        phone:
+          type: string
+          description: The phone number on the shipping address.
+          example: "512-222-3333"
+    order_address_id:
+      type: integer
+      description: Numeric ID of the associated order shipping address.
+      example: 12345
+    productName:
+      type: string
+      description: The name of the product as it appears on the order.
+      example: "Sansevieria"
+    sku:
+      type: string
+      description: The product's SKU.
+      example: "SAN-PL"
+    productType:
+      type: string
+      description: Indicates whether the line item is a physical or digital product.
+      example: "physical"
+      enum:
+        - "physical"
+        - "digital"
+    product_options:
+      type: array
+      items:
+        properties:
+          id:
+            type: integer
+            description: The unique numerical ID of the option; increments sequentially.
+            example: 1595
+          optionId:
+            type: integer
+            description: The numeric ID of the associated option.
+            example: 32
+          orderProductId:
+            type: integer
+            description: The numeric ID of the option within the order.
+            example: 1461
+          productOptionId:
+            $ref: '#/components/schemas/optionList_SIMPLE/items/properties/optionId'
+          displayName:
+            type: string
+            description: Alias for `displayNameCustomer`. The product option name that is shown to customer in the storefront.
+            example: "Size"
+          displayNameCustomer:
+            type: string
+            description: The product option name that is shown to customer in storefront.
+            example: "Size"
+          displayNameMerchant:
+            type: string
+            description: The internal option name in the control panel.
+            example: "Size"
+          displayValue:
+            type: string
+            description: Alias for `displayValueCustomer`. The product option value that is shown to customer in storefront.
+            example: "Small"
+          displayValueCustomer:
+            type: string
+            description: The product option value that is shown to customer in storefront.
+            example: "Small"
+          displayValueMerchant:
+            type: string
+            description: The internal option value name in the control panel.
+            example: "Small"
+          value:
+            type: string
+            description: The unique identifier for the product's selected option value.
+            example: "95"
+          type:
+            $ref: '#/components/schemas/optionList_SIMPLE/items/properties/type'
+          name:
+            type: string
+            description: The option's name, as used internally. Options given a duplicate name have a numeric string added to them.
+            example: "Color1736973439-63261"
+          displayStyle:
+            type: string
+            description: Indicates how a multiple choice option is displayed on the storefront.
+            example: "Rectangle"
+        required:
+          - id
+          - option_id
+          - order_product_id
+          - product_option_id
+          - display_name
+          - display_name_customer
+          - display_name_merchant
+          - display_value
+          - display_value_customer
+          - display_value_merchant
+          - value
+          - type
+          - name
+          - display_style
+    productBrandName:
+      type: string
+      description: The name of the brand associated with the product.
+      example: "Rustic Roots"
+    shipping_method:
+      type: string
+      description: The name of the shipping method.
+      example: "2nd Day Air"
+    orderData_ALL:
+      properties:
+        orderId:
+          $ref: '#/components/schemas/orderId'
+        companyName:
+          $ref: '#/components/schemas/companyName'
+        createdAt:
+          $ref: '#/components/schemas/createdAt'
+        updatedAt:
+          $ref: '#/components/schemas/updatedAt'
+        isInvoiceOrder:
+          $ref: '#/components/schemas/isInvoiceOrder'
+        orderStatus:
+          $ref: '#/components/schemas/orderStatus'
+        customOrderStatus:
+          $ref: '#/components/schemas/customOrderStatus'
+        statusCode:
+          $ref: '#/components/schemas/statusCode'
+        totalIncTax:
+          $ref: '#/components/schemas/totalIncTax'
+        currencyCode:
+          $ref: '#/components/schemas/currencyCode'
+        money:
+          $ref: '#/components/schemas/money'
+        firstName:
+          $ref: '#/components/schemas/firstName'
+        lastName:
+          $ref: '#/components/schemas/lastName'
+        poNumber:
+          $ref: '#/components/schemas/poNumber'
+        referenceNumber:
+          $ref: '#/components/schemas/referenceNumber'
+        channelName:
+          $ref: '#/components/schemas/channelName'
+        extraInt1:
+          $ref: '#/components/schemas/extraInt1'
+        extraInt2:
+          $ref: '#/components/schemas/extraInt2'
+        extraInt3:
+          $ref: '#/components/schemas/extraInt3'
+        extraInt4:
+          $ref: '#/components/schemas/extraInt4'
+        extraInt5:
+          $ref: '#/components/schemas/extraInt5'
+        extraStr1:
+          $ref: '#/components/schemas/extraStr1'
+        extraStr2:
+          $ref: '#/components/schemas/extraStr2'
+        extraStr3:
+          $ref: '#/components/schemas/extraStr3'
+        extraStr4:
+          $ref: '#/components/schemas/extraStr4'
+        extraStr5:
+          $ref: '#/components/schemas/extraStr5'
+        extraText:
+          $ref: '#/components/schemas/extraText'
+        extraInfo:
+          $ref: '#/components/schemas/extraInfo'
+        extraFields:
+          $ref: '#/components/schemas/extraFields'
+    responseObject:
+      type: object
+      properties:
+        code:
+          type: integer
+          description: "HTTP Response Code"
+          default: '200'
+        message:
+          type: string
+          description: "Response message"
+          default: 'SUCCESS'
+        data:
+          type: object
+    responseArray:
+      type: object
+      properties:
+        code:
+          type: integer
+          description: "HTTP Response Code"
+          default: '200'
+        message:
+          type: string
+          description: "Response message"
+          default: 'SUCCESS'
+        data:
+          type: array
+          items:
+            type: object
+    responseSuccess:
+      allOf:
+        - $ref: "#/components/schemas/responseObject"
+        - properties:
+            code:
+              default: 200
   securitySchemes:
     BearerToken:
       description: |-
@@ -2075,4 +2427,4 @@ components:
       type: http
       scheme: bearer
 tags:
-  - name: Order
+  - name: Orders

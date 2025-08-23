@@ -48,15 +48,17 @@ This ensures that any URL assigned to an object's [node](https://developer.bigco
 
 The `with-routes` middleware also checks the [storefront status](https://developer.bigcommerce.com/graphql-storefront/reference#definition-StorefrontStatusType) so that when a control panel or API user takes a storefront down for **MAINTENANCE** or sets it to **LAUNCHED**, the live storefront reflects the change without waiting for a rebuild of the Next.js application.
 
-### Performance and KV Store Configuration
+### Performance and Caching Configuration
 
 The `with-routes` middleware results in a performance penalty, as it involves an extra, blocking API request required to render site pages. 
 
-Path-entity relationships are very cacheable, but Next.js middleware cannot use typical `cache()` functionality, so an alternative caching backend is required. Catalyst uses a [caching implementation](https://github.com/bigcommerce/catalyst/tree/main/core/lib/kv) that’s flexible for multiple KV adapters. By default, [Vercel KV](https://vercel.com/docs/storage/vercel-kv) is supported and is automatically enabled when you connect a Vercel KV instance to a Catalyst storefront. 
+Path-entity relationships are very cacheable, but Next.js middleware cannot use typical `cache()` functionality, so an alternative caching backend is required.
 
-**Key takeaway: For optimal performance with Catalyst’s built-in routing behavior, in production you should configure a KV store.**
+<Callout type="info">
+**Catalyst v1.2 and later**: Route caching now uses [Vercel Runtime Cache](https://vercel.com/changelog/introducing-the-runtime-cache-api) automatically when deployed on Vercel, providing optimal performance without requiring external KV storage setup. No additional configuration is needed for great performance on Vercel.
+</Callout>
 
-We plan to support other caching backends in future releases, such as a generic adapter for traditional Redis backends. Creating your own adapter for your chosen KV is typically a simple process.
+**Key takeaway: Catalyst v1.2+ automatically provides optimal performance with built-in routing behavior when deployed on Vercel.**
 
 If you don't want to use the control panel or API-configured URLs on your Catalyst storefront and don't want to support storefront status checks, you can remove the `with-routes` middleware and gain a performance improvement.
 

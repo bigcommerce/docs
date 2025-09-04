@@ -10,14 +10,14 @@ Middleware code executes before a route is rendered and provides an entry point 
 
 Any URL patterns for which middleware should not be applied can be configured in the `config` exported by `middleware.ts`. By default, static files such as sitemaps and `robots.txt` are not subject to middleware.
 
-As an example, if you have created a custom route for URLs starting with `/product-configure`, and these paths don’t need to be subject to any middleware.  Updating the `config` in `middleware.ts` as follows would exclude them:
+As an example, if you have created a custom route for URLs starting with `/product-configure`, and these paths don’t need to be subject to any middleware. Updating the `config` in `middleware.ts` as follows would exclude them:
 
 ```ts filename="middleware.ts"
 export const config = {
-  matcher: [
-   '/((?!product-configure|api|admin|_next/static|_next/image|_vercel|favicon.ico|xmlsitemap.php|sitemap.xml|robots.txt).*)',
-  ],
-};
+	matcher: [
+		'/((?!product-configure|api|admin|_next/static|_next/image|_vercel|favicon.ico|xmlsitemap.php|sitemap.xml|robots.txt).*)',
+	],
+}
 ```
 
 ## With auth
@@ -28,7 +28,7 @@ The `with-auth` middleware is a wrapper over a minimal implementation of [Auth.j
 
 The `with-routes` middleware overrides the default [Next.js file-based routing behavior](https://nextjs.org/docs/app/building-your-application/routing) to provide support for certain BigCommerce features in a way that allows changes users make with the store control panel and APIs to have the expected effect on the storefront.
 
-Let’s look at an example. The following is a fairly typical terse, SEO-friendly URL path:
+Let's look at an example. The following is a fairly typical terse, SEO-friendly URL path:
 
 ```
 /fancy-high-top
@@ -40,7 +40,7 @@ In a hypothetical store, this might correspond with the URL path set on a produc
 /product/123
 ```
 
-Despite the param name `[slug]`, what the route expects in the segment is a product entity ID. The `with-routes` middleware sends the path `/fancy-high-top` to BigCommerce using the GraphQL Storefront API's [route() node](https://developer.bigcommerce.com/graphql-storefront/reference#definition-Route) to determine the entity (in this case, a product) that corresponds with the supplied path.  It then performs an internal Next.js rewrite to the entity-specific path `/product/123`, resulting in the page being rendered by the appropriate route.
+Despite the param name `[slug]`, what the route expects in the segment is a product entity ID. The `with-routes` middleware sends the path `/fancy-high-top` to BigCommerce using the GraphQL Storefront API's [route() node](https://developer.bigcommerce.com/graphql-storefront/reference#definition-Route) to determine the entity (in this case, a product) that corresponds with the supplied path. It then performs an internal Next.js rewrite to the entity-specific path `/product/123`, resulting in the page being rendered by the appropriate route.
 
 The net effect is to provide full freedom for the custom URL configuration BigCommerce provides. This allows for any desired URL pattern from `/fancy-high-top` to `/product/fancy-high-top` to `/shoes/high-tops/fancy-high-top`.
 
@@ -50,14 +50,16 @@ The `with-routes` middleware also checks the [storefront status](https://develop
 
 ### Performance and KV Store Configuration
 
-The `with-routes` middleware results in a performance penalty, as it involves an extra, blocking API request required to render site pages. 
+Using the `with-routes` middleware introduces a performance cost, since it requires an additional blocking API request to render site pages.
 
-Path-entity relationships are very cacheable, but Next.js middleware cannot use typical `cache()` functionality, so an alternative caching backend is required. Catalyst uses a [caching implementation](https://github.com/bigcommerce/catalyst/tree/main/core/lib/kv) that’s flexible for multiple KV adapters. By default, [Vercel KV](https://vercel.com/docs/storage/vercel-kv) is supported and is automatically enabled when you connect a Vercel KV instance to a Catalyst storefront. 
+Although path-to-entity mappings can be cached, Next.js middleware cannot use the built-in [Data Cache](https://nextjs.org/docs/app/api-reference/functions/fetch#optionsnextrevalidate) which is used to cache fetched data in other parts of Catalyst. Instead, a separate caching backend must be used. Catalyst uses a [caching implementation](https://github.com/bigcommerce/catalyst/tree/main/core/lib/kv) that’s flexible for multiple KV adapters.
 
-**Key takeaway: For optimal performance with Catalyst’s built-in routing behavior, in production you should configure a KV store.**
+<Callout type="info">
+**Vercel Deployments**
 
-We plan to support other caching backends in future releases, such as a generic adapter for traditional Redis backends. Creating your own adapter for your chosen KV is typically a simple process.
+When deployed on Vercel, route caching automatically takes advantage of the [Vercel Runtime Cache](https://vercel.com/changelog/introducing-the-runtime-cache-api). This provides optimal performance without requiring an external KV store or extra configuration.
+</Callout>
 
-If you don't want to use the control panel or API-configured URLs on your Catalyst storefront and don't want to support storefront status checks, you can remove the `with-routes` middleware and gain a performance improvement.
+If your Catalyst storefront does not rely on control panel or API-configured URLs, and you do not need storefront status checks, you can safely remove the `with-routes` middleware to improve performance.
 
-For linking purposes, you may want to tightly control your URLs such that they are known in advance at build time, or engineer routing solutions in other ways.
+For projects where URL structures need to be tightly controlled, consider defining routes at build time or implementing custom routing strategies.

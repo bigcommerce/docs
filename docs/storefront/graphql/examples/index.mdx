@@ -396,3 +396,140 @@ The `geography` node currently supports two filters, both available on the level
 </Tab>
 </Tabs>
 <a href="https://developer.bigcommerce.com/graphql-storefront/playground" target="_blank">**Try it in GraphQL Playground**</a>
+
+## Get wishlist information
+
+Wishlists are accessible through GraphQL and offer access to all standard wishlist management functions. In addition to retrieving information through the queries `customers.wishlists` and `site.publicWishlist` outlined below, the mutations `createWishlist`, `addWishlistItems`, `deleteWishlistItems`, `updateWishlist`, and `deleteWishlists` are provided for managing customer wishlists.
+
+Public wishlists are read-only within GraphQL.
+
+<Callout type="warning">
+The `items` field in both customer and public wishlist queries greatly increases query complexity. This means that the cost for deeply nested or large queries involving wishlist items grows rapidly. As a result, complex queries may hit rate or complexity limits sooner than expected. For platform stability, plan queries with this in mind and retrieve only the data you need.
+</Callout>
+
+### Customer wishlists
+
+Customer wishlists are queried based on the current customer session, using the token generated during the authentication process to identify the customer for the query's response data.
+
+<Tabs items={['Query', 'Response']}>
+<Tab>
+
+```graphql copy filename="Example Query: Customer wishlists"
+query {
+  customer {
+    wishlists {
+      edges {
+        node {
+          id
+          name
+          items {
+            edges {
+              node {
+                entityId
+                productName
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+</Tab>
+<Tab>
+
+```json copy filename="Example Response: Customer wishlists"
+{
+  "data": {
+    "customer": {
+      "wishlists": {
+        "edges": [
+          {
+            "node": {
+              "id": "1",
+              "name": "My Wishlist",
+              "items": {
+                "edges": [
+                  {
+                    "node": {
+                      "entityId": 101,
+                      "productName": "T-shirt"
+                    }
+                  },
+                  {
+                    "node": {
+                      "entityId": 102,
+                      "productName": "Jeans"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}
+```
+
+</Tab>
+</Tabs>
+
+### Public wishlists
+
+You can also access public wishlists using a token. The `items` field in public wishlists is affected by the same complexity considerations:
+
+<Tabs items={['Query', 'Response']}>
+<Tab>
+
+```graphql copy filename="Example Query: Shared wishlists"
+query {
+  site {
+    publicWishlist(token: "TOKEN_HERE") {
+      id
+      name
+      items {
+        edges {
+          node {
+            entityId
+            productName
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+</Tab>
+<Tab>
+
+```json copy filename="Example Response: Shared wishlists"
+{
+  "data": {
+    "site": {
+      "publicWishlist": {
+        "id": "2",
+        "name": "Holiday Gifts",
+        "items": {
+          "edges": [
+            {
+              "node": {
+                "entityId": 201,
+                "productName": "Coffee Mug"
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+```
+
+</Tab>
+</Tabs>
+<a href="https://developer.bigcommerce.com/graphql-storefront/playground" target="_blank">**Try it in GraphQL Playground**</a>

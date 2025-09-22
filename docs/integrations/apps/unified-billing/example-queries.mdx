@@ -1,8 +1,56 @@
-# GraphQL Account API: Unified billing
+# GraphQL Account API: Unified Billing
 
-The following examples of queries and mutations use the Unified Billing features of the BigCommerce GraphQL Account API. Use the API by submitting POST requests to `https://api.bigcommerce.com/accounts/{{partner_account_uuid}}/graphql`.
+The following examples of queries and mutations use the Unified Billing features of the BigCommerce GraphQL Account API.
+
+Use the API by submitting POST requests to `https://api.bigcommerce.com/accounts/{{your_partner_account_uuid}}/graphql`.
 
 We have prepared a Postman collection you can import into your Postman workspace to interact with the Unified Billing API. It includes example requests for common operations such as creating checkouts, querying checkouts, querying subscriptions, and canceling subscriptions: [Unified Billing Postman Collection](https://developer.bigcommerce.com/docs/integrations/apps/unified-billing/postman-collection)
+
+## Possible Implementation Strategies
+
+Using the information gathered from the [prerequisites section](https://developer.bigcommerce.com/docs/integrations/apps/unified-billing#prerequisites), you can begin integrating with the Unified Billing API. The following examples are meant to be a helpful guide for implementation. When considering how to utilize the API, keep in mind the specific needs of your app.
+
+### Creating Subscriptions
+
+When a merchant wants to purchase a subscription after installing your app, use the Create Checkout Mutation to generate a checkout URL for them to complete the purchase.
+
+**Implementation Options:**
+
+**Option A: Polling Checkout Status**
+- Cache the checkout URL for each merchant store
+- Periodically poll the [Checkout Query](https://developer.bigcommerce.com/docs/integrations/apps/unified-billing/example-queries#fetch-a-checkout) until the status changes to `COMPLETE`
+- Once complete, retrieve the `subscriptionId` from the checkout response
+
+**Option B: Polling Subscription Status (Recommended)**
+- Instead of monitoring individual checkouts, gate access to premium features until the [Subscriptions Query](https://developer.bigcommerce.com/docs/integrations/apps/unified-billing/example-queries#query-subscriptions) returns an active subscription
+- This approach is more efficient and provides better reliability for verifying completed purchases
+
+### Managing Access Control
+
+Use the [Subscriptions Query](https://developer.bigcommerce.com/docs/integrations/apps/unified-billing/example-queries#query-subscriptions) to verify which merchants have active subscriptions. Filter by `scopeId` (store hash) to check if a specific merchant has access to premium features.
+
+**Caching Strategy:**
+- Cache subscription results to reduce API calls
+- Invalidate the cache when processing cancellations or when subscriptions expire
+- Consider periodic cache refresh to handle external subscription changes
+
+### Handling Subscription Cancellations
+
+When merchants request to cancel their subscription, use the [CancelSubscription Mutation](https://developer.bigcommerce.com/docs/integrations/apps/unified-billing/example-queries#cancel-a-subscription). The response includes a `cancelledAt` date indicating when access ends:
+
+- **Regular subscriptions**: Access continues until the end of the current billing cycle
+- **Trial subscriptions**: Cancellation takes effect immediately
+
+**Implementation Note:** Invalidate any cached subscription data immediately after processing a cancellation to ensure accurate access control.
+
+### Updating Subscription Plans
+
+To handle plan changes (upgrades, downgrades, or billing frequency modifications), create a new checkout using the [UpdateSubscription Mutation](https://developer.bigcommerce.com/docs/integrations/apps/unified-billing/example-queries#update-a-subscription). This allows you to modify subscription details while preserving the merchant's billing relationship.
+
+**Use Cases:**
+- Plan tier changes (Basic → Premium)
+- Billing frequency updates (Monthly → Annual)
+- Price adjustments for existing subscribers
 
 ## Example queries and mutations
 
@@ -71,7 +119,7 @@ To create a checkout, run the `createCheckout` mutation:
     ```json filename="Sample variables" showLineNumbers copy
       {
         "checkout": {
-          "accountId": "bc/account/account/61db983a-cd07-4d6b-8b59-a5ffe285ca6a",
+          "accountId": "bc/account/account/61db983a-cd07-4d6b-8b59-a5ffe285ca6a", // This should be the merchant's account UUID
           "items": [
             {
               "product": {
@@ -80,7 +128,7 @@ To create a checkout, run the `createCheckout` mutation:
                 "productLevel": "Standard"
               },
               "scope": {
-                "id": "bc/account/scope/f0qyczpkb2",
+                "id": "bc/account/scope/f0qyczpkb2", // This should be the merchant's store hash
                 "type": "STORE"
               },
               "pricingPlan": {
@@ -150,6 +198,12 @@ To create a checkout, run the `createCheckout` mutation:
   </Tab>
 </Tabs>
 
+Some common errors returned when creating a checkout:
+* `Product is not supported for your account.` - The application being purchased is not owned by the partner account (in the request URL) making the request.
+* `Scope does not belong to account.` - The store hash provided does not belong to the merchant account provided.
+* `You do not have permission to do this operation.` - This failure has multiple possible causes:
+  * The account-level API token being used does not have the required scope for the given operation.
+  * The account-level API token does not match the account UUID being used in the request URL.
 
 ### Fetch a checkout
 
@@ -461,7 +515,7 @@ The `createCheckout` mutation can also be used to update an existing subscriptio
 
 ### Cancel a subscription
 
-This mutation cancels the subscription at the end of the merchant's current billing cycle. The `cancelledAt` value will be the last day of the merchant's billing cycle (i.e., the day through which they have already paid).
+This mutation cancels the subscription at the end of the merchant's current billing cycle. The `cancelledAt` value will be the last day of the merchant's billing cycle (i.e., the day through which they have already paid). For trials and subscriptions that have not yet been invoiced, the cancellation takes effect immediately and the `cancelledAt` value will reflect this immediate time.
 
 <Tabs items={["Request", "Sample variables", "Response"]}>
   <Tab>

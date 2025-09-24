@@ -1,0 +1,185 @@
+# Transferring Your Customers to BigCommerce
+
+## Customer data migration: Best practices and process overview
+
+Customer information can be transferred to a BigCommerce store via the API. This guide outlines the recommended process for migrating customers with minimal dependencies on CSV import.
+
+We recommend migrating customers in the following order:
+
+1. Prepare prerequisites
+2. Create customers
+3. Validate and finalize
+
+## Migration Steps
+
+### 1. Preparing for customer migration
+
+Before you begin, decide on the following:
+
+#### Passwords
+
+Passwords can be set via API using the `authentication` object when creating customers:
+[`POST /customers`](https://developer.bigcommerce.com/docs/rest-management/customers#create-customers)
+
+Options:
+
+1. **Preferred method**: Create customers without a password and notify them to reset using a password reset link.
+2. **Alternative**: Provide a password during creation by including the `authentication` object. Example:
+
+```json
+{
+	"first_name": "Jane",
+	"last_name": "Doe",
+	"email": "jane@example.com",
+	"authentication": {
+		"force_reset": true,
+		"new_password": "TempPass123"
+	}
+}
+```
+
+Setting `force_reset: true` ensures customers must update their password at first login.
+
+#### Customer groups
+
+- Customer groups must be created in the control panel before migration.
+- Customers can be assigned to groups during creation (customer_group_id) or afterward via API.
+- Each customer can belong to only one group.
+
+<Callout type='info'>
+	Use CSV import only if you need to bulk-assign groups in one action.
+	Otherwise, use the API.
+</Callout>
+
+#### Channels / Multi-Storefront
+
+- Decide whether customers have global or channel-specific access.
+- Channels must be created in the control panel before migration.
+- Customers without a channel assignment default to global access.
+
+#### Custom form fields
+
+If your store uses custom form fields (at signup or for addresses), make sure they are created in the destination store **before migration**. Then, you can map values to those fields when creating or updating customers.
+
+Example (with a custom field value on creation):
+
+```json
+{
+	"first_name": "Jane",
+	"last_name": "Doe",
+	"email": "jane@example.com",
+	"custom_fields": [
+		{
+			"field_id": 1,
+			"field_value": "VIP"
+		}
+	]
+}
+```
+
+### 2. Migrate customer data
+
+#### Rate limits
+
+<Callout type='info'>
+	Create up to 10 customers per `POST /v3/customers` call; implement backoff
+	using the rate-limit headers.
+</Callout>
+
+BigCommerce APIs are subject to rate limits. Always design your migration to:
+
+- Batch requests where possible
+- Implement retries with exponential backoff
+- Monitor headers: `X-Rate-Limit-Remaining`
+
+#### Create customers
+
+<Callout>
+	Tip: You can assign `store_credit_amounts` when creating customers. If
+	omitted, you can add it later with PUT /customers/{id}.
+</Callout>
+
+minimum required fields:
+
+- `first_name`
+- `last_name`
+- `email`
+
+Use the [`POST /customers`](https://developer.bigcommerce.com/docs/rest-management/customers#create-customers) endpoint to create customers. Include all required fields and any optional fields needed.
+
+Example minimal request body:
+
+```json
+{
+	"first_name": "Jane",
+	"last_name": "Doe",
+	"email": "jane@example.com"
+}
+```
+
+Example request body:
+
+```json
+{
+	"email": "jane.doe@example.com",
+	"first_name": "Jane",
+	"last_name": "Doe",
+	"company": "Acme Corp",
+	"phone": "512-555-1234",
+	"notes": "VIP customer",
+	"customer_group_id": 2,
+	"addresses": [
+		{
+			"address1": "Addr 1",
+			"address2": "",
+			"address_type": "residential",
+			"city": "San Francisco",
+			"company": "History",
+			"country_code": "US",
+			"first_name": "Ronald",
+			"last_name": "Swimmer",
+			"phone": "707070707",
+			"postal_code": "33333",
+			"state_or_province": "California",
+			"form_fields": [
+				{
+					"name": "Delivery Instructions",
+					"value": "Leave at front desk"
+				}
+			]
+		}
+	],
+	"authentication": {
+		"force_password_reset": true,
+		"new_password": "string123"
+	},
+	"store_credit_amounts": [
+		{
+			"amount": 43.15
+		}
+	],
+	"channel_ids": [1, 2],
+	"form_fields": [
+		{
+			"name": "Delivery Instructions",
+			"value": "Leave at front desk"
+		}
+	]
+}
+```
+
+### 3. Post-migration tasks
+
+- Trigger password reset emails (if customers were created without passwords).
+- Verify login across channels.
+- Spot-check customer group assignments and store credit.
+- Confirm that custom fields and preferences are correctly associated.
+
+## Additional resources
+
+For more technical details and API documentation, see:
+
+- [Create Customer API Reference](/docs/rest-management/customers#create-customers)
+- [API best practices](/docs/start/best-practices)
+- [API rate limits](/docs/start/best-practices/api-rate-limits)
+- [Data migration services](https://www.bigcommerce.com/services/launch/#data-migration-services)

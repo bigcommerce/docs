@@ -2,6 +2,12 @@ openapi: 3.0.1
 info:
   title: Payments
   description: |-
+    > **NOTICE**
+    > 
+    > As of September 30, 2025, the B2B Edition API `authToken` will be deprecated and replaced by the standard BigCommerce API `X-Auth-Token`. For information concerning this change, see [B2B Authentication](/b2b-edition/docs/authentication).
+    > 
+    > While `authToken` authentication is not expected to be fully sunset in the near future, it is advised to migrate to the new system as soon as possible to prevent disruption of functionality.
+
     The B2B Edition Payments API provides endpoints for enabling, disabling, and updating active payment methods on a Company-to-Company basis. Every payment method you have enabled on the store-level can be enabled or disabled as needed on the Company level. In addition, the specific behaviors for Company credit and payment on terms can be adjusted with this API.
 
     > NOTE  
@@ -23,20 +29,20 @@ info:
 servers:
   - url: 'https://api-b2b.bigcommerce.com/api/v3/io'
 security:
-  - authToken: []
+  - X-Auth-Token: []
 tags:
   - name: Payment
     description: Company payment & store payment manage.
 paths:
   /payments:
+    parameters:
+      - $ref: "#/components/parameters/X-Store-Hash"
     get:
       tags:
         - Payment
       summary: "Get Payment Methods"
       operationId: get-payments
       description: "Returns a list of all payment methods available on the store."
-      security:
-        - authToken: []
       responses:
         '200':
           description: SUCCESS
@@ -61,6 +67,7 @@ paths:
                               $ref: "#/components/schemas/paymentTitle"
   /companies/{companyId}/payments:
     parameters:
+      - $ref: "#/components/parameters/X-Store-Hash"
       - $ref: "#/components/parameters/companyId"
     get:
       tags:
@@ -68,8 +75,6 @@ paths:
       summary: Get Company Payment Methods
       operationId: get-companies-companyId-payments
       description: "Returns the list of payment methods for the Company associated with `companyId`, indicating which ones are currently available to the Company users."
-      security:
-        - authToken: []
       responses:
         '200':
           description: SUCCESS
@@ -100,8 +105,6 @@ paths:
       summary: "Update Company Payment Methods"
       operationId: put-companies-companyId-payments
       description: "Updates whether the payment methods included in the request body are enabled for the Company associated with `companyId`."
-      security:
-        - authToken: []
       requestBody:
         content:
           application/json:
@@ -178,6 +181,8 @@ paths:
                     data:
                       errMsg: "Company Does not Exist"
   /company-payment-methods:
+    parameters:
+      - $ref: "#/components/parameters/X-Store-Hash"
     get:
       tags:
         - Payment
@@ -199,8 +204,6 @@ paths:
           schema:
             type: string
           description: "The search string by which data should be filtered. Currently supports payment method code & payment method title, so that a value of `q=auth` would return any payment method with 'auth' in either the code or the title."
-      security:
-        - authToken: []
       responses:
         '200':
           description: SUCCESS
@@ -242,6 +245,7 @@ paths:
                               $ref: "#/components/schemas/paymentTitle"
   /companies/{companyId}/credit:
     parameters:
+      - $ref: "#/components/parameters/X-Store-Hash"
       - $ref: "#/components/parameters/companyId"
     get:
       tags:
@@ -249,8 +253,6 @@ paths:
       summary: Get Company Credit Status
       operationId: get-companies-companyId-credit
       description: "Returns the credit settings for the Company specified by `companyId`. If the Company credit feature is disabled, this request will fail. See [B2B Edition Settings](https://support.bigcommerce.com/s/article/B2B-Edition-Settings) for more information."
-      security:
-        - authToken: []
       responses:
         '200':
           description: SUCCESS
@@ -288,8 +290,6 @@ paths:
       summary: Update Company Credit Status
       operationId: put-companies-companyId-credit
       description: "Updates the credit settings for the Company specified by `companyId`. All fields are optional, but an empty request will result in unexpected behavior. If the Company credit feature is disabled, this request will fail. See [B2B Edition Settings](https://support.bigcommerce.com/s/article/B2B-Edition-Settings) for more information."
-      security:
-        - authToken: []
       requestBody:
         content:
           application/json:
@@ -310,6 +310,7 @@ paths:
                         $ref: "#/components/schemas/creditStatus"
   /companies/{companyId}/payment-terms:
     parameters:
+      - $ref: "#/components/parameters/X-Store-Hash"
       - $ref: "#/components/parameters/companyId"
     get:
       tags:
@@ -317,8 +318,6 @@ paths:
       summary: Get Company-Level Payment Terms
       operationId: get-companies-companyId-payment-terms
       description: "Returns the Company-level payment terms for the Company specified by `companyId`. If payment on terms is disabled for the Company, the value of `paymentTerms` in the response will reflect the store-level default."
-      security:
-        - authToken: []
       responses:
         '200':
           description: SUCCESS
@@ -338,8 +337,6 @@ paths:
       summary: Update Company-Level Payment Terms
       operationId: put-companies-companyId-payment-terms
       description: "Updates the Company-level payment terms for the Company specified by `companyId`. If the value of `isEnabled` is set to `false`, the `paymentTerms` field will be ignored and will default to the store-level value."
-      security:
-        - authToken: []
       requestBody:
         content:
           application/json:
@@ -472,12 +469,34 @@ components:
               description: "Human-readable status message."
 
   securitySchemes:
-    authToken:
-      name: authToken
-      description: Required to authenticate requests. Include the token in a header parameter called `authToken`.
+    X-Auth-Token:
+      name: X-Auth-Token
+      description: |-
+
+        ### Authentication header
+
+        | Header | Argument | Description |
+        |:-------|:---------|:------------|
+        | `X-Auth-Token` | `access_token` | For more about API accounts that generate `access_token`s, see our [Guide to API Accounts](/docs/start/authentication/api-accounts). |
+        
+        ### Further reading
+
+        For example requests and more information about authenticating BigCommerce APIs, see [Authentication and Example Requests](/docs/start/authentication#x-auth-token-header-example-requests).
+        
+        For more about BigCommerce OAuth scopes, see our [Guide to API Accounts](/docs/start/authentication/api-accounts#oauth-scopes).
+        
+        For a list of API status codes, see [API Status Codes](/docs/start/about/status-codes).
       type: apiKey
       in: header
   parameters:
+    X-Store-Hash:
+      name: X-Store-Hash
+      in: header
+      required: true
+      schema:
+        type: string
+        example: abc123
+      description: The unique store hash associated with a BigCommerce store that has B2B Edition enabled.
     orderBy:
       name: orderBy
       in: query

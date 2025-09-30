@@ -3,6 +3,12 @@ info:
   title: Addresses
   version: v3
   description: |-
+    > **NOTICE**
+    > 
+    > As of September 30, 2025, the B2B Edition API `authToken` will be deprecated and replaced by the standard BigCommerce API `X-Auth-Token`. For information concerning this change, see [B2B Authentication](/b2b-edition/docs/authentication).
+    > 
+    > While `authToken` authentication is not expected to be fully sunset in the near future, it is advised to migrate to the new system as soon as possible to prevent disruption of functionality.
+
     B2B Edition Company users can store several billing and shipping addresses to their Company account. This allows buyers in the Company to quickly supply address information to quotes, invoices, and orders.
 
     The v3 Server to Server Addresses API allows you to manage billing and shipping addresses on behalf of your Company accounts. Use these endpoints to retrieve addresses, edit their details, and create new ones.
@@ -14,9 +20,12 @@ servers:
   - url: 'https://api-b2b.bigcommerce.com/api/v3/io'
 tags:
   - name: Addresses
+security:
+  - X-Auth-Token: []
 paths:
   /countries:
-    parameters: []
+    parameters:
+      - $ref: "#/components/parameters/X-Store-Hash"
     get:
       summary: Get a Country
       tags:
@@ -45,8 +54,6 @@ paths:
           name: q
           description: The country's name or its two-letter ISO code, depending on the specified `searchType`.
           required: true
-      security:
-        - authToken: []
       responses:
         '200':
           description: OK
@@ -114,7 +121,8 @@ paths:
                     meta:
                       message: Resource not found
   /states:
-    parameters: []
+    parameters:
+      - $ref: "#/components/parameters/X-Store-Hash"
     get:
       summary: Get a State
       tags:
@@ -153,8 +161,6 @@ paths:
         * United States (default)
 
         Use the `searchType` parameter to specify whether you are searching by a state's name or its two-letter [ISO code](https://www.iso.org/obp/ui/#search), and then add the appropriate value for the state to the `q` parameter.
-      security:
-        - authToken: []
       parameters:
         - schema:
             type: integer
@@ -259,8 +265,6 @@ paths:
         Retrieves a list of addresses across all Company accounts. Use the parameters to filter results by different attributes like creation date, Company account, and country.
 
         By default, the response does not include address extra fields and values. To include this information, use the `isIncludeExtraFields` parameter and provide a value of `1`.
-      security:
-        - authToken: []
       parameters:
         - $ref: '#/components/parameters/limit'
         - $ref: '#/components/parameters/offset'
@@ -391,7 +395,8 @@ paths:
                   - code
                   - data
                   - meta
-    parameters: []
+    parameters:
+      - $ref: "#/components/parameters/X-Store-Hash"
     post:
       summary: Create a Company Address
       operationId: post-companies-companyId-addresses
@@ -407,8 +412,6 @@ paths:
         You can create Company addresses without assigning them as billing or shipping addresses. However, Company users cannot use addresses at checkout without a billing or shipping designation.
       tags:
         - Addresses
-      security:
-        - authToken: []
       requestBody:
         content:
           application/json:
@@ -512,6 +515,7 @@ paths:
                       message: "Parameter Error"
   '/addresses/{addressId}':
     parameters:
+      - $ref: "#/components/parameters/X-Store-Hash"
       - schema:
           type: string
         name: addressId
@@ -525,8 +529,6 @@ paths:
         - Addresses
       operationId: get-companies-companyId-addresses-addressId
       description: Retrieves detailed information on a single Company address.
-      security:
-        - authToken: []
       responses:
         '200':
           description: OK
@@ -571,8 +573,6 @@ paths:
         There are no required fields for this endpoint, but you must include `isBilling` or `isShipping` to change the value of `isDefaultBilling` or `isDefaultShipping` respectively.
 
         When changing the `countryName`, you must also update the `countryCode`. Updating the `countryCode` by itself will automatically adjust the `countryName`. If you are changing the `countryCode` to a [country that supports states](#get-a-state), you must also include the `stateCode` with a valid two-letter code value for the state.
-      security:
-        - authToken: []
       requestBody:
         content:
           application/json:
@@ -635,8 +635,6 @@ paths:
       tags:
         - Addresses
       description: Permanently removes an address from a Company account. Deleting addresses does not remove them from existing quotes, invoices, and orders, but the address is no longer available for future records.
-      security:
-        - authToken: []
       responses:
         '200':
           description: OK
@@ -654,6 +652,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/responseNotFound'
   /addresses/bulk:
+    parameters:
+      - $ref: "#/components/parameters/X-Store-Hash"
     post:
       summary: Bulk Create Addresses
       operationId: post-addresses
@@ -663,8 +663,6 @@ paths:
         Creates multiple addresses for **up to 10** addresses at a time. You can create addresses for different Company accounts in a single request by entering a different `companyid` value for each address object.
 
         See [Create a Company Address](#create-a-company-address) for considerations related to creating one or more addresses.
-      security:
-        - authToken: []
       parameters: []
       requestBody:
         content:
@@ -889,6 +887,8 @@ paths:
                     meta:
                       message: "Parameter Error"
   /addresses/extra-fields:
+    parameters:
+      - $ref: "#/components/parameters/X-Store-Hash"
     get:
       summary: Get Address Extra Field Configs
       tags:
@@ -898,8 +898,6 @@ paths:
         Returns a list of available extra fields configurations for Company addresses.
 
         We recommend caching the response results to avoid frequent API requests.
-      security:
-        - authToken: []
       parameters:
         - $ref: '#/components/parameters/offset'
         - $ref: '#/components/parameters/limit'
@@ -990,6 +988,14 @@ paths:
                   - meta
 components:
   parameters:
+    X-Store-Hash:
+      name: X-Store-Hash
+      in: header
+      required: true
+      schema:
+        type: string
+        example: abc123
+      description: The unique store hash associated with a BigCommerce store that has B2B Edition enabled.
     limit:
       name: limit
       in: query
@@ -1299,8 +1305,22 @@ components:
         - data
         - meta
   securitySchemes:
-    authToken:
-      name: authToken
-      description: Required to authenticate requests. Include the token in a header parameter called `authToken`.
+    X-Auth-Token:
+      name: X-Auth-Token
+      description: |-
+
+        ### Authentication header
+
+        | Header | Argument | Description |
+        |:-------|:---------|:------------|
+        | `X-Auth-Token` | `access_token` | For more about API accounts that generate `access_token`s, see our [Guide to API Accounts](/docs/start/authentication/api-accounts). |
+        
+        ### Further reading
+
+        For example requests and more information about authenticating BigCommerce APIs, see [Authentication and Example Requests](/docs/start/authentication#x-auth-token-header-example-requests).
+        
+        For more about BigCommerce OAuth scopes, see our [Guide to API Accounts](/docs/start/authentication/api-accounts#oauth-scopes).
+        
+        For a list of API status codes, see [API Status Codes](/docs/start/about/status-codes).
       type: apiKey
       in: header

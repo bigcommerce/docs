@@ -31,7 +31,7 @@ For successful Company registration, the request must include the following info
     * `address1`
     * `city`
     * `countryCode`
-    * `stateOrProvince` if [required by the country](/b2b-edition/apis/rest-management/address/addresses#get-a-state)
+    * `stateOrProvince` if [required by the country](/b2b-edition/apis/rest-management/address/addresses#get-a-state) (must be the full name and not the two-letter code)
 
 You may also need to include extra fields for Company accounts, Company users, and addresses depending on how their configuration. See [Considerations](#considerations) for more information.
 
@@ -47,9 +47,8 @@ You may also need to include extra fields for Company accounts, Company users, a
                 name: "Great Buys Incorporated",
                 email: "info@greatbuysinc.com",
                 phone: "5121234567",
-                taxExemptCategory: "G",
                 fileList:[
-                    {fileName: "uniquefile.pdf"}
+                    {fileId: "uniquefile.pdf"}
                 ],
                 address: {
                     firstName: "Marie",
@@ -57,54 +56,54 @@ You may also need to include extra fields for Company accounts, Company users, a
                     address1: "123 Main Street",
                     city: "Austin",
                     countryCode: "US",
-                    stateOrProvince: "TX",
+                    stateOrProvince: "Texas",
                     phone: "5121234567",
                     postalCode: "78704"
                     # Address extra fields
                     extraFields: { 
                         texts: [
-                            { fieldEntityId: 123, text: "Text Value" }
+                            { name: "Text Field Name", text: "Text Value" }
                         ],
                         multilineTexts: [
-                            { fieldEntityId: 234, multilineText: "Multi-Line Text Value" }
+                            { name: "Multiline Field Name", multilineText: "Multi-Line Text Value" }
                         ],
                         multipleChoices: [
-                            { fieldEntityId: 345, fieldValue: "Choice Value" }
+                            { name: "Multiple Choice Field Name", fieldValue: "Choice Value" }
                         ],
                         numbers: [
-                            { fieldEntityId: 456, number: 1.0 }
+                            { name: "Number Field Name", number: 1.0 }
                         ]
                     }
                 },
                 # Company account extra fields
                 extraFields: { 
                     texts: [
-                        { fieldEntityId: 123, text: "Text Value" }
+                        { name: "Text Field Name", text: "Text Value" }
                     ],
                     multilineTexts: [
-                        { fieldEntityId: 234, multilineText: "Multi-Line Text Value" }
+                        { name: "Multiline Field Name", multilineText: "Multi-Line Text Value" }
                     ],
                     multipleChoices: [
-                        { fieldEntityId: 345, fieldValue: "Choice Value" }
+                        { name: "Multiple Choice Field Name", fieldValue: "Choice Value" }
                     ],
                     numbers: [
-                        { fieldEntityId: 456, number: 1.0 }
+                        { name: "Number Field Name", number: 1.0 }
                     ]
                 },
                 # Company user extra fields
                 companyUser: { 
                     extraFields: {
                         texts: [
-                            { fieldEntityId: 123, text: "Text Value" }
+                            { name: "Text Field Name", text: "Text Value" }
                         ],
                         multilineTexts: [
-                            { fieldEntityId: 234, multilineText: "Multi-Line Text Value" }
+                            { name: "Multiline Field Name", multilineText: "Multi-Line Text Value" }
                         ],
                         multipleChoices: [
-                            { fieldEntityId: 345, fieldValue: "Choice Value" }
+                            { name: "Multiple Choice Field Name", fieldValue: "Choice Value" }
                         ],
                         numbers: [
-                            { fieldEntityId: 456, number: 1.0 }
+                            { name: "Number Field Name", number: 1.0 }
                         ]
                     }
                 }
@@ -131,11 +130,8 @@ You may also need to include extra fields for Company accounts, Company users, a
       "data": {
         "company": {
           "registerCompany": {
-            "company": {
-              "id": 123456,
-              "name": "Great Buys Incorporated",
-              "status": 0
-            },
+            "entityId": 123456,
+            "status": "PENDING",
             "errors": []
           }
         }
@@ -145,21 +141,25 @@ You may also need to include extra fields for Company accounts, Company users, a
 
     # Error - Customer not authenticated
 
-    {
-      "data": {
-        "company": {
-          "registerCompany": {
-            "company": null,
-            "errors": [
-              {
-                "__typename": "ValidationError",
-                "message": "Customer not authenticated."
-              }
-            ]
-          }
+  {
+    "data": {
+      "company": {
+        "registerCompany": {
+          "entityId": null,
+          "status": null,
+          "errors": [
+            {
+              "__typename": "ValidationError",
+              "message": "Customer not authenticated",
+              "path": [
+                "input"
+              ]
+            }
+          ]
         }
       }
     }
+  }
     ```
   </Tab>
 </Tabs>
@@ -178,11 +178,11 @@ The `taxExemptCategory` field accepts a tax exemption code for automatic tax pro
 
 **Company Files**
 
-The `fileList` array contains `fileName` strings comprised of each file's name and extension. It is optional and only used if the customer has uploaded a file during registration. For more information on Company file attachments, such as file size and type requirements, see the "Managing Attached Files" section of [Companies](https://support.bigcommerce.com/s/article/B2B-Edition-User-Guide-Company-and-Customer-Functions) in the Help Center.
+The `fileList` array contains `fileId` strings comprised of each file's name and extension. It is optional and only used if the customer has uploaded a file during registration. For more information on Company file attachments, such as file size and type requirements, see the "Managing Attached Files" section of [Companies](https://support.bigcommerce.com/s/article/B2B-Edition-User-Guide-Company-and-Customer-Functions) in the Help Center.
 
 **Pending Company Accounts**
 
-After making a successful request, the newly-created Company is assigned the Pending status, which is represented as a numeric ID of `0` in the response. In the **Settings** &rsaquo; **General** area of your B2B Edition control panel, you can further configure the Company registration experience by limiting product visibility and purchasing for pending Company users, or by automatically approving all applications. See the "General Settings" section of [B2B Edition Settings](https://support.bigcommerce.com/s/article/B2B-Edition-Settings) in the Help Center for more information on Company management settings.
+After making a successful request, the newly-created Company is assigned the Pending status. In the **Settings** &rsaquo; **General** area of your B2B Edition control panel, you can further configure the Company registration experience by limiting product visibility and purchasing for pending Company users, or by automatically approving all applications. See the "General Settings" section of [B2B Edition Settings](https://support.bigcommerce.com/s/article/B2B-Edition-Settings) in the Help Center for more information on Company management settings.
 
 ## Resources
 

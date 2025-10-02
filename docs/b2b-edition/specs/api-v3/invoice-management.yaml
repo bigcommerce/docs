@@ -1,7 +1,14 @@
 openapi: '3.0.1'
 info:
   title: BigCommerce B2B Edition API
-  description: API for Invoices, Payments, and Receipts in BigCommerce B2B Edition
+  description: |-
+    > **NOTICE**
+    > 
+    > As of September 30, 2025, the B2B Edition API `authToken` will be deprecated and replaced by the standard BigCommerce API `X-Auth-Token`. For information concerning this change, see [B2B Authentication](/b2b-edition/docs/authentication).
+    > 
+    > While `authToken` authentication is not expected to be fully sunset in the near future, it is advised to migrate to the new system as soon as possible to prevent disruption of functionality.
+
+    API for Invoices, Payments, and Receipts in BigCommerce B2B Edition
   version: v3
   termsOfService: 'https://www.bigcommerce.com/terms'
   contact: 
@@ -11,7 +18,7 @@ info:
 servers:
   - url: "https://api-b2b.bigcommerce.com/api/v3/io/ip"
 security:
-  - authToken: []
+  - X-Auth-Token: []
 tags:
   - name: Invoice
     description: Invoice
@@ -20,6 +27,15 @@ tags:
   - name: Receipt
     description: Receipt
 components:
+  parameters:
+    X-Store-Hash:
+      name: X-Store-Hash
+      in: header
+      required: true
+      schema:
+        type: string
+        example: abc123
+      description: The unique store hash associated with a BigCommerce store that has B2B Edition enabled.
   responses:
     "Invoice404":
       description: Example response
@@ -253,14 +269,29 @@ components:
                   message: Not Found Error
   schemas: {}
   securitySchemes:
-    authToken:
-      name: authToken
-      description: Include the `authToken` in a header parameter.
+    X-Auth-Token:
+      name: X-Auth-Token
+      description: |-
+
+        ### Authentication header
+
+        | Header | Argument | Description |
+        |:-------|:---------|:------------|
+        | `X-Auth-Token` | `access_token` | For more about API accounts that generate `access_token`s, see our [Guide to API Accounts](/docs/start/authentication/api-accounts). |
+        
+        ### Further reading
+
+        For example requests and more information about authenticating BigCommerce APIs, see [Authentication and Example Requests](/docs/start/authentication#x-auth-token-header-example-requests).
+        
+        For more about BigCommerce OAuth scopes, see our [Guide to API Accounts](/docs/start/authentication/api-accounts#oauth-scopes).
+        
+        For a list of API status codes, see [API Status Codes](/docs/start/about/status-codes).
       type: apiKey
       in: header
 paths:
   "/invoices/{invoiceId}":
     parameters:
+      - $ref: "#/components/parameters/X-Store-Hash"
       - schema:
           type: string
         name: invoiceId
@@ -1361,7 +1392,8 @@ paths:
                       message: Bad Requests Error
       tags:
         - Invoice
-    parameters: []
+    parameters:
+      - $ref: "#/components/parameters/X-Store-Hash"
     get:
       summary: Get invoices
       operationId: get-invoices
@@ -1593,6 +1625,7 @@ paths:
   /invoices/export: {}
   "/orders/{orderId}/invoices":
     parameters:
+      - $ref: "#/components/parameters/X-Store-Hash"
       - schema:
           type: number
         name: orderId
@@ -1664,6 +1697,7 @@ paths:
       parameters: []
   "/invoices/{invoiceId}/download-pdf":
     parameters:
+      - $ref: "#/components/parameters/X-Store-Hash"
       - schema:
           type: string
         name: invoiceId
@@ -1734,12 +1768,15 @@ paths:
         - Invoice
   "/invoices/{invoiceId}/send-mail":
     parameters:
+      - $ref: "#/components/parameters/X-Store-Hash"
       - schema:
           type: string
         name: invoiceId
         in: path
         required: true
   /invoices/extra-fields:
+    parameters:
+      - $ref: "#/components/parameters/X-Store-Hash"
     get:
       summary: Get invoice extra field configs
       tags:
@@ -1767,6 +1804,8 @@ paths:
         - $ref: '../../specs/api-v3/user/user.yaml#/components/parameters/limit'
 
   /payments:
+    parameters:
+      - $ref: "#/components/parameters/X-Store-Hash"
     get:
       summary: Get Payments
       tags:
@@ -2227,6 +2266,7 @@ paths:
           description: Query by BigCommerce Channel IDs. This parameter is not needed if you don't have multiple storefront channels.
   "/payments/{paymentId}":
     parameters:
+      - $ref: "#/components/parameters/X-Store-Hash"
       - schema:
           type: number
         name: paymentId
@@ -2562,6 +2602,7 @@ paths:
       parameters: []
   "/payments/{paymentId}/operations":
     parameters:
+      - $ref: "#/components/parameters/X-Store-Hash"
       - schema:
           type: number
         name: paymentId
@@ -2703,6 +2744,7 @@ paths:
         description: ""
   "/payments/{paymentId}/processing-status":
     parameters:
+      - $ref: "#/components/parameters/X-Store-Hash"
       - schema:
           type: number
         name: paymentId
@@ -2771,6 +2813,7 @@ paths:
                 - processingStatus
   "/payments/{paymentId}/transactions":
     parameters:
+      - $ref: "#/components/parameters/X-Store-Hash"
       - schema:
           type: number
         name: paymentId
@@ -3007,6 +3050,7 @@ paths:
                   fundingStatus: "2"
   "/payments/offline/{paymentId}":
     parameters:
+      - $ref: "#/components/parameters/X-Store-Hash"
       - schema:
           type: number
         name: paymentId
@@ -3137,6 +3181,8 @@ paths:
                   fundingStatus: 2
 
   /receipts:
+    parameters:
+      - $ref: "#/components/parameters/X-Store-Hash"
     get:
       summary: Get receipts
       responses:
@@ -3428,6 +3474,7 @@ paths:
         - Receipt
   "/receipts/{receiptId}":
     parameters:
+      - $ref: "#/components/parameters/X-Store-Hash"
       - schema:
           type: string
         name: receiptId
@@ -3635,6 +3682,8 @@ paths:
           $ref: "#/components/responses/Receipt404"
       description: Delete a receipt
   /receipt-lines:
+    parameters:
+      - $ref: "#/components/parameters/X-Store-Hash"
     get:
       summary: Get all receipt lines
       tags:
@@ -4179,6 +4228,7 @@ paths:
           description: The response sorted by which field
       description: "Get lines of a receipt, with pagination data"
     parameters:
+      - $ref: "#/components/parameters/X-Store-Hash"
       - schema:
           type: string
         name: receiptId
@@ -4187,6 +4237,7 @@ paths:
         description: The unique ID of the receipt.
   "/receipts/{receiptId}/lines/{receiptLineId}":
     parameters:
+      - $ref: "#/components/parameters/X-Store-Hash"
       - schema:
           type: string
         name: receiptId

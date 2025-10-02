@@ -2,6 +2,12 @@ openapi: 3.0.1
 info:
   title: Authentication
   description: |-
+    > **NOTICE**
+    > 
+    > As of September 30, 2025, the B2B Edition API `authToken` will be deprecated and replaced by the standard BigCommerce API `X-Auth-Token`. For information concerning this change, see [B2B Authentication](/b2b-edition/docs/authentication).
+    > 
+    > While `authToken` authentication is not expected to be fully sunset in the near future, it is advised to migrate to the new system as soon as possible to prevent disruption of functionality.
+
     ## Introduction
     Authentication tokens validate API requests made by individuals or integrations to the server. All Server to Server API requests require an `authToken` in the header of the request.
 
@@ -21,13 +27,14 @@ info:
 servers:
   - url: "https://api-b2b.bigcommerce.com/api/io"
 security:
-  - authToken: []
+  - X-Auth-Token: []
 tags:
   - name: Authentication
 
 paths:
   /auth/backend:
-    parameters: []
+    parameters:
+      - $ref: "#/components/parameters/X-Store-Hash"
     post:
       tags:
         - Authentication
@@ -185,7 +192,8 @@ paths:
                           message:
                             example: "Not Found Error"
   /auth/customers:
-    parameters: []
+    parameters:
+      - $ref: "#/components/parameters/X-Store-Hash"
     post:
       tags:
         - Authentication
@@ -252,7 +260,8 @@ paths:
                           message:
                             example: "SUCCESS"
   /auth/customers/storefront:
-    parameters: []
+    parameters:
+      - $ref: "#/components/parameters/X-Store-Hash"
     post:
       tags:
         - Authentication
@@ -305,7 +314,8 @@ paths:
                           message:
                             example: "SUCCESS"
   /auth/storefront:
-    parameters: []
+    parameters:
+      - $ref: "#/components/parameters/X-Store-Hash"
     get:
       tags:
         - Authentication
@@ -380,7 +390,8 @@ paths:
                           message:
                             example: "Invalid token header. No credentials provided."
   /backend/tokens:
-    parameters: []
+    parameters:
+      - $ref: "#/components/parameters/X-Store-Hash"
     get:
       tags:
         - Authentication
@@ -449,6 +460,15 @@ paths:
                             $ref: "#/components/schemas/responsePagination"
 
 components:
+  parameters:
+    X-Store-Hash:
+      name: X-Store-Hash
+      in: header
+      required: true
+      schema:
+        type: string
+        example: abc123
+      description: The unique store hash associated with a BigCommerce store that has B2B Edition enabled.
   schemas:
     channelId:
       type: number
@@ -550,9 +570,22 @@ components:
               type: string
 
   securitySchemes:
-    authToken:
-      name: authToken
+    X-Auth-Token:
+      name: X-Auth-Token
       description: |-
-        Required to authenticate requests. Include the token in a header parameter called `authToken`.
+
+        ### Authentication header
+
+        | Header | Argument | Description |
+        |:-------|:---------|:------------|
+        | `X-Auth-Token` | `access_token` | For more about API accounts that generate `access_token`s, see our [Guide to API Accounts](/docs/start/authentication/api-accounts). |
+        
+        ### Further reading
+
+        For example requests and more information about authenticating BigCommerce APIs, see [Authentication and Example Requests](/docs/start/authentication#x-auth-token-header-example-requests).
+        
+        For more about BigCommerce OAuth scopes, see our [Guide to API Accounts](/docs/start/authentication/api-accounts#oauth-scopes).
+        
+        For a list of API status codes, see [API Status Codes](/docs/start/about/status-codes).
       type: apiKey
       in: header

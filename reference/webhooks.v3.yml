@@ -2,7 +2,45 @@ openapi: '3.0.3'
 info:
   title: Webhooks v3
   version: ''
-  description: 'Get notified when specific events occur on a BigCommerce store. For more information, see the [Webhooks Overview](/docs/integrations/webhooks).'
+  description: |-
+    Get notified when specific events occur on a BigCommerce store. For more information, see the [Webhooks Overview](/docs/integrations/webhooks), [Webhooks Events](/docs/integrations/webhooks/events), or [Webhooks Tutorial](/docs/integrations/webhooks/tutorial).
+
+    In general, webhook usage follows the workflow
+    1. Create a webhook for a specific scope using [Create a Webhook](#create-a-webhook)
+    2. Receive event callback payload at the destination URL
+    3. Respond to callback with success status `2xx` or any failure status
+       1. On failure, await second callback attempt
+       2. On success, move to event handling
+    4. Handle event based on payload
+
+    Callback payloads have a uniform structure, including the minimum information to uniquely identify what event occurred, on what store, with respect to what data, and at what time. The `data` object serves as the only variable data structure in the payload.
+
+    For inventory and location events, `data` will include `location_id`, and `variant_id` or `product_id` as necessary. For all other events `data` will include `type`, `id`, and any scope-specific information (such as `couponId` for the `store/cart/couponApplied`). Scope-specific fields are outlined in the [Webhooks Events](/docs/integrations/webhooks/events).
+
+    An example of payload structure is include below. Datatypes are outlined in the following table.
+    | Field | Type | Example |
+    | --- | --- | --- |
+    | `producer`   | `string`  | `stores/abc123` |
+    | `hash`       | `string`  | `dd70c0976e06b67aaf671e73f49dcb79230ebf9d` |
+    | `created_at` | `integer` | `1561479335` |
+    | `store_id`   | `string`  | `1025646` |
+    | `scope`      | `string`  | `store/order/created` |
+    | `data`       | `object`  | variable |
+    | `data.type`  | `string`  | `product` |
+    | `data.id`    | `integer` | `223`|
+    
+    ```json filename="Example callback structure" copy
+    {
+      "producer": "stores/<STORE_HASH>"
+      "hash": <EVENT_HASH>,
+      "created_at": <EVENT_TIMESTAMP>,
+      "store_id": <STORE_ID>,
+      "scope": <WEBHOOK_SCOPE>,
+      "data": {
+        <EVENT_DATA>
+      },
+    }
+    ```
   termsOfService: 'https://www.bigcommerce.com/terms'
   contact:
     email: support@bigcommerce.com
@@ -35,21 +73,6 @@ paths:
                   data:
                     $ref: '#/components/schemas/webhook_Full'
                   meta: {}
-              x-examples:
-                application/json:
-                  value:
-                    data:
-                      id: 18048287
-                      client_id: m9r6keqmo7h7f23btnpwernbez1kglkl
-                      store_hash: sftg45fsd
-                      created_at: 1561488106
-                      updated_at: 1561488106
-                      scope: store/order/created
-                      destination: 'https://665b65a6.ngrok.io/webhooks'
-                      is_active: true
-                      headers:
-                        'custom-key': developer-defined value
-                    meta: {}
           links:
             getHook:
               operationId: getWebhook
@@ -130,14 +153,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/webhook_Put'
-        x-examples:
-          application/json:
-            scope: store/cart/lineItem/*
-            destination: 'https://myapp.herokuapp.com/'
-            is_active: true
-            headers:
-              User-Name: Hello
-              Password: Goodbye
       tags:
         - Manage Webhooks (Single)
     delete:
@@ -519,19 +534,6 @@ components:
           schema:
             description: ''
             type: object
-            x-examples:
-              example-1:
-                data:
-                  id: 22041448
-                  client_id: hm6ttr1z8fzu2utb7d1p9qile9jtugv
-                  store_hash: 29iql3rwa6
-                  scope: store/order/created
-                  destination: 'https://665b65a6.ngrok.io/webhooks'
-                  headers: null
-                  is_active: false
-                  created_at: 1626812212
-                  updated_at: 1627588222
-                meta: {}
             properties:
               data:
                 type: object
@@ -617,7 +619,6 @@ components:
         
         See individual events for more information.
       title: store/cart/*
-      x-internal: false
     store_cart_created:
       description: |-
         This webhook fires on new cart creation when any of the following occur:
@@ -663,7 +664,6 @@ components:
                   example: 09346904-4175-44fd-be53-f7e598531b6c
       x-tags:
         - created
-      x-internal: false
     store_cart_updated:
       title: store/cart/updated
       description: |-
@@ -709,7 +709,6 @@ components:
                   example: 09346904-4175-44fd-be53-f7e598531b6c
       x-tags:
         - created
-      x-internal: false
     store_cart_deleted:
       title: store/cart/deleted
       description: |-
@@ -747,7 +746,6 @@ components:
                   example: 09346904-4175-44fd-be53-f7e598531b6c
       x-tags:
         - deleted
-      x-internal: false
     store_cart_couponApplied:
       title: store/cart/couponApplied
       description: |-
@@ -790,7 +788,6 @@ components:
                   example: 1
       x-tags:
         - created
-      x-internal: false
     store_cart_abandoned:
       title: store/cart/abandoned
       description: |-
@@ -831,7 +828,6 @@ components:
                   type: string
                   example: 1eed6d2d979776ff18e695ceeb10ea61
                   description: Use this token to obtain cart data.
-      x-internal: false
     store_cart_converted:
       title: store/cart/converted
       description: |-
@@ -874,7 +870,6 @@ components:
                   example: 252
       x-tags:
         - created
-      x-internal: false
     store_cart_lineItem_wildcard:
       title: store/cart/lineItem/*
       description: |-
@@ -915,7 +910,6 @@ components:
                   description: ID of the cart.
       x-tags:
         - created
-      x-internal: false
     store_cart_lineItem_created:
       title: store/cart/lineItem/created
       description: |-
@@ -959,7 +953,6 @@ components:
                   example: b0386708-fef3-45de-9d8b-fbe3031450a4
       x-tags:
         - created
-      x-internal: false
     store_cart_lineItem_updated:
       title: store/cart/lineItem/updated
       description: |-
@@ -1007,7 +1000,6 @@ components:
                   example: b0386708-fef3-45de-9d8b-fbe3031450a4
       x-tags:
         - updated
-      x-internal: false
     store_cart_lineItem_deleted:
       title: store/cart/lineItem/deleted
       description: |-
@@ -1050,14 +1042,12 @@ components:
                   example: b0386708-fef3-45de-9d8b-fbe3031450a4
       x-tags:
         - deleted
-      x-internal: false
     store_category_wildcard:
       title: store/category/*
       description: |
         Fires for all `store/category` events.
       x-tags:
         - created
-      x-internal: false
     store_category_created:
       title: store/category/created
       description: |-
@@ -1081,7 +1071,6 @@ components:
         - $ref: '#/components/schemas/callback_category_data'
       x-tags:
         - created
-      x-internal: false
     store_category_updated:
       title: store/category/updated
       description: |-
@@ -1138,7 +1127,6 @@ components:
                   example: 42
       x-tags:
         - updated
-      x-internal: false
     store_category_deleted:
       title: store/category/deleted
       description: |-
@@ -1178,13 +1166,11 @@ components:
                   example: 42
       x-tags:
         - deleted
-      x-internal: false
     store_channel_wildcard:
       title: store/channel/*
       description: Fires for all `store/channel` events.
       x-tags:
         - created
-      x-internal: false
     store_channel_created:
       title: store/channel/created
       description: |-
@@ -1225,7 +1211,6 @@ components:
                   example: 173331
       x-tags:
         - created
-      x-internal: false
     store_channel_updated:
       title: store/channel/updated
       description: |-
@@ -1274,14 +1259,12 @@ components:
                   example: 173331
       x-tags:
         - created
-      x-internal: false
     store_customer_wildcard:
       title: store/customer/*
       description: |
         Fires for all `store/customer` events.
       x-tags:
         - created
-      x-internal: false
     store_customer_created:
       title: store/customer/created
       description: |-
@@ -1322,7 +1305,6 @@ components:
                   example: 32
       x-tags:
         - created
-      x-internal: false
     store_customer_updated:
       title: store/customer/updated
       description: |-
@@ -1364,7 +1346,6 @@ components:
                   example: 32
       x-tags:
         - created
-      x-internal: false
     store_customer_deleted:
       title: store/customer/deleted
       description: |-
@@ -1404,7 +1385,6 @@ components:
                   example: 32
       x-tags:
         - created
-      x-internal: false
     store_customer_address_updated:
       title: store/customer/address/updated
       description: |-
@@ -1453,7 +1433,6 @@ components:
                       example: 32
       x-tags:
         - created
-      x-internal: false
     store_customer_address_created:
       title: store/customer/address/created
       description: |-
@@ -1502,7 +1481,6 @@ components:
                       example: 32
       x-tags:
         - created
-      x-internal: false
     store_customer_address_deleted:
       title: store/customer/address/deleted
       description: |-
@@ -1551,7 +1529,6 @@ components:
                       example: 32
       x-tags:
         - created
-      x-internal: false
     store_customer_payment_instrument_default_updated:
       title: store/customer/payment/instrument/default/updated
       description: |-
@@ -1592,11 +1569,9 @@ components:
                   example: 32
       x-tags:
         - created
-      x-internal: false
     store_order_wildcard:
       title: store/order/*
       description: Fires for all `store/order` events.
-      x-internal: false
     store_order_created:
       title: store/order/created
       description: |-
@@ -1636,7 +1611,6 @@ components:
                   example: 250
       x-tags:
         - created
-      x-internal: false
     store_order_updated:
       title: store/order/updated
       description: |-
@@ -1696,7 +1670,6 @@ components:
                   example: 250
       x-tags:
         - created
-      x-internal: false
     store_order_archived:
       title: store/order/archived
       description: |-
@@ -1735,7 +1708,6 @@ components:
                   example: 250
       x-tags:
         - created
-      x-internal: false
     store_order_statusUpdated:
       title: store/order/statusUpdated
       description: |-
@@ -1789,7 +1761,6 @@ components:
                       example: 11
       x-tags:
         - created
-      x-internal: false
     store_order_message_created:
       title: store/order/message/created
       description: |-
@@ -1838,7 +1809,6 @@ components:
                       example: 3
       x-tags:
         - created
-      x-internal: false
     store_order_refund_created:
       title: store/order/refund/created
       description: |-
@@ -1887,11 +1857,9 @@ components:
                       example: 3
       x-tags:
         - created
-      x-internal: false
     store_product_wildcard:
       title: store/product/*
       description: Fires for all `store/product` events.
-      x-internal: false
     store_product_deleted:
       title: store/product/deleted
       description: |-
@@ -1931,7 +1899,6 @@ components:
                   example: 205
       x-tags:
         - created
-      x-internal: false
     store_product_created:
       title: store/product/created
       description: |-
@@ -1971,7 +1938,6 @@ components:
                   example: 205
       x-tags:
         - created
-      x-internal: false
     store_product_updated:
       title: store/product/updated
       description: |-
@@ -2063,7 +2029,6 @@ components:
                   example: 205
       x-tags:
         - created
-      x-internal: false
     store_product_inventory_updated:
       title: store/product/inventory/updated
       description: |-
@@ -2135,7 +2100,6 @@ components:
                       example: 2
       x-tags:
         - created
-      x-internal: false
     store_product_inventory_order_updated:
       title: store/product/inventory/order/updated
       description: |-
@@ -2202,11 +2166,9 @@ components:
                       example: 2
       x-tags:
         - created
-      x-internal: false
     store_shipment_wildcard:
       title: store/shipment/*
       description: Fires for all `store/shipment` events.
-      x-internal: false
     store_shipment_created:
       title: store/shipment/created
       description: |-
@@ -2250,7 +2212,6 @@ components:
                   example: 251
       x-tags:
         - created
-      x-internal: false
     store_shipment_updated:
       title: store/shipment/updated
       description: |-
@@ -2297,7 +2258,6 @@ components:
                   example: 251
       x-tags:
         - created
-      x-internal: false
     store_shipment_deleted:
       title: store/shipment/deleted
       description: |-
@@ -2341,11 +2301,9 @@ components:
                   example: 251
       x-tags:
         - created
-      x-internal: false
     store_sku_wildcard:
       title: store/sku/*
       description: Fires for all `store/sku` events.
-      x-internal: false
     store_sku_created:
       title: store/sku/created
       description: |-
@@ -2399,7 +2357,6 @@ components:
                       example: 509
       x-tags:
         - created
-      x-internal: false
     store_sku_updated:
       title: store/sku/updated
       description: |-
@@ -2453,7 +2410,6 @@ components:
                       example: 509
       x-tags:
         - created
-      x-internal: false
     store_sku_deleted:
       title: store/sku/deleted
       description: |-
@@ -2507,7 +2463,6 @@ components:
                       example: 509
       x-tags:
         - created
-      x-internal: false
     store_sku_inventory_updated:
       title: store/sku/inventory/updated
       description: |-
@@ -2576,7 +2531,6 @@ components:
                       example: 509
       x-tags:
         - created
-      x-internal: false
     store_sku_inventory_order_updated:
       title: store/sku/inventory/order/updated
       description: |-
@@ -2648,7 +2602,6 @@ components:
                       example: 509
       x-tags:
         - created
-      x-internal: false
     store_app_uninstalled:
       title: store/app/uninstalled
       description: |-
@@ -2682,7 +2635,6 @@ components:
                   example: store
       x-tags:
         - created
-      x-internal: false
     store_information_updated:
       title: store/information/updated
       description: |-
@@ -2724,11 +2676,9 @@ components:
                   example: store
       x-tags:
         - created
-      x-internal: false
     store_subscriber_wildcard:
       title: store/subscriber/*
       description: Fires for all `store/subscriber` events.
-      x-internal: false
     store_subscriber_created:
       title: store/subscriber/created
       description: |-
@@ -2767,7 +2717,6 @@ components:
                   example: 5
       x-tags:
         - created
-      x-internal: false
     store_subscriber_updated:
       title: store/subscriber/updated
       description: |-
@@ -2806,7 +2755,6 @@ components:
                   example: 5
       x-tags:
         - created
-      x-internal: false
     store_subscriber_deleted:
       title: store/subscriber/deleted
       description: |-
@@ -2845,7 +2793,6 @@ components:
                   example: 5
       x-tags:
         - created
-      x-internal: false
     error_Full:
       type: object
       title: error_Full
@@ -2861,7 +2808,6 @@ components:
         type:
           description: This value is typically a link to BigCommerce API Status codes.
           type: string
-      x-internal: false
     errorDetailed_Full:
       type: object
       title: errorDetailed_Full
@@ -2877,12 +2823,10 @@ components:
         type:
           description: Typically a link to BigCommerce API Status codes
           type: string
-        errors:
-          x-internal: false
+        errors: {}
     webhook_Put:
       type: object
       title: webhook_Put
-      x-internal: false
       properties:
         scope:
           type: string
@@ -2906,7 +2850,6 @@ components:
     webhook_Base:
       type: object
       title: webhook_Base
-      x-internal: false
       properties:
         scope:
           type: string
@@ -2988,16 +2931,8 @@ components:
             next:
               type: string
               description: Link to the next page returned in the response.
-      x-internal: false
     webhook_callback_base:
       description: ''
-      x-examples:
-        example-1:
-          created_at: 1561482670
-          store_id: '1025646'
-          producer: 'stores/{store_hash}'
-          scope: store/cart/created
-          hash: 352e4afc6dd3fc85ea26bfdf3f91852604d57528
       title: ''
       type: object
       properties:
@@ -3043,4 +2978,3 @@ components:
               type: integer
               description: ID of the category.
               example: 42
-      x-internal: false

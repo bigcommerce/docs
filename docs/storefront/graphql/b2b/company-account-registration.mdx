@@ -1,0 +1,209 @@
+# GraphQL Storefront API: Company Account Registration
+
+## Overview
+
+In most scenarios, B2B Edition's GraphQL Storefront API powers access to Company account objects, including a Company's users and addresses. The default Buyer Portal uses these queries and mutations to handle the Company creation and management experience for buyers.
+
+However, BigCommerce's GraphQL Storefront API includes the `registerCompany` mutation for requesting a Company account as a storefront user with an existing customer account. This allows you to build separate forms for [registering customers](https://developer.bigcommerce.com/docs/storefront/graphql/customers#register-a-customer) and Companies using a unified set of APIs and authentication models.
+
+The `registerCompany` mutation accepts Company information like name, primary address, and custom fields configured in the B2B Edition control panel. If you've created extra fields for Company user records, it also allows current B2C customers to supply that information while requesting a B2B account. Upon success, this generates a new Company account in either the **Pending** or **Active** status, depending on your store's Company management configurations. See the "General Settings" section of [B2B Edition Settings](https://support.bigcommerce.com/s/article/B2B-Edition-Settings) in the Help Center for more information.
+
+The mutation also passes the `customer_id` and `channel_id` of the current sesion in order to generate a Company user account for the customer and set the corresponding storefront as the user's origin channel.
+
+## Tokens
+
+To authenticate calls to the GraphQL Storefront API, your application can generate a bearer token. This can be done by using either the [Create a storefront token](/docs/rest-authentication/tokens#create-a-token) or the [Create a customer impersonation token](/docs/rest-authentication/tokens/customer-impersonation-token#create-a-token) REST endpoint. On a Stencil storefront, you can also [access a token](/docs/storefront/graphql) directly from the page context.
+
+For more information, see [Storefront tokens](/docs/start/authentication/graphql-storefront#storefront-tokens) in the Authenticating requests to the GraphQL Storefront API article and [Dynamic tokens](/docs/start/authentication#bigcommerce-generated-jwts) in the Strategies and Example Requests article.
+
+## Registering a Company Account
+
+### Required Fields
+
+For successful Company registration, the request must include the following information:
+
+* Company name (`name`)
+* Primary Company email address (`email`)
+* Primary Company phone number (`phone`)
+* Company physical address object (`address`) with the following fields:
+    * `firstName`
+    * `lastName`
+    * `address1`
+    * `city`
+    * `countryCode`
+    * `stateOrProvince` if [required by the country](/b2b-edition/apis/rest-management/address/addresses#get-a-state) (must be the full name and not the two-letter code)
+
+You may also need to include extra fields for Company accounts, Company users, and addresses depending on how their configuration. See [Considerations](#considerations) for more information.
+
+### Example Mutation
+
+<Tabs items={[`Request`, `Response`]}>
+<Tab>
+
+```graphql filename="Example mutation: Register a Company account" showLineNumbers copy
+mutation {
+  company {
+    registerCompany(
+      input: {
+        name: "Great Buys Incorporated",
+        email: "info@greatbuysinc.com",
+        phone: "5121234567",
+        fileList:[
+          {fileId: "uniquefile.pdf"}
+        ],
+        address: {
+          firstName: "Marie",
+          lastName: "Curie",
+          address1: "123 Main Street",
+          city: "Austin",
+          countryCode: "US",
+          stateOrProvince: "Texas",
+          phone: "5121234567",
+          postalCode: "78704"
+          # Address extra fields
+          extraFields: { 
+            texts: [
+              { name: "Text Field Name", text: "Text Value" }
+            ],
+            multilineTexts: [
+              { name: "Multiline Field Name", multilineText: "Multi-Line Text Value" }
+            ],
+            multipleChoices: [
+              { name: "Multiple Choice Field Name", fieldValue: "Choice Value" }
+            ],
+            numbers: [
+              { name: "Number Field Name", number: 1.0 }
+            ]
+          }
+        },
+        # Company account extra fields
+        extraFields: { 
+          texts: [
+            { name: "Text Field Name", text: "Text Value" }
+          ],
+          multilineTexts: [
+            { name: "Multiline Field Name", multilineText: "Multi-Line Text Value" }
+          ],
+          multipleChoices: [
+            { name: "Multiple Choice Field Name", fieldValue: "Choice Value" }
+          ],
+          numbers: [
+            { name: "Number Field Name", number: 1.0 }
+          ]
+        },
+        # Company user extra fields
+        companyUser: { 
+          extraFields: {
+            texts: [
+              { name: "Text Field Name", text: "Text Value" }
+            ],
+            multilineTexts: [
+              { name: "Multiline Field Name", multilineText: "Multi-Line Text Value" }
+            ],
+            multipleChoices: [
+              { name: "Multiple Choice Field Name", fieldValue: "Choice Value" }
+            ],
+            numbers: [
+              { name: "Number Field Name", number: 1.0 }
+            ]
+          }
+        }
+      }
+    ) {
+      entityId
+      status
+      errors {
+        ... on ValidationError {
+          message
+          path
+        }
+      }
+    }
+  }
+}
+```
+
+</Tab>
+<Tab>
+
+```json filename="Example mutation: Register a customer" showLineNumbers copy
+# Success
+
+{
+  "data": {
+    "company": {
+      "registerCompany": {
+        "entityId": 123456,
+        "status": "PENDING",
+        "errors": []
+      }
+    }
+  }
+}
+
+
+# Error - Customer not authenticated
+
+{
+  "data": {
+    "company": {
+      "registerCompany": {
+        "entityId": null,
+        "status": null,
+        "errors": [
+          {
+            "__typename": "ValidationError",
+            "message": "Customer not authenticated",
+            "path": [
+              "input"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}
+```
+
+</Tab>
+</Tabs>
+
+### Considerations
+
+While using the `registerCompany` mutation, take note of the following information:
+
+**Required Extra Fields**
+
+When configuring extra fields in your B2B Edition control panel for Company accounts, users, and addresses, you can mark individual fields as required. Any required extra fields must be captured in the request. To learn more about extra fields, see the "Extra Fields Settings" section of [B2B Edition Settings](https://support.bigcommerce.com/s/article/B2B-Edition-Settings) in the Help Center.
+
+**Company Files**
+
+The `fileList` array contains `fileId` strings comprised of each file's name and extension. It is optional and only used if the customer has uploaded a file during registration. For more information on Company file attachments, such as file size and type requirements, see the "Managing Attached Files" section of [Companies](https://support.bigcommerce.com/s/article/B2B-Edition-User-Guide-Company-and-Customer-Functions) in the Help Center.
+
+**Pending Company Accounts**
+
+After making a successful request, the newly-created Company is assigned the Pending status. In the **Settings** &rsaquo; **General** area of your B2B Edition control panel, you can further configure the Company registration experience by limiting product visibility and purchasing for pending Company users, or by automatically approving all applications. See the "General Settings" section of [B2B Edition Settings](https://support.bigcommerce.com/s/article/B2B-Edition-Settings) in the Help Center for more information on Company management settings.
+
+## Resources
+
+### Documentation
+
+* [GraphQL Storefront API Overview](/docs/storefront/graphql)
+* [Guide to API Accounts](/docs/start/authentication/api-accounts)
+* [Customers: Register a customer](/docs/storefront/graphql/customers#register-a-customer)
+
+### API Reference
+
+* [Create a storefront token](/docs/rest-authentication/tokens#create-a-token)
+* [Create a customer impersonation token](/docs/rest-authentication/tokens/customer-impersonation-token#create-a-token)
+* [REST Management API: Companies](/b2b-edition/apis/rest-management/company)
+  [REST Storefront API: Companies](/b2b-edition/apis/rest-storefront/company)
+
+### Tools
+
+* [GraphQL Storefront API reference](/graphql-storefront/reference)
+* [GraphQL Storefront Playground](/graphql-storefront/playground)
+
+### Community
+
+  * [Developer community](/community)

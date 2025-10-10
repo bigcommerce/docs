@@ -1,13 +1,170 @@
-# Catalyst Setup and Deployment
+# Catalyst \+ B2B Buyer Portal
 
-## Default State \- Custom Buyer Portal
+<Callout type="warning">
+**EXPERIMENTAL: The integration of BigCommerce B2B Edition with Catalyst is experimental and subject to change. It is advisable to work with BigCommerce professional services in order to implement this integration.**
+</Callout>
 
-## Running in Development
+The steps in this guide enable Catalyst with the B2B Edition Buyer Portal, which is a traditional client-side rendered React application. The steps below also document the process for running the Open Source Buyer Portal locally, so that you can customize the experience inside of the Buyer Portal if required.
 
-## Building and Deploying
+This implementation primarily handles authentication with the B2B Storefront API and triggering the render of the Buyer Portal on top of Catalyst. It is similar to the experience currently available for BigCommerce's Stencil storefront framework.
 
-### Versioning Strategy?
+If you are looking to integrate directly into Catalyst's routes and components, this can be done by integrating [B2B Edition's APIs](/b2b-edition/apis). 
 
-## Pulling Upstream Changes
+<Callout type="info">
+Using the default B2B Edition implementation with Catalyst requires support for Customer Access Tokens (CAT). All new B2B Edition stores support this functionality by default. If your store had B2B Edition prior to July 2025, you must contact support to enable this feature.
+</Callout>
 
-## Using the Hosted Buyer Portal
+## Prerequisites
+
+See [B2B Buyer Portal Setup Overview](/b2b-edition/docs/buyer-portal) for general prerequisites. You will need a V3 BigCommerce API token with the B2B Edition scope.
+
+See [Local Development](link) for Catalyst prerequisites.
+
+In addition, you will need:
+
+* Multi-storefront enabled in the BigCommerce store and in B2B Edition
+
+## Creating the Project
+
+### Create and Configure the Storefront Channel
+
+1. If you have not yet created a Catalyst storefront channel, create one as described in Getting Started(link).
+<Callout type="info">
+The initial deployed preview storefront does not support B2B Buyer Portal features.  You must follow the remaining steps and deploy your storefront to your own hosting to enable the Buyer Portal.
+</Callout>
+2. In the B2B Edition dashboard, navigate to Storefronts and click the ellipsis (...) next to your Catalyst Headless Storefront Channel. Click “Enable B2B” and ensure the channel updates to “B2B Enabled.”
+   ![](screenshot)
+3. Also in the Storefronts section of the dashboard, navigate to “Edit settings” for the storefront, select “Buyer portal” settings, and set “Buyer portal type” to “Custom.”
+   ![](screenshot)
+4. In the store control panel, navigate to Channels and select your Catalyst storefront channel. In the “Script manager” panel, delete the “B2BEdition Footer Script” and “B2BEdition Header Script.” 
+   ![](screenshot)
+
+### Install Catalyst Locally
+
+Creating a B2B-enabled Catalyst storefront follows the CLI workflow described in [Manual Installation](link) but requires setting up from a unique upstream branch and a few extra steps.
+
+1. Run the Catalyst CLI installer with the appropriate `gh-ref` for including B2B:
+   ```
+   pnpm create @bigcommerce/catalyst@latest --gh-ref @bigcommerce/catalyst-b2b-makeswift@latest
+   ```
+2. Supply a name for the project and respond to the interactive prompts to connect to your previously created storefront.  
+3. Add the following variables to `.env.local`:
+   | Var | Value |
+   | :---- | :---- |
+   | `B2B_API_HOST` | `https://api-b2b.bigcommerce.com` |
+   | `B2B_API_TOKEN` | Your V3 token with the B2B Edition scope |
+4. Run the following from the project root to start the local server:
+   ```
+   pnpm run dev
+   ```
+5. Follow the standard steps to add a remote Git repository and push your project.
+
+## Forking and Running the Buyer Portal
+
+By default, Catalyst is integrated with the hosted version of the B2B Buyer Portal.
+
+![](screenshot)
+
+For developing and deploying your own custom Buyer Portal, Catalyst has built-in support for the loader scripts described in the [Headless Guide](https://github.com/bigcommerce/b2b-buyer-portal/blob/main/docs/headless.md) in the B2B Buyer Portal repository, which can be activated by the use of environment variables.
+
+Catalyst and the Buyer Portal are separate applications, each with their own source control.
+
+### Clone and Run the Buyer Portal
+
+1. Clone the [B2B Buyer Portal](https://github.com/bigcommerce/b2b-buyer-portal) repository.  
+2. Install dependencies:
+   ```
+   yarn install
+   ```
+3. Copy `apps/storefront/.env-example` as `apps/storefront/.env`.  Note that, for initial development in the local environment, no values need to be changed in this file.  
+4. Start the development server:
+   ```
+   yarn dev
+   ```
+
+While the development server is running, the necessary Buyer Portal loader files will be served via a local URL (usually `localhost:3001`). You should not browse directly to this URL; the next step will take care of updating your storefront to point to this local server.
+
+### Update Catalyst
+
+The local Catalyst project must be configured to load the custom Buyer Portal instead of the hosted version.
+
+In the Catalyst project:
+
+1. Set the following variable in `.env.local` with the appropriate port where the Buyer Portal is running.
+
+   `LOCAL_BUYER_PORTAL_HOST=http://localhost:3001`
+2. Restart the Catalyst dev server.
+
+The Buyer Portal experience in your local Catalyst storefront will now automatically reflect any customizations you make in your Buyer Portal project.
+
+## Deploying with a Custom Buyer Portal
+
+Once you are ready to take your custom Buyer Portal to your production storefront, the Buyer Portal files must be built and deployed.
+
+While the Buyer Portal static files can be deployed with a CDN or via your BigCommerce store’s WebDAV, the steps in this guide will assume you are deploying these build files with the Catalyst storefront itself.
+
+<Callout type="info">
+These steps also assume a strategy for static file cache invalidation involving a date-based subdirectory.  We’ll note where the process differs if you choose to use the Buyer Portal build hashes.
+</Callout>
+
+For the following steps, you must know in advance the URL where your build files will be deployed. (For example, `https://my-catalyst-store.com/b2b`/20260101/.)
+
+### In the Buyer Portal Project
+
+1. Set values in `.env` appropriately for building.
+   | Var | Value |
+   | :---- | :---- |
+   | `VITE_IS_LOCAL_ENVIRONMENT` | `FALSE` |
+   | `VITE_ASSETS_ABSOLUTE_PATH` | The absolute URL where the build files will be deployed. Make sure to include the trailing slash. This guide assumes deployment in a date-based subdirectory of the Catalyst project’s `public` directory, for a URL like:`https://my-catalyst-store.com/b2b/20260101/` |
+   | `VITE_DISABLE_BUILD_HASH` | `TRUE` NOTE: If you wish to handle static file cache invalidation with build hashes in file names (for example, `index-{hash}.js`) instead of with a subdirectory, set this to `FALSE` instead. |
+2. Run the build.
+   ```
+   yarn build
+   ```
+<Callout type="info">
+When re-building and re-deploying your custom Buyer Portal, if only `.env` variables have changed, you should clear the local contents of `.turbo/cache` before running `yarn build` to ensure that all updated code is reflected in the build.
+</Callout>
+
+### In the Catalyst Project
+
+1. Modify `core/middleware.ts` to exclude URLs beginning with `/b2b/` from middleware by adding to the regular expression in `config.matcher`. For example:
+   ```typescript
+   export const config = {
+     matcher: ['/((?!b2b/.*|api|admin|_next/static|_next/image|_vercel|favicon.ico|xmlsitemap.php|sitemap.xml|robots.txt).*)',
+     ],
+   };  
+   ```
+   NOTE: This step must only be performed once, not on every new Buyer Portal deployment.
+2. Copy the contents of `apps/storefront/dist` from the Buyer Portal project into a date-based subdirectory like  `core/public/b2b/20260101.`
+3. Deploy the Catalyst project.  
+   
+
+As an example for how the URLs of the final build files should be represented, consider that the Buyer Portal `dist` directory should contain these two files/subdirectories (among others):
+- `assets`
+- `index.js`
+
+After copying into the `public` subdirectory shown above and deploying Catalyst, we should have URLs like:
+- `https://my-catalyst-store.com/b2b/20260101/assets`
+- `https://my-catalyst-store.com/b2b/20260101/index.js`
+
+<Callout type="info">
+One of the advantages of using a varying subdirectory for new deployments of the Buyer Portal is that older deployments can be left in place, so that a previous Buyer Portal version will continue to be rendered until you choose to activate the new deployment with the environment configuration in the next step.  This also makes reverting to a previous Buyer Portal version simple.
+</Callout>
+
+<Callout type="info">
+If you’ve chosen to include build hashes in the filenames of your Buyer Portal files, you must also update the constants defining those hashes in `core/b2b/script-production-custom.tsx`. It’s likely you will also use a consistent location for the build files, like simply `core/public/b2b`, rather than a varying subdirectory.
+</Callout>
+
+### Loading the Deployed Buyer Portal
+
+In the local Catalyst project, take the following steps in `.env.local` to test with the deployed Buyer Portal:
+
+1. Comment out `LOCAL_BUYER_PORTAL_HOST`.  
+2. Add `PROD_BUYER_PORTAL_HOST` with the base URL of the Buyer Portal build files. For example:  
+   `PROD_BUYER_PORTAL_HOST=https://my-catalyst-store.com/b2b/20260101`
+
+When you’re ready to activate your new Buyer Portal deployment in production, set the same `PROD_BUYER_PORTAL_HOST` environment variable in your Catalyst hosting environment and re-deploy.
+
+<Callout type="info">
+**If you’ve chosen to include build hashes in the filenames of your Buyer Portal files as a cache invalidation strategy, you will likely choose a permanent base URL for your build files and will not need to update `PROD_BUYER_PORTAL_HOST` on each new deployment.**
+</Callout>

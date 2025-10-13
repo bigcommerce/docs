@@ -1089,6 +1089,8 @@ components:
         percentage_amount:
           type: string
           description: The amount of discount (percentage off) to apply.
+        maximum_allowed_discount_amount:
+          $ref: '#/components/schemas/MaximumAllowedDiscountAmount'
       description: '**Percentage Discount**'
     FixedDiscount:
       title: Fixed Discount
@@ -1096,6 +1098,8 @@ components:
       properties:
         fixed_amount:
           $ref: '#/components/schemas/Money'
+        maximum_allowed_discount_amount:
+          $ref: '#/components/schemas/MaximumAllowedDiscountAmount'
       description: '**Fixed Discount**'
     Money:
       title: Money
@@ -1105,6 +1109,14 @@ components:
         **Money**
         Represents a monetary value in the store’s default currency.
       example: '12.95'
+    MaximumAllowedDiscountAmount:
+      pattern: '[0-9]+(\.[0-9]+)?'
+      type: string
+      description: The maximum monetary value that can be applied as a discount. The application of this maximum depends on the discount type`:`
+        Discount on shipping`:` Maximum discount total applies to ALL shipping destinations combined. Maximum total is divide evenly amongst all shipping destinations.
+        Discount on products`:` Maximum discount total applies to ALL products combined. Maximum total is divided based on existing weighting logic amongst all products.
+        Discount on order subtotal`:` Maximum discount total applies to entire order total.
+      example: '10.50'
     OptionalCursorCollectionMeta:
       title: Collection Meta
       type: object
@@ -1901,8 +1913,8 @@ components:
                 data:
                   - id: 1
                     redemption_type: AUTOMATIC
-                    name: Buy Product X Get Free Shipping
-                    display_name: WOW!!! FREE SHIPPING for Product X
+                    name: Buy Product worth X Get Y% off upto Z
+                    display_name: Shop for X and get Y% off upto Z
                     created_from: api
                     channels:
                       - id: 1
@@ -1923,7 +1935,7 @@ components:
                       - action:
                           cart_value:
                             discount:
-                              fixed_amount: '12.95'
+                              percentage_amount: '10'
                         apply_once: true
                         stop: true
                         condition:
@@ -1933,7 +1945,7 @@ components:
                                 - 1
                                 - 2
                                 - 3
-                            minimum_spend: '12.95'
+                            minimum_spend: '100.00'
                             minimum_quantity: 1
                     current_uses: 2
                     max_uses: 10
@@ -1944,7 +1956,7 @@ components:
                     can_be_used_with_other_promotions: false
                     currency_code: USD
                     notifications:
-                      - content: Congratulations! Youʼve received a free %ACTION.FREE_PRODUCT%
+                      - content: Get 10% off on orders over $100 containing Brand A, B or C products.
                         type: UPSELL
                         locations:
                           - HOME_PAGE

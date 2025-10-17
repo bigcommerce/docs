@@ -1,0 +1,313 @@
+# Transferring Your Customers to BigCommerce
+
+By the end of this guide, you'll understand how to migrate customers to BigCommerce using the [REST Management API](/docs/rest-management/customers). You'll learn how to create customers with the minimum required fields, handle API rate limits, and optionally include passwords, customer groups, addresses, and channel assignments.
+
+## Create a Customer
+
+To create a customer, send a POST request to the `/v3/customers` API endpoint. This request, at minimum, requires 3 fields:
+
+- `first_name`
+- `last_name`
+- `email`
+
+**API endpoint:** `POST https://api.bigcommerce.com/stores/{store_hash}/v3/customers`
+
+**Minimal request body:**
+
+```json
+{
+	"first_name": "Jane",
+	"last_name": "Doe",
+	"email": "jane@example.com"
+}
+```
+
+For complete API documentation, see [Create Customers API Reference](/docs/rest-management/customers#create-customers).
+
+## API Rate Limits
+
+Each `POST request to the /v3/customers` endpoint allows you to create up to 10 customers and implement retry logic using the rate-limit headers.
+
+### Best Practices for API Rate Limits
+
+1. **Batch Requests**: Create up to 10 customers per API call to maximize efficiency
+2. **Monitor Rate Limits**: Check `X-Rate-Limit-Requests-Left` before making requests
+3. **Implement Retry Logic**: Use exponential backoff when receiving `429` responses
+4. **Distribute Load**: Spread requests over time rather than making them in bursts
+
+### Example: Batch Customer Creation
+
+<Tabs items={['Batch Payload (10 customers)', 'Rate Limit Handling Function']}>
+<Tab>
+
+```json
+[
+	{
+		"first_name": "Jane",
+		"last_name": "Doe",
+		"email": "jane@example.com"
+	},
+	{
+		"first_name": "John",
+		"last_name": "Smith",
+		"email": "john@example.com"
+	},
+	{
+		"first_name": "Alice",
+		"last_name": "Johnson",
+		"email": "alice@example.com"
+	},
+	{
+		"first_name": "Bob",
+		"last_name": "Williams",
+		"email": "bob@example.com"
+	},
+	{
+		"first_name": "Carol",
+		"last_name": "Brown",
+		"email": "carol@example.com"
+	},
+	{
+		"first_name": "David",
+		"last_name": "Jones",
+		"email": "david@example.com"
+	},
+	{
+		"first_name": "Emma",
+		"last_name": "Garcia",
+		"email": "emma@example.com"
+	},
+	{
+		"first_name": "Frank",
+		"last_name": "Miller",
+		"email": "frank@example.com"
+	},
+	{
+		"first_name": "Grace",
+		"last_name": "Davis",
+		"email": "grace@example.com"
+	},
+	{
+		"first_name": "Henry",
+		"last_name": "Rodriguez",
+		"email": "henry@example.com"
+	}
+]
+```
+
+</Tab>
+<Tab>
+
+```javascript
+async function createCustomers(customerData) {
+	const response = await fetch(
+		'https://api.bigcommerce.com/stores/{store_hash}/v3/customers',
+		{
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+				'X-Auth-Token': 'your_access_token',
+			},
+			body: JSON.stringify(customerData),
+		}
+	)
+
+	// Handle rate limiting
+	if (response.status === 429) {
+		const resetTime = response.headers.get('X-Rate-Limit-Time-Reset-Ms')
+		const waitTime = resetTime ? parseInt(resetTime) : 1000
+
+		console.log(`Rate limited. Waiting ${waitTime}ms before retry`)
+		await new Promise((resolve) => setTimeout(resolve, waitTime))
+
+		// Retry the request
+		return createCustomers(customerData)
+	}
+
+	return response
+}
+```
+
+</Tab>
+</Tabs>
+
+For detailed information about rate limits and best practices, see:
+
+- [API rate limits](/docs/start/best-practices/api-rate-limits)
+- [API best practices](/docs/start/best-practices/api-rate-limits#best-practices)
+
+## Customer Creation Options
+
+In addition to the required fields (`first_name`, `last_name`, `email`), there are optional fields you can include when creating customers based on your needs:
+
+- Password Management
+- Customer Groups
+- Customer Addresses
+- Channels
+
+Let's cover each option in detail.
+
+### Password Management
+
+Due to PCI compliance, you cannot migrate passwords. This means you can either create customers without passwords and send password reset emails after migration or set a password during creation.
+
+#### Preferred: No password (password reset required)
+
+Create customers without passwords and send password reset emails after migration:
+
+```json
+{
+	"first_name": "Jane",
+	"last_name": "Doe",
+	"email": "jane@example.com"
+}
+```
+
+After migration, send a password reset email to each customer. You can use your preferred email service to send a generic email to all users with instructions to reset their password using the storefront login page.
+
+#### Alternative: Set password during creation
+
+<Callout type='warning'>
+	If you set a password during creation, ensure each user gets a unique
+	password. Using the same password for multiple accounts creates a security
+	risk. We recommend sending password reset emails instead of setting passwords
+	during creation.
+</Callout>
+
+To set a temporary password, include the `authentication` object with `force_password_reset: true` and `new_password`:
+
+```json
+{
+	"first_name": "Jane",
+	"last_name": "Doe",
+	"email": "jane@example.com",
+	"authentication": {
+		"force_password_reset": true,
+		"new_password": "string123"
+	}
+}
+```
+
+### Customer Groups
+
+Customer groups allow you to organize customers and control product visibility, pricing, and checkout options. Each customer can belong to only one group.
+
+**Key points for migration:**
+
+- Customer groups must be created in the control panel before migration (cannot be created via API)
+- Assign customers to groups using the `customer_group_id` field during creation
+- Groups control which products customers can see and purchase
+
+**Example Customer with customer group assignment payload:**
+
+```json
+{
+	"first_name": "Jane",
+	"last_name": "Doe",
+	"email": "jane@example.com",
+	"customer_group_id": 1
+}
+```
+
+For detailed information about creating and managing customer groups, see [Customer Groups](https://support.bigcommerce.com/s/article/Customer-Groups?language=en_US#how) in the BigCommerce support documentation.
+
+### Customer Addresses
+
+Customer addresses can be included during customer creation. Each address has specific required fields that must be provided.
+
+**Required fields for addresses:**
+
+- `address1` - Street address line 1
+- `city` - City name
+- `country_code` - Two-letter country code (e.g., "US", "CA", "GB")
+- `first_name` - First name for the address
+- `last_name` - Last name for the address
+- `postal_code` - ZIP/postal code
+- `state_or_province` - State or province name
+
+**Example Customer with minimal address payload:**
+
+```json
+{
+	"first_name": "Jane",
+	"last_name": "Doe",
+	"email": "jane@example.com",
+	"addresses": [
+		{
+			"address1": "123 Main St",
+			"city": "San Francisco",
+			"country_code": "US",
+			"first_name": "Jane",
+			"last_name": "Doe",
+			"postal_code": "94105",
+			"state_or_province": "California"
+		}
+	]
+}
+```
+
+### Channels
+
+Channels allow you to create different storefronts or customer experiences (multi-storefront, headless commerce, mobile apps, marketplaces, etc.). You can assign customers to specific channels to control which storefront they can access.
+
+**Requirements:**
+
+- Channels must be created before migration (can be created via the [Rest Management API](/docs/rest-management/channels#create-a-channel) or control panel)
+- Customers without a channel assignment default to global access
+
+**Example Customer with channel assignment and minimal payload:**
+
+```json
+{
+	"first_name": "Jane",
+	"last_name": "Doe",
+	"email": "jane@example.com",
+	"channel_ids": [1, 2]
+}
+```
+
+For detailed information about creating and managing channels, see [Getting Started with Channels](https://support.bigcommerce.com/s/article/Getting-Started-Channels?language=en_US) in the BigCommerce support documentation.
+
+## Customer Creation Example Payload
+
+Here is a comprehensive example showing a customer created with:
+
+- A temporary password (with forced reset)
+- Assignment to customer group 1
+- A minimal address (required fields only)
+- Assignment to channels 1 and 2
+
+```json
+{
+	"first_name": "Jane",
+	"last_name": "Doe",
+	"email": "jane.doe@example.com",
+	"customer_group_id": 1,
+	"addresses": [
+		{
+			"address1": "123 Main St",
+			"city": "San Francisco",
+			"country_code": "US",
+			"first_name": "Jane",
+			"last_name": "Doe",
+			"postal_code": "94105",
+			"state_or_province": "California"
+		}
+	],
+	"authentication": {
+		"force_password_reset": true,
+		"new_password": "string123"
+	},
+	"channel_ids": [1, 2]
+}
+```
+
+## Additional Resources
+
+For more technical details and API documentation, see:
+
+- [Create Customer API Reference](/docs/rest-management/customers#create-customers)
+- [API rate limits](/docs/start/best-practices/api-rate-limits)
+- [API best practices](/docs/start/best-practices/api-rate-limits#best-practices)
+- [Getting Started with Channels](https://support.bigcommerce.com/s/article/Getting-Started-Channels?language=en_US)
+- [Data migration services](https://www.bigcommerce.com/services/launch/#data-migration-services)

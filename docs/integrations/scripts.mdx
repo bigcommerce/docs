@@ -58,6 +58,66 @@ The following table describes the locations you can associate with Scripts API o
 
 To associate scripts with a checkout page, you need the [Modify Checkout Content OAuth scope](/docs/start/authentication/api-accounts#oauth-scopes).
 
+## Handling prerendered checkout pages
+
+With the introduction of [Speculation Rules API](https://developer.mozilla.org/en-US/docs/Web/API/Speculation_Rules_API) and browser prerendering, checkout pages may be prerendered before users actually navigate to them. This can cause analytics and other event-tracking scripts to fire prematurely.
+
+When scripts inject into checkout pages, they should check whether the page is being prerendered to avoid triggering events before the user actually visits the page.
+
+### Detecting prerendering
+
+Use the `document.prerendering` property to detect if the page is currently being prerendered:
+
+```javascript
+// Check if the page is currently being prerendered
+if (document.prerendering) {
+  // Page is being prerendered - defer analytics tracking
+  console.log('Page is being prerendered, deferring analytics');
+  
+  // Listen for when prerendering ends and page becomes active
+  document.addEventListener('prerenderingchange', () => {
+    console.log('Page is now active, triggering analytics');
+    // Now it's safe to trigger analytics events
+    triggerCheckoutAnalytics();
+  });
+} else {
+  // Page is not prerendered, safe to trigger analytics immediately
+  triggerCheckoutAnalytics();
+}
+```
+
+### Example implementation for checkout analytics
+
+Here's a complete example that safely handles both normal page loads and prerendered pages:
+
+```javascript
+function initializeCheckoutAnalytics() {
+  function triggerAnalyticsEvents() {
+    // Your analytics tracking code here
+    // e.g., fbq('track', 'InitiateCheckout');
+    // e.g., gtag('event', 'begin_checkout');
+    console.log('Checkout analytics triggered');
+  }
+
+  if (document.prerendering) {
+    // Defer analytics until page becomes active
+    document.addEventListener('prerenderingchange', triggerAnalyticsEvents, { once: true });
+  } else {
+    // Page is already active, trigger analytics immediately
+    triggerAnalyticsEvents();
+  }
+}
+
+// Initialize when DOM is ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initializeCheckoutAnalytics);
+} else {
+  initializeCheckoutAnalytics();
+}
+```
+
+For more information about prerendering detection, see the [Speculation Rules API documentation](https://developer.mozilla.org/en-US/docs/Web/API/Speculation_Rules_API) and the [prerender pages guide](https://developer.chrome.com/docs/web-platform/prerender-pages#eagerness).
+
 ## Creating scripts for Catalyst storefronts
 
 Catalyst is BigCommerce's modern storefront framework built on Next.js. When creating scripts for Catalyst storefronts, there are several important considerations that differ from traditional Stencil themes.

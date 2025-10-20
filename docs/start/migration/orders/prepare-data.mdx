@@ -1,0 +1,297 @@
+---
+title: Preparing Order Data
+description:
+keywords: order data, order migration, orders, best practices
+---
+# Prepare Data
+
+Prior to attempting a migration the following are essential steps to ensure data are ready. Skipping these steps may result in missing or incomplete order information post-migration.
+
+## Minimal order example
+
+The following example is intended to show the absolute minimum amount of information you can provide when creating orders in order to migrate your data smoothly, efficiently, and without undue data collisions.
+
+```json
+{
+  "external_source": "M-MIG",
+  "external_order_id": "AB123456",
+  "status_id": 0,
+  "date_created": "Tue, 20 Nov 2012 00:00:00 +0000",
+  "customer_message": "Thank you",
+  "staff_notes": "Ship sunday",
+  "total_ex_tax": "23.74",
+  "total_inc_tax": "25.61",
+  "billing_address": {
+      /*... billing address info ...*/
+  },
+  "products": [
+      /*... product data objects ...*/
+  ],
+}
+```
+
+The other fields that should be included depend on the complexity of your migration and should be added as necessary depending on your needs.
+
+In the remaining sections, all order data mapping is covered in detail to allow a full and complete picture of the process. Your needs will vary depending on the complexity of your migration, customer data, and catalog.
+
+## Product data links
+
+It’s assumed that you have already transferred your products following the instructions in [Product Migration](/docs/start/migration/products/overview). During that process, you should have ensured that your products have the BigCommerce `product_id` attached so that order information is able to attach the correct products within BigCommerce. For products that have variations or modifications that might change the inventory tracking or other relevant data access, the appropriate `variant_id`, `modifier_id`, and `sku` information should be attached to relevant product data within your orders.
+
+As covered in the [fields outline](/docs/start/migration/products/prepare-data#field-mapping-reference) from the product migration page, these fields may be labelled differently depending on the specific API endpoint used to access them during product migration. As such, it’s essential that you label the fields clearly in your data source with respect to the data they belong to.
+
+| Field | Description | General Label | Create an Order API Label | Notes |
+| :---- | :---- | :---- | :---- | :---- |
+| Product ID | Server enforced numeric ID assigned to the parent product on creation. | `product_id` | `product_id` | Read-only field. |
+| Variant ID | Server enforced numeric ID assigned to the variant on creation. | `variant_id` | `Product_options[idx].id` or none | Read-only field. |
+| Variant Option ID | Server enforced ID assigned to specific selections available on a variant. | `variant_option_id` | `Product_options[idx].value` or `variant_id` | Read-only field. Editing the variant or its options **may** change the ID values. This usually occurs because editing will sometimes require deleting existing options. The `product_options` element may be skipped in this use-case if `variant_id` is provided. |
+| Modifier ID | Server enforced numeric ID assigned to the modifier on creation. | `modifier_id` | `Product_options[idx].id` or none | Read-only field. |
+| Modifier Option ID | Server enforced ID assigned to specific selections available on a modifier. | `modifier_option_id` | `product_options[idx].value` | Read-only field. Editing the modifier or its options **may** change the ID values. This usually occurs because editing will sometimes require deleting existing options. For modifiers without explicit selections, this is the value provided by the customer.  |
+| Product SKU | SKU assigned to the parent product, usually used as a “family SKU” as in the case where size or color only change the last few digits. | `product_sku` | N/A | Nullable field. If this is left blank, the primary loss is that the parent product is not filterable on SKU. |
+| Variant SKU | SKU assigned to specific variants of the product. May be wholly different than the `product_sku` value. | `variant_sku` | N/A | Not nullable. These values should be set when creating or editing variants. If they are not, the server will assign them. |
+
+Other product-level fields to map include `product_name`, `variant_name`, and the various `*_price` fields on the product. These should have a uniform name between both source and destination data, since their names are specific enough to make clear what field they reference.
+
+For custom products &mdash; those defined by you when creating an order or those no longer in your catalog &mdash; the only necessary fields are `name`, `quantity`, `price_inc_tax`, and `price_ex_tax`. Other data may be included as necessary, but the data structure is different. See [Create an Order](/docs/rest-management/orders#create-an-order) for more information.
+
+<Callout type="info">  
+Many product fields are not required when creating an order; however, it is helpful to include all necessary fields up front, even if their data is `null` or otherwise not relevant. This prevents missing data issues later.  
+</Callout>  
+<Callout type="info">  
+If you are using consignments to input your order data, omit the `products` array, but follow the same format otherwise for product data.  
+</Callout>
+
+The following is an example of the product data structure for orders:
+
+```json
+{
+  /*... other order fields ...*/
+  "products": [
+    {
+      /*... Custom Product ...*/
+      "name": "Custom Product Name",
+      "quantity": 1,
+      "price_inc_tax": 10.98,
+      "price_ex_tax": 10
+    },
+    {
+      /*... Product with Variants ...*/
+      "product_id": 118,
+      "quantity": 1,
+      "variant_id": 93
+    },
+    {
+      /*... Product with Modifiers ...*/
+      "product_id": 184,
+      "product_options": [
+        {
+          "id": 200,
+          "value": "180"
+        },
+        {
+          "id": 230,
+          "value": "192"
+        }
+      ]
+    },
+    {
+      /*... Product with Variants and Modifiers ...*/
+      "product_id": 184,
+      "variant_id": 93
+      "product_options": [
+        {
+          "id": 200,
+          "value": "180"
+        },
+        {
+          "id": 230,
+          "value": "Custom Text"
+        }
+      ]
+    }
+  ]
+  /*... other order fields ...*/
+}
+```
+
+## Customer data links
+
+Unlike product data, customer data has much more straightforward fields to connect between your data source and BigCommerce. Specifically, customer data requires customer_id and address information. Beyond that, mapping is fairly straightforward.
+
+Regardless of the specific structure used, the following example `billing_address` is the basis for all address options:
+
+```json
+{
+  "billing_address": {
+    "first_name": "Jane",
+    "last_name": "Doe",
+    "company": "Company name",
+    "street_1": "123 Main Street",
+    "street_2": "Suite B",
+    "city": "Austin",
+    "state": "TX",
+    "zip": "12345",
+    "country": "United States",
+    "country_iso2": "US",
+    "phone": "987654321",
+    "email": "example@example.com"
+  }
+}
+```
+
+There are two important callouts about the example above. First, the `zip` field is required within the billing address, as it is a mandatory field for most payment processors. It must be at least two characters and a valid postal code for the country. Second, shipping addresses optionally include a `shipping_method` field, which identifies the method by which the customer requested shipment. It can be any of your store’s enabled shipping methods.
+
+When mapping customer data, there are five main cases to prepare for, as outlined in [Complexity Considerations](/docs/start/migration/orders/complexity). Even so, they fall back on one of two main structures so far as mapping customer data.
+
+<Callout type="info">  
+Certain fields may be included or excluded based on the specific complexity case a given order fits. Guest orders will exclude `customer_id`, and the customer’s contact information will be taken from the billing address. Orders with matched billing and shipping information may exclude `shipping_addresses`. Other cases may also exist.  
+</Callout>
+
+### Orders with consignments
+
+Orders with consignments are treated as, essentially, pickup orders. All product data is paired directly with the relevant address data. In the default use-case, this address data is meant to pair with specific locations of your business and specific ‘pickup’ methods.
+
+An example of this structure is outlined below.
+
+```json
+{
+  /*... other order fields ...*/
+  "customer_id": 11,
+  "billing_address": {
+    /*... billing address fields ...*/
+  },
+  "consignments": {
+    "pickups": [
+      {
+        "pickup_method_id":1,
+        "pickup_method_display_name": "Pick Up",
+        "collection_instructions": "Bring your ID",
+        "collection_time_description": "9am - 6pm",
+        "location": {
+          /* location fields use a different structure */
+          "name": "Location 1",
+          "code": "LOCATION-1",
+          "address_line_1": "123 Main Street",
+          "address_line_2": "Suite 101",
+          "city":"Austin",
+          "state":"Texas",
+          "postal_code":"78726",
+          "country_alpha2":"US",
+          "email":"location1@example.com",
+          "phone":"+1 111-111-1111"
+        },
+		"line_items": [
+          /*... product data ...*/
+        ]
+      }
+    ]
+  }
+  /*... other order fields ...*/
+}
+```
+
+The fields listed in this example may or may not align with your expected structure. Verify ahead that your fields follow the appropriate structure to use this data type.
+
+### Orders without consignments
+
+Rather than using an order with consignments, order data may be split with product data in one array and shipping addresses in another, both of which are collections of objects of their specific data types. In this case, there is no direct mapping between products and the addresses to which they are shipped. As such, only older order data should be imported via this method.
+
+An example of this structure is outlined below.
+
+```json
+{
+  /*... other order fields ...*/
+  "customer_id": 11,
+  "billing_address": {
+    /*... billing address fields ...*/
+  },
+  "shipping_addresses": [
+    {
+      /*... other address fields ...*/
+      "shipping_method": "UPS"
+    }
+  ],
+  "products": [
+    /*... product data ...*/
+  ]
+  /*... other order fields ...*/
+}
+```
+
+## All order data fields
+
+Once product- and customer-specific data have been mapped properly, there are many other fields to manage in mapping. The table below contains all order fields (including for customer and product data) by name, including their data types, descriptions, and examples where possible.
+
+<details>  
+<summary> Click to view the table </summary>  
+There are fields listed in the [Create an Order](/docs/rest-management/orders#create-an-order) {link to the endpoint} documentation not found in this table. Those fields that have been omitted are to be considered read-only and will throw server errors if they are included in the request.
+
+| Name | Data Type | Description | Example |
+| :---- | :---- | :---- | :---- |
+| `customer_id` | `integer` | The unique customer ID assigned by the server on customer creation. Sets base customer contact data for the order. | 123 |
+| `status_id` | `integer` | The status of the order. Values are laid out in the table at [Order Status](/docs/rest-management/orders/order-status) {link to correct doc} | 0 |
+| `date_created` | `string` | RFC-2822 formatted date when the order was placed. | Tue, 20 Nov 2012 00:00:00 +0000 |
+| `order_source` | `string` | Indicates how the order came in. This can be api, www, or other examples. | www |
+| `order_is_digital` | `boolean` | Indicates whether all products in the order are digital. If `false`, at least one product is physical. | true |
+| `billing_address` | `object` | Billing address for the order. Treated as default address. | (see above) |
+| `shipping_addresses` | `array` | Collection of shipping addresses for the order. | (see above) |
+| `products` | `array` | Collection of products in the order data. | (see above) |
+| `consignments` | `object` | Collection of pickups assigned to an order. | (see above) |
+| `fees` | `array` | Collection of fees charged on the order. |  |
+| `default_currency_code` | `string` | The currency code the shopper will pay in. Only available when multi-currency is enabled. | USD |
+| `base_handling_cost` | `string[number]` | Base handling cost before modifications are applied. | 1.223 |
+| `handling_cost_ex_tax` | `string[number]` | Final handling cost, excluding tax. | 2.223 |
+| `handling_cost_inc_tax` | `string[number]` | Final handling cost, including tax. | 2.333 |
+| `base_wrapping_cost` | `string[number]` | Base gift wrapping cost before modifications are applied. | 1.223 |
+| `wrapping_cost_ex_tax` | `string[number]` | Final gift wrapping cost, excluding tax. | 2.223 |
+| `wrapping_cost_inc_tax` | `string[number]` | Final gift wrapping cost, including tax. | 2.333 |
+| `base_shipping_cost` | `string[number]` | Base shipping cost before modifications are applied. | 12.223 |
+| `shipping_cost_ex_tax` | `string[number]` | Final shipping cost, excluding tax. | 12.223 |
+| `shipping_cost_inc_tax` | `string[number]` | Final shipping cost, including tax. | 12.333 |
+| `discount_amount` | `string[number]` | Positive valued discount to the order subtotal. | 12.223 |
+| `refunded_amount` | `string[number]` | Value refunded so far from the order total. | 12.223 |
+| `subtotal_ex_tax` | `string[number]` | Order value after products and fees, but before discounts, excluding tax. Serves to override other fields. | 32.221 |
+| `subtotal_inc_tax` | `string[number]` | Order value after products and fees, but before discounts, including tax. Must be included if the `_ex_tax` field is. | 32.333 |
+| `total_ex_tax` | `string[number]` | Final order value, excluding tax. Serves to override other fields. | 19.998 |
+| `total_inc_tax` | `string[number]` | Final order value, including tax. Must be included if the `_ex_tax` field is. | 20.011 |
+| `payment_method` | `string` | Display name of the payment method on the order. | Manual |
+| `payment_provider_id` | `string` OR `number` | Payment provider’s ID code. May be a numeric ID or a character code. | 5 |
+| `channel_id` | `integer` | The unique channel ID for the sales channel on which the order was placed. | 456 |
+| `customer_locale` | `string` | The 2, 3, 5, or 6 character locale active when the customer checked out. | en-US |
+| `items_shipped` | `integer` | The number of items for which shipments have been created. | 17 |
+| `items_total` | `integer` | The total number of items in the order (includes line items and quantities). | 23 |
+| `customer_message` | `string` | Message provided in the order comments section at checkout. | Thank you for your help today! |
+| `staff_notes` | `string` | Message provided to/by your staff. Not visible to customers. | Invoice number 123546 |
+| `ebay_order_id` | `string` | Order ID reported by eBay if the order originated there. `0` otherwise. | 0 |
+| `external_merchant_id` | `string` | Order ID from your data’s source of truth. Only writable at time of order creation. | `null` |
+| `external_order_id` | `string` | Order ID from an external system. Writable and updatable. | `null` |
+| `external_source` | `string` | Indicates how the order originated. For all orders in your initial migration, this should have the value `M-MIG`. | M-MIG |
+| `ip_address` | `string[ipv4]` | IP address of the customer, if available. Mutually exclusive with `ip_address_v6`. | 127.0.0.1 |
+| `ip_address_v6` | `string[ipv6]` | IP address of the customer, if available. Mutually exclusive with `ip_address`. | 2001:db8:3333:4444:5555:6666:7777:8888 |
+| `geoip_country` | `string` | Full name of the country where the order was placed. Determined from the IP address. | United States |
+| `geoip_country_iso2` | `string` | ISO2 country code. Determined from the IP address. | US |
+
+</details>
+
+## FAQs
+
+1. **What is the minimum data needed to create a migrated order?**  
+   See the minimal example in this document; at minimum you need `external_source`, `external_order_id`, `status_id`, `date_created`, `billing_address`, and `products`.
+2. **Do product and customer IDs need to match those in BigCommerce?**  
+   Yes. Use the server-assigned `product_id` and `customer_id` for correct mapping.
+3. **How do I handle custom products or products no longer in my catalog?**  
+   Use the custom product workflow—provide at least name, quantity, price. See [Orders API - Create an Order](/docs/rest-management/orders#create-an-order).
+4. **How do I migrate orders with consignments (pickups)?**  
+   Use the `consignments` object and omit `products` array. See example above.
+5. **What if an order has multiple shipping addresses?**  
+   Use the `shipping_addresses` array. Each address can have a `shipping_method`.
+6. **Do I need to include all possible fields in my order data?**  
+   Only required fields are mandatory, but including all relevant fields—even if null—prevents missing data issues.
+
+## Resources
+
+- [Product API Field Reference](/docs/rest-catalog)
+- [Orders API - Create an Order](/docs/rest-management/orders#create-an-order)
+- [Order Complexity Considerations](/docs/start/migration/orders/complexity)
+- [API Best Practices](/docs/start/best-practices)
+

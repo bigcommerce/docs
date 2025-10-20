@@ -1,0 +1,112 @@
+---
+title: Preparing Order Data
+description:
+keywords: order data, order migration, orders, best practices
+---
+# Migration Phase
+
+Just as with products, your order migration should include at minimum: testing, initial migration, delta migration. The initial testing process and delta migration will look very similar to those steps in the products migration process, so you can refer back to them as needed. (Load Complete Data)[/docs/start/migration/products/complete-migration] and (Go Live and Delta Migration)[/docs/start/migration/products/delta-migration].
+
+There are some callouts specific to the order migration process, which will be addressed here, but otherwise, use your best judgement when considering how to manage your own work.
+
+## Load test data
+
+This step is essential in verifying you’ve appropriately mapped your order data from your previous data source (ERP, CRM, or other) to BigCommerce. When you’ve finished your data preparation step we encourage you to do the following in loading test data:
+
+- **Ensure ALL order data include the `external_source` field with the value `M-MIG` before beginning.**  
+- Turn off your order notifications in both your sandbox and production environments  
+- Prepare a representative sample from your existing data. Sanitize this data for testing, in case of errors or overlap.  
+- Load the sanitized data into your sandbox environment, logging any errors encountered.  
+- Verify the sample data loaded without issue.  
+- Identify inconsistencies with sample data and revise your mapping strategy accordingly.
+
+Once you’ve successfully migrated your initial test data, move on to the full migration step.
+
+## Migrate your full order history
+
+Once you've successfully tested your order migration process, verified mappings, and gained confidence in your approach, you're ready to proceed with loading your complete order dataset into BigCommerce.
+
+### Pre-Migration checklist
+
+* Remove all extraneous data (test orders, unnecessary attributes) from your dataset  
+* ⚠️ Disable or turn OFF any third-party applications that might automatically ingest product data  
+* Verify the API rate limits for your plan level  
+* Scheduling your migration during off-peak hours, if possible, to minimize potential platform congestion
+
+<Callout type="info">  
+If you are still accepting orders via your previous platform, define a clear “cut-off” time to avoid missing late changes.  
+</Callout>  
+<Callout type="info">  
+When performing large-scale migrations, it is essential to use structures that ensure data is not duplicated. Use unique order identifiers to check if an order exists before retrying an API call to create it.  
+</Callout>
+
+### During migration
+
+* Actively monitor for status error codes and implement your error handling protocols  
+* Track progress through logging to ensure you transfer all products correctly.  
+* Maintain a separate record of any failed transfers for later remediation
+
+### Post-Migration verification
+
+* Compare order counts between your source platform and BigCommerce  
+* Spot-check a representative sample of orders across your complete history  
+* Check that you have transferred complex orders (refer to complexity considerations) correctly.  
+* Test order visibility by using customer impersonation to ensure appropriate account linkage.
+
+### Next Steps
+
+* Once order data is successfully transferred, proceed with migrating design data (theme, etc.) if desired.  
+* Document your migration process thoroughly for future reference or troubleshooting  
+* Consider implementing a synchronization strategy or data freeze if you'll be operating multiple platforms simultaneously during transition
+
+### Estimated time to transfer
+
+The following table provides approximations of migration times for various order history sizes. These estimates are based on platform limits and assumed order complexity. If you have particularly complex orders, your results will vary from these provisions.
+
+Based on this information and the guidance provided above, plan your migration with enough time allotted to prevent issues.
+
+| Resources | Estimated time (store with no live integrations) |
+| :---- | :---- |
+| > 5,000 | Around 30 minutes |
+| > 40,000 | Around  7 hours |
+| > 300,000 | Around 23 hours |
+| > 500,000+ | Recommended to work with our dedicated data migration services team on data processing |
+
+<Callout type="info">
+The information in the table above is based on the platform limits, assuming scaling complexity with order history size. For information on platform limits, see our documentation on [Best Practices](/docs/start/best-practices) and [API Limits](/docs/start/best-practices/api-rate-limits).
+</Callout>
+
+## Delta migration
+
+This step is only required if you are still receiving orders in a live environment during your migration. As with the testing phase, this step has a few callouts to be aware of. We recommend the following steps to ensure a successful delta migration with the fewest errors.
+
+- Before initial migration, take a snapshot of your current order status.  
+- Before performing delta migration, take your store down for maintenance if possible.  
+- Compare snapshot data to newest data, and only update orders for which there is new data to report.  
+- If you took your store down for maintenance for delta migration, reactivate it once you have finished.  
+- Verify data successfully transferred via spot check.
+
+It’s important to note that your order delta migration will vary in size based on your store’s activity. As such, you should plan enough time to account for the full scope of the project, following the table above.
+
+## FAQs
+
+1. **How do I prepare test data for order migration?**  
+   Prepare a representative and sanitized sample of orders, ensure required fields are present, and load into your sandbox for validation.
+2. **How can I avoid duplicate orders during migration?**  
+   Use unique order identifiers and check for existing orders before retrying API calls.
+3. **What should I do if my migration fails or is interrupted?**  
+   Log all migrated order IDs and failed records. Use logs to identify and correct only affected orders.
+4. **How do I handle delta migrations if new orders are placed during migration?**  
+   Take a snapshot before initial migration, compare to new data after, and only migrate newly placed or updated orders.
+5. **How can I verify a successful migration?**  
+   Compare source and destination order counts, spot-check complex orders, and validate correct customer and product linkages.
+6. **What are platform limits for order migration?**  
+   See [API Rate Limits](/docs/start/best-practices/api-rate-limits) for details. For very large datasets, contact [Data Migration Services](https://www.bigcommerce.com/services/launch/#data-migration-services).
+
+## Resources
+
+- [API Best Practices | BigCommerce Dev Center](/docs/start/best-practices)
+- [API Rate Limits](/docs/start/best-practices/api-rate-limits)
+- [Data Migration Services](https://www.bigcommerce.com/services/launch/#data-migration-services)
+- [Orders API Reference](/docs/rest-management/orders)
+

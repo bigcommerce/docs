@@ -1,0 +1,133 @@
+---
+title: Translations Error Handling
+keywords: translations, errors, localization, l18n, graphql
+---
+# Error Handling
+
+The Translation Management API provides robust error handling to ensure data integrity and developer clarity. This section describes how errors are validated, how partial successes are managed, and provides examples of error responses.
+
+## Error Validation Types
+
+Translation Management API performs two types of validation on requests:
+
+1. **Resource ID/Type Validation**:  
+   Ensures that the specified resource (e.g., Category, Brand, Product) exists and is valid. If an incorrect or non-existent resource ID or type is provided, an error is returned.
+   - **EntityNotFoundError**:  
+     Returned when the specified resource does not exist.  
+     Example: `"message": "Entity bc/store/category/28 not found."`
+   - **ValidationError**:  
+     Returned when the query fails validation rules. This can include incorrect `resourceType`, mismatched `resourceType` and `resourceId`, as well as missing fields.  
+     Example: `"message": "Invalid value for resourceType"`  
+     Example: `"message": "resourceId must be an integer for resourceType PRODUCTS."`
+
+2. **Field Name Validation**:  
+   Ensures that the field names submitted in the translation request are valid for the specified resource type. Invalid or unsupported field names result in error responses.
+   - **InvalidTranslationEntityFieldsError**:  
+     Returned when one or more field names are not valid for the specified resource type.  
+     The response includes the invalid field names in the `fields` array.  
+     Example: `"fields": ["namasdas2e", "desc2ription"]`
+
+## Partial Success
+
+The API supports partial success in mutation operations. If only some of the translated entities (resources or fields) are valid, the API will update those and return errors for the invalid ones. This allows you to identify and correct issues without losing valid updates.
+
+## Example: Error Response
+
+Below is an example demonstrating how the API responds to a request containing both invalid resource IDs and invalid field names.
+
+<Tabs items={['Mutation', 'Response']}>
+<Tab>
+### Example Mutation
+
+The following example demonstrates a mutation call to the Translation Management API where the request includes both invalid resource IDs and invalid field names. This is useful for testing how the API handles multiple types of validation errors in a single request. The mutation attempts to update translations for a category resource, but includes two invalid field names (`namasdas2e` and `desc2ription`) among otherwise valid fields.
+
+```graphql
+GRAPHQL {{host}}/stores/{{store_hash}}/graphql
+X-Auth-Token: {{token}}
+
+mutation {
+  translation {
+    updateTranslations(input: {
+      resourceType: CATEGORIES,
+      channelId: "bc/store/channel/{{channel_id}}",
+      localeId: "bc/store/locale/it",
+      entities: [
+        {
+          resourceId: "bc/store/category/28",
+          fields: [
+            {
+              fieldName: "namasdas2e",
+              value: "Comprar todo 2"
+            },
+            {
+              fieldName: "desc2ription",
+              value: "Comprar todo 2"
+            },
+            {
+              fieldName: "page_title",
+              value: "Comprar todo 2"
+            },
+            {
+              fieldName: "meta_description",
+              value: "Comprar todo 2"
+            },
+            {
+              fieldName: "search_keywords",
+              value: "Comprar todo"
+            }
+          ]
+        }
+      ]
+    }) {
+      errors {
+        __typename
+        ... on InvalidTranslationEntityFieldsError {
+          message
+          fields
+        }
+      }
+      errors {
+        __typename
+        ... on EntityNotFoundError {
+          message
+        }
+      }
+    }
+  }
+}
+```
+
+</Tab>
+<Tab>
+
+### Example Error Response
+
+This example response shows how the API reports multiple errors in a single response. Here, the API returns both an `EntityNotFoundError` for a non-existent resource and an `InvalidTranslationEntityFieldsError` indicating which field names are invalid. The `fields` array lists all field names that could not be processed due to validation errors. This pattern allows clients to handle errors granularly and update only the valid parts of the request.
+
+```json
+{
+  "data": {
+    "translation": {
+      "updateTranslations": {
+        "errors": [
+          {
+            "__typename": "EntityNotFoundError",
+            "message": "Entity bc/store/category/28 not found."
+          },
+          {
+            "__typename": "InvalidTranslationEntityFieldsError",
+            "message": "Unsupported translation entity fields.",
+            "fields": [
+              "namasdas2e",
+              "desc2ription"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}
+```
+
+</Tab>
+</Tabs>

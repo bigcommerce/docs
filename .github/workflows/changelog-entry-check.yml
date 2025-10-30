@@ -1,0 +1,98 @@
+name: Changelog Entry Check
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+    paths:
+      - 'docs/**'
+      - 'reference/**'
+      - 'guides/**'
+
+jobs:
+  check-changelog:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18.x
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check for changelog entry
+        id: check
+        run: |
+          # Check if PR has skip-changelog label
+          if [[ "${{ contains(github.event.pull_request.labels.*.name, 'skip-changelog') }}" == "true" ]]; then
+            echo "⏭️ Skipping changelog check (skip-changelog label present)"
+            exit 0
+          fi
+
+          # Check if any doc files were modified
+          CHANGED_DOCS=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -E '^(docs|reference|guides)/' || true)
+          
+          if [ -z "$CHANGED_DOCS" ]; then
+            echo "ℹ️ No documentation files changed"
+            exit 0
+          fi
+
+          echo "📝 Documentation files changed:"
+          echo "$CHANGED_DOCS"
+
+          # Check for changelog entries
+          CHANGELOG_ENTRIES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -E '^\.changelogs/entries/.*\.json$' || true)
+
+          if [ -z "$CHANGELOG_ENTRIES" ]; then
+            echo "::error::No changelog entry found. Please add a changelog entry using 'npm run changelog:add' or add the 'skip-changelog' label if this change doesn't require a changelog entry."
+            exit 1
+          fi
+
+          echo "✅ Changelog entries found:"
+          echo "$CHANGELOG_ENTRIES"
+
+      - name: Validate changelog entries
+        if: steps.check.outcome == 'success'
+        run: |
+          ENTRIES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -E '^\.changelogs/entries/.*\.json$' || true)
+          
+          if [ -n "$ENTRIES" ]; then
+            echo "Validating changelog entries..."
+            for entry in $ENTRIES; do
+              if [ -f "$entry" ]; then
+                npm run changelog:validate "$entry"
+              fi
+            done
+          fi
+
+      - name: Comment on PR
+        if: failure()
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## 📝 Changelog Entry Required
+
+This pull request modifies documentation files but doesn't include a changelog entry.
+
+**To add a changelog entry:**
+\`\`\`bash
+npm run changelog:add
+\`\`\`
+
+Then commit the generated file in \`.changelogs/entries/\` along with your changes.
+
+**If this change doesn't require a changelog entry**, add the \`skip-changelog\` label to this PR.
+
+For more information, see [.changelogs/README.md](.changelogs/README.md).
+              `
+            })

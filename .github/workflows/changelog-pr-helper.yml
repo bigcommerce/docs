@@ -1,0 +1,139 @@
+name: Suggest Changelog Entry
+
+on:
+  pull_request:
+    types: [opened, reopened]
+    paths:
+      - 'docs/**'
+      - 'reference/**'
+      - 'guides/**'
+
+permissions:
+  pull-requests: write
+
+jobs:
+  suggest:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Analyze PR changes
+        id: analyze
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number
+            });
+
+            // Get list of changed files
+            const { data: files } = await github.rest.pulls.listFiles({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number
+            });
+
+            // Filter for documentation files
+            const docFiles = files.filter(file => 
+              file.filename.match(/^(docs|reference|guides)\/.*\.(mdx?|yml|yaml|json)$/)
+            );
+
+            if (docFiles.length === 0) {
+              console.log('No documentation files changed');
+              return;
+            }
+
+            // Determine change type based on file status
+            const addedFiles = docFiles.filter(f => f.status === 'added');
+            const modifiedFiles = docFiles.filter(f => f.status === 'modified');
+            const removedFiles = docFiles.filter(f => f.status === 'removed');
+
+            let changeType = 'changed';
+            if (addedFiles.length > 0 && modifiedFiles.length === 0) {
+              changeType = 'added';
+            } else if (removedFiles.length > 0) {
+              changeType = 'removed';
+            }
+
+            // Generate suggested entry
+            const affectedDocs = docFiles.map(file => {
+              const url = file.filename
+                .replace(/^docs\//, '/docs/')
+                .replace(/^reference\//, '/docs/api-docs/')
+                .replace(/^guides\//, '/docs/guides/')
+                .replace(/\.(mdx?|yml|yaml|json)$/, '')
+                .replace(/\/index$/, '');
+
+              return {
+                path: file.filename,
+                url: url,
+                title: file.filename.split('/').pop().replace(/\.(mdx?|yml|yaml|json)$/, '')
+              };
+            });
+
+            const suggestion = {
+              type: changeType,
+              title: pr.title,
+              description: pr.body || pr.title,
+              affectedDocs: affectedDocs,
+              author: pr.user.login,
+              prNumber: pr.number
+            };
+
+            // Create a comment with the suggestion
+            const comment = `## 📝 Suggested Changelog Entry
+
+Based on the changes in this PR, here's a suggested changelog entry:
+
+\`\`\`json
+{
+  "type": "${suggestion.type}",
+  "title": "${suggestion.title}",
+  "description": "${suggestion.description.substring(0, 200)}${suggestion.description.length > 200 ? '...' : ''}",
+  "affectedDocs": [
+${suggestion.affectedDocs.map(doc => `    {
+      "path": "${doc.path}",
+      "url": "${doc.url}",
+      "title": "${doc.title}"
+    }`).join(',\n')}
+  ],
+  "author": "${suggestion.author}",
+  "prNumber": ${suggestion.prNumber}
+}
+\`\`\`
+
+### To use this suggestion:
+
+1. Run \`npm run changelog:add\` in your local repository
+2. Use the suggested values above when prompted
+3. Review and adjust as needed
+4. Commit the generated file in \`.changelogs/entries/\`
+
+### Change Type Options:
+- **added**: New documentation or features
+- **changed**: Updates to existing documentation
+- **deprecated**: Documentation marked as deprecated
+- **removed**: Removed documentation or features
+- **fixed**: Bug fixes or corrections
+- **security**: Security-related updates
+
+### Tips:
+- Keep the title concise and user-friendly
+- Expand the description to explain what changed and why
+- Ensure all affected documentation pages are listed
+- Review the automatically generated URLs and adjust if needed
+
+---
+
+*This suggestion was automatically generated. You can add the \`skip-changelog\` label if a changelog entry is not needed.*`;
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: comment
+            });

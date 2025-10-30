@@ -53,6 +53,11 @@ Always update your fork to ensure you're working with the newest source files.
 
 ```shell
 .
+├── .changelogs/                       # automated changelog management
+    ├── entries/                       # ephemeral changelog entries
+    ├── published/                     # archived published changelogs
+    ├── README.md                      # changelog system documentation
+    └── schema.json                    # JSON schema for changelog entries
 ├── .github/                           # github config
     └── workflows/                     # workflows to lint pull requests, etc.
     └── ...
@@ -67,6 +72,7 @@ Always update your fork to ensure you're working with the newest source files.
 ├── docs                               # narrative documentation
     ├── api-docs/                      
     ├── bigcommerce-for-wordpress/     
+    ├── changelog/                     # published documentation changelogs
     ├── legacy/                        # Blueprint and V2 API docs
     ├── msf/                           # MSF docs
     ├── partner-apps/                  # docs for some partner integrations
@@ -79,6 +85,10 @@ Always update your fork to ensure you're working with the newest source files.
     ├── catalog/                       # catalog OAS API reference
     ├── payments/                      # payments OAS API reference
     └── ...                            # other OAS API reference
+├── scripts/                           # automation scripts
+    ├── changelog-add.js               # create new changelog entries
+    ├── changelog-publish.js           # aggregate and publish changelogs
+    └── changelog-validate.js          # validate changelog entry format
 ├── theme-styles          
     ├── _root                          # MDX files for Stencil style configuration options
 ├── .cspell.json  
@@ -98,6 +108,19 @@ Always update your fork to ensure you're working with the newest source files.
 
 ## Archived docs 
 View our archived documentation [here](/archive/). 
+
+## Changelog Management
+
+This repository uses an automated changelog management system to track documentation updates. When making documentation changes:
+
+1. Create a changelog entry: `npm run changelog:add`
+2. Commit the entry with your changes
+3. Changelogs are automatically published bi-weekly
+
+For more information, see:
+- [Changelog Management Guide](/docs/changelog/GUIDE.md)
+- [Published Changelogs](/docs/changelog/)
+- [System Documentation](/.changelogs/README.md)
 
 ---
 ## Our developer channels: 

@@ -1,0 +1,129 @@
+name: Publish Changelog
+
+on:
+  schedule:
+    # Run every two weeks on Monday at 9 AM UTC
+    - cron: '0 9 * * 1'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run (do not create PR)'
+        required: false
+        default: 'false'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18.x
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check for changelog entries
+        id: check_entries
+        run: |
+          ENTRY_COUNT=$(find .changelogs/entries -name "*.json" -type f | wc -l)
+          echo "entry_count=$ENTRY_COUNT" >> $GITHUB_OUTPUT
+          
+          if [ $ENTRY_COUNT -eq 0 ]; then
+            echo "ℹ️ No changelog entries to publish"
+            echo "has_entries=false" >> $GITHUB_OUTPUT
+          else
+            echo "📝 Found $ENTRY_COUNT changelog entries to publish"
+            echo "has_entries=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Publish changelog
+        if: steps.check_entries.outputs.has_entries == 'true'
+        run: |
+          npm run changelog:publish
+
+      - name: Get changelog details
+        if: steps.check_entries.outputs.has_entries == 'true'
+        id: changelog_details
+        run: |
+          VERSION=$(date +%Y-%m-%d)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          
+          CHANGELOG_FILE="docs/changelog/${VERSION}.mdx"
+          if [ -f "$CHANGELOG_FILE" ]; then
+            echo "changelog_exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "changelog_exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create Pull Request
+        if: steps.check_entries.outputs.has_entries == 'true' && steps.changelog_details.outputs.changelog_exists == 'true' && github.event.inputs.dry_run != 'true'
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: 'docs: publish changelog ${{ steps.changelog_details.outputs.version }}'
+          branch: changelog/${{ steps.changelog_details.outputs.version }}
+          title: '📰 Changelog - ${{ steps.changelog_details.outputs.version }}'
+          body: |
+            ## Automated Changelog Release
+            
+            This PR contains the aggregated changelog for documentation updates.
+            
+            **Version:** ${{ steps.changelog_details.outputs.version }}
+            **Entry Count:** ${{ steps.check_entries.outputs.entry_count }}
+            
+            ### What's included
+            
+            This changelog aggregates all documentation updates since the last release, including:
+            - New documentation pages
+            - Updates to existing documentation
+            - Bug fixes and corrections
+            - Deprecated or removed content
+            
+            ### Review Checklist
+            
+            - [ ] Review the changelog entries for accuracy
+            - [ ] Ensure all links are working correctly
+            - [ ] Verify the formatting is correct
+            - [ ] Check that all entries are appropriately categorized
+            
+            ### After Merging
+            
+            Once merged, this changelog will be published to the developer documentation site.
+            The individual changelog entries have been archived in `.changelogs/published/`.
+            
+            ---
+            
+            *This PR was automatically created by the changelog publishing workflow.*
+          labels: |
+            changelog
+            documentation
+          draft: false
+
+      - name: Summary
+        if: steps.check_entries.outputs.has_entries == 'true'
+        run: |
+          echo "## Changelog Publishing Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Successfully published changelog" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Version:** ${{ steps.changelog_details.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Entries:** ${{ steps.check_entries.outputs.entry_count }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Dry Run:** ${{ github.event.inputs.dry_run }}" >> $GITHUB_STEP_SUMMARY
+
+      - name: No entries summary
+        if: steps.check_entries.outputs.has_entries == 'false'
+        run: |
+          echo "## Changelog Publishing Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "ℹ️ No changelog entries to publish" >> $GITHUB_STEP_SUMMARY

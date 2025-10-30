@@ -115,7 +115,7 @@ This repository uses an automated changelog management system to track documenta
 
 1. Create a changelog entry: `npm run changelog:add`
 2. Commit the entry with your changes
-3. Changelogs are automatically published bi-weekly
+3. Changelogs are automatically published weekly when entries exist
 
 For more information, see:
 - [Changelog Management Guide](/docs/changelog/GUIDE.md)

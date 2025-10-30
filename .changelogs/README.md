@@ -52,12 +52,15 @@ Each changelog entry is a JSON file containing:
 
 ### 3. Publishing Changelogs
 
-Changelogs are automatically aggregated and published on a regular cadence (every 2 weeks) via GitHub Actions:
+Changelogs are automatically checked weekly via GitHub Actions. When entries exist, they are published:
 
-- The workflow collects all entries from `.changelogs/entries/`
+- The workflow runs every Monday at 9 AM UTC
+- Collects all entries from `.changelogs/entries/`
 - Generates a formatted changelog document
 - Creates a PR with the aggregated changelog
 - Moves processed entries to `.changelogs/published/`
+
+This allows for flexible publishing - changelogs are created as soon as there's content to publish, rather than waiting for a specific schedule.
 
 ### 4. Manual Publishing
 
@@ -89,7 +92,7 @@ npm run changelog:publish
 The system includes several GitHub Actions workflows:
 
 - **changelog-entry-check.yml**: Validates that PRs with doc changes include changelog entries
-- **changelog-publish.yml**: Runs bi-weekly to aggregate and publish changelogs
+- **changelog-publish.yml**: Runs weekly (every Monday) to aggregate and publish changelogs if entries exist
 - **changelog-pr-helper.yml**: Auto-generates changelog entry templates from PR context
 
 ## Configuration

@@ -18,7 +18,7 @@ The changelog management system automates the tracking and publishing of documen
 
 - **Individual changelog entries**: Create small, focused entries alongside documentation changes
 - **Automatic aggregation**: Combine entries into comprehensive changelogs
-- **Scheduled publishing**: Release changelogs on a regular cadence (bi-weekly)
+- **Scheduled publishing**: Release changelogs weekly when entries exist
 - **Direct documentation links**: Link to updated documentation pages, not PRs
 - **GitHub Actions automation**: Automatic validation and publishing
 
@@ -121,12 +121,15 @@ npm run changelog:validate 1730322000000-abc123.json
 ### Automatic Publishing (Recommended)
 
 The system automatically publishes changelogs:
-- **Schedule**: Every two weeks on Monday at 9 AM UTC
+- **Schedule**: Every Monday at 9 AM UTC
+- **Behavior**: Only publishes if there are entries to include
 - **Process**:
-  1. Collects all entries from `.changelogs/entries/`
-  2. Generates a formatted changelog in `docs/changelog/`
+  1. Checks for entries in `.changelogs/entries/`
+  2. If entries exist, generates a formatted changelog in `docs/changelog/`
   3. Creates a PR with the aggregated changelog
   4. Archives processed entries to `.changelogs/published/`
+
+This flexible approach means changelogs are published as soon as there's content, rather than waiting for a fixed schedule.
 
 ### Manual Publishing
 
@@ -179,7 +182,7 @@ To test the publishing workflow without creating a PR:
 #### Publish Changelog (`changelog-publish.yml`)
 
 - **Triggers**: 
-  - Scheduled: Every 2 weeks on Monday at 9 AM UTC
+  - Scheduled: Every Monday at 9 AM UTC (weekly check)
   - Manual: Via workflow dispatch
 - **Purpose**: Aggregates and publishes changelogs
 - **Actions**:

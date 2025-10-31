@@ -1,0 +1,218 @@
+# B2B Edition GraphQL Storefront API overview
+
+The B2B Edition GraphQL Storefront API provides a dynamic method for querying and modifying B2B Edition data from your storefront applications. The GraphQL Storefront API powers the Buyer Portal, and allows you to customize your buyers’ B2B experience on hosted and headless storefronts.
+
+Using the B2B Edition GraphQL Storefront API, you can:
+
+* Create a registration form for new Company accounts.  
+* Authenticate users as they access the Buyer Portal.  
+* Manage Company information like user roles and saved addresses.  
+* View, submit, and generate carts from sales quotes.  
+* Create and approve Shopping Lists.  
+* Retrieve detailed information for orders, invoices, and payments.  
+* Initiative a Masquerade session as a Super Admin user.
+
+While these APIs share some similarities with the [BigCommerce GraphQL Storefront API](/docs/storefront/graphql), they use a different request path (`https://api-b2b.bigcommerce.com/graphql`) and have their own schemas and usage considerations.
+
+It is best practice to use the GraphQL Storefront API if you are developing on the Buyer Portal experience. While the [legacy Stencil storefront experience](/b2b-edition/docs/stencil) uses the REST Storefront API by default, you can also use GraphQL as well.
+
+## Accessing the GraphQL Playground
+
+The [B2B Edition GraphQL Playground](https://api-b2b.bigcommerce.com/graphql/playground) provides a space for you to formulate and test queries and mutations. It includes resources like query schemas and documentation on fields and arguments to help you construct requests.
+
+Input your request on the left side of the playground along with any variables and headers. Click **Play** to send the request and view the results on the right side. You can also hover your cursor over parts of your request to get more information on a field or view error details.
+
+![B2B GraphQL Playground](https://storage.googleapis.com/bigcommerce-production-dev-center/images/b3_console_log_output.png "The B2B GraphQL Playground displaying a query, its variables, and the response")
+
+Most GraphQL requests in B2B Edition reference Company account information and require [authentication](#authentication) for a successful response. However, we have provided an anonymous example query below that does not require authentication to familiarize yourself with the GraphQL Playground.
+
+<Tabs items={[`Query`, `Variables`]}>
+<Tab>
+
+```graphql filename="Example query: Get Store Currencies" showLineNumbers copy
+query currencies ($storeHash:String!, $channelId:String!){
+  currencies (storeHash: $storeHash, channelId:$channelId) {
+    currencies {
+      id
+      name
+      currency_code	
+    }
+  }
+}
+```
+
+</Tab>
+<Tab>
+
+```json filename="Query variables" showLineNumbers copy
+{
+  "storeHash":"[enter your store hash]",
+  "channelId":"1"
+}
+```
+
+## Authentication
+
+The B2B Edition GraphQL Storefront API uses storefront authTokens to authenticate requests. You must add your token to the request header in the following format: `"Authorization": "Bearer [token value]"`.
+
+Storefront authTokens are always associated with a specific Company user or B2C customer, and they don’t rely on storefront cookies. You can use them in both client- and server-side contexts.
+
+To learn more about generating and using storefront authTokens, see [Authentication for hosted storefronts](/b2b-edition/docs/authentication#storefront-tokens).
+
+## Querying within the Buyer Portal
+
+The B2B Edition GraphQL Storefront API allows you to make calls directly from within the Buyer Portal, a Stencil theme, or a script in the store’s [Script Manager](https://support.bigcommerce.com/s/article/Using-Script-Manager). If you are developing in the Buyer Portal experience, it is best to make most customizations within the Buyer Portal itself, and to use scripts or side apps for smaller changes or customizations to non-Buyer Portal areas of the storefront.
+
+Below, we’ve provided examples of how you can use [JavaScript’s Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch) to create scripts for anonymous and authenticated GraphQL queries. The first example uses the [Handlebars](/docs/storefront/stencil/themes/context/handlebars-reference) objects to return the store hash and channel ID of the storefront. The second example uses `window.b2b.utils.user.getB2BToken()` to retrieve the storefront authToken of a logged-in Company user.
+
+<Tabs items={[`Anonymous query`, `Authenticated query`]}>
+<Tab>
+
+```html filename="Anonymous query using Handlebars objects" showLineNumbers copy
+<script>
+  fetch('https://api-b2b.bigcommerce.com/graphql', {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers: {
+      'Content-Type': 'application/json' // anonymous request; no storefront authToken needed
+    },
+    body: JSON.stringify({
+      query: `query MyFirstQuery ($storeHash:String!, $channelId:String!) {
+          currencies (storeHash: $storeHash, channelId: $channelId) {
+            currencies {
+              id
+              name
+              currency_code	
+            }
+          }
+	}`,
+      variables: {
+          storeHash: "{{ settings.store_hash }}",
+          channelId: "{{ settings.channel_id }}"
+      }
+    })
+  })
+  .then(res => res.json())
+  .then(data => console.log(data)) // will log JSON result to browser console
+  .catch(error => console.error(error));
+</script
+```
+
+</Tab>
+<Tab>
+
+```jhtml filename="Authenticated query using getB2BToken" showLineNumbers copy
+<script type="module">
+const token = window.b2b.utils.user.getB2BToken();
+const response = await fetch("https://api-b2b.bigcommerce.com/graphql", 
+
+  {
+    method: "POST",
+    headers: {
+      "Content-Type": 'application/json',
+      "Authentication": `Bearer ${token}`
+    },
+    body: JSON.stringify({
+      'query': `
+            query quotes(first: 10) {
+            	quotes {
+            		edges {
+            			node {
+            				...QuoteData
+            			}
+            		}
+            	}
+            }
+
+            fragment QuoteData on QuoteType {
+                quoteTitle
+                totalAmount
+                status
+            }
+		`,
+       }),
+    })
+        .then((res) => { 
+            if (!res.ok) throw new Error('Network error');
+            return res.json();
+        })
+            .then((data) => {
+            const quotes = data.data?.quotes;
+            console.log('quotes', quotes);
+        })
+            .catch((err) => console.error(err));
+</script>
+```
+
+You can use clients to simplify your GraphQL implementations by aligning code generation with B2B Edition’s schemas. See our [Best Practices](/docs/storefront/graphql/best-practices#development-best-practices-for-graphql) documentation to learn more.
+
+## Pagination
+
+All queries that return a list of items follow the [Cursor Connections](https://facebook.github.io/relay/graphql/connections.htm) pattern, which allows you to configure paginated results and communicate whether additional results are available before or after a given page. To learn more about utilizing pagination, see the [BigCommerce GraphQL Storefront API overview](/docs/storefront/graphql#pagination).
+
+## Extra Fields
+
+Extra fields are custom information fields that you can configure in the [B2B Edition control panel](https://support.bigcommerce.com/s/article/B2B-Edition-Setting) for the following B2B Edition records:
+
+* Company accounts  
+* Company users  
+* Company addresses  
+* B2B orders  
+* Invoices  
+* Sales quotes
+
+You can return extra field information in queries as well as specify field values in mutations that create or update new records. See the query below for how you can include extra fields in your requests.
+
+```
+query GetInvoices {
+    invoices {
+        edges {
+            node {
+                extraFields {
+                    fieldName
+                    fieldValue
+                }
+            }
+        }
+    }
+}
+```
+
+Keep in mind the following considerations when including extra fields in requests:
+
+* The `fieldValue` is always a string, regardless of the extra field’s configured data type.  
+* You can configure extra fields that are not visible to the end user on the storefront.  
+* Mutations will fail if they include:  
+  * Extra fields marked as required with empty values.  
+  * Extra fields marked as unique with values that exist on another record.
+
+## Complexity Limits
+
+Complexity is a measure of the projected load for a given GraphQL query. A query’s complexity score takes into account the number and depth of objects in the query.
+
+The B2B Edition GraphQL API sets a complexity limit of **4,500** per request. For instructions and examples of reducing the complexity of your queries, see the [BigCommerce GraphQL Storefront API overview](/docs/storefront/graphql#pagination).
+
+## FAQ
+
+**Does the B2B Edition GraphQL Storefront API support webhooks?**
+
+it does not, but you can listen for events tied to BC API calls. See [Best Practices](/b2b-edition/docs/best-practices#webhooks) for more information.
+
+**How can I make requests in the context of a specific storefront channel?**
+
+To make a storefront-specific request, you must include the `storeHash` and `channelId` variables in the argument. Note that some records, such as Company accounts and Super Admins, are not exclusive to a single channel in your store. Go to the [GraphQL Playground](https://api-b2b.bigcommerce.com/graphql/playground) to see which queries and mutations require these fields and how to format them in the request.
+
+**How can I create a custom Buyer Portal or modify the functionality of my existing Buyer Portal?**
+
+Use the [open source repository](https://github.com/bigcommerce/b2b-buyer-portal) to customize a self-hosted version of the Buyer Portal on a storefront. See the README file in the repository to learn more.
+
+**Where can I find more information about an error message in a response?**
+
+See [GraphQL HTTP status codes for](/docs/start/about/status-codes#graphql-http-status-codes) a list of error messages and explanations.
+
+## Resources
+
+* [About Our APIs](/b2b-edition/docs/about)  
+* [BigCommerce GraphQL Storefront API overview](/docs/storefront/graphql#pagination)  
+* [Authentication for hosted storefronts](/b2b-edition/docs/authentication#storefront-tokens)  
+* [B2B Edition GraphQL Playground](https://api-b2b.bigcommerce.com/graphql/playground)

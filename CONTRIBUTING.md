@@ -2,6 +2,7 @@
 
 - [Making a Quick Edit](#making-a-quick-edit)
 - [Editing Locally](#editing-locally)
+- [Creating Changelog Entries](#creating-changelog-entries)
 - [Commit Messages](#commit-messages)
 - [Style Guides](#style-guides)
 - [Contributing to Other Projects](#contributing-to-other-projects)
@@ -41,6 +42,53 @@ For more complex changes, fork and edit locally:
 4. Commit and push changes to your remote repo.
 
 5. Create a [pull request](https://help.github.com/en/github/collaborating-with-issues-and-pull-requests/creating-a-pull-request-from-a-fork) to `bigcommerce:docs/main`.
+
+## Creating Changelog Entries
+
+When you make changes to documentation, create a changelog entry to track what changed:
+
+1. **Run the changelog tool:**
+   ```bash
+   npm run changelog:add
+   ```
+
+2. **Follow the prompts** to describe your change:
+   - Select the type of change (added, changed, fixed, etc.)
+   - Provide a clear title and description
+   - List all affected documentation files
+   - Add your GitHub username and PR number (if available)
+
+3. **Commit the entry** along with your documentation changes:
+   ```bash
+   git add .changelogs/entries/*.json
+   git commit -m "docs: your change description"
+   ```
+
+### When to Create a Changelog Entry
+
+Create a changelog entry when:
+- Adding new documentation pages
+- Making significant updates to existing documentation
+- Fixing errors or bugs in documentation
+- Deprecating or removing documentation
+- Making security-related updates
+
+You may skip creating a changelog entry for:
+- Typo fixes
+- Minor formatting changes
+- Internal documentation updates
+- Draft or work-in-progress changes
+
+If skipping, add the `skip-changelog` label to your pull request.
+
+### Changelog Entry Tips
+
+- **Be user-focused**: Write for documentation readers, not internal teams
+- **Be specific**: Clearly state what changed and where to find it
+- **Link correctly**: Ensure documentation URLs are accurate
+- **Review before committing**: Check that your entry is complete and accurate
+
+For more details, see [.changelogs/README.md](.changelogs/README.md).
 
 
 ## Commit Messages

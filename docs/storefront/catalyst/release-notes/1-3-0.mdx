@@ -1,0 +1,88 @@
+# Catalyst version 1.3 Release Notes
+
+We are excited to announce the release of Catalyst v1.3, which brings new features including a cookie consent manager and gift certificate functionality, along with translation updates and reCAPTCHA code removal.
+
+## Consent Manager
+
+We have added a [cookie consent manager](/docs/storefront/catalyst/reference/security#consent-manager) to Catalyst that utilizes the [c15t.com](https://c15t.com) consent management library under the hood to manage shopper privacy preferences when it comes to cookies and data collection. This provides a comprehensive solution for General Data Protection Regulation (GDPR), California Consumer Privacy Act (CCPA), and other privacy regulation compliance.
+
+Once you enable cookie tracking in your storefront settings, shoppers will see a consent banner that allows them to manage their privacy preferences for different types of cookies and data collection activities.
+
+## Gift Certificates
+
+We have implemented Gift Certificate functionality in Catalyst to mirror what is already available in Stencil. This includes:
+
+- Enabling shoppers to purchase gift certificates (respecting merchant-defined configurations such as fixed vs. variable amounts, expiration durations, and available templates)
+- Previewing certificates before purchase
+- Redeeming them in the cart and checkout (API already exists)
+- Checking balances directly from the storefront
+
+To support these experiences, we also are introducing foundational [GraphQL Storefront API](/docs/graphql-storefront) operations for gift certificates, laying the groundwork for future extensibility.
+
+## ReCAPTCHA Code Removal
+
+We have removed the reCAPTCHA code from Catalyst until we're ready to add it at a later point if needed. This cleanup removes both active code and commented-out references.
+
+### What was removed
+
+- `validateRecaptcha()` function and all reCAPTCHA validation logic
+- `@/lib/recaptcha` module and related imports
+- reCAPTCHA token validation from checkout API endpoint (`src/pages/api/checkout.ts`)
+- reCAPTCHA components and props from forms:
+  - Contact Us form
+  - Account creation forms
+  - Login forms
+- All reCAPTCHA-related environment variables and configuration
+
+### Impact if you're currently using reCAPTCHA
+
+1. **Forms will no longer validate reCAPTCHA tokens**
+
+- Any forms that were submitting `recaptchaToken` will no longer have this validation
+- Forms will continue to function but without reCAPTCHA spam protection
+
+2. **API endpoints will ignore reCAPTCHA tokens**
+
+- The checkout API (`/api/checkout`) will no longer call `validateRecaptcha(req.body.recaptchaToken)`
+- Any code expecting reCAPTCHA validation responses will be affected
+
+3. **Environment variables are no longer referenced**
+
+- `NEXT_PUBLIC_RECAPTCHA_SITE_KEY` and `RECAPTCHA_SECRET_KEY` environment variables are no longer used by the codebase
+
+## Improvements and Bug Fixes
+
+### Translation Updates
+
+This release includes translation updates across multiple language files to improve accuracy and completeness. These updates correct translation errors, add missing strings for new features (including the cookie consent manager and gift certificates functionality), and refine existing translations to better match the intended meaning and context for international shoppers.
+
+## Migration Notes
+
+### ReCAPTCHA Removal
+
+If you were using reCAPTCHA functionality, take the following actions:
+
+- **If you extended or customized reCAPTCHA:**
+  - Remove any custom reCAPTCHA code that depends on Catalyst's reCAPTCHA implementation
+  - Remove `NEXT_PUBLIC_RECAPTCHA_SITE_KEY` and `RECAPTCHA_SECRET_KEY` environment variables from your deployment configuration
+  - Consider implementing an alternative CAPTCHA solution if spam protection is needed
+- **If you have forms that submit `recaptchaToken`:**
+  - Remove the `recaptchaToken` field from your form submissions
+  - Update any frontend code that renders reCAPTCHA components
+  - Implement alternative validation methods if needed
+- **If you use reCAPTCHA in GraphQL mutations or queries:**
+  - Remove any reCAPTCHA-related code from your GraphQL operations
+
+## Getting Started
+
+We have published new tags for the Core, Makeswift, and B2B versions of Catalyst. Target these tags to pull the latest code:
+
+[**@bigcommerce/catalyst-core@1.3.0**](https://github.com/bigcommerce/catalyst/releases/tag/%40bigcommerce%2Fcatalyst-core%401.3.0)  
+[**@bigcommerce/catalyst-makeswift@1.3.0**](https://github.com/bigcommerce/catalyst/releases/tag/%40bigcommerce%2Fcatalyst-makeswift%401.3.0)  
+[**@bigcommerce/catalyst-b2b-buyer-portal@1.3.0**](https://github.com/bigcommerce/catalyst/releases/tag/%40bigcommerce%2Fcatalyst-b2b-buyer-portal%401.3.0)
+
+And as always, you can pull the latest stable release with these tags:
+
+[**@bigcommerce/catalyst-core@latest**](https://github.com/bigcommerce/catalyst/releases/tag/%40bigcommerce%2Fcatalyst-core%40latest)  
+[**@bigcommerce/catalyst-makeswift@latest**](https://github.com/bigcommerce/catalyst/releases/tag/%40bigcommerce%2Fcatalyst-makeswift%40latest)  
+[**@bigcommerce/catalyst-b2b-buyer-portal@latest**](https://github.com/bigcommerce/catalyst/releases/tag/%40bigcommerce%2Fcatalyst-b2b-buyer-portal%40latest)

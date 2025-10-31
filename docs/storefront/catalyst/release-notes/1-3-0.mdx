@@ -21,20 +21,57 @@ To support these experiences, we also are introducing foundational [GraphQL Stor
 
 ## ReCAPTCHA Code Removal
 
-<Callout type='warning'>
-	If you were using any reCAPTCHA functionality, you'll need to remove any
-	reCAPTCHA mentions from your GraphQL mutations and queries.
-</Callout>
+We have removed the reCAPTCHA code from Catalyst until we're ready to add it at a later point if needed. This cleanup removes both active code and commented-out references.
 
-We have removed the reCAPTCHA code from Catalyst until we're ready to add it at a later point if needed. This cleanup removes old commented-out blocks and simplifies the codebase.
+### What was removed
 
-## Translation Updates
+- `validateRecaptcha()` function and all reCAPTCHA validation logic
+- `@/lib/recaptcha` module and related imports
+- reCAPTCHA token validation from checkout API endpoint (`src/pages/api/checkout.ts`)
+- reCAPTCHA components and props from forms:
+  - Contact Us form
+  - Account creation forms
+  - Login forms
+- All reCAPTCHA-related environment variables and configuration
 
-Multiple translation updates have been included in this release to improve the internationalization support across different languages and regions. These updates ensure better localization for global storefronts.
+### Impact if you're currently using reCAPTCHA
+
+1. **Forms will no longer validate reCAPTCHA tokens**
+
+- Any forms that were submitting `recaptchaToken` will no longer have this validation
+- Forms will continue to function but without reCAPTCHA spam protection
+
+2. **API endpoints will ignore reCAPTCHA tokens**
+
+- The checkout API (`/api/checkout`) will no longer call `validateRecaptcha(req.body.recaptchaToken)`
+- Any code expecting reCAPTCHA validation responses will be affected
+
+3. **Environment variables are no longer referenced**
+
+- `NEXT_PUBLIC_RECAPTCHA_SITE_KEY` and `RECAPTCHA_SECRET_KEY` environment variables are no longer used by the codebase
+
+## Improvements and Bug Fixes
+
+### Translation Updates
+
+This release includes translation updates across multiple language files to improve accuracy and completeness. These updates correct translation errors, add missing strings for new features (including the cookie consent manager and gift certificates functionality), and refine existing translations to better match the intended meaning and context for international shoppers.
 
 ## Migration Notes
 
-- Remove any reCAPTCHA mentions from GraphQL mutations and queries
+### ReCAPTCHA Removal
+
+If you were using reCAPTCHA functionality, take the following actions:
+
+- **If you extended or customized reCAPTCHA:**
+  - Remove any custom reCAPTCHA code that depends on Catalyst's reCAPTCHA implementation
+  - Remove `NEXT_PUBLIC_RECAPTCHA_SITE_KEY` and `RECAPTCHA_SECRET_KEY` environment variables from your deployment configuration
+  - Consider implementing an alternative CAPTCHA solution if spam protection is needed
+- **If you have forms that submit `recaptchaToken`:**
+  - Remove the `recaptchaToken` field from your form submissions
+  - Update any frontend code that renders reCAPTCHA components
+  - Implement alternative validation methods if needed
+- **If you use reCAPTCHA in GraphQL mutations or queries:**
+  - Remove any reCAPTCHA-related code from your GraphQL operations
 
 ## Getting Started
 

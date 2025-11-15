@@ -6,6 +6,13 @@
 <!-- Provide a bulleted list in the present tense -->
 * 
 
+## Changelog Entry
+<!-- For documentation changes, create a changelog entry using: npm run changelog:add
+     Then commit the generated file from .changelogs/entries/
+     Or add the 'skip-changelog' label if this change doesn't need a changelog entry -->
+
+- [ ] Changelog entry created (or skip-changelog label added)
+
 ## Release notes draft
 <!-- Provide an entry for the release notes using simple, conversational language. Don't be too technical. Explain how the change will benefit the merchant and link to the feature.
 

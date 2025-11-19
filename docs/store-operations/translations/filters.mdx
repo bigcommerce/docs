@@ -1,0 +1,280 @@
+---
+title: Product Filter Translations
+keywords: translations, product filters, localization, l18n, graphql, filters
+description: Translate product filter display names and labels for multilingual storefronts using the Translations Admin GraphQL API.
+---
+
+# Translations for Product Filters (Beta)
+
+<Callout type='info'>
+The Translations Admin GraphQL API is currently available on Catalyst storefronts only.
+</Callout>
+
+The product filter translatable fields are:
+
+| Filter Type | Translatable Fields |
+|-------------|-------------------|
+| Category, Brand, Variants, Custom Fields, Price, Rating | Display Name as `display_name` |
+| Other Filters | Display Name as `display_name` <br /> Has Free Shipping as `has_free_shipping` <br /> Is Featured as `is_featured` <br /> In Stock as `in_stock` |
+
+<Callout type='info'>
+Only string values are translatable. Numeric content such as product count or price values are not translatable.
+</Callout>
+
+## Query translations
+
+This query returns a paginated list of translations by `resourceType`, `channelId`, and `localeId` with a maximum of 50 results per request.
+
+Translated fields are returned whenever available, and the default locale values are returned otherwise on a field-by-field basis.
+
+<Tabs items={['Request', 'Response']}>
+<Tab>
+```graphql filename="Example query: Query a list of translations" showLineNumbers copy
+GRAPHQL https://api.bigcommerce.com/stores/{{store_hash}}/graphql
+X-Auth-Token: {{token}}
+
+query {
+  store {
+    translations(filters: {
+      resourceType: PRODUCT_FILTERS,
+      channelId: "bc/store/channel/1",
+      localeId: "bc/store/locale/fr"
+    } first: 50) {
+      edges {
+        node {
+          resourceId
+          fields {
+            fieldName
+            original
+            translation
+          }
+        }
+        cursor
+      }
+    }
+  }
+}
+```
+</Tab>
+<Tab>
+
+```json filename="Example query: Query a list of translations" showLineNumbers copy
+{
+  "data": {
+    "store": {
+      "translations": {
+        "edges": [
+          {
+            "node": {
+              "resourceId": "bc/store/product-filter/23",
+              "fields": [
+                {
+                  "fieldName": "display_name",
+                  "original": "Price",
+                  "translation": "Prix"
+                },
+                {
+                  "fieldName": "has_free_shipping",
+                  "original": "Free Shipping",
+                  "translation": "Livraison gratuite"
+                }
+              ]
+            },
+            "cursor": "eyJpZCI6MjN9"
+          }
+        ]
+      }
+    }
+  }
+}
+```
+</Tab>
+</Tabs>
+
+### Query a translation by `resourceId`
+
+<Callout type='warning'>
+When querying a translation by `resourceId`, you must provide the full `resourceId` in the format `bc/store/product-filter/{filter_id}`.
+</Callout>
+
+This query returns a translation by `resourceId`.
+
+<Tabs items={['Request', 'Response']}>
+<Tab>
+  ```graphql filename="Example query: Query a translation by resource id" showLineNumbers copy
+GRAPHQL https://api.bigcommerce.com/stores/{{store_hash}}/graphql
+X-Auth-Token: {{token}}
+
+query {
+  store {
+    translations(filters: {
+      resourceType: PRODUCT_FILTERS,
+      channelId: "bc/store/channel/2",
+      localeId: "bc/store/locale/it",
+      resourceIds: ["bc/store/product-filter/42"]
+    }) {
+      edges {
+        node {
+          resourceId
+          fields {
+            fieldName
+            original
+            translation
+          }
+        }
+        cursor
+      }
+    }
+  }
+}
+```
+</Tab>
+<Tab>
+
+```json filename="Example query: Query a translation by resource id" showLineNumbers copy
+{
+  "data": {
+    "store": {
+      "translations": {
+        "edges": [
+          {
+            "node": {
+              "resourceId": "bc/store/product-filter/42",
+              "fields": [
+                {
+                  "fieldName": "display_name",
+                  "original": "Rating",
+                  "translation": "Évaluation"
+                }
+              ]
+            },
+            "cursor": "eyJpZCI6NDJ9"
+          }
+        ]
+      }
+    }
+  }
+}
+```
+</Tab>
+</Tabs>
+
+## Update a translation
+
+This mutation updates a translation.
+
+<Tabs items={['Request', 'Response']}>
+<Tab>
+```graphql filename="Example mutation: Update a translation" showLineNumbers copy
+GRAPHQL https://api.bigcommerce.com/stores/{{store_hash}}/graphql
+X-Auth-Token: {{token}}
+
+mutation {
+  translation {
+    updateTranslations(input: {
+      resourceType: PRODUCT_FILTERS,
+      channelId: "bc/store/channel/1",
+      localeId: "bc/store/locale/es",
+      entities: [
+        {
+          resourceId: "bc/store/product-filter/23",
+          fields: [
+            { fieldName: "display_name", value: "Precio" },
+            { fieldName: "is_featured", value: "Destacado" }
+          ]
+        }
+      ]
+    }) {
+      __typename
+      errors {
+        __typename
+        ... on Error {
+          message
+        }
+      }
+    }
+  }
+}
+```
+</Tab>
+<Tab>
+
+```json filename="Example mutation: Update a translation" showLineNumbers copy
+{
+  "data": {
+    "translation": {
+      "updateTranslations": {
+        "__typename": "UpdateTranslationsResult",
+        "errors": []
+      }
+    }
+  }
+}
+```
+</Tab>
+</Tabs>
+
+## Delete a translation
+
+The following mutation deletes a translation.
+
+<Tabs items={['Request', 'Response']}>
+<Tab>
+```graphql filename="Example mutation: Delete a translation" showLineNumbers copy
+GRAPHQL https://api.bigcommerce.com/stores/{{store_hash}}/graphql
+X-Auth-Token: {{token}}
+
+mutation {
+  translation {
+    deleteTranslations(input: {
+      resourceType: PRODUCT_FILTERS,
+      channelId: "bc/store/channel/1",
+      localeId: "bc/store/locale/es",
+      resources: [
+        {
+          resourceId: "bc/store/product-filter/23",
+          fields: ["display_name", "is_featured"]
+        }
+      ]
+    }) {
+      __typename
+      errors {
+        __typename
+        ... on Error {
+          message
+        }
+      }
+    }
+  }
+}
+```
+</Tab>
+<Tab>
+
+```json filename="Example mutation: Delete a translation" showLineNumbers copy
+{
+  "data": {
+    "translation": {
+      "deleteTranslations": {
+        "__typename": "DeleteTranslationsResult",
+        "errors": []
+      }
+    }
+  }
+}
+```
+</Tab>
+</Tabs>
+
+## Limitations
+
+- Product count and other numeric-only fields do not support localization.
+- Only displayable string content for filter names and values is translatable.
+- Currently available on Catalyst storefronts only.
+
+## Best Practices
+
+- Use the GraphQL Admin API to manage translations in bulk.
+- Check for existing translations before creating new ones to minimize overwrites.
+- Always use full `resourceId` values as required by the API.
+- Storefront GraphQL API automatically uses the shopper’s locale for product filter display names.

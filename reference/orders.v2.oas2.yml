@@ -113,7 +113,7 @@ paths:
 
         > #### Note
         > * If historical orders processed on another eCommerce platform are being migrated to BigCommerce, supply the `external_source` field with the code **M-MIG**. This code will exclude the historical orders from the store’s GMV/order count, which factors into pricing.
-        
+
       summary: Update an Order
       tags:
         - Orders
@@ -386,7 +386,7 @@ paths:
         > #### Note
         > * If historical orders processed on another eCommerce platform are being migrated to BigCommerce, supply the `external_source` field with the code **M-MIG**. This code will exclude the historical orders from the store’s GMV/order count, which factors into pricing.
         
-        
+
       summary: Create an Order
       tags:
         - Orders
@@ -1446,8 +1446,8 @@ components:
       name: include
       in: query
       description: |-
-        * `consignments` - include the response returned from the request to the `/orders/{order_id}/consignments` endpoint. You should also specify `consignment_structure=object` as a request parameter when including consignments. The default array structure provided is legacy and may not be supported in the future.
-        * `consignments.line_items` - include the response returned from the request to the `/orders/{order_id}/products` endpoint in consignments. This implies `include=consignments`. You should also specify `consignment_structure=object` as a request parameter when including consignments. The default array structure provided is legacy and will be removed in the future.
+        * `consignments` - include the response returned from the request to the `/orders/{order_id}/consignments` endpoint. Current default array structure is legacy and will be deprecated from **1 Feb 2026**. Specify `consignment_structure=object` as a request parameter when including consignments.
+        * `consignments.line_items` - include the response returned from the request to the `/orders/{order_id}/products` endpoint in consignments. This will also includes the resources associated with `include=consignments`. Current default array structure is legacy and will be deprecated from **1 Feb 2026**. Specify `consignment_structure=object` as a request parameter when including consignments.
         * `fees` - include the response returned from the request to the `/orders/{order_id}/fees` endpoint.
       style: form
       explode: false
@@ -2816,6 +2816,7 @@ components:
                   order_id: 138
                   order_address_id: 39
                   tax_rate_id: 1
+                  sales_tax_id: 'TaxId123'
                   tax_class_id: 0
                   name: Tax
                   class: Default Tax Class
@@ -2828,6 +2829,7 @@ components:
                   order_id: 138
                   order_address_id: 40
                   tax_rate_id: 1
+                  sales_tax_id: 'TaxId123'
                   tax_class_id: 0
                   name: Tax
                   class: Default Tax Class
@@ -2981,6 +2983,7 @@ components:
       type: object
       description: ''
       x-internal: false
+      additionalProperties: false
       properties:
         id:
           description: Numeric ID of this product within this order.
@@ -3370,9 +3373,14 @@ components:
           example: 29
           type: integer
         tax_rate_id:
-          description: The unique numeric identifier of the tax rate.
+          description: The unique numeric identifier of the tax rate. This field has been deprecated, use sales_tax_id instead.
           example: 1
           type: integer
+          deprecated: true
+        sales_tax_id:
+          description: A unique identifier for the applied tax rate. This may be a third-party tax provider's identifier.
+          example: 'TaxId123'
+          type: string
         tax_class_id:
           description: |-
             A unique numeric identifier for the tax class. If not provided or null, the default fee tax class from the control panel is used.
@@ -4012,7 +4020,7 @@ components:
           example: Thank you
           type: string
         date_created:
-          description: The date the order was created, formatted in the RFC-2822 standard. You set this attribute on Order creation (POST) to support the migration of historical orders. If you do not provide a value, then it will default to the current date/time. e.g., `Tue, 20 Nov 2012 00:00:00 +0000`.
+          description: The date the order was created, formatted in the RFC-2822 standard. You set this attribute on Order creation (POST) to support the migration of historical orders. If you do not provide a value, then it will default to the current date/time. e.g., `Tue, 20 Nov 2012 00:00:00 +0000`. This date time is always in UTC in the api response.
           type: string
         discount_amount:
           description: Amount of discount for this transaction. The value can't be negative. (Float, Float-As-String, Integer)
@@ -4151,8 +4159,13 @@ components:
           type: string
         customer_locale:
           type: string
-          example: en
-          description: The customer’s locale.
+          example: en, asa, en-US, es-419
+          description: |
+            The customer’s locale. The supported formats are:
+            - 2-char lowercase characters. e.g., `en`
+            - 3-char lowercase characters. e.g., `asa`
+            - 5-char the language code is 2 lowercase characters and the region code is 2 uppercase characters, with `-` in the middle. e.g., `en-US`
+            - 6-char the language code is 2 lowercase character and the region code is three digit number, with `-` in the middle. e.g., `es-419`
         external_order_id:
           type: string
           example: external-order-id
@@ -4270,7 +4283,7 @@ components:
           example: 118
         date_modified:
           type: string
-          description: A read-only value representing the last modification of the order. Do not attempt to modify or set this value in a POST or PUT request. RFC-2822
+          description: A read-only value representing the last modification of the order. Do not attempt to modify or set this value in a POST or PUT request. RFC-2822. This date time is always in UTC in the api response.
         date_shipped:
           type: string
           description: >
@@ -4407,7 +4420,9 @@ components:
             Allowed values: `www` (Desktop) | `iphone` (Iphone) | `ipad` (Ipad) | `android` (Android) | `mobile` (Mobile) | `manual` (manual order) | `external` (Orders API) | `checkout_api` (Checkout API) | `buybutton` (Buy Button) | `amazon` (Amazon) | `ebay` (Ebay) | `facebookshop` (Facebook Shop) | `facebookcheckout` (Facebook Checkout) | `facebookmarketplace` (Facebook Marketplace) | `pinterest` (Pinterest) | `socialshop` (Social Shop)
           type: string
         consignments:
-          $ref: '#/components/schemas/orderConsignments_Resource'
+          oneOf:
+            - $ref: '#/components/schemas/orderConsignments_Resource'
+            - $ref: '#/components/schemas/orderConsignment_Get'
         products:
           $ref: '#/components/schemas/products_Resource'
         shipping_addresses:
@@ -4869,8 +4884,13 @@ components:
               type: string
             customer_locale:
               type: string
-              example: en
-              description: The customer’s locale.
+              example: en, asa, en-US, es-419
+              description: |
+                The customer’s locale. The supported formats are:
+                - 2-char lowercase characters. e.g., `en`
+                - 3-char lowercase characters. e.g., `asa`
+                - 5-char the language code is 2 lowercase characters and the region code is 2 uppercase characters, with `-` in the middle. e.g., `en-US`
+                - 6-char the language code is 2 lowercase character and the region code is three digit number, with `-` in the middle. e.g., `es-419`
             external_order_id:
               type: string
               nullable: true
@@ -5388,9 +5408,13 @@ components:
           example: recipient@email.com
           description: The recipient email of the gift certificate.
         line_items:
-          type: array
-          items:
-            $ref: '#/components/schemas/products_Resource'
+              oneOf:
+                - type: array
+                  items:
+                    $ref: '#/components/schemas/products_Resource'
+                - type: array
+                  items:
+                    $ref: '#/components/schemas/orderProducts'
     pickupConsignment_Get:
       allOf:
         - type: object
@@ -5409,9 +5433,13 @@ components:
             location:
               $ref: '#/components/schemas/pickupConsignmentLocation_Get'
             line_items:
-              type: array
-              items:
-                $ref: '#/components/schemas/products_Resource'
+              oneOf:
+                - type: array
+                  items:
+                    $ref: '#/components/schemas/products_Resource'
+                - type: array
+                  items:
+                    $ref: '#/components/schemas/orderProducts'
       x-examples:
         example-1:
           id: 99
@@ -5470,9 +5498,13 @@ components:
         - type: object
           properties:
             line_items:
-              type: array
-              items:
-                $ref: '#/components/schemas/products_Resource'
+              oneOf:
+                - type: array
+                  items:
+                    $ref: '#/components/schemas/products_Resource'
+                - type: array
+                  items:
+                    $ref: '#/components/schemas/orderProducts'
             items_total:
               type: number
               example: 1
@@ -5645,9 +5677,13 @@ components:
           example: recipient@email.com
           description: The recipient email of the digital consignment.
         line_items:
-          type: array
-          items:
-            $ref: '#/components/schemas/products_Resource'
+          oneOf:
+            - type: array
+              items:
+                $ref: '#/components/schemas/products_Resource'
+            - type: array
+              items:
+                $ref: '#/components/schemas/orderProducts'
       x-examples:
         example-1:
           recipient_email: recipient@email.com

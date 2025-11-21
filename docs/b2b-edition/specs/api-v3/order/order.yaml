@@ -3,6 +3,12 @@ info:
   title: Orders
   version: v3
   description: |-
+    > **NOTICE**
+    > 
+    > As of September 30, 2025, the B2B Edition API `authToken` will be deprecated and replaced by the standard BigCommerce API `X-Auth-Token`. For information concerning this change, see [B2B Authentication](/b2b-edition/docs/authentication).
+    > 
+    > While `authToken` authentication is not expected to be fully sunset in the near future, it is advised to migrate to the new system as soon as possible to prevent disruption of functionality.
+
     The B2B Server to Server Orders API allows you to retrieve order information and update B2B-specific details like Purchase Order (PO) number and extra fields. You can also assign pre-existing orders to a Company account, ensuring that buyers can access their orders placed prior to B2B Company registration.
 
     Note that this resource does **not** allow you to create new orders, update an order’s basic information, or add attributes like shipments and order-level fees. Use the BigCommerce [Orders V2 API](/docs/rest-management/orders) to handle these tasks in your integration.
@@ -50,8 +56,6 @@ paths:
       tags:
         - Orders
       operationId: get-orders
-      security:
-        - authToken: []
       description: |-
         Retrieves limited information for all orders, including B2B-specific information like Company IDs and order extra fields. The response includes orders placed by B2C customers and guest shoppers. Use [Get Order Products](#get-order-products) to retrieve an order's product details, or use the BigCommerce [Orders V2 API](/docs/rest-management/orders) to retrieve all order details except those specific to B2B Edition, like Company ID and extra fields.
 
@@ -232,8 +236,6 @@ paths:
         - Orders
       summary: Create an Order
       operationId: post-orders
-      security:
-        - authToken: []
       description: |-
         Generates an order record in B2B Edition after a Company user places an order. This occurs automatically; however, you can populate extra information on a B2B order by using a [webhook](/docs/integrations/webhooks) that first listens for BigCommerce order creation and then calls the Create an Order endpoint. The request must be made within 10 seconds of an order's creation for it to be successful.
 
@@ -266,8 +268,6 @@ paths:
         Retrieves limited information for a specific order based on the `bcOrderId` provided. The response includes the same fields as the Get All Orders endpoint, including B2B extra fields and PO numbers.
 
         The `bcOrderId` parameter must include a valid BigCommerce Order ID (**not** the B2B Edition order ID returned in certain Orders endpoints) for the request to be successful.
-      security:
-        - authToken: []
       parameters:
           - name: bcOrderId
             in: path
@@ -441,8 +441,6 @@ paths:
         This request uses the `bcGroupId` field to assign orders by customer group ID instead of the Company ID. As a result, it is only supported if your store uses the legacy Dependent Companies behavior. Do not use this request if your store uses [Independent Companies behavior](https://support.bigcommerce.com/s/article/Companies-and-Customer-Groups).
 
         For a successful response, you must include the `bcGroupId` field with a BigCommerce customer group ID value that corresponds to a Company account.
-      security:
-        - authToken: []
       parameters:
         - schema:
             type: integer
@@ -522,8 +520,6 @@ paths:
         Retrieves product details of a specific order based on the `bcOrderId` provided. The `bcOrderId` parameter must include a valid BigCommerce Order ID (**not** the B2B Edition order ID returned in certain Orders endpoints) for the request to be successful.
 
         This does not include all product information, such as pricing and physical dimensions. You can retrieve this information by using the [List Order Products](/docs/rest-management/orders/order-products#list-order-products) endpoint of the BigCommerce Orders API.
-      security:
-        - authToken: []
       parameters:
         - name: bcOrderId
           in: path
@@ -589,8 +585,6 @@ paths:
         Associates orders from a buyer to their Company account based on the `customerId` entered. This endpoint is useful if a buyer has orders they placed before applying for or being added to a Company account.
 
         The `customerId` parameter must include a valid BigCommerce customer ID for the request to be successful. This is different from the B2B Edition Company user ID returned by some B2B API endpoints, such as the `id` field in [Get Users](/b2b-edition/apis/rest-management/user#get-users).
-      security:
-        - authToken: []
       parameters:
         - schema:
             type: integer
@@ -1397,10 +1391,35 @@ components:
               - meta
   examples: {}
   securitySchemes:
-    authToken:
-      name: authToken
-      description: Required to authenticate requests. Include the token in a header parameter called `authToken`.
+    X-Store-Hash:
+      name: X-Store-Hash
+      description: |-
+        ### Authentication header
+
+        | Header | Argument | Description |
+        |:-------|:---------|:------------|
+        | `X-Store-Hash` | `store_hash` | The unique store hash associated with a BigCommerce store that has B2B Edition enabled. |
+      type: apiKey
+      in: header
+    X-Auth-Token:
+      name: X-Auth-Token
+      description: |-
+
+        ### Authentication header
+
+        | Header | Argument | Description |
+        |:-------|:---------|:------------|
+        | `X-Auth-Token` | `access_token` | For more about API accounts that generate `access_token`s, see our [Guide to API Accounts](/docs/start/authentication/api-accounts). |
+        
+        ### Further reading
+
+        For example requests and more information about authenticating BigCommerce APIs, see [Authentication and Example Requests](/docs/start/authentication#x-auth-token-header-example-requests).
+        
+        For more about BigCommerce OAuth scopes, see our [Guide to API Accounts](/docs/start/authentication/api-accounts#oauth-scopes).
+        
+        For a list of API status codes, see [API Status Codes](/docs/start/about/status-codes).
       type: apiKey
       in: header
 security:
-  - authToken: []
+  - X-Auh-Token: []
+    X-Store-Hash: []

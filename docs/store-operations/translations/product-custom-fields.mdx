@@ -1,0 +1,313 @@
+# Translations for Product Custom Fields (Beta)
+
+<Callout type='info'>
+  The Translations Admin GraphQL API for managing product custom field translations is available on Catalyst storefronts only.
+</Callout>
+
+The product custom fields translatable data points are:
+
+- Name
+- Value
+
+## Querying Product Custom Field Translations (Storefront API)
+
+Product custom field translations are returned in the current locale determined by the context (e.g., `Accept-Language` header, channel settings, or session locale).
+
+### Example: Query a product custom field in a given locale
+
+<Tabs items={['Request', 'Response']}>
+<Tab>
+
+```graphql filename="Example query: Query product custom field in a locale" showLineNumbers copy
+GRAPHQL https://storefront.example.com/graphql
+Accept-Language: es
+
+query {
+  site {
+    product(entityId: "123") {
+      entityId
+      customFields {
+        entityId
+        name
+        value
+      }
+    }
+  }
+}
+```
+
+</Tab>
+<Tab>
+
+```json filename="Example query: Query product custom field in a locale" showLineNumbers copy
+{
+  "data": {
+    "site": {
+      "product": {
+        "entityId": "123",
+        "customFields": [
+          {
+            "entityId": "456",
+            "name": "Material",
+            "value": "Algodón"
+          }
+        ]
+      }
+    }
+  }
+}
+```
+</Tab>
+</Tabs>
+
+## Managing Product Custom Field Translations (Admin API)
+
+Product custom field translation management (list, update, delete) is available via the Admin GraphQL API. These mutations and queries are not available on the Storefront API.
+
+### Query a List of Product Custom Field Translations
+
+<Tabs items={['Request', 'Response']}>
+<Tab>
+
+```graphql filename="Example query: Query a list of product custom field translations" showLineNumbers copy
+GRAPHQL https://api.bigcommerce.com/stores/{{store_hash}}/graphql
+X-Auth-Token: {{token}}
+
+query {
+  store {
+    translations(filters: {
+        resourceType: PRODUCT_CUSTOM_FIELDS,
+        channelId: "bc/store/channel/5",
+        localeId: "bc/store/locale/es"
+      } first: 50) {
+      edges {
+        node {
+          resourceId
+          fields {
+            fieldName
+            original
+            translation
+          }
+        }
+        cursor
+      }
+    }
+  }
+}
+```
+
+</Tab>
+<Tab>
+
+```json filename="Example query: Query a list of product custom field translations" showLineNumbers copy
+{
+  "data": {
+    "store": {
+      "translations": {
+        "edges": [
+          {
+            "node": {
+              "resourceId": "bc/store/product-custom-field/456",
+              "fields": [
+                {
+                  "fieldName": "name",
+                  "original": "Material",
+                  "translation": "Material (ES)"
+                },
+                {
+                  "fieldName": "value",
+                  "original": "Cotton",
+                  "translation": "Algodón"
+                }
+              ]
+            },
+            "cursor": "eyJpZCI6NDU2fQ"
+          }
+        ]
+      }
+    }
+  }
+}
+```
+</Tab>
+</Tabs>
+
+### Query a Product Custom Field Translation by Resource ID
+
+<Callout type='warning'>
+  When querying a translation by resourceId, you must provide the full resourceId in the format `bc/store/product-custom-field/{custom_field_id}`.
+</Callout>
+
+<Tabs items={['Request', 'Response']}>
+<Tab>
+
+```graphql filename="Example query: Query a product custom field translation by id" showLineNumbers copy
+GRAPHQL https://api.bigcommerce.com/stores/{{store_hash}}/graphql
+X-Auth-Token: {{token}}
+
+query {
+  store {
+    translations(filters: {
+      resourceType: PRODUCT_CUSTOM_FIELDS,
+      channelId: "bc/store/channel/4",
+      localeId: "bc/store/locale/fr",
+      resourceIds: ["bc/store/product-custom-field/456"]
+    }) {
+      edges {
+        node {
+          resourceId
+          fields {
+            fieldName
+            original
+            translation
+          }
+        }
+        cursor
+      }
+    }
+  }
+}
+```
+
+</Tab>
+<Tab>
+
+```json filename="Example query: Query a product custom field translation by id" showLineNumbers copy
+{
+  "data": {
+    "store": {
+      "translations": {
+        "edges": [
+          {
+            "node": {
+              "resourceId": "bc/store/product-custom-field/456",
+              "fields": [
+                {
+                  "fieldName": "name",
+                  "original": "Material",
+                  "translation": "Matériel (FR)"
+                },
+                {
+                  "fieldName": "value",
+                  "original": "Cotton",
+                  "translation": "Coton"
+                }
+              ]
+            },
+            "cursor": "eyJpZCI6NDU2fQ"
+          }
+        ]
+      }
+    }
+  }
+}
+```
+</Tab>
+</Tabs>
+
+### Update a Product Custom Field Translation
+
+<Tabs items={['Request', 'Response']}>
+<Tab>
+
+```graphql filename="Example mutation: Update a product custom field translation" showLineNumbers copy
+GRAPHQL https://api.bigcommerce.com/stores/{{store_hash}}/graphql
+X-Auth-Token: {{token}}
+
+mutation {
+  translation {
+    updateTranslations(input: {
+      resourceType: PRODUCT_CUSTOM_FIELDS,
+      channelId: "bc/store/channel/2",
+      localeId: "bc/store/locale/es",
+      entities: [
+        {
+          resourceId: "bc/store/product-custom-field/456",
+          fields: [
+            { fieldName: "name", value: "Material (ES)" },
+            { fieldName: "value", value: "Algodón" }
+          ]
+        }
+      ]
+    }) {
+      __typename
+      errors {
+        __typename
+        ... on Error {
+          message
+        }
+      }
+    }
+  }
+}
+```
+
+</Tab>
+<Tab>
+
+```json filename="Example mutation: Update a product custom field translation" showLineNumbers copy
+{
+  "data": {
+    "translation": {
+      "updateTranslations": {
+        "__typename": "UpdateTranslationsResult",
+        "errors": []
+      }
+    }
+  }
+}
+```
+</Tab>
+</Tabs>
+
+### Delete a Product Custom Field Translation
+
+<Tabs items={['Request', 'Response']}>
+<Tab>
+
+```graphql filename="Example mutation: Delete a product custom field translation" showLineNumbers copy
+GRAPHQL https://api.bigcommerce.com/stores/{{store_hash}}/graphql
+X-Auth-Token: {{token}}
+
+mutation {
+  translation {
+    deleteTranslations(input: {
+      resourceType: PRODUCT_CUSTOM_FIELDS,
+      channelId: "bc/store/channel/2",
+      localeId: "bc/store/locale/es",
+      resources: [
+        {
+          resourceId: "bc/store/product-custom-field/456",
+          fields: ["name", "value"]
+        }
+      ]
+    }) {
+      __typename
+      errors {
+        __typename
+        ... on Error {
+          message
+        }
+      }
+    }
+  }
+}
+```
+
+</Tab>
+<Tab>
+
+```json filename="Example mutation: Delete a product custom field translation" showLineNumbers copy
+{
+  "data": {
+    "translation": {
+      "deleteTranslations": {
+        "__typename": "DeleteTranslationsResult",
+        "errors": []
+      }
+    }
+  }
+}
+```
+</Tab>
+</Tabs>

@@ -2,6 +2,12 @@ openapi: 3.0.1
 info:
   title: Quotes
   description: |-
+    > **NOTICE**
+    > 
+    > As of September 30, 2025, the B2B Edition API `authToken` will be deprecated and replaced by the standard BigCommerce API `X-Auth-Token`. For information concerning this change, see [B2B Authentication](/b2b-edition/docs/authentication).
+    > 
+    > While `authToken` authentication is not expected to be fully sunset in the near future, it is advised to migrate to the new system as soon as possible to prevent disruption of functionality.
+
     B2B Edition sales quotes allow you to build tailored orders on behalf of your B2B buyers, B2C customers, and guest shoppers while also incorporating your business’s terms and conditions.
 
     With sales quotes, you can make customizations that are not available for buyers on your storefront, such as:
@@ -62,7 +68,8 @@ info:
 servers:
   - url: https://api-b2b.bigcommerce.com/api/v3/io
 security:
-  - authToken: []
+  - X-Auth-Token: []
+    X-Store-Hash: []
 tags:
   - name: Quotes
     description: Request for Quote.
@@ -198,8 +205,6 @@ paths:
             default: 1
           description: "Enter one or more storefront channel IDs to retrieve quotes assigned to the storefront(s). Use 1 for your store’s default storefront channel. Separate channel IDs with a comma."
           example: 1,12345678
-      security:
-        - authToken: []
       responses:
         '200':
           description: |-
@@ -294,8 +299,6 @@ paths:
         The `extraFields` array is only required if you have created Quote extra fields which are marked as required. To learn more about extra fields, see B2B Edition Settings (Help Center).
 
         The `channelId` field is required if you have multiple storefront channels. If you only have a single storefront, then you do not need to include it.
-      security:
-        - authToken: []
       requestBody:
         content:
           application/json:
@@ -424,8 +427,6 @@ paths:
       operationId: get-rfq-quote_id-custom-shipping
       description: |-
         Retrieves all custom shipping methods that you’ve enabled in the Quotes settings of your B2B Edition control panel. See [Custom Shipping](#custom-shipping) for more information.
-      security:
-        - authToken: []
       responses:
         '200':
           description: OK
@@ -587,8 +588,6 @@ paths:
       parameters:
         - $ref: "#/components/parameters/offset"
         - $ref: "#/components/parameters/limit"
-      security:
-        - authToken: []
       responses:
         '200':
           description: OK
@@ -643,8 +642,6 @@ paths:
             type: string
           description: "The date that the quote was created. Use %m/%d/%Y format."
           example: "04/07/2025"
-      security:
-        - authToken: []
       responses:
         '200':
           description: OK
@@ -679,8 +676,6 @@ paths:
         * To update a quote’s shipping rate, use the [Select a Shipping Rate for a Quote](#select-a-shipping-rate-for-quote) endpoint.
 
         See [Create a Quote](#create-a-quote) for experience- and setting-specific requirements related to adding custom shipping or non-purchasable products to a quote.
-      security:
-        - authToken: []
       requestBody:
         content:
           application/json:
@@ -706,8 +701,6 @@ paths:
         Permanently deletes a specific quote based on the provided `quote_id`.
 
         If you want to hide a quote from a buyer without deleting it, you can archive the quote from the **Quotes** area of your B2B Edition control panel. See [Managing Sales Quotes in B2B Edition (Help Center)](https://support.bigcommerce.com/s/article/B2B-Edition-Quotes) for more information.
-      security:
-        - authToken: []
       responses:
         '200':
           description: OK
@@ -733,8 +726,6 @@ paths:
         * Updated by Customer (3)
 
         This endpoint will generate a checkout link for a quote even if it is configured to hide the checkout button on the Buyer Portal. You can use this to create an alternate checkout flow for your sales quotes.
-      security:
-        - authToken: []
       requestBody:
         content:
           application/json:
@@ -801,8 +792,6 @@ paths:
         When specifying the order to be associated with the quote, use its **BigCommerce Order ID**, not the **B2B Edition Order ID**.
 
         This endpoint **does not** convert an unpurchased quote into a new BigCommerce order. You can manually convert a quote while editing it in your B2B Edition control panel.
-      security:
-        - authToken: []
       requestBody:
         content:
           application/json:
@@ -852,8 +841,6 @@ paths:
         The PDF does not use one of the buyer-facing templates that can be selected for PDFs and emails. Instead, it uses a non-configurable template that also communicates backend information, like storefront channel and line item cost margins.
 
         You can optionally update the currency information and also supply a custom exchange rate by using the `currency` array.
-      security:
-        - authToken: []
       requestBody:
         content:
           application/json:
@@ -898,8 +885,6 @@ paths:
         The request body must include either the `shippingMethodId` field to add a static or real-time shipping method, *or* the `customShippingMethodName` **and** the `customShippingMethodCost` fields to add a custom shipping method.
 
         Note that the URL for this endpoint is *https://api-b2b.bigcommerce.com/api/v3/io/rfq/{quote_id}/shipping-rate*, which is different from the URL for the [Get Available Shipping Rates for a Quote](#get-available-shipping-rates-for-a-quote) endpoint (*https://api-b2b.bigcommerce.com/api/v3/io/rfq/{quote_id}/shipping-rates*). Using the incorrect URL will result in a **405 - Method Not Allowed** error.
-      security:
-        - authToken: []
       requestBody:
         content:
           application/json:
@@ -966,8 +951,6 @@ paths:
         Removes the current shipping method associated with a specific quote based on the provided `quoteId`.
 
         Note that the URL for this endpoint is *https://api-b2b.bigcommerce.com/api/v3/io/rfq/{quote_id}/shipping-rate*, which is different from the URL for the [Get Available Shipping Rates for a Quote](#get-available-shipping-rates-for-a-quote) endpoint (*https://api-b2b.bigcommerce.com/api/v3/io/rfq/{quote_id}/shipping-rates*). Using the incorrect URL will result in a **405 - Method Not Allowed** error.
-      security:
-        - authToken: []
       responses:
         '204':
           description: OK
@@ -1000,8 +983,6 @@ paths:
         This endpoint only returns the static and real-time shipping methods available to a quote based on its product specifications and shipping address. Use the [Get All B2B Quote Custom Shipping Methods](#get-all-b2b-quote-custom-shipping-methods) endpoint to retrieve information on custom shipping methods.
 
         Note that the URL for this endpoint is *https://api-b2b.bigcommerce.com/api/v3/io/rfq/{quote_id}/shipping-rates*, which is different from the URL for the [Select a Shipping Rate for a Quote](#select-a-shipping-rate-for-quote) and [Remove Selected Shipping Rate from a Quote](#remove-selected-shipping-rate-for-quote) endpoints (*https://api-b2b.bigcommerce.com/api/v3/io/rfq/{quote_id}/shipping-rate*). Using the incorrect URL will result in a **405 - Method Not Allowed** error.
-      security:
-        - authToken: []
       responses:
         '200':
           description: OK
@@ -1504,7 +1485,10 @@ components:
             userEmail:
               type: string
               format: email
-              description: "The email address of the quote’s sales rep."
+              description: |-
+                The email address of the quote’s sales rep. Any user email found within the B2B Edition System Users menu is considered a valid value for this field.
+                
+                This field is optional. If left blank, it will default to the store owner's email address as shown in the B2B Edition System Users menu.
             expiredAt:
               type: string
               description: "The date when the buyer can no longer purchase the quote. Use '%m/%d/%Y' format when entering the expiration date."
@@ -1892,9 +1876,32 @@ components:
       description: "The internal numeric ID of the sales quote."
       example: 123456
   securitySchemes:
-    authToken:
-      name: authToken
-      description: Required to authenticate requests. Include the token in a header
-        parameter called `authToken`.
+    X-Store-Hash:
+      name: X-Store-Hash
+      description: |-
+        ### Authentication header
+
+        | Header | Argument | Description |
+        |:-------|:---------|:------------|
+        | `X-Store-Hash` | `store_hash` | The unique store hash associated with a BigCommerce store that has B2B Edition enabled. |
+      type: apiKey
+      in: header
+    X-Auth-Token:
+      name: X-Auth-Token
+      description: |-
+
+        ### Authentication header
+
+        | Header | Argument | Description |
+        |:-------|:---------|:------------|
+        | `X-Auth-Token` | `access_token` | For more about API accounts that generate `access_token`s, see our [Guide to API Accounts](/docs/start/authentication/api-accounts). |
+        
+        ### Further reading
+
+        For example requests and more information about authenticating BigCommerce APIs, see [Authentication and Example Requests](/docs/start/authentication#x-auth-token-header-example-requests).
+        
+        For more about BigCommerce OAuth scopes, see our [Guide to API Accounts](/docs/start/authentication/api-accounts#oauth-scopes).
+        
+        For a list of API status codes, see [API Status Codes](/docs/start/about/status-codes).
       type: apiKey
       in: header

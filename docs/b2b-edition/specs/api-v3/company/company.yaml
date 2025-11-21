@@ -2,6 +2,12 @@ openapi: 3.0.1
 info:
   title: Company Management
   description: |-
+    > **NOTICE**
+    > 
+    > As of September 30, 2025, the B2B Edition API `authToken` will be deprecated and replaced by the standard BigCommerce API `X-Auth-Token`. For information concerning this change, see [B2B Authentication](/b2b-edition/docs/authentication).
+    > 
+    > While `authToken` authentication is not expected to be fully sunset in the near future, it is advised to migrate to the new system as soon as possible to prevent disruption of functionality.
+
     ## Introduction
     
     A Company in B2B Edition is the business account for B2B clients, which connects buyers in the business within its instance of the Buyer Portal.
@@ -103,7 +109,8 @@ info:
 servers:
   - url: "https://api-b2b.bigcommerce.com/api/v3/io"
 security:
-  - authToken: []
+  - X-Auth-Token: []
+  - X-Store-Hash: []
 tags:
   - name: Companies
   - name: Company Roles and Permissions
@@ -111,7 +118,6 @@ tags:
 
 paths:
   /companies:
-    parameters: []
     get:
       tags:
         - Companies
@@ -255,8 +261,6 @@ paths:
 
             The filter type defaults to `search` when no parameter is provided.
           example: "exact-match"
-      security:
-        - authToken: []
       responses:
         "200":
           description: OK
@@ -308,8 +312,6 @@ paths:
 
         If your store is using legacy Dependent Company behavior, a new customer group will be automatically created and associated with each new Company account. In this case, you will not use the `customerGroupId` field.
       parameters: []
-      security:
-        - authToken: []
       requestBody:
         content:
           application/json:
@@ -492,8 +494,6 @@ paths:
       operationId: get-companies-companyId
       description: Returns detailed information for a specific Company account.
       parameters: []
-      security:
-        - authToken: []
       responses:
         "200":
           description: OK
@@ -537,8 +537,6 @@ paths:
 
         If your store is using Dependent Companies behavior, use the `priceListAssign` field to assign a price list to the Company account.
       parameters: []
-      security:
-        - authToken: []
       requestBody:
         content:
           application/json:
@@ -596,8 +594,6 @@ paths:
 
         With Dependent Companies behavior, Company accounts and BigCommerce customer groups have a one-to-one relationship. Deleting a Company will also delete the corresponding customer group.
       parameters: []
-      security:
-        - authToken: []
       responses:
         "200":
           $ref: "#/components/responses/RESPONSE_200_Base"
@@ -632,7 +628,7 @@ paths:
                     meta:
                       message: This resource is not found.
   /customer-groups/{customerGroupId}/companies:
-    parameters: 
+    parameters:
       - name: customerGroupId
         in: path
         required: true
@@ -655,8 +651,6 @@ paths:
 
         If you have configured required information fields in your store’s Extra Fields settings for Company accounts or Company users, you must include the field’s name and value in the extraFields array of the request body. For more information on extra fields, see [B2B Edition Settings](https://support.bigcommerce.com/s/article/B2B-Edition-Settings) in the Help Center.
       parameters: []
-      security:
-        - authToken: []
       requestBody:
         content:
           application/json:
@@ -780,7 +774,6 @@ paths:
         "404":
           $ref: "#/components/responses/ERROR_404_Data"
   /companies/bulk:
-    parameters: []
     post:
       tags:
         - Companies
@@ -791,8 +784,6 @@ paths:
 
         See [Create a Company](#create-a-company) for recommendations on formatting individual Companies in the array.
       parameters: []
-      security:
-        - authToken: []
       requestBody:
         content:
           application/json:
@@ -995,8 +986,6 @@ paths:
       operationId: put-companies
       description: "Updates up to `10` Company accounts at once. See [Update a Company](#update-a-company) for recommendations on formatting individual Companies in the array."
       parameters: []
-      security:
-        - authToken: []
       requestBody:
         content:
           application/json:
@@ -1069,17 +1058,15 @@ paths:
           $ref: "#/components/responses/ERROR_413"
       x-codegen-request-body-name: body
   /companies/{companyId}/catalogs:
-    parameters: 
+    parameters:
       - $ref: "#/components/parameters/companyId"
     put:
       tags:
         - Companies
-      summary: Update a Company's Catalog
+      summary: Update a Company Catalog
       operationId: put-companies-companyId-catalog
       description: "Updates the price list assigned to the Company account. This endpoint **is not supported** for stores using Independent Companies behavior."
       parameters: []
-      security:
-        - authToken: []
       requestBody:
         content:
           application/json:
@@ -1101,12 +1088,10 @@ paths:
     put:
       tags:
         - Companies
-      summary: Update a Company's Status
+      summary: Update a Company Status
       operationId: put-companies-companyId-status
       description: "Updates a Company’s account status. See [Company Status Codes](#company-status-codes) for a description of the available statuses."
       parameters: []
-      security:
-        - authToken: []
       requestBody:
         content:
           application/json:
@@ -1126,7 +1111,6 @@ paths:
         "200":
           $ref: "#/components/responses/RESPONSE_200_UPDATE"
   /companies/extra-fields:
-    parameters: []
     get:
       tags:
         - Companies
@@ -1136,8 +1120,6 @@ paths:
       parameters:
         - $ref: "#/components/parameters/paginationLimit"
         - $ref: "#/components/parameters/paginationOffset"
-      security:
-        - authToken: []
       responses:
         "200":
           description: OK
@@ -1282,7 +1264,6 @@ paths:
                                 - Manufacturing
                           x-internal: false
   /companies/permissions:
-    parameters: []
     get:
       tags:
         - Company Roles and Permissions
@@ -1296,8 +1277,6 @@ paths:
             type: string
           description: "Enter a Company permission name to return partial and exact matches."
           example: Get addresses
-      security:
-        - authToken: []
       responses:
         "200":
           description: OK
@@ -1342,8 +1321,6 @@ paths:
 
         Note that the permission’s `name` and `code` values cannot match an existing permission.
       parameters: []
-      security:
-        - authToken: []
       requestBody:
         content:
           application/json:
@@ -1408,8 +1385,6 @@ paths:
         
         Predefined permissions cannot be updated.
       parameters: []
-      security:
-        - authToken: []
       requestBody:
         content:
           application/json:
@@ -1466,14 +1441,11 @@ paths:
 
         Predefined permissions cannot be deleted.
       parameters: []
-      security:
-        - authToken: []
       responses:
         "200":
           $ref: "#/components/responses/RESPONSE_200_Base"
       x-internal: false
   /companies/roles:
-    parameters: []
     get:
       tags:
         - Company Roles and Permissions
@@ -1489,8 +1461,6 @@ paths:
           example: "Procurement Manager"
         - $ref: "#/components/parameters/paginationOffset"
         - $ref: "#/components/parameters/paginationLimit"
-      security:
-        - authToken: []
       responses:
         "200":
           description: OK
@@ -1543,8 +1513,6 @@ paths:
 
         Some permissions require prerequisites that must also be enabled in the role, and assigned to the same or higher permission level. See [B2B Edition Buyer Roles and Permissions](https://support.bigcommerce.com/s/article/Buyer-Roles-and-Permissions) in the Help Center to learn more.
       parameters: []
-      security:
-        - authToken: []
       requestBody:
         content:
           application/json:
@@ -1582,7 +1550,7 @@ paths:
                       message: SUCCESS
       x-internal: false
   /companies/roles/{roleId}:
-    parameters: 
+    parameters:
       - name: roleId
         in: path
         required: true
@@ -1597,8 +1565,6 @@ paths:
       operationId: "get-stores-companies-roles-int:roleId"
       description: Returns the details for a specific Company user role.
       parameters: []
-      security:
-        - authToken: []
       responses:
         "200":
           description: OK
@@ -1632,8 +1598,6 @@ paths:
 
         When formatting the request body, you must add all permissions that you wish to keep in the role, including its existing permissions. See [Permission Codes](https://developer.bigcommerce.com/b2b-edition/apis/rest-management/company/#permission-codes) for a list of predefined permission `name` and `code` values.
       parameters: []
-      security:
-        - authToken: []
       requestBody:
         content:
           application/json:
@@ -1676,8 +1640,6 @@ paths:
       operationId: delete-stores-companies-roles-roleId
       description: Deletes a custom Company user role. You cannot delete predefined Company roles, or custom roles that are currently assigned to a Company user.
       parameters: []
-      security:
-        - authToken: []
       responses:
         "200":
           $ref: "#/components/responses/RESPONSE_200_Base"
@@ -1692,8 +1654,6 @@ paths:
       operationId: get-companies-companyId-attachments
       description: Returns files uploaded to the Company account.
       parameters: []
-      security:
-        - authToken: []
       responses:
         "200":
           $ref: "#/components/responses/RESPONSE_200_ATTACHMENT"
@@ -1717,8 +1677,6 @@ paths:
         - CSV
         ```
       parameters: []
-      security:
-        - authToken: []
       requestBody:
         content:
           multipart/form-data:
@@ -1752,8 +1710,6 @@ paths:
       operationId: delete-companies-companyId-attachments-attachmentId
       description: Deletes an attached file from a Company account.
       parameters: []
-      security:
-        - authToken: []
       responses:
         "200":
           $ref: "#/components/responses/RESPONSE_200_Base"
@@ -1769,8 +1725,6 @@ paths:
       parameters:
         - $ref: "#/components/parameters/paginationOffset"
         - $ref: "#/components/parameters/paginationLimit"
-      security:
-        - authToken: []
       responses:
         "200":
           description: |-
@@ -1867,8 +1821,6 @@ paths:
 
         If the deleted subsidiary has its own subsidiary companies, this request will create a separate hierarchy with the deleted subsidiary at the top.
       parameters: []
-      security:
-        - authToken: []
       responses:
         "204":
           description: Success
@@ -1919,8 +1871,6 @@ paths:
 
         You cannot assign *United States* as a parent of *North America*, since the parent Company for *United States* is also a subsidiary of *North America*.
       parameters: []
-      security:
-        - authToken: []
       requestBody:
         content:
           application/json:
@@ -1992,8 +1942,6 @@ paths:
         The default rate limit for this endpoint is `15` calls/min per store.
 
       parameters: []
-      security:
-        - authToken: []
       responses:
         "200":
           description: OK
@@ -2715,8 +2663,32 @@ components:
       description: Unique numeric ID of the Company account.
       example: 123456
   securitySchemes:
-    authToken:
-      name: authToken
-      in: header
+    X-Store-Hash:
+      name: X-Store-Hash
+      description: |-
+        ### Authentication header
+
+        | Header | Argument | Description |
+        |:-------|:---------|:------------|
+        | `X-Store-Hash` | `store_hash` | The unique store hash associated with a BigCommerce store that has B2B Edition enabled. |
       type: apiKey
-      description: Required to authenticate requests. Include the token in a header parameter called `authToken`.
+      in: header
+    X-Auth-Token:
+      name: X-Auth-Token
+      description: |-
+
+        ### Authentication header
+
+        | Header | Argument | Description |
+        |:-------|:---------|:------------|
+        | `X-Auth-Token` | `access_token` | For more about API accounts that generate `access_token`s, see our [Guide to API Accounts](/docs/start/authentication/api-accounts). |
+        
+        ### Further reading
+
+        For example requests and more information about authenticating BigCommerce APIs, see [Authentication and Example Requests](/docs/start/authentication#x-auth-token-header-example-requests).
+        
+        For more about BigCommerce OAuth scopes, see our [Guide to API Accounts](/docs/start/authentication/api-accounts#oauth-scopes).
+        
+        For a list of API status codes, see [API Status Codes](/docs/start/about/status-codes).
+      type: apiKey
+      in: header

@@ -1,0 +1,102 @@
+# Checkout Session Syncing Solutions
+
+In a [previous release](https://github.com/bigcommerce/catalyst/releases/tag/%40bigcommerce%2Fcatalyst-core%400.19.0), we improved our GraphQL Authentication implementation which added the ability for a shopper to login from their Catalyst/headless storefront and remain logged in as they proceed into the Stencil checkout page.
+
+This document outlines step-by-step instructions to further improve that feature which allow the shopper to login (and logout) from the Stencil checkout page, and have their login state persist back to the Catalyst/headless storefront.
+
+## Intended Behavior
+
+### Login Flow
+
+1. The shopper navigates to Stencil Checkout as a **guest**.
+2. They click **Sign In**.
+3. They’re redirected to the **login page on the Catalyst/headless storefront**.
+4. After signing in, they’re redirected back to **Stencil Checkout**, now **signed in**.
+
+---
+
+### Logout Flow
+
+1. The shopper navigates to Stencil Checkout while **signed in**.
+2. They click **Sign Out**.
+3. They’re redirected to the **logout route on the Catalyst/headless storefront**.
+4. After signing out, they’re redirected back to **Stencil Checkout**, now as a **guest**.
+
+## Setup Instructions
+
+1. **Use the latest Catalyst code.**
+
+   Ensure you’ve merged the following pull requests:
+
+   - [PR #2182](https://github.com/bigcommerce/catalyst/pull/2182)
+   - [PR #2186](https://github.com/bigcommerce/catalyst/pull/2186)
+
+2. **Configure login and logout routes.**
+
+   Send a request to [GET a Channel Site](https://developer.bigcommerce.com/docs/rest-management/channels/site#get-a-channel-site) to retrieve the `site_id` for your Catalyst/headless storefront.
+
+   ```bash
+   GET https://api.bigcommerce.com/stores/{store_hash}/v3/sites
+   ```
+
+   Send a request to [PUT Routes](https://developer.bigcommerce.com/docs/rest-management/sites/site-routes#update-a-sites-routes) to configure the login and logout routes.
+
+   ```bash
+   PUT https://api.bigcommerce.com/stores/{store_hash}/v3/sites/{site_id}/routes
+   ```
+
+   ```json
+   [
+     {
+       "type": "home",
+       "matching": "*",
+       "route": "/"
+     },
+     {
+       "type": "cart",
+       "matching": "*",
+       "route": "/cart/"
+     },
+     {
+       "type": "login",
+       "matching": "*",
+       "route": "/login/"
+     },
+     {
+       "type": "logout",
+       "matching": "*",
+       "route": "/logout/"
+     },
+     // Optional: Included by One-Click Catalyst but not required for session syncing
+     {
+       "type": "search",
+       "matching": "*",
+       "route": "/search/"
+     },
+     {
+       "type": "account",
+       "matching": "*",
+       "route": "/account/"
+     }
+   ]
+   ```
+
+3. **Enable storefront redirection in checkout settings.**
+
+   To enable storefront redirection in checkout settings, send a request to [PUT Checkout Settings](https://developer.bigcommerce.com/docs/rest-management/checkouts/checkout-settings#update-checkout-settings) to update the `should_redirect_to_storefront_for_auth` setting.
+
+   ```bash
+   PUT https://api.bigcommerce.com/stores/{store_hash}/v3/checkouts/settings/channels/{channel_id}
+   ```
+
+   ```json
+   {
+     // Required to enable session-based redirect
+     "should_redirect_to_storefront_for_auth": true,
+
+     // Required if no custom checkout settings exist for this channel
+     "custom_checkout_script_url": "",
+     "custom_order_confirmation_script_url": "",
+     "order_confirmation_use_custom_checkout_script": false
+   }
+   ```

@@ -2,6 +2,12 @@ openapi: 3.0.1
 info:
   title: Sales Staff
   description: |-
+    > **NOTICE**
+    > 
+    > As of September 30, 2025, the B2B Edition API `authToken` will be deprecated and replaced by the standard BigCommerce API `X-Auth-Token`. For information concerning this change, see [B2B Authentication](/b2b-edition/docs/authentication).
+    > 
+    > While `authToken` authentication is not expected to be fully sunset in the near future, it is advised to migrate to the new system as soon as possible to prevent disruption of functionality.
+
     Sales Staff are backend team members who have access to a set group of Companies and features within B2B Edition. By default, Sales Staff will have the system user role Sales Rep, but you can create custom system user roles within B2B Edition that function as Sales Staff. For more information on configuring system user roles, see [B2B Edition User Roles and Permissions (Help Center)](https://support.bigcommerce.com/s/article/B2B-Edition-User-Roles-and-Permissions).
     
     **Note:** These endpoints are specifically for managing the Company assignments of backend user accounts. To manage frontend user accounts, see [User (Server-to-Server)](/b2b-edition/apis/rest-management/user) for individual accounts or [Company (Server-to-Server)](/b2b-edition/apis/rest-management/company) for Company accounts.
@@ -13,11 +19,13 @@ info:
   termsOfService: 'https://www.bigcommerce.com/terms'
 servers:
   - url: https://api-b2b.bigcommerce.com/api/v3/io
+security:
+  - X-Auth-Token: []
+    X-Store-Hash: []
 tags:
   - name: Sales Staff
 paths:
   /sales-staffs:
-    parameters: []
     get:
       tags:
         - Sales Staff
@@ -111,8 +119,6 @@ paths:
       summary: "Get Sales Staff Account Details"
       operationId: get-sales-staffs-salesStaffId
       description: "Returns detailed information about the Sales Staff account associated with `salesStaffId`, including an array of Companies to which the account is assigned and when the assignment was made."
-      security:
-        - authToken: []
       responses:
         '200':
           description: OK
@@ -171,8 +177,6 @@ paths:
       summary: "Update Sales Staff Assignments"
       operationId: put-sales-staffs-salesStaffId
       description: "Updates the Company assignments of the Sales Staff account associated with `salesStaffId`. This operation is non-destructive, meaning that assigning or unassigning a single Company from the Sales Staff does not affect the other assignments."
-      security:
-        - authToken: []
       requestBody:
         content:
           application/json:
@@ -295,9 +299,32 @@ components:
           description: "The total number of items matching the query."
           example: 179
   securitySchemes:
-    authToken:
-      name: authToken
-      description: Required to authenticate requests. Include the token in a header
-        parameter called `authToken`.
+    X-Store-Hash:
+      name: X-Store-Hash
+      description: |-
+        ### Authentication header
+
+        | Header | Argument | Description |
+        |:-------|:---------|:------------|
+        | `X-Store-Hash` | `store_hash` | The unique store hash associated with a BigCommerce store that has B2B Edition enabled. |
+      type: apiKey
+      in: header
+    X-Auth-Token:
+      name: X-Auth-Token
+      description: |-
+
+        ### Authentication header
+
+        | Header | Argument | Description |
+        |:-------|:---------|:------------|
+        | `X-Auth-Token` | `access_token` | For more about API accounts that generate `access_token`s, see our [Guide to API Accounts](/docs/start/authentication/api-accounts). |
+        
+        ### Further reading
+
+        For example requests and more information about authenticating BigCommerce APIs, see [Authentication and Example Requests](/docs/start/authentication#x-auth-token-header-example-requests).
+        
+        For more about BigCommerce OAuth scopes, see our [Guide to API Accounts](/docs/start/authentication/api-accounts#oauth-scopes).
+        
+        For a list of API status codes, see [API Status Codes](/docs/start/about/status-codes).
       type: apiKey
       in: header

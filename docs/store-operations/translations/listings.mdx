@@ -1,0 +1,346 @@
+# Translations for Catalog Pages (Beta)
+
+<Callout type='info'>
+	The Translations Admin GraphQL API is currently available on Catalyst
+	storefronts only.
+</Callout>
+
+The following entities are translatable for catalog listing pages:
+
+- Categories
+  - Name as `name`
+  - Description as `description`
+  - Page Title as `page_title`
+  - Meta Keywords as `meta_keywords`
+  - Meta Description as `meta_description`
+  - Search Keywords as `search_keywords`
+- Brands
+  - Name as `name`
+  - Page Title as `page_title`
+  - Meta Keywords as `meta_keywords`
+  - Meta Description as `meta_description`
+  - Search Keywords as `search_keywords`
+
+## Resource fields
+
+The entities listed above are referenced differently based on resource type and must use the following values in the queries outlined below:
+| Entity Type | `resourceType` | `resourceId` Format |
+| --- | --- | --- |
+| Category | `CATEGORIES` | `bc/store/category/{{category_id}}` |
+| Brand | `BRANDS` | `bc/store/brand/{{brand_id}}` |
+
+## Examples
+
+Below are examples of GraphQL queries and mutations for retrieving and managing translation settings for catalog pages.
+
+### Query a List of Translations
+
+This query returns a paginated list of translations by resourceType, channel and locale with a maximum of 50 results per request.
+
+The request below uses several variables for reusability. Replace `{{resourceType}}`, `{{channel_id}}`, and `{{locale_code}}` with the appropriate values for your use case.
+
+<Tabs items={['Request', 'Response']}>
+<Tab>
+
+```graphql filename="Example query: Query a list of translations" showLineNumbers copy
+GRAPHQL https://api.bigcommerce.com/stores/{{store_hash}}/graphql
+X-Auth-Token: {{token}}
+
+query {
+  store {
+    translations(filters: {
+        resourceType: {{resourceType}},
+        channelId: "bc/store/channel/{{channel_id}}",
+        localeId: "bc/store/locale/{{locale_code}}"
+      } first: 50) {
+      edges {
+        node {
+          resourceId
+          fields {
+            fieldName
+            original
+            translation
+          }
+        }
+        cursor
+      }
+    }
+  }
+}
+```
+
+</Tab>
+<Tab>
+
+The response example below specifically references category translations. If your query is for brands, the `resourceId` will be different. Make sure your handling code addresses the correct format.
+
+```json filename="Example query: Query a list of translations" showLineNumbers copy
+{
+  "data": {
+    "store": {
+      "translations": {
+        "edges": [
+          {
+            "node": {
+              "resourceId": "bc/store/category/24",
+              "fields": [
+                {
+                  "fieldName": "name",
+                  "original": "my channel level categories",
+                  "translation": "name (OVR) 1"
+                },
+                {
+                  "fieldName": "description",
+                  "original": "<p>my channel level categories description</p>",
+                  "translation": "description (OVR)"
+                },
+                {
+                  "fieldName": "page_title",
+                  "original": "Second Home page title",
+                  "translation": "page_title (OVR)"
+                },
+                {
+                  "fieldName": "meta_description",
+                  "original": "Second Meta description",
+                  "translation": "meta_description (OVR)"
+                },
+                {
+                  "fieldName": "search_keywords",
+                  "original": "Second Search keywords",
+                  "translation": "search_keywords (OVR)"
+                }
+              ]
+            },
+            "cursor": "eyJpZCI6MjR9"
+          }
+        ]
+      }
+    }
+  }
+}
+```
+
+</Tab>
+</Tabs>
+
+### Query a Translation by Resource ID
+
+This query returns a translation by resourceId.
+
+The request below uses several variables for reusability. Replace `{{resourceId}}`, `{{resourceType}}`, `{{channel_id}}`, and `{{locale_code}}` with appropriate values for your use case. Make sure `resourceId` follows the format from the [Resource fields](#resource-fields) table.
+
+<Tabs items={['Request', 'Response']}>
+<Tab>
+
+```graphql filename="Example query: Query a translation by id" showLineNumbers copy
+GRAPHQL https://api.bigcommerce.com/stores/{{store_hash}}/graphql
+X-Auth-Token: {{token}}
+
+query {
+  store {
+    translations(filters: {
+      resourceType: {{resourceType}},
+      channelId: "bc/store/channel/{{channel_id}}",
+      localeId: "bc/store/locale/{{locale_code}}",
+      resourceIds: ["{{resourceId}}"]
+    }) {
+      edges {
+        node {
+          resourceId
+          fields {
+            fieldName
+            original
+            translation
+          }
+        }
+        cursor
+      }
+    }
+  }
+}
+```
+
+</Tab>
+<Tab>
+
+The response example below specifically references category translations. If your query is for brands, the `resourceId` will be different. Make sure your handling code addresses the correct format.
+
+```json filename="Example query: Query a translation by id" showLineNumbers copy
+{
+  "data": {
+    "store": {
+      "translations": {
+        "edges": [
+          {
+            "node": {
+              "resourceId": "bc/store/category/1",
+              "fields": [
+                {
+                  "fieldName": "name",
+                  "original": "my channel level categories",
+                  "translation": "name (OVR) 1"
+                },
+                {
+                  "fieldName": "description",
+                  "original": "<p>my channel level categories description</p>",
+                  "translation": "description (OVR)"
+                },
+                {
+                  "fieldName": "page_title",
+                  "original": "Second Home page title",
+                  "translation": "page_title (OVR)"
+                },
+                {
+                  "fieldName": "meta_description",
+                  "original": "Second Meta description",
+                  "translation": "meta_description (OVR)"
+                },
+                {
+                  "fieldName": "search_keywords",
+                  "original": "Second Search keywords",
+                  "translation": "search_keywords (OVR)"
+                }
+              ]
+            },
+            "cursor": "eyJpZCI6MjR9"
+          }
+        ]
+      }
+    }
+  }
+}
+```
+
+</Tab>
+</Tabs>
+
+### Update a Translation
+
+<Tabs items={['Request', 'Response']}>
+<Tab>
+
+The request below is for updating a category. For brands, replace `resourceType` and `resourceId` with appropriate values from the [Resource fields](#resource-fields) table.
+
+```graphql filename="Example mutation: Update a translation" showLineNumbers copy
+GRAPHQL https://api.bigcommerce.com/stores/{{store_hash}}/graphql
+X-Auth-Token: {{token}}
+
+mutation {
+  translation {
+    updateTranslations(input: {
+      resourceType: CATEGORIES,
+      channelId: "bc/store/channel/1",
+      localeId: "bc/store/locale/en",
+      entities: [
+        {
+          resourceId: "bc/store/category/18",
+          fields: [
+            {
+              fieldName: "name",
+              value: "name (OVR)"
+            },
+            {
+              fieldName: "description",
+              value: "description (OVR)"
+            },
+            {
+              fieldName: "page_title",
+              value: "page_title (OVR)"
+            },
+            {
+              fieldName: "meta_description",
+              value: "meta_description (OVR)"
+            },
+            {
+              fieldName: "search_keywords",
+              value: "search_keywords (OVR)"
+            }
+          ]
+        }
+      ]
+    }) {
+      __typename
+      errors {
+        __typename
+        ... on Error {
+          message
+        }
+      }
+    }
+  }
+}
+```
+
+</Tab>
+<Tab>
+
+```json filename="Example mutation: Update a translation" showLineNumbers copy
+{
+  "data": {
+    "translation": {
+      "updateTranslations": {
+        "__typename": "UpdateTranslationsResult",
+        "errors": []
+      }
+    }
+  }
+}
+````
+
+</Tab>
+</Tabs>
+
+### Delete a Translation
+
+<Tabs items={['Request', 'Response']}>
+<Tab>
+
+The request below is for deleting translations on a category. For brands, replace `resourceType` and `resourceId` with appropriate values from the [Resource fields](#resource-fields) table.
+
+```graphql filename="Example mutation: Delete a translation" showLineNumbers copy
+GRAPHQL https://api.bigcommerce.com/stores/{{store_hash}}/graphql
+X-Auth-Token: {{token}}
+
+mutation {
+  translation {
+    deleteTranslations(input: {
+      resourceType: CATEGORIES,
+      channelId: "bc/store/channel/1",
+      localeId: "bc/store/locale/en",
+      resources: [
+        {
+          resourceId: "bc/store/category/18",
+          fields: ["name", "page_title", "meta_description"]
+        }
+      ]
+    }) {
+      __typename
+      errors {
+        __typename
+        ... on Error {
+          message
+        }
+      }
+    }
+  }
+}
+```
+
+</Tab>
+<Tab>
+
+```json filename="Example mutation: Delete a translation" showLineNumbers copy
+{
+  "data": {
+    "translation": {
+      "deleteTranslations": {
+        "__typename": "DeleteTranslationsResult",
+        "errors": []
+      }
+    }
+  }
+}
+```
+
+</Tab>
+</Tabs>

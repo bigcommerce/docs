@@ -4,7 +4,7 @@ We are excited to announce the release of Catalyst v1.4, which addresses a criti
 
 ## Next.js 16 Upgrade
 
-Catalyst has been upgraded to Next.js 16, bringing improved performance, new features, and better developer experience. This is a **minor version upgrade** that requires [migration steps](#migration-guide) for existing stores.
+Catalyst has been upgraded to Next.js 16, bringing improved performance, new features, and better developer experience. This upgrade requires [migration steps](#migration-guide) for existing stores.
 
 ## Critical Security Update
 
@@ -43,19 +43,21 @@ If you're maintaining a custom Catalyst store, update your `package.json`:
 
 ```json
 {
-	"dependencies": {
-		"next": "16.0.7",
-		"react": "^19.2.1",
-		"react-dom": "^19.2.1"
-	}
+  "dependencies": {
+    "next": "16.0.7",
+    "react": "^19.2.1",
+    "react-dom": "^19.2.1"
+  }
 }
 ```
 
 Then run:
-
 ```bash
 pnpm install
 ```
+<Callout type='info'>
+	**Note**: `next` will automatically update your `tsconfig.json` file.
+</Callout>
 
 ### Step 2: Update next.config.ts
 
@@ -68,13 +70,48 @@ Remove or comment out PPR configuration:
 // }
 ```
 
-### Step 3: Replace instances of `unstable_expireTag` and `unstable_expirePath`
+Remove or comment out eslint config
+```typescript
+// eslint: {
+//     ignoreDuringBuilds: !!process.env.CI,
+//     dirs: [
+//     'app',
+//     'auth',
+//     'build-config',
+//     'client',
+//     'components',
+//     'data-transformers',
+//     'i18n',
+//     'lib',
+//     'middlewares',
+//     'scripts',
+//     'tests',
+//     'vibes',
+//     ],
+// },
+```
 
-Use `revalidatePath` and `revalidateTag` instead.
+### Step 3: Replace instances of `unstable_expireTag` and `unstable_expirePath` 
 
+Use `revalidatePath` and `revalidateTag` instead. To use the new API, utilize the `max` cache life argument:
 ```typescript
 // Include the 'max' revalidation behavior
-revalidateTag(TAGS.checkout, 'max')
+revalidateTag(TAGS.checkout, 'max');
+```
+
+### Step 4: 
+
+Rename `priority` prop in `<Image>` for `preload`:
+
+```typescript
+<Image
+  alt={image.alt}
+  className="block h-20 w-full object-cover"
+  fill
+  preload={idx === 0}
+  sizes="100vw"
+  src={image.src}
+/>
 ```
 
 ## Getting Started

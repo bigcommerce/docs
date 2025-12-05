@@ -3,6 +3,8 @@
   <h1 align="center">BigCommerce developer documentation</h1>
 </p>
 
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/bigcommerce/docs)
+
 You've found the BigCommerce documentation GitHub repository, which contains the public content for the [BigCommerce Developer Center](https://developer.bigcommerce.com/docs).
 
 This repo is the source of truth for our public, open source documentation and API reference at [developer.bigcommerce.com](https://developer.bigcommerce.com). It consists of **Markdown React (.mdx)**, **OpenAPI Specification (.yml)**, and **JSON Schema (.json and .yml)** files.

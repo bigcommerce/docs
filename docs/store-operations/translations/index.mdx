@@ -1,29 +1,42 @@
 # Translations Admin GraphQL API (Beta)
 
-## Overview
+
 The Translations Admin GraphQL API is currently available on Catalyst storefronts only. This API enables merchants to translate a single website into multiple languages. 
 
 With a single storefront setup, the shopper's experience remains consistent, but the content is displayed in their preferred language. This use case is particularly common in multilingual countries like Canada and for customers selling cross-border, where the same storefront serves shoppers in multiple languages without altering the overall user experience.
 
 The API currently supports translations for the following resource types, and more are expected in the future:
 
-* Categories
-* Brands
-* Locations
-* Products
+* [Product Data](/docs/store-operations/translations/products)
+  * Product Options
   * Custom Fields
+* [Catalog Pages](/docs/store-operations/translations/listings)
+  * Categories
+  * Brands
+* [Locations](/docs/store-operations/translations/locations)
+
+Refer to the [Error Handling](/docs/store-operations/translations/errors) guide for understanding and handling errors while managing translations.
 
 <Callout type="info">
 Translation API allows users to add content translations to any non-default channel locale. In order to update content on a default channel language, please use respective management API.
 </Callout>
 
-## Purpose and Benefits
-The API helps merchants localize their storefronts efficiently, enabling a consistent shopping experience across multiple languages. This allows merchants to cater to a broader audience and expand market reach.
+## How does this API work?
 
-## Authentication and Access
+### Core Concepts
+
+When using the GraphQL Admin API to manage translations, the following fields are used to identify the relevant channel, locale, and resource so that all data is assigned properly.
+
+- **resourceType**: The type of entity being translated (PRODUCTS, CATEGORIES, BRANDS, etc.)
+- **resourceId**: The specific entity ID (format varies by type, e.g. `bc/store/category/{id}`)
+- **channelId**: The channel context (format: `bc/store/channel/{id}`)
+- **localeId**: The target language (format: `bc/store/locale/{locale_code}`)
+
+### Authentication
+
 Access to the Translations Admin GraphQL API requires valid API credentials. GraphQL Admin API endpoints use the X-Auth-Token header to authenticate to BigCommerce servers. To make a call to the Admin GraphQL, use an API client tool such as [Postman](https://www.postman.com/). Ensure authentication tokens are included in requests.
 
-## OAuth scopes
+#### OAuth scopes
 
 | Name | Permission | Description |
 |:-----|:-----------|:------------|
@@ -32,20 +45,30 @@ Access to the Translations Admin GraphQL API requires valid API credentials. Gra
 
 For more information on OAuth Scopes, see our [Guide to API Accounts](/docs/start/authentication/api-accounts#oauth-scopes).
 
+### Behavior Notes
+
+- Adding a translation to a default locale will result in unexpected behavior. Do **not** attempt to add translations to a channel's default locale.
+- Across all translatable resources, the API will return the default values for any field that doesn't have an existing translation in the requested locale.
+- With translations enabled, the API will automatically return translated fields, whenever possible, based on the requested locale.
+- For more complex translation requests (e.g. product listing pages with many products), the use of pagination is required. Currently, the Translations API supports up to 50 results per request.
 
 ## Limitations
 
-* Currently in Beta and subject to changes
-* Rate limits apply
-* Only available on Catalyst storefronts
+- Currently in Beta and subject to changes
+- Catalyst storefronts only
+- Rate limits apply
+- Can only translate non-default channel locales
 
 ## Best Practices
-* Cache translations to minimize API calls.
-* Avoid redundant translations by checking existing translations first
+
+- Cache translations to minimize API calls
+- Check existing translations before creating duplicates
+- Use pagination effectively for large translation sets
+- Validate resourceIds match resourceType format requirements
 
 ## Resources
-* [Translations for Products (Beta)](/docs/store-operations/translations/product)
-  * [Translations for Custom Fields(Beta)](/docs/store-operations/translations/product-custom-fields)
-* [Translations for Brands (Beta)](/docs/store-operations/translations/brands)
-* [Translations for Categories (Beta)](/docs/store-operations/translations/categories)
-* [Translations for Locations (Beta)](/docs/store-operations/translations/locations)
+
+- [Product Translations](/docs/store-operations/translations/products)
+- [Catalog Page Translations](/docs/store-operations/translations/listings)
+- [Inventory Locations Translations](/docs/store-operations/translations/locations)
+- [Error Handling Reference](/docs/store-operations/translations/errors)

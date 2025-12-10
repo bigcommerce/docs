@@ -1,0 +1,327 @@
+# GraphQL Storefront API: Company Account Registration
+
+B2B Edition’s GraphQL Storefront API powers the registration workflow for new Company accounts in the [Buyer Portal experience](https://support.bigcommerce.com/s/article/Buyer-Portal-Migration). The built-in form for Company account registration uses GraphQL Storefront API queries and mutations to:
+
+* Retrieve the form fields configured in your B2B Edition [account form field settings](https://support.bigcommerce.com/s/article/B2B-Edition-Settings).  
+* Check if an applicant has an existing B2C customer account and populate their information in the form.  
+* Create a pending Company account with the provided information.  
+* Generate a B2C customer account and corresponding Company user account for applicants without an existing account.
+
+While B2B Edition’s [legacy Stencil storefront experience](https://developer.bigcommerce.com/b2b-edition/docs/stencil) uses the [REST Storefront API](https://developer.bigcommerce.com/b2b-edition/apis#storefront-apis) in its registration form, it is recommended to use the GraphQL Storefront API to make any customizations to the Buyer Portal form. However, you can also use the `registerCompany` mutation in [BigCommerce’s GraphQL Storefront API](https://developer.bigcommerce.com/b2b-edition/docs/account-registration) to create a new Company as a storefront user with an existing B2C customer account.
+
+## Tokens
+
+Guest users do not have an existing customer account with login credentials. As a result, the requests involved in the [guest registration workflow](#registration-for-guest-users) can be performed anonymously without a token in the Authorization header. 
+
+The [registration workflow for existing customers](#registration-for-existing-storefront-customers) passes a storefront authToken to the Authorization header. This is a Bearer token generated via the `login` mutation following customer login. While it is included in the header of all B2B Edition GraphQL queries and mutations in the flow, it is only required for the `customer` query, which is a proxy request to the [BigCommerce GraphQL Storefront API](https://developer.bigcommerce.com/docs/storefront/graphql). This request uses the following endpoint: `https://api-b2b.bigcommerce.com/api/v3/proxy/bc-storefront/graphql`
+
+For more information on B2B Edition storefront authTokens, see [Storefront Tokens](https://developer.bigcommerce.com/b2b-edition/docs/authentication#storefront-tokens) in the Authentication for hosted storefronts article.
+
+## Registration for guest users
+
+Users who are not logged in to a customer account receive a prompt to enter contact information when they access the Company account registration form on the storefront. This is used to generate a customer storefront account when they submit their application.  
+
+The `accountFormFields` query checks the “Contact Information” and “Additional Information” fields in the **Business Account Registration Fields** tab of your [account form field settings](https://support.bigcommerce.com/s/article/B2B-Edition-Settings) so that the form only displays fields configured to be visible to the end user. 
+
+When the user proceeds to the next step of the registration workflow, their provided email address is passed to the `userEmailCheck` query, along with the store hash and a `null` Company ID value. This returns one of the following `userType` values based on the presence or absence of an existing user record.
+
+* **1** — The email address is not associated with any user/customer.  
+* **2** — The email address is associated with a customer account, but not a Company user.  
+* **3** — The email address is associated with multiple customer accounts, but not a Company user.  
+* **4** — The email address is associated with an existing Company user account.  
+  * This value returns when an existing Company user attempts to create a new Company application.  
+* **5** — The email address is tied to the specified Company account.  
+  * This value is not returned as part of the Company registration workflow. Instead, it is a value that can return when adding a Company user with a taken email address to a registered Company account.  
+* **6** — The email address is tied to a [Super Admin](https://developer.bigcommerce.com/b2b-edition/apis/rest-storefront/sales-rep) account.  
+* **7** — The email address is tied to a Company account in a different storefront channel associated with the store hash.
+
+If the query returns a value of **1**, the user continues to the next step of the workflow. For any other response, the user receives an error that the email address is in use. Existing customers without a Company (`userType === 2`) can log in and then begin the application process to continue. 
+
+The next step of the workflow also uses the `accountFormFields` query to retrieve the “Business Details” and “Address” fields from the account form field settings, including any Company and Address extra fields configured to be visible on the storefront. Additionally, it uses the `countries` query to return possible country selections for the address.
+
+After filling in the business details and continuing to the last step, the user specifies their account password and completes a reCAPTCHA prompt if it is enabled in your control panel’s [security and privacy settings](https://support.bigcommerce.com/s/article/Updating-Themes-with-reCAPTCHA-v2). Submitting the form triggers the `customerCreate` and `companyCreate` mutations to create the customer storefront account and B2B Company account records using the values from the form fields. This also generates a new Company user record for the applicant automatically, which is automatically assigned as the Admin for the pending Company.
+
+## Registration for existing storefront customers
+
+Users with an existing customer storefront account experience a different registration workflow from guest users. The form prompts them to log in to their account if they are not already logged in, and then uses the `accountFormFields` query to retrieve the “Contact Information” and “Additional Information” fields from the **Personal to Business Conversion Fields** tab of account form field settings. These are pre-filled with the values from the customer’s account.
+
+Like the guest user workflow, the form uses the `accountFormFields` and `countries` queries to return the fields and countries that should appear under the “Business Details" and “Address” form groups. This triggers the `companyCreate` mutation.
+
+Since the user already has a customer account, submitting the form does **not** trigger `customerCreate`. Instead, it uses the `customer` query to retrieve the contact information pre-filled in the application form to generate a Company user record which is automatically assigned the Admin role.
+
+## Related queries and mutations
+
+### Get account form fields
+
+GraphQL Storefront API query: `accountFormFields`
+
+Retrieve the available registration form fields based on the provided `formType` value. The following values are accepted:
+
+| Form type value | Form fields returned |
+| :---- | :---- |
+| 1 | Business Account Registration Fields |
+| 2 | Personal Account Registration Fields |
+| 3 | Personal to Business Conversion Fields |
+
+<Tabs items={[`Request`]}>
+    <Tab>
+        ```graphql filename="Example query: Get account form fields" showLineNumbers copy
+        query {
+            accountFormFields(
+                storeHash: "1234abcd",
+                formType: 3
+            ) {
+                id
+                formType
+                fieldFrom
+                fieldId
+                fieldIndex
+                custom
+                groupId
+                groupName
+                isRequired
+                visible
+                labelName
+                fieldName
+                fieldType
+                valueConfigs
+                createdAt
+                updatedAt
+            }
+        }
+        ```
+    </Tab>
+</Tabs>
+
+
+
+### Validate a user’s email address
+
+GraphQL Storefront API query: `userEmailCheck`
+
+Check if the provided email address is associated with a customer or Company user account. See [Registration for guest users](#registration-for-guest-users) to learn more about the `userType` values that the query can return.
+
+<Tabs items={[`Request`]}>
+    <Tab>
+        ```graphql filename="Example query: Validate a user’s email address" showLineNumbers copy
+        query {
+            userEmailCheck (
+                email: "user@email.com"
+                companyId: null
+                storeHash: "1234abcd"
+                channelId: 1
+            ) {
+                userType,
+                userInfo{
+                    id
+                    email
+                    firstName
+                    lastName
+                    phoneNumber
+                    role
+                    companyName
+                    originChannelId
+                    forcePasswordReset
+                }
+            }
+        }
+        ```
+    </Tab>
+</Tabs>
+
+### Get a list of available countries
+
+GraphQL Storefront API query: `countries`
+
+Return a list of countries that populate in the “Address” group of the form. This also includes a list of states or provinces for each country, if available.
+
+
+<Tabs items={[`Request`]}>
+    <Tab>
+        ```graphql filename="Example query: Get a list of available countries" showLineNumbers copy
+        query {
+            countries(storeHash:"1234abcd") {
+                id
+                countryName
+                countryCode
+                states {
+                    stateName
+                    stateCode
+                }
+            }
+        }
+        ```
+    </Tab>
+</Tabs>
+
+### Register a Company account
+
+GraphQL Storefront API mutation: `companyCreate`
+
+Creates a new Company account using the information entered in the “Business Details” and “Address” fields of the registration form.
+
+<Tabs items={[`Request`, `Response`]}>
+    <Tab>
+        ```graphql filename="Example mutation: Register a Company account" showLineNumbers copy
+        mutation{
+            companyCreate(
+                companyData: {
+                    customerId: "123",
+                    storeHash: "1234abcd",
+                    companyName: "Great Buys Incorporated",
+                    companyEmail: "info@greatbuysinc.com",
+                    companyPhoneNumber: "5121234567",
+                    country: "United States",
+                    addressLine1: "123 Main Street",
+                    addressLine2: "Building 10",
+                    city: "Austin",
+                    state: "Texas",
+                    zipCode: "78704",
+                    extraFields: [
+                        { name: "Field Name", text: "Field Value" }
+                    ],
+                    fileList: [
+                        { fileId: "uniquefile.pdf" }
+                    ],
+                    channelId: 1,
+                    addressExtraFields: [
+                        { name: "Field Name", text: "Field Value" }
+                    ],
+                    userExtraFields: [
+                        { name: "Field Name", text: "Field Value" }
+                    ]
+                }
+            ) {
+                company {
+                    id,
+                    companyStatus
+                }
+            }
+        }
+        ```
+    </Tab>
+    <Tab>
+        ```json filename="Example mutation: Register a Company account" showLineNumbers copy
+        {
+            "data":{
+                "companyCreate":{
+                    "company":{
+                        "id":"10454460",
+                        "companyStatus":0
+                    }
+                }
+            }
+        }
+        ```
+    </Tab>
+</Tabs>
+
+### Create a customer account
+
+GraphQL Storefront API mutation: `customerCreate`
+
+Create a new customer account for a guest user with the information entered in the “Contact Information” and “Additional Information” fields of the registration form.
+
+<Tabs items={[`Request`, `Response`]}>
+    <Tab>
+        ```graphql filename="Example mutation: Create a customer account" showLineNumbers copy
+        mutation customerCreate(
+            $customerData: CustomerInputType!,
+            $recaptchaUserResponse: String
+        ) {
+            customerCreate(
+                customerData: $customerData,
+                recaptchaUserResponse: $recaptchaUserResponse
+            ) {
+                customer {
+                    id
+                    email
+                    firstName
+                    lastName
+                    phone
+                    company
+                    customerGroupId
+                }
+            }
+        }
+
+        {
+            "customerData": {
+                "storeHash": "1234abcd",
+                "authentication": {
+                    "forcePasswordReset": false,
+                    "newPassword": "UserPassword"
+                },
+                "acceptsProductReviewAbandonedCartEmails": false,
+                "firstName": "Company",
+                "lastName": "User",
+                "email": "info@greatbuysinc.com",
+                "phone": "5121234567",
+                "formFields": [
+                    {
+                        "name": "Consent",
+                        "value": [
+                            "I agree to the Privacy Policy"
+                        ]
+                    }
+                ],
+                "addresses": [],
+                "originChannelId": 1,
+                "channelIds": [
+                    1
+                ]
+            },
+            "recaptchaUserResponse": "alphanumeric ReCaptcha token"
+        }
+        ```
+    </Tab>
+    <Tab>
+        ```json filename="Example mutation: Create a customer account" showLineNumbers copy{
+        "data": {
+            "customerCreate": {
+                "customer": {
+                    "id": 123,
+                    "email": "info@greatbuysinc.com",
+                    "firstName": "Company",
+                    "lastName": "User",
+                    "phone": "5121234567",
+                    "company": "Great Buys Incorporated",
+                    "customerGroupId": 3
+                }
+            }
+        }
+        ```
+    </Tab>
+</Tabs>
+
+## Considerations
+
+**New Company Accounts**
+
+There are several default configurations that you can set for new Company applications. Using your [B2B Edition control panel settings](https://support.bigcommerce.com/s/article/B2B-Edition-Settings), you can:
+
+* Specify whether new applications are approved automatically or if they must undergo manual review before accessing B2B storefront functionality.  
+* Restrict purchases and product pricing visibility for pending Company users.  
+* Set default configurations for the Company account for when it is approved, such as assigned customer group, available payment methods, and net payment terms.
+
+The REST Management API request to approve or reject a Company account is [Update a Company Status](https://developer.bigcommerce.com/b2b-edition/apis/rest-management/company/companies#update-a-company-status). Change the `companyStatus` value to `1` (Approved) or `2` (Rejected).
+
+**Company User Accounts**
+
+Submitting the new Company application automatically creates a new Company user account from the provided customer information, whether it was sourced from an existing customer account or entered by a guest user in the application application. The new user account always has the **Admin** role.
+
+When an existing customer applies for a Company account, their currently-assigned customer group does not change until you approve their account. If you are using [Independent Companies behavior](https://support.bigcommerce.com/s/article/Companies-and-Customer-Groups), the approved Company and its users are added to the default customer group configured in the control panel. You can assign a different customer group by editing the Company account. 
+
+If you are using legacy Dependent Companies behavior, a customer group is created for the new Company automatically, and it cannot be reassigned.
+
+**Buyer Portal Access for Pending Accounts**
+
+If you are using Independent Companies behavior, buyers with a pending Company account cannot log in to the B2C version of the Buyer Portal or view previous orders until you have approved or rejected their Company application. When you approve an application, the buyer can log in to the B2B version of the Buyer Portal and view previous orders. Rejecting an application restores their access to the B2C version of the Buyer Portal.
+
+For stores using legacy Dependent Companies behavior, buyers with a pending Company account can still log in to the Buyer Portal and view their orders before you have processed their application.
+
+## Resources
+
+* [B2B Edition GraphQL Storefront API overview](https://developer.bigcommerce.com/b2b-edition/docs/graphql#resources)  
+* [Authentication for hosted storefronts](https://developer.bigcommerce.com/b2b-edition/docs/authentication)  
+* [GraphQL Storefront Playground](https://api-b2b.bigcommerce.com/graphql/playground)

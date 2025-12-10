@@ -69,13 +69,12 @@ servers:
   - url: https://api-b2b.bigcommerce.com/api/v3/io
 security:
   - X-Auth-Token: []
+    X-Store-Hash: []
 tags:
   - name: Quotes
     description: Request for Quote.
 paths:
   /rfq:
-    parameters:
-      - $ref: "#/components/parameters/X-Store-Hash"
     get:
       tags:
         - Quotes
@@ -421,8 +420,6 @@ paths:
                     meta:
                       message: "Grand total amount not match for product list details"
   /rfq/custom/shipping-methods:
-    parameters:
-      - $ref: "#/components/parameters/X-Store-Hash"
     get:
       tags:
         - Quotes
@@ -467,8 +464,6 @@ paths:
                 meta:
                   message: "Custom shipping is not enabled"
   /rfq/emails:
-    parameters:
-      - $ref: "#/components/parameters/X-Store-Hash"
     post:
       tags:
         - Quotes
@@ -581,8 +576,6 @@ paths:
                     meta:
                       message: "Invalid choice of email language"
   /rfq/extra-fields:
-    parameters:
-      - $ref: "#/components/parameters/X-Store-Hash"
     get:
       tags:
         - Quotes
@@ -631,7 +624,6 @@ paths:
                             $ref: "#/components/schemas/responsePagination"
   /rfq/{quote_id}:
     parameters:
-      - $ref: "#/components/parameters/X-Store-Hash"
       - $ref: "#/components/parameters/quoteId"
     get:
       tags:
@@ -718,7 +710,6 @@ paths:
                 $ref: "#/components/schemas/responseWithMessage"
   /rfq/{quote_id}/checkout:
     parameters:
-      - $ref: "#/components/parameters/X-Store-Hash"
       - $ref: "#/components/parameters/quoteId"
     post:
       tags:
@@ -783,7 +774,6 @@ paths:
                       message: "Draft Quote can not be ordered"
   /rfq/{quote_id}/ordered:
     parameters:
-      - $ref: "#/components/parameters/X-Store-Hash"
       - $ref: "#/components/parameters/quoteId"
     post:
       tags:
@@ -839,7 +829,6 @@ paths:
                       message: "Invalid BigCommerce order"
   /rfq/{quote_id}/pdf-export:
     parameters:
-      - $ref: "#/components/parameters/X-Store-Hash"
       - $ref: "#/components/parameters/quoteId"
     post:
       tags:
@@ -882,7 +871,6 @@ paths:
                             example: "https://s3-us-west-2.amazonaws.com/bundleb2b-v2.0-quote-prod/B2B_Store%3AQN1234.pdf"
   /rfq/{quote_id}/shipping-rate:
     parameters:
-      - $ref: "#/components/parameters/X-Store-Hash"
       - $ref: "#/components/parameters/quoteId"
     put:
       tags:
@@ -983,7 +971,6 @@ paths:
                   message: "Your quote does not have any shipping rate."
   /rfq/{quote_id}/shipping-rates:
     parameters:
-      - $ref: "#/components/parameters/X-Store-Hash"
       - $ref: "#/components/parameters/quoteId"
     get:
       tags:
@@ -1498,7 +1485,10 @@ components:
             userEmail:
               type: string
               format: email
-              description: "The email address of the quote’s sales rep."
+              description: |-
+                The email address of the quote’s sales rep. Any user email found within the B2B Edition System Users menu is considered a valid value for this field.
+                
+                This field is optional. If left blank, it will default to the store owner's email address as shown in the B2B Edition System Users menu.
             expiredAt:
               type: string
               description: "The date when the buyer can no longer purchase the quote. Use '%m/%d/%Y' format when entering the expiration date."
@@ -1863,14 +1853,6 @@ components:
           description: "The number of records returned per page."
           default: 10
   parameters:
-    X-Store-Hash:
-      name: X-Store-Hash
-      in: header
-      required: true
-      schema:
-        type: string
-        example: abc123
-      description: The unique store hash associated with a BigCommerce store that has B2B Edition enabled.
     offset:
       name: offset
       in: query
@@ -1894,6 +1876,16 @@ components:
       description: "The internal numeric ID of the sales quote."
       example: 123456
   securitySchemes:
+    X-Store-Hash:
+      name: X-Store-Hash
+      description: |-
+        ### Authentication header
+
+        | Header | Argument | Description |
+        |:-------|:---------|:------------|
+        | `X-Store-Hash` | `store_hash` | The unique store hash associated with a BigCommerce store that has B2B Edition enabled. |
+      type: apiKey
+      in: header
     X-Auth-Token:
       name: X-Auth-Token
       description: |-

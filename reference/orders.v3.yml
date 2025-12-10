@@ -225,7 +225,6 @@ paths:
               - item_id: 79
                 item_type: SHIPPING
                 amount: 10
-        description: ''
       responses:
         '201':
           $ref: '#/components/responses/RefundQuote_Resp'
@@ -2760,10 +2759,17 @@ components:
         - bypass any tax correction due to tax rate/providers changes between when a customer places an order and a merchant initiates a refund
         - use explicit values calculated by external systems (e.g., merchants' own Extended Producer Responsibility or Order Management System)
 
+        When using this when submitting refunds, please update the amount in payments section of the request payload to match the override value.
+
         Note: when using the override, BC internal tax based refund calculation is skipped and therefore order/taxes records are not updated.
       properties:
         total_amount:
-          $ref: '#/components/schemas/Amount'
+          type: number
+          format: float
+          title: Amount
+          description: A non-negative 2 decimal place rounded value that represents the amount that to be used as override for the refund.
+          example: 9.99
+          x-internal: false
         total_tax:
           type: number
           description: Total tax amount refunded back to the shopper. Use 0 value if there is no tax liability change for the refund or tax does not need to be recorded on the refund and would be handled externally.
@@ -2787,8 +2793,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ItemsRefund'
-        merchant_calculated_override:
-          $ref: '#/components/schemas/MerchantOverride'
       required:
         - items
     RefundQuote_TaxAdjustmentAmount:
@@ -2798,8 +2802,6 @@ components:
       properties:
         tax_adjustment_amount:
           $ref: '#/components/schemas/TaxAdjustmentAmount'
-        merchant_calculated_override:
-          $ref: '#/components/schemas/MerchantOverride'
       required:
         - tax_adjustment_amount
     Refund:

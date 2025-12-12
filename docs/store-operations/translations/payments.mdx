@@ -1,0 +1,232 @@
+# Translations for Payments (Beta)
+
+The following entities are translatable for payments:
+
+- Display Name as `display_name`
+- Payment Instruction as `payment_instruction`
+
+Translations appear in the following storefront views:
+
+- Checkout page (payment methods listing)
+- Order confirmation page
+- Order email
+- My Account page (payment methods and orders)
+
+## Resource fields
+
+For payment method related translation entries, the `resourceId` follows this structure:
+
+`bc/store/paymentMethod/{payment_method_id}.{currency}`
+
+| **Segment**              | **Description**                                                      |
+| ------------------------ | -------------------------------------------------------------------- |
+| `bc/store/paymentMethod` | Namespace prefix for payment translation resources.                  |
+| `{payment_method_id}`    | Payment method identifier (e.g., `authorizenet.credit_card`).        |
+| `{currency}`             | The ISO currency code configured for the payment method (e.g `USD`). |
+
+A single `resourceId` corresponds to all payment profiles that share the same payment method ID and currency. As a result:
+
+- Translations apply at the payment method \+ currency level.
+- If a provider has multiple profiles (e.g., multiple gateway configurations) using the same payment method ID and same currency, they share the same translation resource.
+- Updating the translation updates the display for every profile in that set.
+
+### Example
+
+In this example, the payment method is `authorizenet.credit_card` and the currency is `USD`. The translation will be applied to all payment profiles that use the same payment method ID and currency.
+
+`"resourceId": "bc/store/paymentMethod/authorizenet.credit_card.USD"`
+
+## Querying Payment Method Translations
+
+This query retrieves all payment method translations for a specific channel and locale, including the original and translated values for display names and payment instructions.
+
+<Tabs items={['Request', 'Response']}>
+<Tab>
+```graphql
+query ListPaymentMethodTranslations {
+  store {
+    translations(
+      filters: {
+        resourceType: PAYMENT_METHODS
+        channelId: "bc/store/channel/1"
+        localeId: "bc/store/locale/en-AU"
+      }
+    ) {
+      edges {
+        node {
+          resourceId
+          fields {
+            fieldName
+            original
+            translation
+          }
+        }
+        cursor
+      }
+      pageInfo {
+        hasNextPage
+        hasPreviousPage
+        startCursor
+        endCursor
+      }
+    }
+  }
+}
+```
+</Tab>
+<Tab>
+```json
+{
+  "data": {
+    "store": {
+      "translations": {
+        "edges": [
+          {
+            "node": {
+              "resourceId": "bc/store/paymentMethod/authorizenet.credit_card.USD",
+              "fields": [
+                {
+                  "fieldName": "display_name",
+                  "original": "Authorize.Net",
+                  "translation": null
+                },
+                {
+                  "fieldName": "payment_instruction",
+                  "original": "",
+                  "translation": null
+                }
+              ]
+            },
+            "cursor": "YXV0aG9yaXplbmV0LmNyZWRpdF9jYXJkLlVTRA"
+          }
+        ],
+        "pageInfo": {
+          "hasNextPage": false,
+          "hasPreviousPage": false,
+          "startCursor": "YXV0aG9yaXplbmV0LmNyZWRpdF9jYXJkLlVTRA",
+          "endCursor": "YXV0aG9yaXplbmV0LmNyZWRpdF9jYXJkLlVTRA"
+        }
+      }
+    }
+  }
+}
+```
+</Tab>
+</Tabs>
+
+## Update a Payment Method Translation
+
+This mutation updates the translated values for payment method display names and payment instructions for a specific payment method, channel, and locale.
+
+<Tabs items={['Request', 'Response']}>
+<Tab>
+```graphql
+mutation UpdatePaymentMethodTranslations {
+  translation {
+    updateTranslations(
+      input: {
+        resourceType: PAYMENT_METHODS
+        channelId: "bc/store/channel/1"
+        localeId: "bc/store/locale/en-AU"
+        entities: [
+          {
+            resourceId: "bc/store/paymentMethod/authorizenet.credit_card.USD"
+            fields: [
+              { fieldName: "display_name", value: "Translated display" }
+              { fieldName: "payment_instruction", value: "Translated instrumention" }
+            ]
+          }
+        ]
+      }
+    ) {
+      errors {
+        __typename
+        ... on ValidationError {
+          message
+        }
+        ... on EntityNotFoundError {
+          id
+          message
+        }
+        ... on InvalidTranslationEntityFieldsError {
+          id
+          message
+          fields
+        }
+      }
+    }
+  }
+}
+```
+</Tab>
+<Tab>
+```json
+{
+  "data": {
+    "translation": {
+      "updateTranslations": {
+        "errors": []
+      }
+    }
+  }
+}
+```
+</Tab>
+</Tabs>
+
+## Delete a Payment Method Translation
+
+This mutation removes translated values for specified payment method fields, reverting them to the original values for a specific payment method, channel, and locale.
+
+<Tabs items={['Request', 'Response']}>
+<Tab>
+```graphql
+mutation {
+  translation {
+    deleteTranslations(
+      input: {
+        resourceType: PAYMENT_METHODS
+        channelId: "bc/store/channel/1"
+        localeId: "bc/store/locale/en-AU"
+        resources: [
+          {
+            resourceId: "bc/store/paymentMethod/authorizenet.credit_card.USD"
+            fields: ["display_name", "payment_instruction"]
+          }
+        ]
+      }
+    ) {
+      errors {
+        __typename
+        ... on ValidationError {
+          message
+        }
+        ... on EntityNotFoundError {
+          id
+          message
+        }
+        ... on InvalidTranslationEntityFieldsError {
+          id
+          message
+          fields
+        }
+      }
+    }
+  }
+}
+```
+</Tab>
+<Tab>
+```json
+{
+  "data": {
+    "translation": {
+      "deleteTranslations": {
+        "errors": []
+      }
+    }
+  }
+} 
+```
+</Tab>
+</Tabs>

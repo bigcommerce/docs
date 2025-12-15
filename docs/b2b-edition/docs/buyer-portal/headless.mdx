@@ -1,0 +1,169 @@
+# Custom Headless Setup and Deployment
+
+## Adding the Hosted Buyer Portal
+
+The default version of Buyer Portal may be deployed to headless stores; however, it requires a few extra steps. If you haven't, be sure to enable B2B Edition for the Storefront following the steps outlined in the Overview.
+
+### The Buyer Portal Script
+
+In order to load the necessary remote assets, the following script must be added to your headless storefront.
+
+```html
+<script type="module" data-storehash="{{store-hash}}" data-channelid="{{channel-id}}" src="https://cdn.bundleb2b.net/b2b/production/storefront/headless.js"></script>
+```
+
+This script loads the necessary Buyer Portal features into your store pages. Be sure to replace `{{store-hash}}` and `{{channel-id}}` with the relevant values from your BigCommerce control panel.
+
+## Forking and Running the Buyer Portal
+
+### Prerequisites
+
+See [B2B Buyer Portal Setup Overview](/b2b-edition/docs/buyer-portal#prerequisites) for general prerequisites. You will need a V3 BigCommerce API token with the B2B Edition scope.
+
+### Clone and Run the Buyer Portal
+
+1. Clone the [B2B Buyer Portal](https://github.com/bigcommerce/b2b-buyer-portal) repository.  
+2. Install dependencies:
+   ```
+   yarn install
+   ```
+3. Copy `apps/storefront/.env-example` as `apps/storefront/.env`.  Note that, for initial development in the local environment, no values need to be changed in this file.  
+4. Start the development server:
+   ```
+   yarn dev
+   ```
+
+While the development server is running, the necessary Buyer Portal loader files will be served via a local URL (usually `localhost:3001`). You should not browse directly to this URL; the next step will take care of updating your storefront to point to this local server.
+
+### Update Your Storefront Code
+
+With your local Buyer Portal instance running, you must now inject the appropriate scripts to load the Buyer Portal in your storefront application.
+
+See the [Headless Guide](https://github.com/bigcommerce/b2b-buyer-portal/blob/main/docs/headless.md) in the B2B Buyer Portal repository for details on the scripts to include in `<head>` and at the end of `<body>`.
+
+It is always recommended to explicitly configure your B2B Edition settings to account for a customized Buyer Portal. Navigate to B2B Edition in the control panel and set “Buyer Portal type” to “Custom.”
+
+* In a single storefront configuration, this is found in the main Buyer Portal settings.
+
+  ![Buyer Portal Type - Single Storefront](https://storage.googleapis.com/bigcommerce-production-dev-center/images/b2b/buyer-portal-type-ssf.png)
+
+* In a multi-storefront configuration, update this setting for the specific storefront.
+
+  ![Buyer Portal Type - Multi Storefront - 1](https://storage.googleapis.com/bigcommerce-production-dev-center/images/b2b/buyer-portal-type-msf-1.png)
+  ![Buyer Portal Type - Multi Storefront - 2](https://storage.googleapis.com/bigcommerce-production-dev-center/images/b2b/buyer-portal-type-msf-2.png)
+  ![Buyer Portal Type - Multi Storefront - 3](https://storage.googleapis.com/bigcommerce-production-dev-center/images/b2b/buyer-portal-type-msf-3.png)
+
+## Building and Deploying
+
+Once you are ready to take your custom Buyer Portal to your production storefront, the Buyer Portal files must be built and deployed.
+
+For the following steps, you must know in advance the URL where your build files will be deployed. (For example, `https://my.custom.cdn/generated/b2b`/.)
+
+1. Set values in `.env` appropriately for building.
+
+| Var | Value |
+| :---- | :---- |
+| `VITE_IS_LOCAL_ENVIRONMENT` | `FALSE` |
+| `VITE_ASSETS_ABSOLUTE_PATH` | The absolute URL where the build files will be deployed. For example, if the build files from `dist` will be uploaded to the URL `https://my.custom/cdn/generated/b2b`/, this should be provided as the value. Make sure to include the trailing slash. |
+| `VITE_DISABLE_BUILD_HASH` | By default, build files will include a hash to invalidate previous caches. (For example, `index-{hash}.js`) Set this value to `TRUE` if you want to build files without the hash. (For example, `index.js`) This is appropriate if you are using a folder-based naming scheme for cache busting instead of file-based. |
+
+2. Run the build.
+
+`yarn build`
+
+3. Copy the contents of `apps/storefront/dist` to your chosen CDN or hosting provider.
+
+   As an example for how the URLs of the final build files should be represented, consider that `dist` should contain these two files/directories (among others):  
+   * `assets`  
+   * `index.js (or index-{hash}.js)`
+
+   Assuming the example URL value above was used for `VITE_ASSETS_ABSOLUTE_PATH`, after deployment we should have URLs like:  
+   * `https://my.custom/cdn/generated/b2b/assets`  
+   * `https://my.custom/cdn/generated/b2b/index.js`
+
+4. Update the scripts in your storefront code to load the deployed loader files, as detailed in the [Headless Guide](https://github.com/bigcommerce/b2b-buyer-portal/blob/main/docs/headless.md#deploying-the-project) in the Buyer Portal repo.
+
+<Callout type="info">
+When re-building and re-deploying your custom Buyer Portal, you should clear the local contents of `.turbo/cache` before running `yarn build` to ensure that all updated code is reflected in the build.  Also make sure to update your scripts in Script Manager again after deploying your new build files.
+</Callout>
+
+### Deploying with WebDAV
+
+Your BigCommerce store’s [WebDAV storage](https://support.bigcommerce.com/s/article/File-Access-WebDAV) can be a viable option for serving your custom B2B Buyer Portal files without sourcing a third-party CDN.
+
+Follow the instructions in the above support article to learn about enabling WebDAV and connecting with a client like Cyberduck.  Once you’re connected, you can use your store’s WebDAV as the upload destination for the steps described in Building and Deploying.
+
+The directory `content` should be used for static files of this nature.  Let’s say you intend to upload the build files from `dist` into `content/b2b` on your store’s WebDAV.  This will make your Buyer Portal files available at the following URL:
+
+`https://{my-store}.com/content/b2b/`
+
+The files can also be accessed via the store’s canonical URL, in this format:
+
+`https://store-{store-hash}.mybigcommerce.com/content/b2b/`
+
+Either of these should be used as the value of `VITE_ASSETS_ABSOLUTE_PATH` before running `yarn build`, and the same value should be utilized when updating the scripts in Script Manager.
+
+### Deploying with Your Storefront
+
+In a headless storefront scenario, you’re already deploying a custom frontend web application, and so you have the opportunity to deploy Buyer Portal build files with your own storefront rather than with a third-party CDN or your store’s WebDAV.
+
+As an example, let’s say your storefront is a Next.js application and served from `mystore.com`.  You might decide that the Buyer Portal static files will be available at `https://mystore.com/assets/b2b/`.
+
+Your first step, as always, would be to set this base URL as the value of `VITE_ASSETS_ABSOLUTE_PATH` in your Buyer Portal codebase before building.
+
+In Next.js, any static files in the `public` project subdirectory will be served directly from the base URL.  Therefore, to complete your deployment after building the Buyer Portal files, sync the contents of `dist` into `public/assets/b2b` within your Next.js project, update your loader scripts, and re-deploy your storefront.
+
+### Versioning and Toggle Strategy
+
+As mentioned above, by default the build process includes a hash in the filename of several key files.  If you’re hosting your Buyer Portal build files with your headless storefront, for example, the following would be an example of the final URL of such a file:
+
+`https://mystore.com/assets/b2b/index-{hash}.js`
+
+This is a file-based strategy for avoiding stale cached files being served to shoppers.  Upon a new build/deploy, you *must* make sure to update each file URL referenced in your loader scripts each time you deploy new Buyer Portal build files.
+
+Another strategy is to include a unique identifier in the *subdirectory* of your deployed location rather than in each individual filename.  For example, say you configure `VITE_DISABLE_BUILD_HASH` to `TRUE` before building (resulting in filenames without a hash) and then upload the build files to a subdirectory in your storefront project that includes a date-based string.  This could result in URLs like the following:
+
+`https://mystore.com/assets/b2b-20260101/index.js`
+
+As with the file-based strategy, your loader scripts must be updated to reflect this new path.  However, this approach can make it easier to upload your new build files without overwriting previous build files, ensuring that the previous Buyer Portal version continues to be served to end users until your loader scripts are updated.
+
+In a headless storefront, it’s usually easy to incorporate the build hash or date-based string into an environment variable and avoid the need to update your actual loader scripts for new build files.  For example, if you’re using the file hash approach, you might create an environment variable like the following in your storefront application:
+
+`B2B_BUILD_HASH={hash}`
+
+In Next.js, your `<body>` loader script component can incorporate this environment var as follows:  
+
+```html copy filename="Build hash environment variable"
+const { B2B_BUILD_HASH } = process.env;
+...
+<script
+  type="module"
+  crossorigin=""
+  `src="`<YOUR_APP_URL_HERE>/index.${B2B_BUILD_HASH}.js`"`
+></script>
+```
+
+With this technique in place, subsequent builds of your custom Buyer Portal won’t require you to change your storefront code, only update your variable in the appropriate environment and redeploy.
+
+You may find it useful to implement a similar strategy to toggle your storefront loader scripts when you are actively developing on the Buyer Portal, without the need for changing the script code each time.  For example (again, in your storefront application, not the Buyer Portal project), create the following environment variable:
+
+`B2B_LOCAL_LOADER=TRUE`
+
+The following example Next.js code can toggle the appropriate loader scripts based on whether you’re running a local Buyer Portal project or loading a deployed Buyer Portal.
+
+`const { B2B_LOCAL_LOADER } = process.env;`  
+`if (B2B_LOCAL_LOADER) {`  
+  `// ... Local Buyer Portal script`  
+`} else {`  
+  `// ... Deployed Buyer Portal script`  
+`}`
+
+## Co-Locating the Buyer Portal with Your Storefront Code
+
+While your headless storefront and the Buyer Portal are, by nature, separate applications with their own codebases, you may find it desirable to locate their source code together in the same repository.
+
+Managing code together in this way might offer benefits like:
+
+* Consistent deployment of Buyer Portal customizations and related storefront customizations  
+* Automation of copying Buyer Portal build files into a final deployment directory  
+* Orchestration of related tasks, such as running the local servers for both the storefront application and Buyer Portal

@@ -78,6 +78,10 @@ You must build a BigCommerce [single-click app](/docs/integrations/apps/guide/ty
 
 Review our [introduction to building apps](/docs/integrations/apps) guide and use the sidebar to explore topics including: types of apps, managing apps in the dev portal, implementing OAuth, and designing the UI.
 
+We recommend that you provide a login flow within your app iFrame so that you can choose your own authentication method. You can also provide an account registration flow in your iFrame to help merchants create a new tax provider account. Learn more about [designing the app UI](/docs/integrations/apps/guide/ui). An account login flow lets you capture basic authentication credentials from merchants.
+
+We also recommend that you [establish a connection](#establishing-a-connection) immediately after the merchant installs your app, and you authenticate the merchant's account credentials. Otherwise, your tax provider will not be displayed when merchants navigate to the **Settings > Setup > Tax** page in the control panel.
+
 Make sure to also review our [app development best practices](/docs/integrations/apps/guide/best-practices) for some tips.
 
 <Callout type="info">
@@ -98,7 +102,7 @@ When handling the OAuth flow, make sure your app requests read and write permiss
 
 ## Establishing a connection
 
-You will be ready to set up a connection with the Tax Provider API when all of the following are true:
+You will be ready to set up a connection with the Tax Provider API when all the following are true:
 
 * You have [shared your tax provider details](#sharing-provider-details-with-bigcommerce) with BigCommerce through email, and we've replied confirming the tax provider configuration is now ready on all supplied merchant and/or partner test stores.
 * BigCommerce has shared the `provider_id` of the tax provider configuration with you through email after you [shared your tax provider details](#sharing-provider-details-with-bigcommerce).
@@ -106,21 +110,31 @@ You will be ready to set up a connection with the Tax Provider API when all of t
 * During the [OAuth flow](#installing-the-app), the app requests that the merchant authorize read and write permissions on the Information and Settings API scopes.
 * During the [OAuth flow](#installing-the-app), you received and stored the `client_id` and `access_token`.
 
-For context, the [Tax Provider API Connection endpoints](/docs/rest-contracts/tax-app-connection) add a layer of security for your app. You can use these basic credentials to authenticate API requests that you receive from stores so that you can reject unauthorized requests.
+To establish a connection, you **must** call the [Update Connection](/docs/rest-contracts/tax-app-connection#update-a-connection) Tax Connection endpoint to establish a connection.
 
-An account login flow lets you capture basic authentication credentials from merchants. We recommend that you provide a login flow within your app iFrame so that you can choose your own authentication method. You can also provide an account registration flow in your iFrame to help merchants create a new tax provider account. Learn more about [designing the app UI](/docs/integrations/apps/guide/ui).
-
-We recommend calling the [Update Connection](/docs/rest-contracts/tax-app-connection#update-a-connection) endpoint immediately after the merchant installs your app and you authenticate the merchant's account credentials. Otherwise, your tax provider will not be displayed when merchants navigate to the **Settings > Setup > Tax** page in the control panel. You will need to include `store_hash`, `provider_id`, and `X-Auth-Token`(`access_token`) values.
+The [Tax Provider API Connection endpoints](/docs/rest-contracts/tax-app-connection) add a layer of security for your app. You can use these basic credentials to authenticate API requests that you receive from stores so that you can reject unauthorized requests.
 
 ## Configure tax provider settings in the control panel
 
-After you install your app and send basic authentication credentials through the [Update Connection](/docs/rest-contracts/tax-app-connection#update-a-connection) request, merchants can adjust their tax provider settings to activate supported functions on their store. 
+After you've established a connection, merchants can adjust their tax provider settings to activate supported functions on their store.
 
-Merchants can adjust these settings by navigating to **Settings > Setup > Tax > _TaxProviderName_** in the control panel. 
+Merchants can adjust these settings by navigating to **Settings > Setup > Tax > _TaxProviderName_** in the control panel.
+
+<Callout type="info">
+    Is your tax provider not visible in the control panel? Ensure that you have sent the update connection request as described in the [establishing a connection](#establishing-a-connection) section.
+</Callout>
 
 Before you can provide tax estimates, the merchant must choose which regions they want you to service. The control panel displays a list of countries and subdivisions that you support. 
 
 If you support document submission, the merchant can choose to select the **Submit Order Data** checkbox. This allows merchants to submit tax documents for supported transactions on their store.
+
+## Verifying your integration
+
+To help verify your integration we offer a test connection function in the control panel. This function will trigger a request to the tax provider's estimate URL for a sample tax estimate.
+
+To test the integration, navigate to **Settings > Setup > Tax > _TaxProviderName_** in the control panel and click **Test Connection**.
+
+If the connection is unsuccessful or the response contains errors, merchants can navigate to **Settings > Advanced > Store logs** in the control panel to view the error and its description to help triage and resolve the issue.
 
 ## Tax estimation
 
@@ -130,9 +144,9 @@ After the merchant enables your app in the control panel, your app is ready to r
 
 Tax estimates will be requested, depending on the BigCommerce store's settings, multiple times during a standard BigCommerce checkout flow.
 
-* After selecting a shipping method when using the **Estimate Shipping & Tax functionality** on the cart page
-* After specifying a shipping address during a checkout
-* After specifying a billing address during a checkout
+* After selecting a shipping method when using the **Estimate Shipping & Tax functionality** on the cart page.
+* After specifying a shipping address during a checkout.
+* After specifying a billing address during a checkout.
 
 Estimate requests are not expected after the following events.
 
@@ -143,8 +157,7 @@ Estimate requests are not expected after the following events.
 
 Estimate calls will also be made in the control panel when using flows like the following:
 
-* Line-item refund flows
-* Test connection functionality when merchants navigate to **Settings > Setup > Tax > _TaxProviderName_** in the control panel
+* Line-item refund flows.
 
 <Callout type="info">
   Tax estimate requests sent by BigCommerce may not always contain complete data as these requests will be fired at different stages of the shopper checkout. For example, the **Estimate Shipping & Tax** functionality on the cart page does not provide any billing address data, but the tax provider will still be expected to return a valid tax estimate.
@@ -190,15 +203,15 @@ If your tax provider supports document submission, merchants can enable this fea
 
 [View the Commit Tax Quote API reference](/docs/rest-contracts/tax#commit-tax-quote).
 
-## Testing
+## End-to-end testing
 
-Before testing your tax provider, your store needs the following configured in the control panel:
+Before conducting any end-to-end testing of your tax provider, your store needs the following configured in the control panel:
 
-* The shipping origin address, found by navigating to **Settings > Setup > Shipping**, is configured. This value is included in tax estimate requests
-* The tax provider, found by navigating to **Settings > Setup > Tax > _TaxProviderName_**, is enabled in the relevant countries or subdivisions
-* If document submission is supported, navigate to **Settings > Setup > Tax > _TaxProviderName_** and ensure the **Submit Order Data** checkbox is checked
+* The shipping origin address, found by navigating to **Settings > Setup > Shipping**, is configured. This value is included in tax estimate requests.
+* The tax provider, found by navigating to **Settings > Setup > Tax > _TaxProviderName_**, is enabled in the relevant countries or subdivisions.
+* If document submission is supported, navigate to **Settings > Setup > Tax > _TaxProviderName_** and ensure the **Submit Order Data** checkbox is checked.
 
-To test the tax provider connection, navigate to **Settings > Setup > Tax > _TaxProviderName_** in the control panel and click **Test Connection**. This function will trigger a request to the tax provider's estimate URL for a sample tax estimate. If the connection or response is unsuccessful, merchants can navigate to **Settings > Advanced > Store logs** in the control panel to view the error and its description to help triage the issue.
+Also available is the test connection function, as covered by [Verifying your integration](#verifying-your-integration).
 
 ## Support
 

@@ -1,0 +1,164 @@
+# Translations for Customers (Beta)
+
+<Callout type='info'>
+  The Translations Admin GraphQL API for managing customer translations, including custom form fields and address form fields, is available for Catalyst storefronts only.
+</Callout>
+
+The Translations Admin GraphQL API provides support for translating customer form fields. This applies to both customer-level and address-level form fields, but the specifics for managing them are slightly different.
+
+The following entities are translatable for customer form fields:
+
+  - Field Name (`name`)
+  - Field Description (`description`)
+  - Field Value (`value`) for options in selection-style field types
+
+<Callout type='warning'>
+  While `value` is provided as translatable for customer form fields, it is designed only to support selection field types such as dropdown menus, radio buttons, checkboxes, and other formats where predefined values are available.
+</Callout>
+
+## Resource fields
+
+Customer translation entities have the following resource type and ID formats:
+
+| Entity Type                | `resourceType`            | `resourceId` Format                                   |
+|----------------------------|--------------------------|-------------------------------------------------------|
+| Customer Custom Form Field | `CUSTOMER_FORM_FIELDS`   | `bc/store/customer-form-field/{{form_field_id}}`      |
+| Address Custom Form Field  | `ADDRESS_FORM_FIELDS`    | `bc/store/address-form-field/{{form_field_id}}`       |
+
+## Querying Customer-Related Form Field Translations
+
+Customer-related translations are managed via the Admin GraphQL API, but data is returned in the locale determined by the query.
+
+### Example: Query a List of Custom Form Field Translations
+
+Note that in this example, `resourceType` is referenced with a placeholder. Use the appropriate value for your use case. Further, the example response explicitly shows a customer form field example. Your code should address the appropriate structure for the specific data you query.
+
+<Tabs items={['Request', 'Response']}>
+<Tab>
+
+```graphql filename="Example query: Query a list of custom form field translations" showLineNumbers copy
+GRAPHQL https://api.bigcommerce.com/stores/{{store_hash}}/graphql
+X-Auth-Token: {{token}}
+
+query {
+  store {
+    translations(
+      filters: {
+        resourceType: {{RESOURCE_TYPE}}
+        channelId: "bc/store/channel/{{channel_id}}"
+        localeId: "bc/store/locale/{{locale_code}}"
+      }
+      first: 50
+    ) {
+      edges {
+        node {
+          resourceId
+          fields {
+            fieldName
+            original
+            translation
+          }
+        }
+        cursor
+      }
+    }
+  }
+}
+```
+
+</Tab>
+<Tab>
+
+```json filename="Example response: Custom form field translations" showLineNumbers copy
+{
+  "data": {
+    "store": {
+      "translations": {
+        "edges": [
+          {
+            "node": {
+              "resourceId": "bc/store/customer-form-field/17",
+              "fields": [
+                {
+                  "fieldName": "name",
+                  "original": "Favorite Color",
+                  "translation": "Couleur Préférée"
+                }
+              ]
+            },
+            "cursor": "eyJpZCI6MTd9"
+          }
+        ]
+      }
+    }
+  }
+}
+```
+</Tab>
+</Tabs>
+
+### Single Item, Update, and Delete
+
+The examples below demonstrate the process for updating and deleting translations. They function analogously for both customer form fields and address form fields. Use the appropriate `resourceType` and `resourceId` for your specific use case.
+
+#### Example: Update a Customer Address Form Field Translation
+
+```graphql filename="Example mutation: Update a customer address form field translation" showLineNumbers copy
+mutation {
+  translation {
+    updateTranslations(
+      input: {
+        resourceType: ADDRESS_FORM_FIELDS
+        channelId: "bc/store/channel/{{channel_id}}"
+        localeId: "bc/store/locale/{{locale_code}}"
+        entities: [
+          {
+            resourceId: "bc/store/address-form-field/{{form_field_id}}"
+            fields: [
+              { fieldName: "name", value: "Numéro d'appartement" }
+            ]
+          }
+        ]
+      }
+    ) {
+      __typename
+      errors {
+        __typename
+        ... on Error {
+          message
+        }
+      }
+    }
+  }
+}
+```
+
+#### Example: Delete a Customer Address Form Field Translation
+
+```graphql filename="Example mutation: Delete a customer address form field translation" showLineNumbers copy
+mutation {
+  translation {
+    deleteTranslations(
+      input: {
+        resourceType: ADDRESS_FORM_FIELDS
+        channelId: "bc/store/channel/{{channel_id}}"
+        localeId: "bc/store/locale/{{locale_code}}"
+        resources: [
+          {
+            resourceId: "bc/store/address-form-field/{{form_field_id}}"
+            fields: ["name", "description"]
+          }
+        ]
+      }
+    ) {
+      __typename
+      errors {
+        __typename
+        ... on Error {
+          message
+        }
+      }
+    }
+  }
+}
+```

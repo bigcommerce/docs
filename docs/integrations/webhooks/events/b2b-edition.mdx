@@ -15,7 +15,7 @@ This page is a reference for B2B Edition webhooks and it assumes that you're fam
 
 To create a webhook, send a request to the [Create a webhook](/docs/webhooks/webhooks/manage-webhooks-bulk#create-a-webhook) endpoint. You must use a BigCommerce store- or app-level API account to authenticate the request; it does not support the API tokens created in your [B2B Edition API Account settings](https://support.bigcommerce.com/s/article/B2B-Edition-Settings). Your API account must have the **B2B Edition** scope set to *modify*.
 
-The following example creates a webhook that subscribes to changes to Company accounts.
+The following example creates a webhook that subscribes to creation events for Company accounts.
 
 ```http filename="Example request: Create a webhook" showLineNumbers copy
 POST https://api.bigcommerce.com/stores/{{STORE_HASH}}/v3/hooks
@@ -24,7 +24,7 @@ Content-Type: application/json
 Accept: application/json
 
 {
-  "scope": "store/company/*", // The `*` indicates that you subscribe to all Company events 
+  "scope": "store/company/created", 
   "destination": "https://placeholder.ngrok.io/webhooks", // replace placeholder.ngrok.io with your HTTPS tunnel URL
   "is_active": true
 }
@@ -48,7 +48,6 @@ The following webhooks fire in response to changes to Company account records. Y
 
 | Name / Scope            | Description |
 |:------------------------|:------------|
-| store/company/* | Fires for all store/company events. This includes [Company User](#company-users) and [Company Address](#company-addresses) events. |
 | store/company/created | Fires when a new Company account is created in the storefront, from the B2B Edition control panel, or via the API. Note that this webhook does not fire when the REST Management [Bulk Create Companies](/b2b-edition/apis/rest-management/company/companies#bulk-create-companies) endpoint is used. |
 | store/company/updated | Fires when a Company’s basic information is updated, including: <br />- Company name <br />- Email address <br />- Phone number <br />- Assigned customer group ID (Must be using [Independent Companies](https://support.bigcommerce.com/s/article/Companies-and-Customer-Groups) behavior) <br />- Legal address <br />- UUID <br />- Activity status<br />- Parent Company (Must be using [Account Hierarchy](https://support.bigcommerce.com/s/article/B2B-Edition-Account-Hierarchy)) <br />- Assigned price list (Must be using Dependent Companies behavior) <br />- Company extra field values |
 | store/company/deleted | Fires when a Company account is deleted from the B2B Edition control panel or via the API. |
@@ -73,9 +72,8 @@ The following webhooks fire in response to changes to Company users. These are B
 
 | Name / Scope            | Description |
 |:------------------------|:------------|
-| store/company/user/* | Fires for all store/company/user events. |
 | store/company/user/created | Fires when a new Company user is created in the storefront, from the B2B Edition control panel, or via the API. |
-| store/company/user/updated | Fires when a Company user's account information is updated, including: <br />- User name <br />- Email address <br />- Phone number <br />- Assigned customer group ID <br />- Company user extra field values <br />- Assigned Company account |
+| store/company/user/updated | Fires when a Company user's account information is updated, including: <br />- User name <br />- Email address <br />- Phone number <br />- Company user extra field values |
 | store/company/user/deleted | Fires when a Company user is deleted in the storefront, from the B2B Edition control panel, or via the API. |
 
 ```json filename="Example Company user created payload object" showLineNumbers copy
@@ -97,7 +95,6 @@ The following webhooks fire in response to changes to addresses saved to Company
 
 | Name / Scope            | Description |
 |:------------------------|:------------|
-| store/company/address/* | Fires for all store/company/address events. |
 | store/company/address/created | Fires when a new Company address is saved to a Company in the storefront, from the B2B Edition control panel, or via the API. |
 | store/company/address/updated | Fires when any field on an existing Company address is updated, including Company address extra field values. |
 | store/company/address/deleted | Fires when a Company address is deleted in the storefront, from the B2B Edition control panel, or via the API. |
@@ -107,7 +104,8 @@ The following webhooks fire in response to changes to addresses saved to Company
   "scope": "store/company/address/created",
   "store_id": "123456",
   "data": {
-    "company_address_id": 1234
+    "company_id": 123456,
+    "address_id": 1234
   },
   "hash": "352e4afc6dd3fc85ea26bfdf3f91852604d57528",
   "created_at": 1561482670,
@@ -121,9 +119,8 @@ The following webhooks fire in response to changes to [Super Admins](https://dev
 
 | Name / Scope            | Description |
 |:------------------------|:------------|
-| store/superadmin/* | Fires for all store/superadmin events. |
 | store/superadmin/created | Fires when a new Super Admin is created the B2B Edition control panel or via the API. |
-| store/superadmin/updated | Fires when a Super Admin's account information is updated, including: <br />- Email address <br />- Name <br />- Phone number <br />- Assigned Company accounts |
+| store/superadmin/updated | Fires when a Super Admin's account information is updated, including: <br />- Email address <br />- Name <br />- Phone number <br />- Assigned/Unassigned Company accounts |
 | store/superadmin/deleted | Fires when a Super Admin is deleted from the B2B Edition control panel or via the API. |
 
 ```json filename="Example Company address created payload object" showLineNumbers copy
@@ -131,7 +128,7 @@ The following webhooks fire in response to changes to [Super Admins](https://dev
   "scope": "store/superadmin/created",
   "store_id": "123456",
   "data": {
-    "super-admin_id": 1234
+    "user_id": 1234
   },
   "hash": "352e4afc6dd3fc85ea26bfdf3f91852604d57528",
   "created_at": 1561482670,

@@ -1,0 +1,97 @@
+# eWallet Buttons with the GraphQL Storefront API
+
+BigCommerce's GraphQL Storefront API allows you to query and initialize eWallet payment buttons (Apple Pay, Google Pay, PayPal, etc.) for use in both regular and headless storefronts. This enables merchants and system integrators to provide seamless wallet payment experiences across the shopper journey.
+
+<Callout type="warning">
+Wallet initialization data and client tokens are returned and may be sensitive. Ensure all data is handled securely and any user-facing content is sanitized or validated to prevent security vulnerabilities.
+</Callout>
+
+## Example Usage
+
+Use the `paymentWalletWithInitializationData` query to fetch initialization data and client tokens for a specific wallet and cart. You may also use the `createPaymentWalletIntent` mutation to initialize payment intents for supported wallets.
+
+<Tabs items={['Query: Initialization Data', 'Mutation: Create Intent', 'Response']}>
+<Tab>
+
+```graphql filename="Example query: Get wallet initialization data" showLineNumbers copy
+query GetWalletInitData($cartId: String!, $walletEntityId: String!) {
+  paymentWalletWithInitializationData(
+    filter: {
+      cartEntityId: $cartId,
+      paymentWalletEntityId: $walletEntityId
+    }
+  ) {
+    initializationData
+    clientToken
+  }
+}
+```
+
+</Tab>
+<Tab>
+
+```graphql filename="Example mutation: Create a payment wallet intent" showLineNumbers copy
+mutation CreateWalletIntent($cartId: String!, $walletEntityId: String!) {
+  payment {
+    paymentWallet {
+      createPaymentWalletIntent(
+        input: {
+          cartEntityId: $cartId,
+          paymentWalletEntityId: $walletEntityId
+        }
+      ) {
+        errors {
+          message
+        }
+        paymentWalletIntentData {
+          approvalUrl
+          orderId
+          initializationEntityId
+        }
+      }
+    }
+  }
+}
+```
+
+</Tab>
+<Tab>
+
+```json filename="Example response: Wallet initialization and intent" showLineNumbers copy
+{
+  "data": {
+    "paymentWalletWithInitializationData": {
+      "initializationData": "InitializationDataForApplePay",
+      "clientToken": "ClientTokenForApplePay"
+    },
+    "payment": {
+      "paymentWallet": {
+        "createPaymentWalletIntent": {
+          "errors": [],
+          "paymentWalletIntentData": {
+            "approvalUrl": "https://provider.com/approve",
+            "orderId": "ORDER123",
+            "initializationEntityId": "ENTITY456"
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+</Tab>
+</Tabs>
+
+## Key Points
+
+- **Secure Handling**: Initialization data and client tokens are sensitive. Store and transmit securely.
+- **Supported Wallets**: Examples include Apple Pay, Google Pay, PayPal, Venmo, Worldpay, etc.
+- **Dynamic Context**: Both queries and mutations require a valid cart ID and wallet entity ID, allowing dynamic integration for headless storefronts.
+- **Feature Flags**: These APIs may be gated by feature flags and are in alpha; check production readiness before use.
+- **Deprecation Notices**: Some fields are marked as alpha or deprecated; consult API documentation for stability.
+
+## Additional Resources
+- [GraphQL Storefront API Reference](/graphql-storefront/reference#group-Operations-Queries)
+- [GraphQL Storefront API overview](/docs/storefront/graphql)
+- [Best Practices for Using GraphQL APIs](/docs/storefront/graphql/best-practices)

@@ -985,6 +985,8 @@ components:
           properties:
             discount:
               $ref: '#/components/schemas/Discount'
+            maximum_allowed_discount_amount:
+              $ref: '#/components/schemas/MaximumAllowedDiscountAmount'
       description: |-
         **Cart Value Action**
         Applies discount on the entire cart.
@@ -1054,6 +1056,8 @@ components:
           properties:
             discount:
               $ref: '#/components/schemas/Discount'
+            maximum_allowed_discount_amount:
+              $ref: '#/components/schemas/MaximumAllowedDiscountAmount'
             as_total:
               type: boolean
               description: |-
@@ -1128,6 +1132,8 @@ components:
           type: string
           description: The amount of discount (percentage off) to apply.
       description: '**Percentage Discount**'
+      required:
+        - percentage_amount
     FixedDiscount:
       title: Fixed Discount
       type: object
@@ -1135,6 +1141,8 @@ components:
         fixed_amount:
           $ref: '#/components/schemas/Money'
       description: '**Fixed Discount**'
+      required:
+        - fixed_amount
     Money:
       title: Money
       pattern: '[0-9]+(\.[0-9]+)?'
@@ -1143,6 +1151,17 @@ components:
         **Money**
         Represents a monetary value in the store’s default currency.
       example: '12.95'
+    MaximumAllowedDiscountAmount:
+      type: string
+      nullable: true
+      pattern: '^(?!0+(?:\.0+)?$)(\d+)(\.[0-9]+)?$'
+      description: |
+        The maximum monetary value that can be applied as a discount. It can take value from 1 to 10000000.
+        The application of this maximum depends on the discount type:
+          - Discount on shipping: the max limit is distributed to the first number of shipping destinations until it is reached
+          - Discount on products: the max limit is distributed to the first number of eligible products until it is reached
+          - Discount on order subtotal: the max limit is checked against the order discount value
+      example: '10'
     OptionalCursorCollectionMeta:
       title: Collection Meta
       type: object
@@ -1939,8 +1958,8 @@ components:
                 data:
                   - id: 1
                     redemption_type: AUTOMATIC
-                    name: Buy Product X Get Free Shipping
-                    display_name: WOW!!! FREE SHIPPING for Product X
+                    name: Buy Product worth X Get Y% off upto Z
+                    display_name: Shop for X and get Y% off upto Z
                     created_from: api
                     channels:
                       - id: 1
@@ -1961,7 +1980,8 @@ components:
                       - action:
                           cart_value:
                             discount:
-                              fixed_amount: '12.95'
+                              percentage_amount: '10'
+                            maximum_allowed_discount_amount: '20'
                         apply_once: true
                         stop: true
                         condition:

@@ -11,7 +11,7 @@ In order to properly prepare data for migration, data validation and testing are
 
 Before attempting to load any data, be sure to familiarize yourself with the [BigCommerce API Best Practices and Rate Limits](https://developer.bigcommerce.com/resource-hub/navigating-bigcommerces-api-rate-limits-update).
 
-To ensure a smooth execution during migration, prepare a subset of your catalog to perform a partial migration as a test. This should be around `50` to `1000` data records, depending on the size and complexity of of your catalog, that cover a broad range of potential product configurations
+To ensure a smooth execution during migration, prepare a subset of your catalog to perform a partial migration as a test. This should be around `50` to `1000` data records, depending on the size and complexity of your catalog, that cover a broad range of potential product configurations
 
 If your catalog contains any of the following, ensure that your representative sample contains at least one product with each to test the associated BigCommerce APIs.
 

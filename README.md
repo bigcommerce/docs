@@ -19,7 +19,7 @@ Here are some quick links to our [Contribution](/CONTRIBUTING.md) guide:
 
 - [Making a Quick Edit](/CONTRIBUTING.md#making-a-quick-edit)
 - [Editing Locally](/CONTRIBUTING.md#editing-locally)
-- [Commit Messages](/CONTRIBUTING.md/cod#commit-messages)
+- [Commit Messages](/CONTRIBUTING.md#commit-messages)
 - [Style Guides](/CONTRIBUTING.md#style-guides)
 - [Contributing to Other Projects](/CONTRIBUTING.md#contributing-to-other-projects)
 
@@ -53,10 +53,10 @@ Always update your fork to ensure you're working with the newest source files.
 
 ```shell
 .
-├── .github/                           # github config
+├── .github/                           # GitHub config
     └── workflows/                     # workflows to lint pull requests, etc.
     └── ...
-├── .idea/                             # directory ignored by git - use for yourself
+├── .idea/                             # directory ignored by Git - use for yourself
 ├── .style/                            # CSPELL data files
 ├── assets/ 
     ├── csv/                           # static files used in docs

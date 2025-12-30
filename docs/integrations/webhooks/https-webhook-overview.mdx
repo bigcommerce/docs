@@ -6,7 +6,7 @@ HTTPS webhooks are push APIs delivered over HTTPS, triggered by an event on the 
 
 <Tabs items={['HTTPS example', 'GraphQL example']}>
 <Tab>
-To create a webhook, send a `POST` request to the [Create a webhook](/docs/webhooks/webhooks/manage-webhooks-bulk#create-a-webhooks) endpoint. Set the `scope` property value equal to the **Name / Scope** of the webhook you want to create. If a hook fires twice for the same event, both request bodies rely on the same hash. 
+To create a webhook, send a `POST` request to the [Create a webhook](/docs/webhooks/webhooks/manage-webhooks-bulk#create-a-webhooks) endpoint. Set the `scope` property value equal to the **Name / Scope** of the webhook you want to create. If a hook fires twice for the same event, both request bodies rely on the same hash.
 
 
 ```http filename="Example request: Create a webhook" showLineNumbers copy
@@ -72,9 +72,8 @@ mutation CreateHTTPWebhook($input:CreateHttpsWebhookInput!) {
 
 {
   "input": {
-    
-	"scope": "store/order/updated",
- 	"destination": "https://6676-8-29-231-139.ngrok-free.app/"
+    "scope": "store/order/updated",
+    "destination": "https://yourapp.example.com/webhooks/order-updated"
   }
 }
 ```
@@ -89,8 +88,8 @@ mutation CreateHTTPWebhook($input:CreateHttpsWebhookInput!) {
                     "id": "bc/store/webhook/26713462",
                     "scope": "store/order/updated",
                     "destination": "https://yourapp.example.com/",
-                    "status": ACTIVE,
-		    "isActive": true,
+                    "status": "ACTIVE",
+                    "isActive": true,
                     "createdAt": "2023-07-05T20:14:05Z"
                 }
             }
@@ -110,15 +109,15 @@ When a webhook is triggered, BigCommerce will `POST` a light payload containing 
 
 ```json filename="HTTPS example: store/order/statusUpdated payload object" showLineNumbers copy
 {
- "store_id":"11111",
- "producer":"stores/abcde",
- "scope":"store/order/statusUpdated",
- "data":{
-    "type":"order",
-    "id":173331
-  },
- "hash":"3f9ea420af83450d7ef9f78b08c8af25b2213637"
- }
+    "store_id": "11111",
+    "producer": "stores/abcde",
+    "scope": "store/order/statusUpdated",
+    "data": {
+        "type": "order",
+        "id": 173331
+    },
+    "hash": "3f9ea420af83450d7ef9f78b08c8af25b2213637"
+}
 ```
 
 You can then make a request to the [Get an order](/docs/rest-management/orders#get-an-order) endpoint to obtain full order details.
@@ -193,21 +192,21 @@ After the final retry attempt (cumulatively **48 hours** after the first deliver
 
 To ensure webhook callback requests are secure, BigCommerce takes the following precautions:
 
-* Create webhook requests to accept a header object in every HTTP webhook, which you can use to authenticate callback requests. 
-* We advise merchants to use libraries provided by [Standard Webhook](https://github.com/standard-webhooks/standard-webhooks/tree/main/libraries) to verify the legitimacy of the events. 
+* Create webhook requests to accept a header object in every HTTP webhook, which you can use to authenticate callback requests.
+* We advise merchants to use libraries provided by [Standard Webhook](https://github.com/standard-webhooks/standard-webhooks/tree/main/libraries) to verify the legitimacy of the events.
 * A timestamp is used to protect against replay attacks.
 * We recommend validating the signature and timestamp before processing any webhook event.
 
 ### Webhook signature
 
-You can verify the signature is legitimate by using the [Webhook Verifer](https://www.standardwebhooks.com/verify) provided by Standard Webhook or the code samples provided below.
+You can verify the signature is legitimate by using the [Webhook Verifier](https://www.standardwebhooks.com/verify) provided by Standard Webhook or the code samples provided below.
 
 The code samples below show how to validate the webhook signature in different programming languages.
 
 <Tabs items={['Python', 'Node.js']}>
- 
+
 <Tab>
-Use the following command to run the calculation: 
+Use the following command to run the calculation:
 
 ```py filename="Python" showLineNumbers copy
 import functions_framework
@@ -229,7 +228,7 @@ def hello_http(request):
     print(str(webhook_headers))
 
     result = 'no_result'
-    
+
     # Use the encoded client secret
     wh = Webhook(encoded_client_secret)
     try:
@@ -244,7 +243,7 @@ def hello_http(request):
 </Tab>
 
 <Tab>
-Use the following command to run the calculation: 
+Use the following command to run the calculation:
 
 ```js filename="Node.js" showLineNumbers copy
 const functions = require('@google-cloud/functions-framework');

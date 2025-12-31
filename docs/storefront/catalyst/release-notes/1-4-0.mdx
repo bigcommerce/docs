@@ -1,0 +1,252 @@
+# Catalyst version 1.4.0 Release Notes
+
+We are excited to announce the release of Catalyst v1.4.0, which brings new features including product reviews, newsletter subscriptions, and additional improvements.
+
+## Product reviews
+
+Catalyst now supports end-to-end product reviews on the storefront, powered by the Storefront GraphQL API.
+
+This release includes:
+
+- New Storefront GraphQL settings for reviews
+- Native review submission UI on the product detail page (PDP)
+- Behavior that matches Cornerstone 1-to-1 for:
+  - Whether reviews are enabled
+  - Whether product ratings are shown
+
+<Callout type='info'>
+	There is one difference between Cornerstone and Catalyst due to pre-existing
+	functionality in the `addProductReview` mutation. When the setting
+	`onlyAcceptPreviousCustomerReviews` is `false`, email is still a required
+	field when submitting a product review via GraphQL.
+</Callout>
+
+### Storefront GraphQL settings
+
+The Storefront GraphQL API now exposes review-related settings under the site settings object. You can query:
+
+1. **Whether reviews are globally enabled for the store**
+
+   - Used in Catalyst as `reviewsEnabled`
+   - When `false`, Catalyst hides:
+     - The reviews section on PDP
+     - The review submission UI
+     - Rating stars on PDP/PLP
+
+2. **Whether product ratings should be displayed on the storefront**
+
+   - Backed by `site.settings.display.showProductRating`
+   - Ratings only render when:
+     - Reviews are enabled **and**
+     - `showProductRating` is `true`
+   - When disabled, review submission can still be available, but rating stars are hidden
+
+3. **Whether review submissions are restricted to previous purchasers**
+   - Reflects the "Only allow reviews from previous customers" store setting
+   - When enabled, the Storefront GraphQL API only accepts reviews where the submitted email matches at least one past order for that product
+   - Catalyst surfaces GraphQL error messages when this validation fails
+
+<Callout type='info'>
+	Use this query in your own custom components if you need to make review-aware
+	UI decisions outside the built-in sections.
+</Callout>
+
+```gql
+query SiteReviewSettings {
+	site {
+		settings {
+			reviews {
+				enabled
+				onlyAcceptPreviousCustomerReviews
+			}
+			display {
+				showProductRating
+			}
+		}
+	}
+}
+```
+
+### Storefront behavior
+
+#### Rating display (PDP, PLP, search, category, brand)
+
+All product-listing UIs now respect the same review settings as Stencil:
+
+**When reviews are enabled and `showProductRating` is `true`:**
+
+- Product cards on search/category/brand pages show star ratings when `rating > 0`
+- PDP header shows the product rating
+- PDP reviews section is visible (including the review form)
+
+**When reviews are disabled:**
+
+- No ratings are shown on PLP or PDP
+- PDP reviews section (including submission UI) is hidden
+- GraphQL queries still succeed; Catalyst simply does not render review UI
+
+**Note:** Products with no reviews (`rating` is `0` or `null`) never show rating stars, even when ratings are enabled. This prevents non-reviewed products from appearing as if they have a "0" rating.
+
+#### Review submission UI
+
+On the PDP, customers can submit reviews via a dedicated modal form:
+
+**"Write a review" button:**
+
+- Appears in the reviews section when reviews exist
+- Appears in the reviews empty state
+- Implemented via `ProductReviewButton`
+
+**Review form fields:**
+
+- Rating
+- Title
+- Review text
+- Name
+- Email
+
+**Form behavior:**
+
+- Performs client-side validation on required fields
+- Calls BigCommerce's Storefront GraphQL API to create the review
+- Shows inline error messages for validation and GraphQL errors
+- Shows a success toast and closes the modal after a successful submission
+
+**Note:** The default implementation does **not** include reCAPTCHA. Add custom protection if your storefront requires it.
+
+#### Logged-in vs guest customers
+
+**Logged-in customers:**
+
+- Name and email are read from the auth JWT
+- The form is pre-filled with these values to maximize the chance of matching past orders for "verified purchaser only" stores
+
+**Guest customers:**
+
+- Name and email are always required
+- When "only allow reviews from previous customers" is enabled, the Storefront GraphQL API rejects submissions where the email does not match an order
+- Catalyst displays the resulting error message
+
+## Newsletter Subscriptions
+
+This release introduces a fully functional, end-to-end newsletter subscription experience in Catalyst, integrated with the BigCommerce Storefront GraphQL API.
+
+This release enables:
+
+- Store-controlled visibility of newsletter signup UI
+- Real customer subscription via GraphQL mutations
+- Customer self-management of newsletter preferences from account settings
+
+### Features
+
+1. **Homepage newsletter signup is settings-driven**
+
+   - The homepage `Subscribe` component now renders conditionally based on store configuration
+   - Visibility is controlled by the Storefront GraphQL field: `site.settings.newsletter.showNewsletterSignup`
+   - Uses the `Stream` / `Streamable` pattern for progressive loading
+   - **Result:**
+     - Stores with newsletter signup disabled will not render the section
+     - Stores with signup enabled see the newsletter section as before, now controlled by settings
+
+2. **Newsletter subscription is fully functional**
+
+   - Replaced the mock newsletter subscription with a real Storefront GraphQL mutation: `SubscribeToNewsletterMutation`
+   - Added comprehensive error handling:
+     - Invalid email address
+     - Already subscribed
+     - Unexpected server errors
+   - Improved error rendering in `InlineEmailForm` so server-side errors are properly displayed
+   - Added E2E tests covering the subscription flow
+   - **User-facing behavior:**
+     - Success message on subscription
+     - Clear error messages for common failure cases
+
+3. **Account settings newsletter toggle**
+
+   - Adds a "Marketing preferences" section to `/account/settings`
+   - Introduces a toggle allowing customers to:
+     - Subscribe to newsletters
+     - Unsubscribe from newsletters
+   - Uses a new server action: `updateNewsletterSubscription`
+   - UI is shown only when newsletter signup is enabled at the store level
+   - **Key characteristics:**
+     - Toggle state reflects `customer.isSubscribedToNewsletter`
+     - Submitting updates calls Storefront GraphQL to subscribe or unsubscribe
+     - Includes E2E tests and translations
+
+### Storefront GraphQL settings
+
+This feature relies on Storefront GraphQL for both configuration and customer subscription state.
+
+#### Fields added
+
+**`site.settings.newsletter.showNewsletterSignup`**
+
+- **Type:** `Boolean`
+- **Purpose:** Controls whether newsletter subscription UI is displayed in the storefront
+- **Used by:**
+  - Homepage newsletter signup section
+  - Account settings "Marketing preferences" section
+
+**`customer.isSubscribedToNewsletter`**
+
+- **Type:** `Boolean`
+- **Purpose:** Indicates whether the authenticated customer is currently subscribed
+- **Used by:**
+  - Account settings toggle initial state
+  - Determining subscribe vs unsubscribe behavior
+
+#### GraphQL query example
+
+```gql
+query NewsletterSettingsAndCustomerStatus {
+	site {
+		settings {
+			newsletter {
+				showNewsletterSignup
+			}
+		}
+	}
+	customer {
+		isSubscribedToNewsletter
+	}
+}
+```
+
+<Callout type='info'>
+	The `customer` field requires an authenticated shopper context. For homepage
+	gating only, querying `site.settings.newsletter.showNewsletterSignup` is
+	sufficient.
+</Callout>
+
+### Storefront behavior
+
+#### Homepage newsletter signup section
+
+- The newsletter signup section no longer renders unconditionally
+- Rendering is controlled by `showNewsletterSignup`
+- **UX impact:**
+  - No visual placeholder or empty state when disabled
+  - When enabled, the section loads progressively and behaves as expected
+
+#### Newsletter signup subscription flow
+
+- Email submissions call BigCommerce Storefront GraphQL
+- Errors returned from the API are surfaced directly in the UI
+- **User-visible outcomes:**
+  - Success confirmation on subscription
+  - Friendly error messages for:
+    - Invalid email
+    - Already subscribed
+    - General failures
+
+#### Account settings: Marketing preferences
+
+- Customers can manage newsletter preferences directly from `/account/settings`
+- Toggle reflects real subscription state
+- Submitting changes updates BigCommerce via GraphQL
+- **Display rules:**
+  - Section only appears when `showNewsletterSignup` is enabled
+- **UX impact:**
+  - Customers can opt in or out without re-entering email
+  - Aligns newsletter management with other account preferences

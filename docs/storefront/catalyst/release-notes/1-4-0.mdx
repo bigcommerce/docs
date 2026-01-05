@@ -1,131 +1,40 @@
 # Catalyst version 1.4.0 Release Notes
 
-We are excited to announce the release of Catalyst v1.4.0, which brings new features including product reviews, newsletter subscriptions, and additional improvements.
+We are excited to announce the release of Catalyst v1.4.0, which brings a few additional improvements  as well as new features including:
 
-## Product reviews
+* [Product reviews](#product-reviews)  
+* Newsletter subscriptions  
+* Open telemetry  
+* Backorders 
 
-Catalyst now supports end-to-end product reviews on the storefront, powered by the Storefront GraphQL API.
+## Product Reviews
 
-This release includes:
+Catalyst now supports end-to-end product reviews on the storefront, integrated with the Storefront GraphQL API. This release enables:
 
-- New Storefront GraphQL settings for reviews
-- Native review submission UI on the product detail page (PDP)
-- Behavior that matches Cornerstone 1-to-1 for:
-  - Whether reviews are enabled
-  - Whether product ratings are shown
+* New Storefront GraphQL setting for enabling reviews (`site.settings.reviews.enabled)`  
+* New Storefront GraphQL setting for displaying product ratings (`site.settings.display.showProductRating)`  
+* New Storefront GraphQL setting for only accepting reviews from customers that have purchased the product (`site.settings.display.onlyAcceptPreviousCustomerReviews)`  
+* Native review submission UI on the product detail page (PDP)
 
-<Callout type='info'>
-	There is one difference between Cornerstone and Catalyst due to pre-existing
-	functionality in the `addProductReview` mutation. When the setting
-	`onlyAcceptPreviousCustomerReviews` is `false`, email is still a required
-	field when submitting a product review via GraphQL.
-</Callout>
+Here is an example GraphQL query for the settings related to reviews..
 
-### Storefront GraphQL settings
-
-The Storefront GraphQL API now exposes review-related settings under the site settings object. You can query:
-
-1. **Whether reviews are globally enabled for the store**
-
-   - Used in Catalyst as `reviewsEnabled`
-   - When `false`, Catalyst hides:
-     - The reviews section on PDP
-     - The review submission UI
-     - Rating stars on PDP/PLP
-
-2. **Whether product ratings should be displayed on the storefront**
-
-   - Backed by `site.settings.display.showProductRating`
-   - Ratings only render when:
-     - Reviews are enabled **and**
-     - `showProductRating` is `true`
-   - When disabled, review submission can still be available, but rating stars are hidden
-
-3. **Whether review submissions are restricted to previous purchasers**
-   - Reflects the "Only allow reviews from previous customers" store setting
-   - When enabled, the Storefront GraphQL API only accepts reviews where the submitted email matches at least one past order for that product
-   - Catalyst surfaces GraphQL error messages when this validation fails
-
-<Callout type='info'>
-	Use this query in your own custom components if you need to make review-aware
-	UI decisions outside the built-in sections.
-</Callout>
-
-```gql
+```graphql
 query SiteReviewSettings {
-	site {
-		settings {
-			reviews {
-				enabled
-				onlyAcceptPreviousCustomerReviews
-			}
-			display {
-				showProductRating
-			}
-		}
-	}
+  site {
+    settings {
+      reviews {
+        enabled
+        onlyAcceptPreviousCustomerReviews
+      }
+      display {
+        showProductRating
+      }
+    }
+  }
 }
 ```
 
-### Storefront behavior
-
-#### Rating display (PDP, PLP, search, category, brand)
-
-All product-listing UIs now respect the same review settings as Stencil:
-
-**When reviews are enabled and `showProductRating` is `true`:**
-
-- Product cards on search/category/brand pages show star ratings when `rating > 0`
-- PDP header shows the product rating
-- PDP reviews section is visible (including the review form)
-
-**When reviews are disabled:**
-
-- No ratings are shown on PLP or PDP
-- PDP reviews section (including submission UI) is hidden
-- GraphQL queries still succeed; Catalyst simply does not render review UI
-
-**Note:** Products with no reviews (`rating` is `0` or `null`) never show rating stars, even when ratings are enabled. This prevents non-reviewed products from appearing as if they have a "0" rating.
-
-#### Review submission UI
-
-On the PDP, customers can submit reviews via a dedicated modal form:
-
-**"Write a review" button:**
-
-- Appears in the reviews section when reviews exist
-- Appears in the reviews empty state
-- Implemented via `ProductReviewButton`
-
-**Review form fields:**
-
-- Rating
-- Title
-- Review text
-- Name
-- Email
-
-**Form behavior:**
-
-- Performs client-side validation on required fields
-- Calls BigCommerce's Storefront GraphQL API to create the review
-- Shows inline error messages for validation and GraphQL errors
-- Shows a success toast and closes the modal after a successful submission
-
-**Note:** The default implementation does **not** include reCAPTCHA. Add custom protection if your storefront requires it.
-
-#### Logged-in vs guest customers
-
-**Logged-in customers:**
-
-- Name and email are read from the auth JWT
-- The form is pre-filled with these values to maximize the chance of matching past orders for "verified purchaser only" stores
-
-**Guest customers:**
-
-- Name and email are always required
-- When "only allow reviews from previous customers" is enabled, the Storefront GraphQL API rejects submissions where the email does not match an order
-- Catalyst displays the resulting error message
+For more information on managing reviews in the Control Panel, refer to the [Managing Reviews documentation](https://support.bigcommerce.com/s/article/Managing-Reviews?language=en_US).
 
 ## Newsletter Subscriptions
 

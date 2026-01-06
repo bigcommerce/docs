@@ -1,0 +1,448 @@
+# Translations for Payment Methods (Beta)
+
+<Callout type='info'>
+	The Translations Admin GraphQL API is currently available on Catalyst
+	storefronts only.
+</Callout>
+
+The following entities are translatable for payment methods:
+
+- Display Name as `display_name`
+- Payment Instruction as `payment_instruction`
+
+Translations appear in the following storefront views:
+
+- Checkout page (payment methods listing)
+- Order confirmation page
+- Order email
+- My Account page (payment methods and orders)
+
+## Resource fields
+
+The entities listed above are referenced differently based on resource type and must use the following values in the queries outlined below:
+| Entity Type | `resourceType` | `resourceId` Format |
+| --- | --- | --- |
+| Payment Method | `PAYMENT_METHODS` | `bc/store/paymentMethod/{payment_method_id}.{currency}` |
+
+### Resource ID Format
+
+For payment method related translation entries, the `resourceId` follows this structure:
+
+`bc/store/paymentMethod/{payment_method_id}.{currency}`
+
+| **Segment**              | **Description**                                                      |
+| ------------------------ | -------------------------------------------------------------------- |
+| `bc/store/paymentMethod` | Namespace prefix for payment translation resources.                  |
+| `{payment_method_id}`    | Payment method identifier (e.g., `authorizenet.credit_card`, `braintree.credit_card`).        |
+| `{currency}`             | The ISO currency code configured for the payment method (e.g `USD`, `AUD`). |
+
+A single `resourceId` corresponds to all payment profiles that share the same payment method ID and currency. As a result:
+
+- Translations apply at the payment method + currency level.
+- If a provider has multiple profiles (e.g., multiple gateway configurations) using the same payment method ID and same currency, they share the same translation resource.
+- Updating the translation updates the display for every profile in that set.
+
+### Example
+
+In this example, the payment method is `braintree.credit_card` and the currency is `USD`. The translation will be applied to all payment profiles that use the same payment method ID and currency.
+
+`"resourceId": "bc/store/paymentMethod/braintree.credit_card.USD"`
+
+## Examples
+
+Below are examples of GraphQL queries and mutations for retrieving and managing translation settings for payment methods.
+
+### Query a List of Translations
+
+This query returns up to 50 payment method translations for the specified resource type, channel, and locale.
+
+The request below uses several variables for reusability. Replace `{{channel_id}}` and `{{locale_code}}` with the appropriate values for your use case.
+
+<Tabs items={['Request', 'Response']}>
+<Tab>
+
+```graphql filename="Example query: Query a list of translations" showLineNumbers copy
+GRAPHQL https://api.bigcommerce.com/stores/{{store_hash}}/graphql
+X-Auth-Token: {{token}}
+
+query {
+  store {
+    translations(
+      filters: {
+        resourceType: PAYMENT_METHODS,
+        channelId: "bc/store/channel/{{channel_id}}",
+        localeId: "bc/store/locale/{{locale_code}}"
+      }
+      first: 50
+    ) {
+      edges {
+        node {
+          resourceId
+          fields {
+            fieldName
+            original
+            translation
+          }
+        }
+        cursor
+      }
+      pageInfo {
+        hasNextPage
+        hasPreviousPage
+        startCursor
+        endCursor
+      }
+    }
+  }
+}
+```
+
+</Tab>
+<Tab>
+
+```json filename="Example query: Query a list of translations" showLineNumbers copy
+{
+  "data": {
+    "store": {
+      "translations": {
+        "edges": [
+          {
+            "node": {
+              "resourceId": "bc/store/paymentMethod/braintree.credit_card.USD",
+              "fields": [
+                {
+                  "fieldName": "display_name",
+                  "original": "Display name original",
+                  "translation": "Display name translation"
+                },
+                {
+                  "fieldName": "payment_instruction",
+                  "original": "Instruction original",
+                  "translation": "Instruction translation"
+                }
+              ]
+            },
+            "cursor": "YXV0aG9yaXplbmV0LmNyZWRpdF9jYXJkLlVTRA"
+          },
+          {
+            "node": {
+              "resourceId": "bc/store/paymentMethod/stripe.credit_card.USD",
+              "fields": [
+                {
+                  "fieldName": "display_name",
+                  "original": "Stripe",
+                  "translation": null
+                },
+                {
+                  "fieldName": "payment_instruction",
+                  "original": "",
+                  "translation": null
+                }
+              ]
+            },
+            "cursor": "c3RyaXBlLmNyZWRpdF9jYXJkLlVTRA"
+          }
+        ],
+        "pageInfo": {
+          "hasNextPage": false,
+          "hasPreviousPage": false,
+          "startCursor": "YXV0aG9yaXplbmV0LmNyZWRpdF9jYXJkLlVTRA",
+          "endCursor": "c3RyaXBlLmNyZWRpdF9jYXJkLlVTRA"
+        }
+      }
+    }
+  }
+}
+```
+
+</Tab>
+</Tabs>
+
+### Query a Translation by Resource ID
+
+This query returns translation(s) by resourceId.
+
+<Callout type='info'>
+When querying a translation by `resourceId`, you must provide the full `resourceId` in the format `bc/store/paymentMethod/{payment_method_id}.{currency}`.
+</Callout>
+
+The request below uses several variables for reusability. Replace `{{resourceId}}`, `{{channel_id}}`, and `{{locale_code}}` with appropriate values for your use case. Make sure `resourceId` follows the format from the [Resource fields](#resource-fields) table.
+
+<Tabs items={['Request', 'Response']}>
+<Tab>
+
+```graphql filename="Example query: Query a translation by id" showLineNumbers copy
+GRAPHQL https://api.bigcommerce.com/stores/{{store_hash}}/graphql
+X-Auth-Token: {{token}}
+
+query {
+  store {
+    translations(
+      filters: {
+        resourceType: PAYMENT_METHODS,
+        channelId: "bc/store/channel/{{channel_id}}",
+        localeId: "bc/store/locale/{{locale_code}}",
+        resourceIds: ["bc/store/paymentMethod/braintree.credit_card.USD"]
+      }
+    ) {
+      edges {
+        node {
+          resourceId
+          fields {
+            fieldName
+            original
+            translation
+          }
+        }
+        cursor
+      }
+    }
+  }
+}
+```
+
+</Tab>
+<Tab>
+
+```json filename="Example query: Query a translation by id" showLineNumbers copy
+{
+  "data": {
+    "store": {
+      "translations": {
+        "edges": [
+          {
+            "node": {
+              "resourceId": "bc/store/paymentMethod/braintree.credit_card.USD",
+              "fields": [
+                {
+                  "fieldName": "display_name",
+                  "original": "Authorize.Net",
+                  "translation": null
+                },
+                {
+                  "fieldName": "payment_instruction",
+                  "original": "",
+                  "translation": null
+                }
+              ]
+            },
+            "cursor": "YXV0aG9yaXplbmV0LmNyZWRpdF9jYXJkLlVTRA"
+          }
+        ]
+      }
+    }
+  }
+}
+```
+
+</Tab>
+</Tabs>
+
+### Update a Translation
+
+This mutation updates the translated values for payment method display names and payment instructions for a specific payment method, channel, and locale.
+
+<Tabs items={['Request', 'Response']}>
+<Tab>
+
+```graphql filename="Example mutation: Update a translation" showLineNumbers copy
+GRAPHQL https://api.bigcommerce.com/stores/{{store_hash}}/graphql
+X-Auth-Token: {{token}}
+
+mutation {
+  translation {
+    updateTranslations(
+      input: {
+        resourceType: PAYMENT_METHODS,
+        channelId: "bc/store/channel/{{channel_id}}",
+        localeId: "bc/store/locale/{{locale_code}}",
+        entities: [
+          {
+            resourceId: "bc/store/paymentMethod/braintree.credit_card.USD",
+            fields: [
+              {
+                fieldName: "display_name",
+                value: "Carte de crédit Braintree"
+              },
+              {
+                fieldName: "payment_instruction",
+                value: "Instructions de paiement Braintree"
+              }
+            ]
+          },
+          {
+            resourceId: "bc/store/paymentMethod/stripe.credit_card.USD",
+            fields: [
+              {
+                fieldName: "display_name",
+                value: "Carte de crédit Stripe"
+              },
+              {
+                fieldName: "payment_instruction",
+                value: "Instructions de paiement Stripe"
+              }
+            ]
+          }
+        ]
+      }
+    ) {
+      __typename
+      errors {
+        __typename
+        ... on Error {
+          message
+        }
+        ... on ValidationError {
+          message
+        }
+        ... on EntityNotFoundError {
+          id
+          message
+        }
+        ... on InvalidTranslationEntityFieldsError {
+          id
+          message
+          fields
+        }
+      }
+    }
+  }
+}
+```
+
+</Tab>
+<Tab>
+
+```json filename="Example mutation: Update a translation" showLineNumbers copy
+{
+  "data": {
+    "translation": {
+      "updateTranslations": {
+        "__typename": "UpdateTranslationsResult",
+        "errors": []
+      }
+    }
+  }
+}
+```
+
+</Tab>
+</Tabs>
+
+<Callout type='info'>
+The mutation example above shows a successful response. If invalid fields or resource IDs are provided, the API will return error responses. See the [Error Handling Reference](/docs/store-operations/translations/errors) for more details on error responses.
+
+Example error response for invalid resource ID:
+```json
+{
+  "data": {
+    "translation": {
+      "updateTranslations": {
+        "__typename": "UpdateTranslationsResult",
+        "errors": [
+          {
+            "__typename": "ValidationError",
+            "message": "Invalid resource ID: braintree.credit_card.US"
+          }
+        ]
+      }
+    }
+  }
+}
+```
+
+Example error response for invalid fields:
+```json
+{
+  "data": {
+    "translation": {
+      "updateTranslations": {
+        "__typename": "UpdateTranslationsResult",
+        "errors": [
+          {
+            "__typename": "InvalidTranslationEntityFieldsError",
+            "id": "bc/store/paymentMethod/braintree.credit_card.USD",
+            "message": "Unsupported translation entity fields.",
+            "fields": ["display_name1", "payment_instruction1"]
+          }
+        ]
+      }
+    }
+  }
+}
+```
+</Callout>
+
+### Delete a Translation
+
+The following mutation removes translated values for specified payment method fields, reverting them to the original values for a specific payment method, channel, and locale.
+
+<Tabs items={['Request', 'Response']}>
+<Tab>
+
+```graphql filename="Example mutation: Delete a translation" showLineNumbers copy
+GRAPHQL https://api.bigcommerce.com/stores/{{store_hash}}/graphql
+X-Auth-Token: {{token}}
+
+mutation {
+  translation {
+    deleteTranslations(
+      input: {
+        resourceType: PAYMENT_METHODS,
+        channelId: "bc/store/channel/{{channel_id}}",
+        localeId: "bc/store/locale/{{locale_code}}",
+        resources: [
+          {
+            resourceId: "bc/store/paymentMethod/braintree.credit_card.USD",
+            fields: ["display_name", "payment_instruction"]
+          },
+          {
+            resourceId: "bc/store/paymentMethod/stripe.credit_card.USD",
+            fields: ["display_name"]
+          }
+        ]
+      }
+    ) {
+      __typename
+      errors {
+        __typename
+        ... on Error {
+          message
+        }
+        ... on ValidationError {
+          message
+        }
+        ... on EntityNotFoundError {
+          id
+          message
+        }
+        ... on InvalidTranslationEntityFieldsError {
+          id
+          message
+          fields
+        }
+      }
+    }
+  }
+}
+```
+
+</Tab>
+<Tab>
+
+```json filename="Example mutation: Delete a translation" showLineNumbers copy
+{
+  "data": {
+    "translation": {
+      "deleteTranslations": {
+        "__typename": "DeleteTranslationsResult",
+        "errors": []
+      }
+    }
+  }
+}
+```
+
+</Tab>
+</Tabs>
+

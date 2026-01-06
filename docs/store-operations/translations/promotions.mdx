@@ -1,0 +1,358 @@
+# Translations for Promotions (Beta)
+
+<Callout type='info'>
+	The Translations Admin GraphQL API is currently available on Catalyst
+	storefronts only.
+</Callout>
+
+The following entities are translatable for promotions:
+
+- Name as `name`
+- Description as `description`
+
+## Resource fields
+
+| Entity Type | `resourceType`   | `resourceId` Format               |
+| ----------- | ---------------- | --------------------------------- |
+| Promotion   | `PROMOTIONS`     | `bc/store/promotion/{promotion_id}` |
+
+## Examples
+
+Below are examples of GraphQL queries and mutations for retrieving and managing translation settings for promotions.
+
+### Query a List of Translations
+
+This query returns up to 50 promotion translations for the specified resource type, channel, and locale.
+
+The request below uses several variables for reusability. Replace `{{channel_id}}` and `{{locale_code}}` with the appropriate values for your use case.
+
+<Tabs items={['Request', 'Response']}>
+<Tab>
+
+```graphql filename="Example query: Query a list of translations" showLineNumbers copy
+GRAPHQL https://api.bigcommerce.com/stores/{{store_hash}}/graphql
+X-Auth-Token: {{token}}
+
+query {
+  store {
+    translations(
+      filters: {
+        resourceType: PROMOTIONS
+        channelId: "bc/store/channel/{{channel_id}}"
+        localeId: "bc/store/locale/{{locale_code}}"
+      }
+      first: 50
+    ) {
+      edges {
+        node {
+          resourceId
+          fields {
+            fieldName
+            original
+            translation
+          }
+        }
+        cursor
+      }
+      pageInfo {
+        hasNextPage
+        hasPreviousPage
+        startCursor
+        endCursor
+      }
+    }
+  }
+}
+```
+
+</Tab>
+<Tab>
+
+```json filename="Example query: Query a list of translations" showLineNumbers copy
+{
+  "data": {
+    "store": {
+      "translations": {
+        "edges": [
+          {
+            "node": {
+              "resourceId": "bc/store/promotion/101",
+              "fields": [
+                {
+                  "fieldName": "name",
+                  "original": "Holiday Promo",
+                  "translation": "Promotion des fêtes"
+                },
+                {
+                  "fieldName": "description",
+                  "original": "Seasonal discount",
+                  "translation": "Remise saisonnière"
+                }
+              ]
+            },
+            "cursor": "eyJpZCI6MTAxfQ"
+          },
+          {
+            "node": {
+              "resourceId": "bc/store/promotion/102",
+              "fields": [
+                {
+                  "fieldName": "name",
+                  "original": "Spring Sale",
+                  "translation": null
+                },
+                {
+                  "fieldName": "description",
+                  "original": "Limited time offer",
+                  "translation": null
+                }
+              ]
+            },
+            "cursor": "eyJpZCI6MTAyfQ"
+          }
+        ],
+        "pageInfo": {
+          "hasNextPage": false,
+          "hasPreviousPage": false,
+          "startCursor": "eyJpZCI6MTAxfQ",
+          "endCursor": "eyJpZCI6MTAyfQ"
+        }
+      }
+    }
+  }
+}
+```
+
+</Tab>
+</Tabs>
+
+### Query a Translation by Resource ID
+
+This query returns translation(s) by resourceId.
+
+<Callout type='info'>
+When querying a translation by `resourceId`, you must provide the full `resourceId` in the format `bc/store/promotion/{promotion_id}`.
+</Callout>
+
+The request below uses several variables for reusability. Replace `{{resourceId}}`, `{{channel_id}}`, and `{{locale_code}}` with appropriate values for your use case. Make sure `resourceId` follows the format from the [Resource fields](#resource-fields) table.
+
+<Tabs items={['Request', 'Response']}>
+<Tab>
+
+```graphql filename="Example query: Query a translation by id" showLineNumbers copy
+GRAPHQL https://api.bigcommerce.com/stores/{{store_hash}}/graphql
+X-Auth-Token: {{token}}
+
+query {
+  store {
+    translations(
+      filters: {
+        resourceType: PROMOTIONS
+        channelId: "bc/store/channel/{{channel_id}}"
+        localeId: "bc/store/locale/{{locale_code}}"
+        resourceIds: ["{{resourceId}}"]
+      }
+    ) {
+      edges {
+        node {
+          resourceId
+          fields {
+            fieldName
+            original
+            translation
+          }
+        }
+        cursor
+      }
+    }
+  }
+}
+```
+
+</Tab>
+<Tab>
+
+```json filename="Example query: Query a translation by id" showLineNumbers copy
+{
+  "data": {
+    "store": {
+      "translations": {
+        "edges": [
+          {
+            "node": {
+              "resourceId": "bc/store/promotion/101",
+              "fields": [
+                {
+                  "fieldName": "name",
+                  "original": "Holiday Promo",
+                  "translation": "Promotion des fêtes"
+                },
+                {
+                  "fieldName": "description",
+                  "original": "Seasonal discount",
+                  "translation": "Remise saisonnière"
+                }
+              ]
+            },
+            "cursor": "eyJpZCI6MTAxfQ"
+          }
+        ]
+      }
+    }
+  }
+}
+```
+
+</Tab>
+</Tabs>
+
+### Update a Translation
+
+This mutation updates translated values for promotions for a specific channel and locale.
+
+<Tabs items={['Request', 'Response']}>
+<Tab>
+
+```graphql filename="Example mutation: Update a translation" showLineNumbers copy
+GRAPHQL https://api.bigcommerce.com/stores/{{store_hash}}/graphql
+X-Auth-Token: {{token}}
+
+mutation {
+  translation {
+    updateTranslations(
+      input: {
+        resourceType: PROMOTIONS,
+        channelId: "bc/store/channel/{{channel_id}}",
+        localeId: "bc/store/locale/{{locale_code}}",
+        entities: [
+          {
+            resourceId: "bc/store/promotion/101",
+            fields: [
+              { fieldName: "name", value: "Promotion des fêtes" },
+              { fieldName: "description", value: "Remise saisonnière" }
+            ]
+          },
+          {
+            resourceId: "bc/store/promotion/102",
+            fields: [
+              { fieldName: "name", value: "Vente de printemps" },
+              { fieldName: "description", value: "Offre limitée" }
+            ]
+          }
+        ]
+      }
+    ) {
+      __typename
+      errors {
+        __typename
+        ... on ValidationError {
+          message
+        }
+        ... on EntityNotFoundError {
+          id
+          message
+        }
+        ... on InvalidTranslationEntityFieldsError {
+          id
+          message
+          fields
+        }
+      }
+    }
+  }
+}
+```
+
+</Tab>
+<Tab>
+
+```json filename="Example mutation: Update a translation" showLineNumbers copy
+{
+  "data": {
+    "translation": {
+      "updateTranslations": {
+        "__typename": "UpdateTranslationsResult",
+        "errors": []
+      }
+    }
+  }
+}
+```
+
+</Tab>
+</Tabs>
+
+<Callout type='info'>
+The mutation example above shows a successful response. If invalid fields or resource IDs are provided, the API will return error responses. See the [Error Handling Reference](/docs/store-operations/translations/errors) for more details on error responses.
+</Callout>
+
+### Delete a Translation
+
+The following mutation removes translated values for specified promotion fields, reverting them to the original values for a specific channel and locale.
+
+<Tabs items={['Request', 'Response']}>
+<Tab>
+
+```graphql filename="Example mutation: Delete a translation" showLineNumbers copy
+GRAPHQL https://api.bigcommerce.com/stores/{{store_hash}}/graphql
+X-Auth-Token: {{token}}
+
+mutation {
+  translation {
+    deleteTranslations(
+      input: {
+        resourceType: PROMOTIONS,
+        channelId: "bc/store/channel/{{channel_id}}",
+        localeId: "bc/store/locale/{{locale_code}}",
+        resources: [
+          {
+            resourceId: "bc/store/promotion/101",
+            fields: ["name", "description"]
+          },
+          {
+            resourceId: "bc/store/promotion/102",
+            fields: ["name"]
+          }
+        ]
+      }
+    ) {
+      __typename
+      errors {
+        __typename
+        ... on ValidationError {
+          message
+        }
+        ... on EntityNotFoundError {
+          id
+          message
+        }
+        ... on InvalidTranslationEntityFieldsError {
+          id
+          message
+          fields
+        }
+      }
+    }
+  }
+}
+```
+
+</Tab>
+<Tab>
+
+```json filename="Example mutation: Delete a translation" showLineNumbers copy
+{
+  "data": {
+    "translation": {
+      "deleteTranslations": {
+        "__typename": "DeleteTranslationsResult",
+        "errors": []
+      }
+    }
+  }
+}
+```
+
+</Tab>
+</Tabs>
+

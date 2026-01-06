@@ -1,24 +1,23 @@
 # Catalyst version 1.4.0 Release Notes
 
-We are excited to announce the release of Catalyst v1.4.0, which brings a few additional improvements  as well as new features including:
+We are excited to announce the release of Catalyst v1.4.0, which brings product reviews, newsletter subscriptions, and more.
 
-* [Product reviews](#product-reviews)  
-* Newsletter subscriptions  
-* Open telemetry  
-* Backorders 
+For additional details, you can refer to the [Catalyst 1.4 changeset](https://github.com/bigcommerce/catalyst/releases/tag/%40bigcommerce%2Fcatalyst-core%401.4.0).
 
-## Product Reviews
+## Product reviews
 
-Catalyst now supports end-to-end product reviews on the storefront, integrated with the Storefront GraphQL API. This release enables:
+Catalyst now supports end-to-end product reviews on the storefront, integrated with the Storefront GraphQL API. This release includes:
 
 * New Storefront GraphQL setting for enabling reviews (`site.settings.reviews.enabled)`  
 * New Storefront GraphQL setting for displaying product ratings (`site.settings.display.showProductRating)`  
 * New Storefront GraphQL setting for only accepting reviews from customers that have purchased the product (`site.settings.display.onlyAcceptPreviousCustomerReviews)`  
 * Native review submission UI on the product detail page (PDP)
 
-Here is an example GraphQL query for the settings related to reviews..
+### Sample Storefront GraphQL Query
 
-```graphql
+Here is an example Storefront GraphQL query for the settings related to product reviews.
+
+```
 query SiteReviewSettings {
   site {
     settings {
@@ -36,143 +35,226 @@ query SiteReviewSettings {
 
 For more information on managing reviews in the Control Panel, refer to the [Managing Reviews documentation](https://support.bigcommerce.com/s/article/Managing-Reviews?language=en_US).
 
-## Newsletter Subscriptions
+## Newsletter subscriptions
 
-This release introduces a fully functional, end-to-end newsletter subscription experience in Catalyst, integrated with the BigCommerce Storefront GraphQL API.
+Catalyst now supports an end-to-end newsletter subscription experience, integrated with the BigCommerce Storefront GraphQL API. This includes:
 
-This release enables:
+* Fully-functioning newsletter subscription UI on the home page that includes success confirmation and error handling   
+* **Marketing preferences** section in the account settings page for managing newsletter preferences  
+* New Storefront GraphQL setting for controlling visibility of the signup UI (`site.settings.newsletter.showNewsletterSignup)`on the home page and account settings page  
+* New Storefront GraphQL setting for determining if a user is already subscribed (`site.customer.isSubscribedToNewsletter`)  
+* New Storefront GraphQL [newsletter mutations](https://developer.bigcommerce.com/graphql-storefront/reference#definition-NewsletterMutations) for subscribing and unsubscribing  
+* E2E tests
 
-- Store-controlled visibility of newsletter signup UI
-- Real customer subscription via GraphQL mutations
-- Customer self-management of newsletter preferences from account settings
+### Sample Storefront GraphQL Query
 
-### Features
+Here is a sample Storefront GraphQL query that queries the new settings related to newsletter subscriptions.
 
-1. **Homepage newsletter signup is settings-driven**
-
-   - The homepage `Subscribe` component now renders conditionally based on store configuration
-   - Visibility is controlled by the Storefront GraphQL field: `site.settings.newsletter.showNewsletterSignup`
-   - Uses the `Stream` / `Streamable` pattern for progressive loading
-   - **Result:**
-     - Stores with newsletter signup disabled will not render the section
-     - Stores with signup enabled see the newsletter section as before, now controlled by settings
-
-2. **Newsletter subscription is fully functional**
-
-   - Replaced the mock newsletter subscription with a real Storefront GraphQL mutation: `SubscribeToNewsletterMutation`
-   - Added comprehensive error handling:
-     - Invalid email address
-     - Already subscribed
-     - Unexpected server errors
-   - Improved error rendering in `InlineEmailForm` so server-side errors are properly displayed
-   - Added E2E tests covering the subscription flow
-   - **User-facing behavior:**
-     - Success message on subscription
-     - Clear error messages for common failure cases
-
-3. **Account settings newsletter toggle**
-
-   - Adds a "Marketing preferences" section to `/account/settings`
-   - Introduces a toggle allowing customers to:
-     - Subscribe to newsletters
-     - Unsubscribe from newsletters
-   - Uses a new server action: `updateNewsletterSubscription`
-   - UI is shown only when newsletter signup is enabled at the store level
-   - **Key characteristics:**
-     - Toggle state reflects `customer.isSubscribedToNewsletter`
-     - Submitting updates calls Storefront GraphQL to subscribe or unsubscribe
-     - Includes E2E tests and translations
-
-### Storefront GraphQL settings
-
-This feature relies on Storefront GraphQL for both configuration and customer subscription state.
-
-#### Fields added
-
-**`site.settings.newsletter.showNewsletterSignup`**
-
-- **Type:** `Boolean`
-- **Purpose:** Controls whether newsletter subscription UI is displayed in the storefront
-- **Used by:**
-  - Homepage newsletter signup section
-  - Account settings "Marketing preferences" section
-
-**`customer.isSubscribedToNewsletter`**
-
-- **Type:** `Boolean`
-- **Purpose:** Indicates whether the authenticated customer is currently subscribed
-- **Used by:**
-  - Account settings toggle initial state
-  - Determining subscribe vs unsubscribe behavior
-
-#### GraphQL query example
-
-```gql
+```
 query NewsletterSettingsAndCustomerStatus {
-	site {
-		settings {
-			newsletter {
-				showNewsletterSignup
-			}
-		}
-	}
-	customer {
-		isSubscribedToNewsletter
-	}
+  site {
+    settings {
+      newsletter {
+        showNewsletterSignup
+      }
+    }
+  }
+  customer {
+    isSubscribedToNewsletter
+  }
 }
 ```
 
-<Callout type='info'>
-	The `customer` field requires an authenticated shopper context. For homepage
-	gating only, querying `site.settings.newsletter.showNewsletterSignup` is
-	sufficient.
-</Callout>
+For more information on newsletter settings in the Control Panel, refer to the [Newsletter and Email Marketing Settings documentation](https://support.bigcommerce.com/s/article/Collecting-Newsletter-Subscriptions?language=en_US).
 
-### Storefront behavior
+### What’s not included
 
-#### Homepage newsletter signup section
+The Require Consent toggle in the store’s [Miscellaneous settings](https://support.bigcommerce.com/s/article/Using-the-Abandoned-Cart-Saver?language=en_US#notifications), which overrides the Newsletter Checkbox when enabled and allows customers to opt in to receive abandoned cart emails and other marketing emails, was not implemented in this release. 
 
-- The newsletter signup section no longer renders unconditionally
-- Rendering is controlled by `showNewsletterSignup`
-- **UX impact:**
-  - No visual placeholder or empty state when disabled
-  - When enabled, the section loads progressively and behaves as expected
+Additionally, the [Show Newsletter Summary](https://support.bigcommerce.com/s/article/Collecting-Newsletter-Subscriptions?language=en_US#newsletter-settings) field is not supported. 
 
-#### Newsletter signup subscription flow
+## Inventory messaging on Product Listings & Product Details
 
-- Email submissions call BigCommerce Storefront GraphQL
-- Errors returned from the API are surfaced directly in the UI
-- **User-visible outcomes:**
-  - Success confirmation on subscription
-  - Friendly error messages for:
-    - Invalid email
-    - Already subscribed
-    - General failures
+This release adds **store-aware inventory messaging** across both Product Listing Pages (PLPs) and Product Detail Pages (PDPs). Messages are automatically driven by BigCommerce inventory and backorder settings, ensuring consistent customer communication without custom logic.
 
-#### Account settings: Marketing preferences
+### Product Listing Pages (PLPs)
 
-- Customers can manage newsletter preferences directly from `/account/settings`
-- Toggle reflects real subscription state
-- Submitting changes updates BigCommerce via GraphQL
-- **Display rules:**
-  - Section only appears when `showNewsletterSignup` is enabled
-- **UX impact:**
-  - Customers can opt in or out without re-entering email
-  - Aligns newsletter management with other account preferences
+Product cards can now display inventory status messages based on store and product configuration. 
 
-### Limitations
+An **Out of Stock** message will be displayed when:
 
-This release does not include support for the following newsletter-related features:
+* The product is out of stock  
+* The store is configured to show out-of-stock messaging
 
-**Support for Require Consent**
 
-The Require Consent toggle in the store's Miscellaneous settings, which overrides the Newsletter Checkbox when enabled and allows customers to opt in to receive abandoned cart emails and other marketing emails, is not supported in this release.
+A **Backorder** message will be displayed when:
 
-**Support for Newsletter Summary**
+* The product has no on-hand inventory  
+* The product is available for backorder  
+* The store or product is configured to show backorder messaging
 
-The [Show Newsletter Summary](https://support.bigcommerce.com/s/article/Collecting-Newsletter-Subscriptions?language=en_US#newsletter-settings) field is not supported.
+### Product Detail Pages (PDPs)
 
-## Migration Guide
+Product detail pages now surface richer backorder context when applicable. When a product supports backorders and store settings allow it, the PDP can display:
+
+* A backorder availability prompt  
+* The quantity currently on backorder  
+* A custom backorder message
+
+## Consent management
+
+We’ve made several updates to how we handle consent management in Catalyst.
+
+* Upgraded [`@c15t/nextjs`](https://www.npmjs.com/package/@c15t/nextjs) to version `1.8.2`  
+* Changed consent manager mode from `custom` to `offline` mode  
+* Simplified cookie handling and removed custom consent cookie encoder/decoder implementations (`decoder.ts`, `encoder.ts`)  
+* `CookieBanner` now supports the `privacyPolicyUrl` field from BigCommerce API and will be rendered in the banner description if available.
+
+### ConsentManagerProvider
+
+The `ConsentManagerProvider` now uses `offline` mode instead of `custom` mode with endpoint handlers. The provider configuration has been simplified:
+
+* `mode` changed from `'custom'` to `'offline'`  
+* Removed `endpointHandlers` \- no longer needed in offline mode  
+* Added `enabled` prop to control consent manager functionality  
+* Added `storageConfig` for cookie storage configuration
+
+**Before:**
+
+```ts
+<C15TConsentManagerProvider
+  options={{
+    mode: 'custom',
+    consentCategories: ['necessary', 'functionality', 'marketing', 'measurement'],
+    endpointHandlers: {
+      showConsentBanner: () => showConsentBanner(isCookieConsentEnabled),
+      setConsent,
+      verifyConsent,
+    },
+  }}
+>
+  <ClientSideOptionsProvider scripts={scripts}>
+    {children}
+  </ClientSideOptionsProvider>
+</C15TConsentManagerProvider>
+```
+
+**After:**
+
+```ts
+<C15TConsentManagerProvider
+  options={{
+    mode: 'offline',
+    storageConfig: {
+      storageKey: CONSENT_COOKIE_NAME,
+      crossSubdomain: true,
+    },
+    consentCategories: ['necessary', 'functionality', 'marketing', 'measurement'],
+    enabled: isCookieConsentEnabled,
+  }}
+>
+  <ClientSideOptionsProvider scripts={scripts}>
+    {children}
+  </ClientSideOptionsProvider>
+</C15TConsentManagerProvider>
+```
+
+### Cookie Handling
+
+If you have custom code that directly reads or writes consent cookies, you'll need to update it:
+
+**Before:** The previous implementation used custom encoding/decoding. If you were directly accessing consent cookie values, you would have needed to use the custom decoder.
+
+**After:** The consent cookie now uses c15t's compact format. The public API for reading cookies remains the same:
+
+```ts
+import { getConsentCookie } from '~/lib/consent-manager/cookies/client'; // client-side
+// or
+import { getConsentCookie } from '~/lib/consent-manager/cookies/server'; // server-side
+
+const consent = getConsentCookie();
+```
+
+The `getConsentCookie()` function now internally uses `parseCompactFormat()` to parse the compact format cookie string. If you were directly parsing cookie values, you should now use the `getConsentCookie()` helper instead.
+
+`getConsentCookie` now returns a compact version of the consent values:
+
+```ts
+{
+  i.t: 123456789,
+  c.necessary: true,
+  c.functionality: true,
+  c.marketing: false,
+  c.measurment: false
+}
+```
+
+Instances where `getConsentCookie` is used have been updated to reflect this new schema. We also removed `setConsentCookie` from server and client since this is now handled by the c15t library.
+
+### Script Location Support
+
+`c15t` scripts now support rendering in either the `<head>` or `<body>` based on the `location` field from the BigCommerce API:
+
+```ts
+// Scripts transformer now includes target based on location
+target: script.location === 'HEAD' ? 'head' : 'body'
+```
+
+The `ScriptsFragment` GraphQL query now includes the `location` field, allowing scripts to be placed in the appropriate DOM location. `FOOTER` location is still not supported.
+
+### Privacy Policy
+
+The `RootLayoutMetadataQuery` GraphQL query now includes the `privacyPolicyUrl` field, which the `CookieBanner` component now accepts as a prop. Here is an abbreviated version of that query.
+
+```
+query RootLayoutMetadataQuery {
+  site {
+    settings {
+      privacy {
+        cookieConsentEnabled
+        privacyPolicyUrl
+      }
+  }
+}
+
+```
+
+This property is then passed to the `privacyPolicyUrl` prop in the `CookieBanner`.
+
+```ts
+const privacyPolicyUrl = rootData.data.site.settings?.privacy?.privacyPolicyUrl;
+//...
+
+<CookieBanner 
+  privacyPolicyUrl={privacyPolicyUrl}
+  // ... other props
+/>
+```
+
+The privacy policy link:
+
+- Opens in a new tab (`target="_blank"`)  
+- Only renders if `privacyPolicyUrl` is provided as a non-empty string
+
+Add translatable `privacyPolicy` field to `Components.ConsentManager.CookieBanner` translation namespace for the privacy policy link text.
+
+## OpenTelemetry Observability
+
+Catalyst now ships with **built-in [OpenTelemetry](https://opentelemetry.io/docs/) (OTel) instrumentation** using [`@vercel/otel`](https://www.npmjs.com/package/@vercel/otel) and Next.js native instrumentation. This enables production-grade observability out of the box:
+
+* Understand **end-to-end request performance** across PLPs, PDPs, cart, and checkout  
+* Identify **slow API calls, rendering bottlenecks, and N+1 patterns**  
+* Debug production issues with **trace-level visibility**, without adding custom instrumentation
+
+NOTE: Collection of OpenTelemetry data is enabled by default. For testing locally, you can follow the [Testing your instrumentation](https://nextjs.org/docs/app/guides/open-telemetry#testing-your-instrumentation) documentation from Vercel. Additionally, when connecting to a production environment, you’ll want to configure an observability provider. Here is a non-exhaustive [list of vendors who natively support OpenTelemetry](https://opentelemetry.io/ecosystem/vendors/).
+
+Next.js includes tracing for several spans out of the box. Refer to the [Default Spans in Next.js](https://nextjs.org/docs/app/guides/open-telemetry#default-spans-in-nextjs) documentation for more details. Additionally, if you need to create custom spans, you can find examples in the [`tracer.ts`](https://github.com/bigcommerce/catalyst/blob/44c682ef988030d7500275f3e4e4503a3a1af63c/core/lib/otel/tracer.ts) file.
+
+For an introduction to observability, read the [Observability primer doc](https://opentelemetry.io/docs/concepts/observability-primer/) on the OpenTelemetry website.
+
+## Product Level Discounts (bug fix)
+
+Previously, automatic discounts to a specific product (not the entire cart) were not being displayed appropriately. Because of this, it wasn’t clear whether or not the promotions were being applied correctly. This has now been fixed, by displaying a strikethrough price for individually discounted products.
 
 ## Release Tags
 

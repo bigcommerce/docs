@@ -30,12 +30,11 @@ servers:
   - url: 'https://api-b2b.bigcommerce.com/api/v3/io'
 security:
   - X-Auth-Token: []
+    X-Store-Hash: []
 tags:
   - name: Users
 paths:
   /users:
-    parameters:
-      - $ref: "#/components/parameters/X-Store-Hash"
     get:
       summary: Get All B2B users
       description: Returns a paginated list of B2B users with optional filters.
@@ -163,7 +162,7 @@ paths:
     post:
       summary: Create A Company User
       description: |-
-        Create a Company user within an existing Company.
+        Create a Company user within an existing Company. This migrates the user's existing orders to the Company's Buyer Portal if their email address is associated with a B2C customer account.
 
         With [Independent Company behavior](/b2b-edition/apis/rest-management/company/companies#independent-vs-dependent-companies-behavior) enabled, B2B Edition Company accounts are the source of truth for defining a Company user’s customer group assignment.
         
@@ -198,8 +197,6 @@ paths:
         '422':
           $ref: "#/components/responses/post422"
   /users/bulk:
-    parameters:
-      - $ref: "#/components/parameters/X-Store-Hash"
     post:
       summary: Bulk Create Users
       description: |-
@@ -260,7 +257,6 @@ paths:
           $ref: "#/components/responses/post422"
   /users/{userId}:
     parameters:
-      - $ref: "#/components/parameters/X-Store-Hash"
       - name: userId
         in: path
         required: true
@@ -406,7 +402,6 @@ paths:
                             default: "The last user in company can not be deleted."
   /users/customer/{customerId}:
     parameters:
-      - $ref: "#/components/parameters/X-Store-Hash"
       - name: customerId
         in: path
         required: true
@@ -439,8 +434,6 @@ paths:
         '404':
           $ref: "#/components/responses/userId404"
   /users/extra-fields:
-    parameters:
-      - $ref: "#/components/parameters/X-Store-Hash"
     get:
       summary: List extra fields for users
       description: Returns paginated list of extra field definitions for users.
@@ -791,14 +784,6 @@ components:
                         type: string
                         default: "User matching query does not exist."
   parameters:
-    X-Store-Hash:
-      name: X-Store-Hash
-      in: header
-      required: true
-      schema:
-        type: string
-        example: abc123
-      description: The unique store hash associated with a BigCommerce store that has B2B Edition enabled.
     limit:
       name: limit
       in: query
@@ -831,6 +816,16 @@ components:
       schema:
         type: integer
   securitySchemes:
+    X-Store-Hash:
+      name: X-Store-Hash
+      description: |-
+        ### Authentication header
+
+        | Header | Argument | Description |
+        |:-------|:---------|:------------|
+        | `X-Store-Hash` | `store_hash` | The unique store hash associated with a BigCommerce store that has B2B Edition enabled. |
+      type: apiKey
+      in: header
     X-Auth-Token:
       name: X-Auth-Token
       description: |-

@@ -51,15 +51,13 @@ tags:
     description: Managing orders placed by buyers on stores using B2B Edition.
 paths:
   /orders:
-    parameters:
-      - $ref: "#/components/parameters/X-Store-Hash"
     get:
       summary: Get All Orders
       tags:
         - Orders
       operationId: get-orders
       description: |-
-        Retrieves limited information for all orders, including B2B-specific information like Company IDs and order extra fields. The response includes orders placed by B2C customers and guest shoppers. Use [Get Order Products](#get-order-products) to retrieve an order's product details, or use the BigCommerce [Orders V2 API](/docs/rest-management/orders) to retrieve all order details except those specific to B2B Edition, like Company ID and extra fields.
+        Retrieves limited information for all orders, including B2B-specific information like Company IDs and order extra fields. By default, this endpoint limits its response to orders created or updated in the last year. The response includes orders placed by B2C customers and guest shoppers. Use [Get Order Products](#get-order-products) to retrieve an order's product details, or use the BigCommerce [Orders V2 API](/docs/rest-management/orders) to retrieve all order details except those specific to B2B Edition, like Company ID and extra fields.
 
         Use the parameters to filter the returned orders by attributes like associated Company ID, date created, or storefront channel. You can also set the `showExtra` parameter to `true` in order to return extra field values associated with the order.
       parameters:
@@ -578,8 +576,6 @@ paths:
                   - code
                   - data
   '/customers/{customerId}/orders/b2b':
-    parameters:
-      - $ref: "#/components/parameters/X-Store-Hash"
     put:
       tags:
         - Orders
@@ -646,8 +642,6 @@ paths:
                   - code
                   - data
   /orders/extra-fields:
-    parameters:
-      - $ref: "#/components/parameters/X-Store-Hash"
     get:
       summary: Get Order Extra Field Configs
       tags:
@@ -676,14 +670,6 @@ paths:
                             - $ref: '#/components/schemas/orderExtraFields'
 components:
   parameters:
-    X-Store-Hash:
-      name: X-Store-Hash
-      in: header
-      required: true
-      schema:
-        type: string
-        example: abc123
-      description: The unique store hash associated with a BigCommerce store that has B2B Edition enabled.
     limit:
       name: limit
       in: query
@@ -1405,6 +1391,16 @@ components:
               - meta
   examples: {}
   securitySchemes:
+    X-Store-Hash:
+      name: X-Store-Hash
+      description: |-
+        ### Authentication header
+
+        | Header | Argument | Description |
+        |:-------|:---------|:------------|
+        | `X-Store-Hash` | `store_hash` | The unique store hash associated with a BigCommerce store that has B2B Edition enabled. |
+      type: apiKey
+      in: header
     X-Auth-Token:
       name: X-Auth-Token
       description: |-
@@ -1425,4 +1421,5 @@ components:
       type: apiKey
       in: header
 security:
-  - authToken: []
+  - X-Auh-Token: []
+    X-Store-Hash: []

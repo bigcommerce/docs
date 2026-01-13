@@ -864,6 +864,8 @@ paths:
         - $ref: '#/components/parameters/date_created_max'
         - $ref: '#/components/parameters/date_modified_min'
         - $ref: '#/components/parameters/date_modified_max'
+        - $ref: '#/components/parameters/BeforeCursorParam'
+        - $ref: '#/components/parameters/AfterCursorParam'
     post:
       summary: Create multiple Metafields
       tags:
@@ -1327,6 +1329,52 @@ components:
               description: |
                 Link to the next page returned in the response.
       x-internal: false
+    CursorPagination:
+      type: object
+      description: Data about the response, including cursor pagination and collection totals.
+      title: CursorPagination
+      properties:
+        count:
+          type: integer
+          description: |
+            Total number of items in the collection response.
+          example: 36
+        per_page:
+          type: integer
+          description: |
+            The amount of items returned in the collection per page, controlled by the limit parameter.
+          example: 50
+        start_cursor:
+          type: string
+          description: |
+            Cursor that is referring to a start of current page.
+          example: "aWQ6Nw=="
+        end_cursor:
+          type: string
+          description: |
+            Cursor that is referring to a end of current page. Should be used to fetch next page.
+          example: "aWQ6Nw=="
+        links:
+          type: object
+          description: |
+            Pagination links for the previous and next parts of the whole collection.
+          properties:
+            previous:
+              type: string
+              description: |
+                Cursor to the previous page returned in the response.
+              example: '?page=1&after=aWQ6Nw%3D%3D'
+            current:
+              type: string
+              description: |
+                Cursor to the current page returned in the response.
+              example: '?page=1&after=aWQ6Nw%3D%3D'
+            next:
+              type: string
+              description: |
+                Cursor to the next page returned in the response.
+              example: '?page=1&after=aWQ6Nw%3D%3D'
+      x-internal: false
     ReceivedItems_Put:
       type: array
       items:
@@ -1463,56 +1511,12 @@ components:
       x-internal: false
     CollectionMeta:
       type: object
-      description: Data about the response, including pagination and collection totals.
+      description: Data about the response, including pagination (for a first page and offset-based and cursor-based pagination data are returned) and collection totals.
       properties:
         pagination:
-          type: object
-          description: Data about the response, including pagination and collection totals.
-          title: Pagination
-          properties:
-            total:
-              type: integer
-              description: |
-                Total number of items in the result set.
-              example: 36
-            count:
-              type: integer
-              description: |
-                Total number of items in the collection response.
-              example: 36
-            per_page:
-              type: integer
-              description: |
-                The amount of items returned in the collection per page, controlled by the limit parameter.
-              example: 50
-            current_page:
-              type: integer
-              description: |
-                The page you are currently on within the collection.
-              example: 1
-            total_pages:
-              type: integer
-              description: |
-                The total number of pages in the collection.
-              example: 1
-            links:
-              type: object
-              description: |
-                Pagination links for the previous and next parts of the whole collection.
-              properties:
-                previous:
-                  type: string
-                  description: |
-                    Link to the previous page returned in the response.
-                current:
-                  type: string
-                  description: |
-                    Link to the current page returned in the response.
-                  example: '?page=1&limit=50'
-                next:
-                  type: string
-                  description: |
-                    Link to the next page returned in the response.
+          $ref: '#/components/schemas/Pagination'
+        cursor_pagination:
+          $ref: '#/components/schemas/CursorPagination'
       title: Collection Meta
       x-internal: false
     Meta:
@@ -3483,6 +3487,8 @@ components:
                 properties:
                   pagination:
                     $ref: '#/components/schemas/Pagination'
+                  cursor_pagination:
+                    $ref: '#/components/schemas/CursorPagination'
     ReturnStatus_Resp:
       description: ''
       content:
@@ -3991,6 +3997,20 @@ components:
             - owner_client_id
             - date_created
             - date_modified
+    BeforeCursorParam:
+      name: 'before'
+      description: 'Specify a cursor starting from which next page will be fetched (Backward order). Not required for a first page. For all subsequent page requests use a value from meta.cursor_pagination.end_cursor obtained by previous request. Works with limit, direction and other parameters. Overrides offset pagination parameter as page. Can not be used with after parameter'
+      in: query
+      required: false
+      schema:
+        type: string
+    AfterCursorParam:
+      name: 'after'
+      description: 'Specify a cursor starting from which next page will be fetched (Forward order). Not required for a first page. For all subsequent page requests use a value from meta.cursor_pagination.end_cursor obtained by previous request. Works with limit, direction and other parameters. Overrides offset pagination parameter as page. Can not be used with before parameter'
+      in: query
+      required: false
+      schema:
+        type: string
   securitySchemes:
     X-Auth-Token:
       name: X-Auth-Token

@@ -1,97 +1,57 @@
-# Manually Installing Scripts
+# Installing Scripts in Catalyst
 
-## Introduction
+Catalyst storefronts support adding custom scripts (for analytics, marketing tags, widgets, etc.). There are two primary ways to include third-party scripts on your Catalyst storefront:
 
-In this guide, you'll learn how scripts can be manually added to Catalyst. This is a common need for apps in the BigCommerce marketplace. Luckily it's very straightforward to do!
+1. **Add scripts in your code** using Next.js’s `<Script>` component.
+2. **Use [BigCommerce Script Manager](https://support.bigcommerce.com/s/article/Using-Script-Manager?language=en_US)** in your store’s control panel to inject scripts without code changes.
 
-<Callout type="info" emoji="ℹ️">
-  Marketplace apps may automatically inject scripts into your store using the
-  Scripts API. We plan on Catalyst supporting this in the future, once the
-  GraphQL API supports returning all those scripts in a single request. Until
-  this occurs, use this guide to help you add scripts manually to Catalyst.
+<Callout type="info">
+  Every additional script has a performance cost. Third-party scripts can increase page load time, block rendering, or add runtime overhead on the client. This applies whether scripts are added manually in code or through Script Manager.
+  Be intentional about which scripts you include, where they load (head vs body), and when they execute. Periodically review and remove unused scripts, and test storefront performance after adding or updating scripts to ensure they don’t negatively impact shopper experience.
 </Callout>
 
-If you want to see a real-world example of an app's script being added to Catalyst, check out the [Adding Mailchimp to Catalyst](/docs/storefront/catalyst/getting-started/guides/mailchimp-newsletter) guide.
+## Adding Scripts via Code (Next.js `<Script>`)
 
-## Overview of the Next.js Script component
+Because Catalyst is built on Next.js, you can directly include scripts in your application code using the Next.js `<Script>` component. This approach gives you fine-grained control over when and how scripts load (e.g. immediately, after page load, or during idle time) by specifying the script’s loading strategy. For example, you can add an external script in a layout or page component like so:
 
-The preferred method of adding scripts to Catalyst is the `<Script />` component from `next/script`, which is designed to optimize the loading of third-party scripts. It enables us to control when and how scripts are loaded. Using it properly can improve the performance and user experience of your site by loading less Javascript up front and enabling the critical site elements to become interactive in less time.
-
-In its most basic form, it looks very similar to a normal script tag:
-
-```tsx {1,6} copy
+```tsx copy
 import Script from 'next/script';
 
-export default function YourComponent() {
+export default function MyPage() {
   return (
-    <>
-      <Script src="https://example.com/script.js" />
+    <>
+      {/* Other page content */}
+      <Script src="https://example.com/script.js" strategy="afterInteractive" />
     </>
   );
 }
 ```
 
-Without any props, the script will load using an `afterInteractive` strategy. That means it'll load the script after the page initially starts to render interactive elements in the browser.
+Next.js will ensure the script is injected and loaded at the appropriate time. Refer to the [Next.js documentation on the `<Script>` component](https://nextjs.org/docs/app/api-reference/components/script) for details on all available props and strategies.
 
-There are multiple strategies compatible with Catalyst:
+<Callout type="warning">
+  When adding scripts manually via the Next.js `<Script>` component, Catalyst does not automatically manage user consent. Scripts that set cookies or perform tracking (for example analytics, advertising, or personalization) may execute immediately, which can violate GDPR or similar privacy regulations if user consent has not been obtained.
+  If a script requires cookie consent, prefer adding it through BigCommerce Script Manager, which integrates with Catalyst’s consent management (via c15t) and ensures non-essential scripts are deferred until the shopper grants consent.
+</Callout>
 
-- [`beforeInteractive`](https://nextjs.org/docs/app/api-reference/components/script#beforeinteractive): Load before any Next.js code and before any page hydration occurs. (_e.g. bot detectors and cookie consent managers_)
-- [`afterInteractive`](https://nextjs.org/docs/app/api-reference/components/script#afterinteractive): (default) Load early but after some hydration on the page occurs. (_e.g. tag managers and analytics_)
-- [`lazyOnload`](https://nextjs.org/docs/app/api-reference/components/script#lazyonload): Load during browser idle time. (_e.g. chat support plugins, social media widgets, and marketing pop-ups_)
+## Adding Scripts via BigCommerce Script Manager
 
-What is not listed here is the `worker` strategy, which loads the script on a different thread, within a web worker. This is because that strategy is experimental and not yet compatible with two modern technologies Catalyst depends on: Next.js App Router and React Server Components.
+BigCommerce’s Script Manager is a feature that lets you manage third-party scripts through the BigCommerce control panel UI (instead of editing code). The Script Manager provides a visual list of all scripts installed on your store for easy management. This is useful for adding tracking pixels, analytics tags, chat widgets, or other scripts by simply pasting them into the control panel.
 
-For comprehensive details on the Script component, [check out the Next.js documentation](https://nextjs.org/docs/app/api-reference/components/script).
+To use this feature, log in to your BigCommerce control panel and navigate to **Storefront \> Script Manager**. From there you can create a new script, give it a name, and specify options such as:
 
-## Installing scripts all pages
+* **Location** – where the script should be injected (e.g. the \<head\> or the bottom of \<body\> of your storefront pages).
+* **Pages where it applies** – for example, *All Pages* or *Storefront Pages*. *(Catalyst will automatically fetch scripts that apply to “All Pages” or “Storefront” pages; other options like Order Confirmation are ignored.)*
+* **Script content or URL** – you can either paste inline script code or provide an external script URL.  
+* **Consent category** – categorize the script (Essential, Functional, Analytics, or Targeting) for privacy consent purposes.
 
-To load a script on every page, add it to the default layout, which is shared across all pages:
+Once you save a script in Script Manager, it becomes associated with your BigCommerce store’s settings. Catalyst will automatically pick up these scripts and include them on your headless storefront at runtime. You do not need to alter your Catalyst codebase – the integration between Catalyst and Script Manager handles it for you.
 
-```tsx {1,25} filename="core/app/[locale]/(default)/layout.tsx" copy
-import Script from 'next/script';
-import { setRequestLocale } from 'next-intl/server';
-import { PropsWithChildren } from 'react';
+**How it works under the hood:** When your Catalyst storefront loads, it uses BigCommerce’s GraphQL Storefront API to retrieve any scripts defined via Script Manager for your store. Catalyst’s built-in GraphQL fragment includes all scripts configured for “All Pages” or “Storefront”, along with each script’s details (content or URL, location, consent category, etc.). The steps below outline this process:
 
-import { Footer } from '~/components/footer';
-import { Header } from '~/components/header';
+1. **Fetch scripts via GraphQL:** The Catalyst app’s root layout query requests the list of scripts from the store (using a `ScriptsFragment` fragment). This returns up to 50 scripts and their properties.
+2. **Transform script data:** The raw script data from BigCommerce is passed through a `scriptsTransformer` function in Catalyst. This transformer maps BigCommerce’s script fields into the format expected by the `c15t` script loader. For example, it converts the script’s location to a target placement (head or body), uses the script’s entityId as a stable script ID, and maps the BigCommerce consent category (e.g. Essential, Functional, Analytics, Targeting) to c15t’s category names (necessary, functionality, measurement, marketing).
+3. **Inject via c15t:** Catalyst uses [**c15t**](https://c15t.com/), an open-source consent management library, to actually load the scripts on the client side. The transformed scripts list is provided to c15t’s `<ClientSideOptionsProvider>` in the Catalyst app, which will create the corresponding `<script>` elements in the browser. `c15t` ensures each script is injected into the appropriate part of the page (head or body) and manages their lifecycle.
+4. **Consent management:** If your store has cookie consent enabled, c15t’s consent manager will **defer non-essential scripts** until the shopper grants consent for their category. For instance, a script categorized as “Analytics” (mapped to c15t’s measurement category) will not execute until the user consents to analytics cookies. The Catalyst storefront includes a cookie consent banner and modal powered by c15t to handle user opt-in. Once consent is given, c15t will load any pending scripts for the allowed categories automatically. If cookie consent is **disabled** in your store’s settings, all scripts will load immediately without requiring any user action.
 
-interface Props extends PropsWithChildren {
-  params: Promise<{ locale: string }>;
-}
-
-export default async function DefaultLayout({ params, children }: Props) {
-  const { locale } = await params;
-
-  setRequestLocale(locale);
-
-  return (
-    <>
-      <Header />
-
-      <main>{children}</main>
-
-      <Footer />
-
-      <Script src="https://your-script-url.com/script.js" />
-    </>
-  );
-}
-
-export const experimental_ppr = true;
-```
-
-The script will now be loaded once per session.
-
-## Installing scripts on a specific page
-
-The instructions above are focused on the most common use case, which is installing scripts that will be on all pages. That's why we used the shared default layout file.
-
-The same code could be used within a page route file instead of the layout, if you want to target only a single type of page.
-
-For instance, if you wanted a script for product reviews to load only on product pages, you would add it to `core/app/[locale]/(default)/product/[slug]/page.tsx`
-
-## Enabling scripts that run code on every page load
-
-Sometimes scripts have logic that runs each time a page is visited. If you find that the script you install is working on the first page you visit, but not the second, it's likely dependent on additional logic like this.
-
-The `<Script/>` component has an `onReady` prop that accepts a function that will run every time a page is loaded, even if the script is already loaded. You can view more details about this property [on the Next.js docs](https://nextjs.org/docs/app/api-reference/components/script#onready).
+Using Script Manager in this way decouples script management from your codebase. It allows non-developers (or admins) to add or remove third-party integrations on the storefront safely, and it ensures those scripts load in a performant and privacy-compliant way. In summary, simply add your script via BigCommerce Script Manager, and Catalyst (with the help of c15t) will handle injecting that script into your headless storefront at runtime.

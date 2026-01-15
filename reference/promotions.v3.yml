@@ -4,7 +4,7 @@ info:
   version: '1.0'
   description: |
     A *promotion* is composed of a condition that a customer can satisfy, such as increasing their cart value above a certain amount or adding an item to their cart. 
-    
+
     After the customer satisfies the condition, an action takes place, such as a free item being added to the cart or a discount applying itself to the order total.
 
     To learn more about promotions, consult the [Promotions Overview](/docs/store-operations/promotions).
@@ -279,7 +279,7 @@ paths:
           content: {}
         '422':
           $ref: '#/components/responses/BulkDeleteResponse'
-          
+
   '/promotions/{promotion_id}/codegen':
     post:
       tags:
@@ -287,7 +287,7 @@ paths:
       summary: Generate Multiple Coupon Codes
       description: |-
         Generate a batch of coupon codes for a particular bulk coupon promotion.
-        
+
         **Note:**
         * batch_size (number of codes generated per request) is limited to 250. If batch_size is not an integer or larger than 250, it will return a 422 error code.
         * The default rate limit for this endpoint is 10 concurrent requests.
@@ -351,7 +351,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-
   '/promotions/codes':
     parameters:
       - $ref: '#/components/parameters/Accept'
@@ -361,7 +360,7 @@ paths:
       summary: Get A Coupon Code
       description: |-
         Get a coupon with a given coupon code.
-        
+
         **Note:**
         The default rate limit for this endpoint is 40 concurrent requests.
       operationId: getCouponCodeByCode
@@ -376,7 +375,7 @@ paths:
       summary: Delete A Coupon Code
       description: |-
         Deletes a coupon with a given coupon code.
-        
+
         **Note:**
         The default rate limit for this endpoint is 40 concurrent requests.
       operationId: deleteCouponCodeByCode
@@ -536,8 +535,6 @@ components:
         - $ref: '#/components/schemas/PromotionBase'
         - type: object
           properties:
-            codes:
-              $ref: '#/components/schemas/CouponCode'
             coupon_overrides_automatic_when_offering_higher_discounts:
               type: boolean
               example: false
@@ -599,9 +596,9 @@ components:
               type: object
               properties:
                 has_multiple_codes:
-                    type: boolean
-                    example: false
-                    default: false
+                  type: boolean
+                  example: false
+                  default: false
             coupon_type:
               type: string
               enum:
@@ -985,6 +982,8 @@ components:
           properties:
             discount:
               $ref: '#/components/schemas/Discount'
+            maximum_allowed_discount_amount:
+              $ref: '#/components/schemas/MaximumAllowedDiscountAmount'
       description: |-
         **Cart Value Action**
         Applies discount on the entire cart.
@@ -1054,6 +1053,8 @@ components:
           properties:
             discount:
               $ref: '#/components/schemas/Discount'
+            maximum_allowed_discount_amount:
+              $ref: '#/components/schemas/MaximumAllowedDiscountAmount'
             as_total:
               type: boolean
               description: |-
@@ -1100,7 +1101,7 @@ components:
               type: boolean
               description: Set this property to true to provide a separate free shipping method. Read-Only.
             zone_ids:
-              description: ''
+              description: List of shipping zone IDs to which free shipping can apply, or '*' for all zones.
               oneOf:
                 - type: string
                   enum:
@@ -1128,6 +1129,8 @@ components:
           type: string
           description: The amount of discount (percentage off) to apply.
       description: '**Percentage Discount**'
+      required:
+        - percentage_amount
     FixedDiscount:
       title: Fixed Discount
       type: object
@@ -1135,6 +1138,8 @@ components:
         fixed_amount:
           $ref: '#/components/schemas/Money'
       description: '**Fixed Discount**'
+      required:
+        - fixed_amount
     Money:
       title: Money
       pattern: '[0-9]+(\.[0-9]+)?'
@@ -1143,6 +1148,17 @@ components:
         **Money**
         Represents a monetary value in the store’s default currency.
       example: '12.95'
+    MaximumAllowedDiscountAmount:
+      type: string
+      nullable: true
+      pattern: '^(?!0+(?:\.0+)?$)(\d+)(\.[0-9]+)?$'
+      description: |
+        The maximum monetary value that can be applied as a discount. It can take value from 1 to 10000000.
+        The application of this maximum depends on the discount type:
+          - Discount on shipping: the max limit is distributed to the first number of shipping destinations until it is reached
+          - Discount on products: the max limit is distributed to the first number of eligible products until it is reached
+          - Discount on order subtotal: the max limit is checked against the order discount value
+      example: '10'
     OptionalCursorCollectionMeta:
       title: Collection Meta
       type: object
@@ -1237,11 +1253,7 @@ components:
     CursorPagination:
       title: Cursor Pagination
       type: object
-      required: [
-        count,
-        per_page,
-        links
-      ]
+      required: [count, per_page, links]
       properties:
         count:
           type: integer
@@ -1371,7 +1383,7 @@ components:
             - CART_PAGE
             - CHECKOUT_PAGE
           items:
-              type: string
+            type: string
       description: |-
         **Notification**
         A notification displayed to the user based on the result of executing a promotion, for example, a "Congratulations! Youʼve received free shipping!" message when the shopper receives free shipping.
@@ -1432,7 +1444,7 @@ components:
               items:
                 minItems: 1
                 type: string
-                example: "0439538491"
+                example: '0439538491'
     CouponCode:
       description: A `CouponCode` object encapsulates attributes of a coupon code.
       type: object
@@ -1612,7 +1624,7 @@ components:
         - $ref: '#/components/schemas/NotCustomerSegmentLimitation'
         - $ref: '#/components/schemas/AndCustomerSegmentLimitation'
         - $ref: '#/components/schemas/OrCustomerSegmentLimitation'
-      description: ''
+      description: Specifies customer segment limitations for the promotion.
     CustomerSegmentIdLimitation:
       title: CustomerSegmentIdLimitation
       required:
@@ -1744,7 +1756,7 @@ components:
         - id
   responses:
     BulkDeleteResponse:
-      description: ''
+      description: Response for bulk delete operations on promotions.
       content:
         application/json:
           schema:
@@ -1797,8 +1809,8 @@ components:
                 title: Errors occurred in bulk delete action.
                 type: 'https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes'
                 errors:
-                  0.constraint: "Failed for id=12. Error: constraint reference error."
-                  2.code: "Failed for id=14. Error: some relating codes are still present."
+                  0.constraint: 'Failed for id=12. Error: constraint reference error.'
+                  2.code: 'Failed for id=14. Error: some relating codes are still present.'
             meta:
               total: 5
               success: 3
@@ -1939,8 +1951,8 @@ components:
                 data:
                   - id: 1
                     redemption_type: AUTOMATIC
-                    name: Buy Product X Get Free Shipping
-                    display_name: WOW!!! FREE SHIPPING for Product X
+                    name: Buy Product worth X Get Y% off upto Z
+                    display_name: Shop for X and get Y% off upto Z
                     created_from: api
                     channels:
                       - id: 1
@@ -1961,7 +1973,8 @@ components:
                       - action:
                           cart_value:
                             discount:
-                              fixed_amount: '12.95'
+                              percentage_amount: '10'
+                            maximum_allowed_discount_amount: '20'
                         apply_once: true
                         stop: true
                         condition:

@@ -1,0 +1,88 @@
+---
+title: Transactions API
+keywords: payments, transactions, authorization, purchase, capture, void, external payments
+---
+
+# Transactions API
+
+The Transactions API allows you to create transaction records in BigCommerce for payments that were processed externally. This enables merchants to use BigCommerce for post-order actions such as capture, void, and refund on transactions that originated outside of BigCommerce.
+
+## Prerequisites
+
+To perform post-order actions such as capture or void on a transaction, the payment provider used to process the payment outside of BigCommerce must already be configured within BigCommerce at the time the transaction is created. The payment provider must be enabled and configured with the same channel and currency that the order is placed against.
+
+This is because the payment provider ID is stored against the transaction at time of creation.
+
+<Callout type="warning">
+#### Provider configuration required
+If the payment provider is not configured in BigCommerce when the transaction is created, no provider ID will be stored against the transaction. This means BigCommerce will not know which provider to call when attempting to capture or void the transaction.
+</Callout>
+
+### Example scenario
+
+Consider the following scenario:
+
+1. A payment is authorized externally through Stripe.
+2. The transaction is POSTed to BigCommerce using the `/v3/payments/transactions/authorizations` endpoint.
+3. Stripe is **not yet configured** within BigCommerce for the currency and channel the order was created against.
+
+In this case, when an attempt is made to capture the authorized transaction within BigCommerce, BigCommerce does not know which provider to call to capture the transaction.
+
+## Endpoints
+
+Individual endpoints are available for creating single transactions:
+
+| Endpoint | Description |
+|----------|-------------|
+| `POST /v3/payments/transactions/authorizations` | Create an authorization transaction |
+| `POST /v3/payments/transactions/purchases` | Create a purchase transaction |
+
+<Callout type="info">
+#### Future endpoints
+The following endpoints are planned for future phases:
+- `/v3/payments/transactions/captures`
+- `/v3/payments/transactions/voids`
+- `/v3/payments/transactions/refunds`
+</Callout>
+
+## Batch processing
+
+These endpoints do not currently support batch processing. Support for batch processing may be provided in a future phase.
+
+## Security
+
+These endpoints are secured in the same way as other BigCommerce REST endpoints as described in [Authentication](/docs/start/authentication).
+
+<Callout type="info">
+#### Required OAuth scopes
+The OAuth2 scope required for these endpoints is `store_v2_transactions`, which is the same as the modify scope of `/v3/orders/{order_id}/transactions`.
+
+This scope can be granted when creating a store-level API account in the control panel.
+</Callout>
+
+## Payload notes
+
+### AVS and CVV results
+
+The `avs_result` and `cvv_result` fields must either:
+- Be omitted entirely
+- Be `null`
+- Have all property values (such as `code` and `message`) set to `null`
+
+### Provider data
+
+The `provider_data` field varies by provider and payment instrument. Accepted keys are filtered server-side based on the provider.
+
+For example, depending on the payment instrument, the `provider_data` keys for Stripe might include:
+- `mandate_method_id`
+- `override_method_id`
+
+## Related resources
+
+### Endpoints
+- [Create Authorization Transaction](/docs/rest-payments/transactions#create-authorization-transaction)
+- [Create Purchase Transaction](/docs/rest-payments/transactions#create-purchase-transaction)
+
+### Articles
+- [Payments API](/docs/store-operations/payments)
+- [Available Payment Gateways (Help Center)](https://support.bigcommerce.com/s/article/Available-Payment-Gateways)

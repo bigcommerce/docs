@@ -3867,6 +3867,20 @@ paths:
     parameters:
       - $ref: '#/components/parameters/Accept'
       - $ref: '#/components/parameters/ProductIdParam'
+      - $ref: '#/components/parameters/PageParam'
+      - $ref: '#/components/parameters/LimitParam'
+      - $ref: '#/components/parameters/MetafieldKeyParam'
+      - $ref: '#/components/parameters/MetafieldKeyInParam'
+      - $ref: '#/components/parameters/MetafieldNamespaceParam'
+      - $ref: '#/components/parameters/MetafieldNamespaceInParam'
+      - $ref: '#/components/parameters/DirectionParam'
+      - $ref: '#/components/parameters/IncludeFieldsParamMetafields'
+      - $ref: '#/components/parameters/date_created_min'
+      - $ref: '#/components/parameters/date_created_max'
+      - $ref: '#/components/parameters/date_modified_min'
+      - $ref: '#/components/parameters/date_modified_max'
+      - $ref: '#/components/parameters/BeforeCursorParam'
+      - $ref: '#/components/parameters/AfterCursorParam'
   '/catalog/products/{product_id}/metafields/{metafield_id}':
     get:
       tags:
@@ -4898,6 +4912,8 @@ paths:
         - $ref: '#/components/parameters/date_modified_max'
         - $ref: '#/components/parameters/date_created_min'
         - $ref: '#/components/parameters/date_created_max'
+        - $ref: '#/components/parameters/BeforeCursorParam'
+        - $ref: '#/components/parameters/AfterCursorParam'
     post:
       summary: Create multiple Metafields
       tags:
@@ -5079,6 +5095,101 @@ paths:
                 $ref: '#/components/schemas/MetaFieldCollectionResponsePartialSuccess_DELETE'
 components:
   schemas:
+    Pagination:
+      type: object
+      description: Data about the response, including pagination and collection totals.
+      title: Pagination
+      properties:
+        total:
+          type: integer
+          description: |
+            Total number of items in the result set.
+          example: 36
+        count:
+          type: integer
+          description: |
+            Total number of items in the collection response.
+          example: 36
+        per_page:
+          type: integer
+          description: |
+            The amount of items returned in the collection per page, controlled by the limit parameter.
+          example: 50
+        current_page:
+          type: integer
+          description: |
+            The page you are currently on within the collection.
+          example: 1
+        total_pages:
+          type: integer
+          description: |
+            The total number of pages in the collection.
+          example: 1
+        links:
+          type: object
+          description: |
+            Pagination links for the previous and next parts of the whole collection.
+          properties:
+            previous:
+              type: string
+              description: |
+                Link to the previous page returned in the response.
+            current:
+              type: string
+              description: |
+                Link to the current page returned in the response.
+              example: '?page=1&limit=50'
+            next:
+              type: string
+              description: |
+                Link to the next page returned in the response.
+      x-internal: false
+    CursorPagination:
+      type: object
+      description: Data about the response, including cursor pagination and collection totals.
+      title: CursorPagination
+      properties:
+        count:
+          type: integer
+          description: |
+            Total number of items in the collection response.
+          example: 36
+        per_page:
+          type: integer
+          description: |
+            The amount of items returned in the collection per page, controlled by the limit parameter.
+          example: 50
+        start_cursor:
+          type: string
+          description: |
+            Cursor that is referring to a start of current page.
+          example: "aWQ6Nw=="
+        end_cursor:
+          type: string
+          description: |
+            Cursor that is referring to a end of current page. Should be used to fetch next page.
+          example: "aWQ6Nw=="
+        links:
+          type: object
+          description: |
+            Pagination links for the previous and next parts of the whole collection.
+          properties:
+            previous:
+              type: string
+              description: |
+                Cursor to the previous page returned in the response.
+              example: '?page=1&after=aWQ6Nw%3D%3D'
+            current:
+              type: string
+              description: |
+                Cursor to the current page returned in the response.
+              example: '?page=1&after=aWQ6Nw%3D%3D'
+            next:
+              type: string
+              description: |
+                Cursor to the next page returned in the response.
+              example: '?page=1&after=aWQ6Nw%3D%3D'
+      x-internal: false
     modifierCondition:
       type: object
       properties: 
@@ -8837,53 +8948,9 @@ components:
       description: Data about the response, including pagination and collection totals.
       properties:
         pagination:
-          type: object
-          description: Data about the response, including pagination and collection totals.
-          title: Pagination
-          properties:
-            total:
-              type: integer
-              description: |
-                Total number of items in the result set.
-              example: 36
-            count:
-              type: integer
-              description: |
-                Total number of items in the collection response.
-              example: 36
-            per_page:
-              type: integer
-              description: |
-                The amount of items returned in the collection per page, controlled by the limit parameter.
-              example: 50
-            current_page:
-              type: integer
-              description: |
-                The page you are currently on within the collection.
-              example: 1
-            total_pages:
-              type: integer
-              description: |
-                The total number of pages in the collection.
-              example: 1
-            links:
-              type: object
-              description: |
-                Pagination links for the previous and next parts of the whole collection.
-              properties:
-                previous:
-                  type: string
-                  description: |
-                    Link to the previous page returned in the response.
-                current:
-                  type: string
-                  description: |
-                    Link to the current page returned in the response.
-                  example: '?page=1&limit=50'
-                next:
-                  type: string
-                  description: |
-                    Link to the next page returned in the response.
+          $ref: '#/components/schemas/Pagination'
+        cursor_pagination:
+          $ref: '#/components/schemas/CursorPagination'
       additionalProperties: true
       title: Collection Meta
       x-internal: false
@@ -9239,6 +9306,20 @@ components:
               meta:
                 $ref: '#/components/schemas/metaEmptyFull'
   parameters:
+    BeforeCursorParam:
+      name: 'before'
+      description: 'A cursor indicating where to start retrieving the previous page of results. Use this parameter to paginate backward. Not required for the initial request. For subsequent requests, use the end_cursor value returned in meta.cursor_pagination from the previous response. Works with limit, direction, and other supported query parameters. When specified, offset-based pagination (page) is ignored. Cannot be used in combination with the after parameter.'
+      in: query
+      required: false
+      schema:
+        type: string
+    AfterCursorParam:
+      name: 'after'
+      description: 'A cursor indicating where to start retrieving the next page of results. Use this parameter to paginate forward. Not required for the initial request. For subsequent requests, use the start_cursor value returned in meta.cursor_pagination from the previous response. Works with limit, direction, and other supported query parameters. When specified, offset-based pagination (page) is ignored. Cannot be used in combination with the before parameter.'
+      in: query
+      required: false
+      schema:
+        type: string
     ProductIdParam:
       name: product_id
       in: path

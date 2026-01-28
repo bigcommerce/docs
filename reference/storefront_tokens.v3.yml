@@ -8,7 +8,17 @@ info:
 
     ## Storefront tokens
 
-    This type of token is the most appropriate to use from a web browser when you're serving a static site that only supports anonymous shopping. If you're creating a token for backend implementation, you wish to support signing in customers, or you're developing a frontend app that proxies requests, such as a NextJS app, use a [customer impersonation token](#customer-impersonation-tokens). 
+    Storefront tokens are designed for use from a web browser when you're serving a static site that only supports anonymous shopping. Storefront tokens support CORS via `allowed_cors_origins` and are intended for browser-based applications. For server-to-server integrations, you must use [private tokens](#private-tokens) instead.
+
+    > #### Deprecation notice
+    > A deprecation date will be introduced soon. After this date, new storefront tokens created will not be usable statelessly in server-to-server contexts. Existing storefront tokens created before the deprecation date will continue to work. If you're planning a server-to-server integration, you should use private tokens now.
+
+    ## Private tokens
+
+    Private tokens are designed for server-to-server integrations. They are always stateless (no session required) and provide better performance for server-to-server use cases. Private tokens are created using a separate endpoint (`/storefront/api-token-private`). The API will reject private token-authenticated requests that originate from web browsers.
+
+    > #### Warning
+    > Private tokens are sensitive and should never be exposed publicly. Treat them with the same care as other application secrets.
 
     ## Customer impersonation tokens
 
@@ -40,6 +50,7 @@ security:
   - X-Auth-Token: []
 tags:
   - name: API Token
+  - name: Private API Token
   - name: Customer Impersonation Token
 paths:
   '/storefront/api-token':
@@ -50,7 +61,9 @@ paths:
         - API Token
       summary: Create a Token
       description: |-
-        Creates a Storefront API token.
+        Creates a Storefront API token. This endpoint creates storefront tokens that support CORS via `allowed_cors_origins` and are intended for browser-based applications.
+
+        For server-to-server integrations, you must use the [private token endpoint](#operation/createPrivateToken) instead.
 
         **Required Scopes**
         * `Manage` `Storefront API Tokens`
@@ -67,13 +80,13 @@ paths:
                 - $ref: '#/components/schemas/TokenPostSimple'
                 - $ref: '#/components/schemas/TokenPostImpersonation'
             examples:
-              Single Channel:
+              Storefront Token (Single Channel):
                 value:
                   allowed_cors_origins:
                     -  'https://www.yourstorefront.com'
                   channel_id: 1
                   expires_at: 1885635176
-              Multi Channel:
+              Storefront Token (Multi Channel):
                 value:
                   allowed_cors_origins:
                     -  'https://www.yourstorefront.com'
@@ -112,6 +125,80 @@ paths:
       responses:
         '200':
           description: A storefront API token revocation has been scheduled.
+          content: {}
+        '401':
+          description: Unauthorized - the v3 Auth client ID or token in the request are not a valid combination for this store.
+          content: {}
+        '403':
+          description: Missing scope - the v3 Auth token is valid but does not have proper permissions to access this endpoint.
+          content: {}
+        '422':
+          description: Invalid JWT Token provided or missing JWT token header
+          content: {}
+  '/storefront/api-token-private':
+    parameters:
+      - $ref: '#/components/parameters/Accept'
+    post:
+      tags:
+        - Private API Token
+      summary: Create a Private API Token
+      description: |-
+        Creates a private token for server-to-server integrations. Private tokens are always stateless (no session required) and provide better performance for server-to-server use cases. The API will reject private token-authenticated requests that originate from web browsers.
+
+        **Required Scopes**
+        * `Manage` `Storefront API Tokens`
+
+        > NOTE: While neither `channel_id` nor `channel_ids` is labelled as required, one must be included in the request body. Including neither will throw an error, and including both will result in unexpected behaviors.
+      operationId: createPrivateToken
+      parameters:
+        - $ref: '#/components/parameters/ContentType'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenPostImpersonation'
+            examples:
+              Private Token (Single Channel):
+                value:
+                  channel_id: 1
+                  expires_at: 1885635176
+              Private Token (Multi Channel):
+                value:
+                  channel_ids: [1,12]
+                  expires_at: 1885635176
+        required: false
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Token_Full'
+        '401':
+          description: Unauthorized - the v3 Auth client ID or token in the request are not a valid combination for this store.
+          content: {}
+        '403':
+          description: Missing scope - the v3 Auth token is valid but does not have proper permissions to access this endpoint.
+          content: {}
+        '422':
+          description: Invalid JSON request body - missing or invalid data.
+          content: {}
+    delete:
+      tags:
+        - Private Token
+      summary: Revoke a Private Token
+      description: Revoke access for a private token. Only revoke compromised tokens under emergency situations. Let uncompromised short-lived tokens expire naturally, as you do not need to revoke these.
+      operationId: revokePrivateToken
+      parameters:
+        - name: Sf-Api-Token
+          in: header
+          description: An existing private JWT token that you want to revoke.
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A private token revocation has been scheduled.
           content: {}
         '401':
           description: Unauthorized - the v3 Auth client ID or token in the request are not a valid combination for this store.

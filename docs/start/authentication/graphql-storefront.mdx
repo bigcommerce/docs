@@ -295,14 +295,49 @@ Private tokens are designed for server-to-server integrations. They are always s
 - **Server-to-server only:** The API rejects private token-authenticated requests that originate from web browsers
 - **Always stateless:** No session or cookie validation required
 - **Required for server-to-server:** Private tokens are required for server-to-server integrations without customer impersonation. Storefront tokens cannot be used statelessly in server-to-server contexts.
+- **Access scoping:** Only private tokens support access scopes (other token types do not). See [Private token access scopes](#private-token-access-scopes) below.
 
 <Callout type="info">
 Private tokens are the recommended choice for new server-to-server integrations that don't require customer impersonation. They provide better performance and are designed specifically for stateless server-to-server use cases.
 </Callout>
 
+### Private token access scopes
+
+Only **private tokens** use access scopes; storefront and customer access tokens do not. Scopes restrict which GraphQL fields the token can access. The token must include **all** scopes required by every field in the selection (including nested fields).
+
+**Scopes are independent:** There is no hierarchy or inheritance. For example, `TOKEN_SCOPE_CUSTOMER` does not include or imply `TOKEN_SCOPE_UNAUTHENTICATED`—they cover different areas. You need more than one scope only when your query selects fields that require different scopes (e.g. `checkout { order { id } }` requires both Unauthenticated for `checkout` and Customer for `order`).
+
+**Scope identifiers** (use these in the create request):
+
+| Scope | Use |
+|-------|-----|
+| `TOKEN_SCOPE_UNAUTHENTICATED` | Store, channel, catalog, products, content, cart, checkout (except nested `order`), wishlist create/public, analytics, payment, newsletter. |
+| `TOKEN_SCOPE_CUSTOMER` | Customer identity, orders, login/logout, session sync, registration (`registerCustomer`), customer wishlists, cart assignment, order messages. |
+| `TOKEN_SCOPE_B2B` | Company operations (e.g. `registerCompany`). |
+
+If you create a token with **no scopes** (or an empty `scopes` array), it will have access to almost nothing; most fields require at least `TOKEN_SCOPE_UNAUTHENTICATED`. Apply the [principle of least privilege](https://en.wikipedia.org/wiki/Principle_of_least_privilege)—request only the scopes you need.
+
+When the token lacks a scope required by a field, the API returns a GraphQL response with `errors`. Affected fields may be `null` in `data`. The error includes `extensions.code: "INSUFFICIENT_ACCESS_SCOPE"` and `extensions.requiredScopes` (the scope identifiers required by that field):
+
+```json filename="Example: insufficient access scope error" showLineNumbers copy
+{
+  "data": null,
+  "errors": [
+    {
+      "message": "The provided token does not include the scopes required to resolve this field.",
+      "path": ["company"],
+      "extensions": {
+        "code": "INSUFFICIENT_ACCESS_SCOPE",
+        "requiredScopes": ["TOKEN_SCOPE_B2B"]
+      }
+    }
+  ]
+}
+```
+
 ### Create a private token
 
-Use the [Create a private token](/docs/rest-authentication/tokens#create-a-private-api-token) REST endpoint to create private tokens. Add the [storefront API tokens creation scope](/docs/start/authentication/api-accounts#token-creation-scopes) to the [store-level or app-level API account](/docs/start/authentication/api-accounts) you use to generate tokens.
+You **must** specify `scopes` when creating a private token. Use the [Create a private token](/docs/rest-authentication/tokens#create-a-private-api-token) REST endpoint to create private tokens. Add the [storefront API tokens creation scope](/docs/start/authentication/api-accounts#token-creation-scopes) to the [store-level or app-level API account](/docs/start/authentication/api-accounts) you use to generate tokens.
 
 <Tabs items={['Request', 'Response']}>
 <Tab>
@@ -314,8 +349,13 @@ accept: application/json
 content-type: application/json
 
 {
-  "channel_ids": [1, 2, 3],            // array of integers (must be valid channel IDs on the store)
-  "expires_at": 1602288000   // when the token will expire, as an integer unix timestamp (in seconds)
+  "expires_at": 1602288000,   // when the token will expire, as an integer unix timestamp (in seconds)
+  "channel_ids": [1, 2, 3],  // array of integers (must be valid channel IDs on the store)
+  "scopes": [                 // access scope identifiers (required)
+    "TOKEN_SCOPE_UNAUTHENTICATED",
+    "TOKEN_SCOPE_CUSTOMER",
+    "TOKEN_SCOPE_B2B"
+  ]
 }
 ```
 </Tab>

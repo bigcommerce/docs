@@ -156,17 +156,22 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TokenPostImpersonation'
+              $ref: '#/components/schemas/TokenPostPrivate'
             examples:
               Private Token (Single Channel):
                 value:
                   channel_id: 1
                   expires_at: 1885635176
+                  scopes:
+                    - TOKEN_SCOPE_UNAUTHENTICATED
+                    - TOKEN_SCOPE_CUSTOMER
               Private Token (Multi Channel):
                 value:
                   channel_ids: [1,12]
                   expires_at: 1885635176
-        required: false
+                  scopes:
+                    - TOKEN_SCOPE_UNAUTHENTICATED
+        required: true
       responses:
         '200':
           description: ''
@@ -265,6 +270,23 @@ components:
         - $ref: "#/components/schemas/Channel"
       required:
         - expires_at
+    TokenPostPrivate:
+      allOf:
+        - $ref: '#/components/schemas/TokenPostImpersonation'
+        - type: object
+          properties:
+            scopes:
+              type: array
+              description: Access scope identifiers. Required for private tokens. Include all scopes required by the GraphQL fields you need. See [Private token access scopes](/docs/start/authentication/graphql-storefront#private-token-access-scopes).
+              minItems: 1
+              items:
+                type: string
+                enum:
+                  - TOKEN_SCOPE_UNAUTHENTICATED
+                  - TOKEN_SCOPE_CUSTOMER
+                  - TOKEN_SCOPE_B2B
+          required:
+            - scopes
     TokenPostSimple:
       type: object
       properties:

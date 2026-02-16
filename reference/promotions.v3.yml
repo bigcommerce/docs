@@ -4,7 +4,7 @@ info:
   version: '1.0'
   description: |
     A *promotion* is composed of a condition that a customer can satisfy, such as increasing their cart value above a certain amount or adding an item to their cart. 
-
+    
     After the customer satisfies the condition, an action takes place, such as a free item being added to the cart or a discount applying itself to the order total.
 
     To learn more about promotions, consult the [Promotions Overview](/docs/store-operations/promotions).
@@ -263,7 +263,7 @@ paths:
         - Coupon Codes (Bulk)
       summary: Delete Multiple Coupon Codes
       description: |-
-        Deletes multiple coupon codes relating to the given promotion. Currently, batches are limited to 50 coupon codes.
+        Deletes multiple coupon codes relating to the given promotion. Currently, batches are limited to 250 coupon codes.
 
         **Notes**
         * "id:in" query param is required to delete coupon codes. If not provided, or provided with the wrong data format, a 422 error code is returned.
@@ -279,7 +279,7 @@ paths:
           content: {}
         '422':
           $ref: '#/components/responses/BulkDeleteResponse'
-
+          
   '/promotions/{promotion_id}/codegen':
     post:
       tags:
@@ -287,7 +287,7 @@ paths:
       summary: Generate Multiple Coupon Codes
       description: |-
         Generate a batch of coupon codes for a particular bulk coupon promotion.
-
+        
         **Note:**
         * batch_size (number of codes generated per request) is limited to 250. If batch_size is not an integer or larger than 250, it will return a 422 error code.
         * The default rate limit for this endpoint is 10 concurrent requests.
@@ -360,7 +360,7 @@ paths:
       summary: Get A Coupon Code
       description: |-
         Get a coupon with a given coupon code.
-
+        
         **Note:**
         The default rate limit for this endpoint is 40 concurrent requests.
       operationId: getCouponCodeByCode
@@ -375,7 +375,7 @@ paths:
       summary: Delete A Coupon Code
       description: |-
         Deletes a coupon with a given coupon code.
-
+        
         **Note:**
         The default rate limit for this endpoint is 40 concurrent requests.
       operationId: deleteCouponCodeByCode
@@ -509,15 +509,10 @@ components:
           properties:
             codes:
               $ref: '#/components/schemas/CouponCode'
+            coupon_overrides_other_promotions:
+              $ref: '#/components/schemas/CouponOverridesOtherPromotions'
             coupon_overrides_automatic_when_offering_higher_discounts:
-              type: boolean
-              example: false
-              default: false
-              description: |-
-                This field only has effect when `can_be_used_with_other_promotions` is `false`:
-                - When the property is set to `true`, the coupon will override the applied automatic promotions if it provides a greater discount.
-                - When the property is set to `fasle`, the coupon will not be applied if automatic promotions are already applied.
-                Trying to set the value of this field to `true` when `can_be_used_with_other_promotions` is `true` will yield a 422 error response.
+              $ref: '#/components/schemas/CouponOverridesAutomaticWhenOfferingHigherDiscounts'
             coupon_type:
               type: string
               enum:
@@ -535,15 +530,12 @@ components:
         - $ref: '#/components/schemas/PromotionBase'
         - type: object
           properties:
+            codes:
+              $ref: '#/components/schemas/CouponCode'
+            coupon_overrides_other_promotions:
+              $ref: '#/components/schemas/CouponOverridesOtherPromotions'
             coupon_overrides_automatic_when_offering_higher_discounts:
-              type: boolean
-              example: false
-              default: false
-              description: |-
-                This field only has effect when `can_be_used_with_other_promotions` is `false`:
-                - When the property is set to `true`, the coupon will override the applied automatic promotions if it provides a greater discount.
-                - When the property is set to `fasle`, the coupon will not be applied if automatic promotions are already applied.
-                Trying to set the value of this field when `can_be_used_with_other_promotions` is `true` will yield a 422 error response.
+              $ref: '#/components/schemas/CouponOverridesAutomaticWhenOfferingHigherDiscounts'
             redemption_type:
               type: string
               description: The type of the promotion. Promotions applied automatically have a value of `AUTOMATIC` whereas promotions requiring a coupon have a value of `COUPON`.
@@ -577,16 +569,12 @@ components:
               $ref: '#/components/schemas/CreatedFrom'
             codes:
               $ref: '#/components/schemas/CouponCode'
-            coupon_overrides_automatic_when_offering_higher_discounts:
-              type: boolean
-              example: false
-              default: false
-              description: |-
-                This field only has effect when the `redemption_type` is `COUPON` and `can_be_used_with_other_promotions` is `false`:
-                - When the property is set to `true`, the coupon will override the applied automatic promotions if it provides a greater discount.
-                - When the property is set to `fasle`, the coupon will not be applied if automatic promotions are already applied.
 
-                Trying to set the value of this field to `true` when the `redemption_type` is not `COUPON`, or when `can_be_used_with_other_promotions` is `true` will yield a 422 error response.
+            coupon_overrides_other_promotions:
+              $ref: '#/components/schemas/CouponOverridesOtherPromotions'
+
+            coupon_overrides_automatic_when_offering_higher_discounts:
+              $ref: '#/components/schemas/CouponOverridesAutomaticWhenOfferingHigherDiscounts'
             redemption_type:
               type: string
               description: The type of the promotion. Promotions applied automatically have a value of `AUTOMATIC` whereas promotions requiring a coupon have a value of `COUPON`.
@@ -621,7 +609,7 @@ components:
         - start_date
         - status
         - can_be_used_with_other_promotions
-        - coupon_overrides_automatic_when_offering_higher_discounts
+        - coupon_overrides_other_promotions
         - coupon_type
     PatchAutomaticPromotion:
       title: Patch Automatic Promotion
@@ -1253,7 +1241,10 @@ components:
     CursorPagination:
       title: Cursor Pagination
       type: object
-      required: [count, per_page, links]
+      required:
+        - count
+        - per_page
+        - links
       properties:
         count:
           type: integer
@@ -1745,6 +1736,28 @@ components:
           $ref: '#/components/schemas/CustomerSegmentIdLimitation'
       required:
         - not
+    CouponOverridesAutomaticWhenOfferingHigherDiscounts:
+      title: CouponOverridesAutomaticWhenOfferingHigherDiscounts
+      deprecated: true
+      type: boolean
+      example: false
+      default: false
+      description: |-
+        This property has been deprecated and `coupon_overrides_other_promotions` should be used instead.
+        This field only has effect when the `redemption_type` is `COUPON` and `can_be_used_with_other_promotions` is `false`:
+        - When the property is set to `true`, the coupon will override the applied automatic promotions if it provides a greater discount.
+        - When the property is set to `false`, the coupon will not be applied if automatic promotions are already applied.
+        Trying to set the value of this field to `true` when the `redemption_type` is not `COUPON`, or when `can_be_used_with_other_promotions` is `true` will yield a 422 error response.
+    CouponOverridesOtherPromotions:
+      title: CouponOverridesOtherPromotions
+      type: boolean
+      example: false
+      default: false
+      description: |-
+        - When this property is set to `true`, the coupon will always override all applied promotions, including both automatic and coupon promotions.
+        - When this property is set to `false`, the coupon will not be applied if any promotions are already applied.
+        
+        N.B.: This field only has effect when `can_be_used_with_other_promotions` is `false`. Trying to set the value of this field when `can_be_used_with_other_promotions` is `true` will yield a 422 error response.
     Channel:
       title: Channel
       type: object

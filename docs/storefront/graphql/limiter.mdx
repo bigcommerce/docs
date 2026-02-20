@@ -1,15 +1,10 @@
----
-title: GraphQL Storefront API
-keywords: graphql, storefront, limiter
----
-
 # GraphQL Complexity Limiter
 
 ---
 
-A. We have basically 3 types of clients:
+## We have basically 3 types of clients:
 
-1. Stencil (pure frontend)
+1. **Stencil (pure frontend)**
 
 When you are using Stencil, you are basically a frontend client,
 and you need to be careful with the number of queries you are sending on page load.
@@ -17,14 +12,14 @@ You should optimize your queries, use caching for repeating queries.
 
 Try not to send bunch of graphql queries on page load, only what you need, and cache the rest.
 
-2. Catalyst (any headless)
+2. **Catalyst (any headless)**
 
 When you are using Catalyst, you can be either a frontend or a server client,
 depending on your architecture.
 
 Try to use as minimum GraphQL queries as possible, and cache responses when you can.
 
-3. Server-to-server
+3. **Server-to-server**
 
 When you are doing server-to-server, you have more control over your queries,
 and you can do more optimizations.
@@ -33,25 +28,23 @@ Use a trusted proxy to propagate ip address and cache responses at the edge.)
 
 ---
 
-B. Since amount of traffic is huge, you should be careful with the number of queries
-you are sending, and try to optimize them as much as possible.
+## Since amount of traffic is huge, you should be careful with the number of queries you are sending, and try to optimize them as much as possible.
 
-C. We have a limiter in place to protect our infrastructure,
-and if you exceed the limits, you will get HTTP 429 errors.
+## We have a limiter in place to protect our infrastructure, and if you exceed the limits, you will get HTTP 429 errors.
 
-- Limiter is based on a token bucket algorithm,
+* Limiter is based on a token bucket algorithm,
 and you have a certain number of tokens that you can use simultaneously.
 
-- Limiter is applied per store, and it is based on the number of concurrent queries you are sending.
+* Limiter is applied per store, and it is based on the number of concurrent queries you are sending.
 
-- Limiter is applied per IP address, so you don't need to be worry about real users,
+* Limiter is applied per IP address, so you don't need to be worry about real users,
 each of them is using corresponding counter on our side.
 
-- We have a monitoring system in place, and when your store overreaches the limit,
+* We have a monitoring system in place, and when your store overreaches the limit,
 we will see it in our monitoring system, and you will be notified about it.
 
-- There are certain number of headers added to the response to understand
+* There are certain number of headers added to the response to understand
 the state of the limiter, and you can use them to optimize your implementation.
 
-    - `X-BC-IP-Rate-Limit-Requests-Quota`: <numeric value>
-    - `X-BC-IP-Rate-Limit-Requests-Quota-Left`: <numeric value>
+    - `X-BC-IP-Rate-Limit-Requests-Quota`: numeric_value
+    - `X-BC-IP-Rate-Limit-Requests-Quota-Left`: numeric_value

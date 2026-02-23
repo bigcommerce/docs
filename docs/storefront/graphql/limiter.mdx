@@ -1,53 +1,118 @@
 # GraphQL Complexity Limiter
 
----
-
-## We have basically 3 types of clients:
-
-1. **Stencil (pure frontend)**
-
-When you are using Stencil, you are basically a frontend client,
-and you need to be careful with the number of queries you are sending on page load.
-You should optimize your queries, use caching for repeating queries.
-
-Try not to send bunch of graphql queries on page load, only what you need, and cache the rest.
-
-2. **Catalyst (any headless)**
-
-When you are using Catalyst, you can be either a frontend or a server client,
-depending on your architecture.
-
-Try to use as minimum GraphQL queries as possible, and cache responses when you can.
-
-3. **Server-to-server**
-
-When you are doing server-to-server, you have more control over your queries,
-and you can do more optimizations.
-
-Use a trusted proxy to propagate ip address and cache responses at the edge.)
+This document explains how the **per-IP inflight GraphQL complexity limiter** behaves in Storefront GraphQL and how to interpret limiter headers.
 
 ---
 
-## Since amount of traffic is huge, you should be careful with the number of queries you are sending, and try to optimize them as much as possible.
+## Why your query can be limited
 
-## We have a limiter in place to protect our infrastructure, and if you exceed the limits, you will get HTTP 429 errors.
+The limiter protects Storefront GraphQL infrastructure from bursts of expensive concurrent traffic from a single source.
 
-- Limiter is based on a token bucket algorithm,
-and you have a certain number of tokens that you can use simultaneously.
+At runtime, each request has a calculated GraphQL complexity. The service tracks in-flight complexity per IP
+and rejects requests when accepting a new one would exceed the configured per-IP in-flight threshold.
+This prevents one source from over-consuming shared compute and helps keep latency stable for everyone.
 
-- Limiter is applied per store, and it is based on the number of concurrent queries you are sending.
+Important implementation details:
 
-- Limiter is applied per IP address, so you don't need to be worry about real users,
-each of them is using corresponding counter on our side.
+- The limiter is applied only for Storefront GraphQL API origin requests.
+- Counters are in-flight counters (increment before execution, decrement after execution), not daily/monthly request budgets.
 
-- We have a monitoring system in place, and when your store overreaches the limit,
-we will see it in our monitoring system, and you will be notified about it.
+---
 
-- There are certain number of headers added to the response to understand
-the state of the limiter, and you can use them to optimize your implementation.
-  - `X-BC-IP-Rate-Limit-Requests-Quota`: numeric_value
-  - `X-BC-IP-Rate-Limit-Requests-Quota-Left`: numeric_value
+## Quota value is not a public contract
 
-- In case of quota reached there will be additional header:
-  - `X-BC-Rate-Limit-Reason-Code`: `1`
-and 429 status code will be returned.
+The `X-BC-IP-Rate-Limit-Requests-Quota` header reflects the **current configured per-IP in-flight complexity threshold**.
+
+- It can be changed without notice.
+- It should **not** be treated as a fixed, publicly advertised SLA number.
+
+In other words: do not hardcode logic around a specific value (for example 100k). Always read and react to headers dynamically.
+
+---
+
+## Client profiles and recommendations
+
+### 1) Stencil (pure frontend)
+
+When using Stencil, you are a frontend client. Optimize page-load behavior:
+
+- Avoid firing many GraphQL queries at once on initial page load.
+- Prefer batching/fewer round-trips where possible.
+- Cache repeated reads aggressively.
+
+### 2) Catalyst (headless)
+
+Catalyst can act like frontend traffic or backend traffic depending on your architecture.
+
+- Keep GraphQL calls minimal.
+- Cache reusable results.
+- Control concurrency on server-render paths.
+
+### 3) Server-to-server
+
+You usually have the most control.
+
+- Use a trusted proxy/load balancer configuration so the effective client IP is propagated correctly.
+- Add edge/application caching.
+- Avoid fan-out bursts from one egress IP.
+
+---
+
+## Header reference
+
+### `X-BC-Rate-Limit-Reason-Code`
+
+Reason code describing whether and why rate limiting occurred:
+
+- `0` — request not limited by rate limiter
+- `1` — throttled by **per-IP inflight complexity limiter**
+
+### `X-BC-IP-Rate-Limit-Requests-Quota`
+
+Current configured per-IP in-flight complexity threshold used by limiter evaluation for this request.
+
+### `X-BC-IP-Rate-Limit-Requests-Quota-Left`
+
+Remaining per-IP in-flight complexity before crossing threshold, based on current in-flight counters.
+
+---
+
+## All response header combinations and examples
+
+> Note: examples show realistic values; exact numbers vary per environment and traffic state.
+
+### Case A: Per-IP limiter evaluated, request allowed
+
+- Typical status: `200` (or any non-429 business status)
+- Headers:
+
+```http
+X-BC-Rate-Limit-Reason-Code: 0
+X-BC-IP-Rate-Limit-Requests-Quota: 80000
+X-BC-IP-Rate-Limit-Requests-Quota-Left: 23420
+```
+
+Meaning: request passed and the limiter reports current quota and remaining headroom.
+
+### Case B: Per-IP limiter evaluated, request rejected
+
+- Status: `429 Too Many Requests`
+- Headers:
+
+```http
+X-BC-Rate-Limit-Reason-Code: 1
+X-BC-IP-Rate-Limit-Requests-Quota: 80000
+X-BC-IP-Rate-Limit-Requests-Quota-Left: 70
+```
+
+Meaning: request was throttled because this IP exceeded per-IP in-flight complexity threshold.
+
+## Operational guidance
+
+- Treat `429` as retryable with backoff/jitter.
+- Reduce burst concurrency per IP.
+- Cache read-heavy queries.
+- Avoid redundant page-load calls.
+- Inspect `X-BC-Rate-Limit-Reason-Code` first to distinguish per-IP complexity throttling (`1`) vs query/basic limiter throttling (`2`).
+- Inspect `X-BC-IP-Rate-Limit-Requests-Quota` for a quota configured
+- Inspect `X-BC-IP-Rate-Limit-Requests-Quota-Left`: inspect whether you have enough headroom or are close to the threshold.

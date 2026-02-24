@@ -33,7 +33,7 @@ In a branch you’ve pushed to GitHub, look for the ‘…' action on the file y
 When it opens that file, you’ll see the option to view it in ‘raw’ form. Press that:
 ![](//docs/assets/images/testing-api-spec-rendering-5.png)
 
-Now you will see the raw file with the public facing URL in the browser. Copy and past that into the input box:
+Now you will see the raw file with the public facing URL in the browser. Copy and paste that into the input box:
 ![](//docs/assets/images/testing-api-spec-rendering-6.png)
 
 ## Making edits within the GitHub UI

@@ -263,7 +263,7 @@ paths:
         - Coupon Codes (Bulk)
       summary: Delete Multiple Coupon Codes
       description: |-
-        Deletes multiple coupon codes relating to the given promotion. Currently, batches are limited to 50 coupon codes.
+        Deletes multiple coupon codes relating to the given promotion. Currently, batches are limited to 250 coupon codes.
 
         **Notes**
         * "id:in" query param is required to delete coupon codes. If not provided, or provided with the wrong data format, a 422 error code is returned.
@@ -350,7 +350,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-
 
   '/promotions/codes':
     parameters:
@@ -510,15 +509,10 @@ components:
           properties:
             codes:
               $ref: '#/components/schemas/CouponCode'
+            coupon_overrides_other_promotions:
+              $ref: '#/components/schemas/CouponOverridesOtherPromotions'
             coupon_overrides_automatic_when_offering_higher_discounts:
-              type: boolean
-              example: false
-              default: false
-              description: |-
-                This field only has effect when `can_be_used_with_other_promotions` is `false`:
-                - When the property is set to `true`, the coupon will override the applied automatic promotions if it provides a greater discount.
-                - When the property is set to `fasle`, the coupon will not be applied if automatic promotions are already applied.
-                Trying to set the value of this field to `true` when `can_be_used_with_other_promotions` is `true` will yield a 422 error response.
+              $ref: '#/components/schemas/CouponOverridesAutomaticWhenOfferingHigherDiscounts'
             coupon_type:
               type: string
               enum:
@@ -538,15 +532,10 @@ components:
           properties:
             codes:
               $ref: '#/components/schemas/CouponCode'
+            coupon_overrides_other_promotions:
+              $ref: '#/components/schemas/CouponOverridesOtherPromotions'
             coupon_overrides_automatic_when_offering_higher_discounts:
-              type: boolean
-              example: false
-              default: false
-              description: |-
-                This field only has effect when `can_be_used_with_other_promotions` is `false`:
-                - When the property is set to `true`, the coupon will override the applied automatic promotions if it provides a greater discount.
-                - When the property is set to `fasle`, the coupon will not be applied if automatic promotions are already applied.
-                Trying to set the value of this field when `can_be_used_with_other_promotions` is `true` will yield a 422 error response.
+              $ref: '#/components/schemas/CouponOverridesAutomaticWhenOfferingHigherDiscounts'
             redemption_type:
               type: string
               description: The type of the promotion. Promotions applied automatically have a value of `AUTOMATIC` whereas promotions requiring a coupon have a value of `COUPON`.
@@ -580,16 +569,12 @@ components:
               $ref: '#/components/schemas/CreatedFrom'
             codes:
               $ref: '#/components/schemas/CouponCode'
-            coupon_overrides_automatic_when_offering_higher_discounts:
-              type: boolean
-              example: false
-              default: false
-              description: |-
-                This field only has effect when the `redemption_type` is `COUPON` and `can_be_used_with_other_promotions` is `false`:
-                - When the property is set to `true`, the coupon will override the applied automatic promotions if it provides a greater discount.
-                - When the property is set to `fasle`, the coupon will not be applied if automatic promotions are already applied.
 
-                Trying to set the value of this field to `true` when the `redemption_type` is not `COUPON`, or when `can_be_used_with_other_promotions` is `true` will yield a 422 error response.
+            coupon_overrides_other_promotions:
+              $ref: '#/components/schemas/CouponOverridesOtherPromotions'
+
+            coupon_overrides_automatic_when_offering_higher_discounts:
+              $ref: '#/components/schemas/CouponOverridesAutomaticWhenOfferingHigherDiscounts'
             redemption_type:
               type: string
               description: The type of the promotion. Promotions applied automatically have a value of `AUTOMATIC` whereas promotions requiring a coupon have a value of `COUPON`.
@@ -599,9 +584,9 @@ components:
               type: object
               properties:
                 has_multiple_codes:
-                    type: boolean
-                    example: false
-                    default: false
+                  type: boolean
+                  example: false
+                  default: false
             coupon_type:
               type: string
               enum:
@@ -624,7 +609,7 @@ components:
         - start_date
         - status
         - can_be_used_with_other_promotions
-        - coupon_overrides_automatic_when_offering_higher_discounts
+        - coupon_overrides_other_promotions
         - coupon_type
     PatchAutomaticPromotion:
       title: Patch Automatic Promotion
@@ -1256,11 +1241,10 @@ components:
     CursorPagination:
       title: Cursor Pagination
       type: object
-      required: [
-        count,
-        per_page,
-        links
-      ]
+      required:
+        - count
+        - per_page
+        - links
       properties:
         count:
           type: integer
@@ -1390,7 +1374,7 @@ components:
             - CART_PAGE
             - CHECKOUT_PAGE
           items:
-              type: string
+            type: string
       description: |-
         **Notification**
         A notification displayed to the user based on the result of executing a promotion, for example, a "Congratulations! Youʼve received free shipping!" message when the shopper receives free shipping.
@@ -1451,7 +1435,7 @@ components:
               items:
                 minItems: 1
                 type: string
-                example: "0439538491"
+                example: '0439538491'
     CouponCode:
       description: A `CouponCode` object encapsulates attributes of a coupon code.
       type: object
@@ -1752,6 +1736,28 @@ components:
           $ref: '#/components/schemas/CustomerSegmentIdLimitation'
       required:
         - not
+    CouponOverridesAutomaticWhenOfferingHigherDiscounts:
+      title: CouponOverridesAutomaticWhenOfferingHigherDiscounts
+      deprecated: true
+      type: boolean
+      example: false
+      default: false
+      description: |-
+        This property has been deprecated and `coupon_overrides_other_promotions` should be used instead.
+        This field only has effect when the `redemption_type` is `COUPON` and `can_be_used_with_other_promotions` is `false`:
+        - When the property is set to `true`, the coupon will override the applied automatic promotions if it provides a greater discount.
+        - When the property is set to `false`, the coupon will not be applied if automatic promotions are already applied.
+        Trying to set the value of this field to `true` when the `redemption_type` is not `COUPON`, or when `can_be_used_with_other_promotions` is `true` will yield a 422 error response.
+    CouponOverridesOtherPromotions:
+      title: CouponOverridesOtherPromotions
+      type: boolean
+      example: false
+      default: false
+      description: |-
+        - When this property is set to `true`, the coupon will always override all applied promotions, including both automatic and coupon promotions.
+        - When this property is set to `false`, the coupon will not be applied if any promotions are already applied.
+        
+        N.B.: This field only has effect when `can_be_used_with_other_promotions` is `false`. Trying to set the value of this field when `can_be_used_with_other_promotions` is `true` will yield a 422 error response.
     Channel:
       title: Channel
       type: object
@@ -1816,8 +1822,8 @@ components:
                 title: Errors occurred in bulk delete action.
                 type: 'https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes'
                 errors:
-                  0.constraint: "Failed for id=12. Error: constraint reference error."
-                  2.code: "Failed for id=14. Error: some relating codes are still present."
+                  0.constraint: 'Failed for id=12. Error: constraint reference error.'
+                  2.code: 'Failed for id=14. Error: some relating codes are still present.'
             meta:
               total: 5
               success: 3

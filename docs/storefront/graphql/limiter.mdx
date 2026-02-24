@@ -12,21 +12,7 @@ At runtime, each request has a calculated GraphQL complexity. The service tracks
 and rejects requests when accepting a new one would exceed the configured per-IP in-flight threshold.
 This prevents one source from over-consuming shared compute and helps keep latency stable for everyone.
 
-Important implementation details:
-
-- The limiter is applied only for Storefront GraphQL API origin requests.
-- Counters are in-flight counters (increment before execution, decrement after execution), not daily/monthly request budgets.
-
----
-
-## Quota value is not a public contract
-
-The `X-BC-IP-Rate-Limit-Requests-Quota` header reflects the **current configured per-IP in-flight complexity threshold**.
-
-- It can be changed without notice.
-- It should **not** be treated as a fixed, publicly advertised SLA number.
-
-In other words: do not hardcode logic around a specific value (for example 100k). Always read and react to headers dynamically.
+The limiter is applied only for Storefront GraphQL API origin requests.
 
 ---
 
@@ -60,13 +46,6 @@ You usually have the most control.
 
 ## Header reference
 
-### `X-BC-Rate-Limit-Reason-Code`
-
-Reason code describing whether and why rate limiting occurred:
-
-- `0` — request not limited by rate limiter
-- `1` — throttled by **per-IP inflight complexity limiter**
-
 ### `X-BC-IP-Rate-Limit-Requests-Quota`
 
 Current configured per-IP in-flight complexity threshold used by limiter evaluation for this request.
@@ -87,9 +66,8 @@ Remaining per-IP in-flight complexity before crossing threshold, based on curren
 - Headers:
 
 ```http
-X-BC-Rate-Limit-Reason-Code: 0
-X-BC-IP-Rate-Limit-Requests-Quota: 80000
-X-BC-IP-Rate-Limit-Requests-Quota-Left: 23420
+X-BC-IP-Rate-Limit-Requests-Quota: 50000
+X-BC-IP-Rate-Limit-Requests-Quota-Left: 35000
 ```
 
 Meaning: request passed and the limiter reports current quota and remaining headroom.
@@ -100,12 +78,22 @@ Meaning: request passed and the limiter reports current quota and remaining head
 - Headers:
 
 ```http
-X-BC-Rate-Limit-Reason-Code: 1
-X-BC-IP-Rate-Limit-Requests-Quota: 80000
-X-BC-IP-Rate-Limit-Requests-Quota-Left: 70
+X-BC-IP-Rate-Limit-Requests-Quota: 50000
+X-BC-IP-Rate-Limit-Requests-Quota-Left: 750
 ```
 
-Meaning: request was throttled because this IP exceeded per-IP in-flight complexity threshold.
+Meaning: request was rejected because this IP exceeded per-IP in-flight complexity threshold.
+
+---
+
+## Quota value is not a public contract
+
+The `X-BC-IP-Rate-Limit-Requests-Quota` header reflects the **current configured per-IP in-flight complexity threshold**.
+
+- It can be changed without notice.
+- It should **not** be treated as a fixed, publicly advertised SLA number.
+
+In other words: do not hardcode logic around a specific value. Always read and react to headers dynamically.
 
 ## Operational guidance
 
@@ -113,6 +101,8 @@ Meaning: request was throttled because this IP exceeded per-IP in-flight complex
 - Reduce burst concurrency per IP.
 - Cache read-heavy queries.
 - Avoid redundant page-load calls.
-- Inspect `X-BC-Rate-Limit-Reason-Code` first to distinguish requests not limited (`0`) from requests throttled by the per-IP inflight complexity limiter (`1`).
-- Inspect `X-BC-IP-Rate-Limit-Requests-Quota` for the configured quota value.
-- Inspect `X-BC-IP-Rate-Limit-Requests-Quota-Left`: to understand whether you have enough headroom or are close to the threshold.
+- Inspect `X-BC-IP-Rate-Limit-Requests-Quota` for the configured quota value (the maximum allowed request weight for the current window).
+- Inspect `X-BC-IP-Rate-Limit-Requests-Quota-Left` to understand how much quota remains and whether you are approaching the threshold.
+- Calculate the current request’s query complexity by subtracting `X-BC-IP-Rate-Limit-Requests-Quota-Left` from `X-BC-IP-Rate-Limit-Requests-Quota`.
+  The difference represents how much of the quota has been consumed in the current window,
+  which reflects the effective complexity of the executed query.

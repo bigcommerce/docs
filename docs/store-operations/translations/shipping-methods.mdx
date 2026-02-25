@@ -1,0 +1,291 @@
+# Translations for Shipping Methods (Beta)
+
+<Callout type='info'>
+	The Translations Admin GraphQL API is currently available on Catalyst
+	storefronts only.
+</Callout>
+
+The following entities are translatable for shipping methods:
+
+- Shipping Method Name as `shipping_method_name`
+
+## Resource fields
+
+| Entity Type        | `resourceType`     | `resourceId` Format                      |
+| ------------------ | ------------------ | ---------------------------------------- |
+| Shipping Method    | `SHIPPING_METHODS` | `bc/store/shippingMethod/{id}`           |
+
+## Examples
+
+Below are examples of GraphQL queries and mutations for retrieving and managing translation settings for shipping methods.
+
+### Query a List of Translations
+
+This query returns shipping method translations for the specified resource type, channel, and locale (up to 50).
+
+<Tabs items={['Request', 'Response']}>
+<Tab>
+
+```graphql filename="Example query: Query a list of translations" showLineNumbers copy
+GRAPHQL https://api.bigcommerce.com/stores/{{store_hash}}/graphql
+X-Auth-Token: {{token}}
+
+query {
+  store {
+    translations(filters: {
+      resourceType: SHIPPING_METHODS,
+      channelId: "bc/store/channel/{{channel_id}}",
+      localeId: "bc/store/locale/{{locale_code}}"
+    }) {
+      edges {
+        node {
+          resourceId
+          fields {
+            fieldName
+            original
+            translation
+          }
+        }
+        cursor
+      }
+      pageInfo {
+        hasNextPage
+        hasPreviousPage
+        startCursor
+        endCursor
+      }
+    }
+  }
+}
+```
+
+</Tab>
+<Tab>
+
+```json filename="Example query: Query a list of translations" showLineNumbers copy
+{
+  "data": {
+    "store": {
+      "translations": {
+        "edges": [
+          {
+            "node": {
+              "resourceId": "bc/store/shippingMethod/1",
+              "fields": [
+                {
+                  "fieldName": "shipping_method_name",
+                  "original": "Dev Test 1",
+                  "translation": "espanol"
+                }
+              ]
+            },
+            "cursor": ""
+          }
+        ],
+        "pageInfo": {
+          "hasNextPage": false,
+          "hasPreviousPage": false,
+          "startCursor": "eyJyZXNvdXJjZUlkIjoxfQ",
+          "endCursor": "eyJyZXNvdXJjZUlkIjoxfQ"
+        }
+      }
+    }
+  }
+}
+```
+
+</Tab>
+</Tabs>
+
+### Query a Translation by Resource ID
+
+This query returns a translation by `resourceId`.
+
+<Callout type='info'>
+When querying by `resourceId`, provide the full ID in the format `bc/store/shippingMethod/{id}`.
+</Callout>
+
+<Tabs items={['Request', 'Response']}>
+<Tab>
+
+```graphql filename="Example query: Query a translation by id" showLineNumbers copy
+GRAPHQL https://api.bigcommerce.com/stores/{{store_hash}}/graphql
+X-Auth-Token: {{token}}
+
+query {
+  store {
+    translations(
+      filters: {
+        resourceType: SHIPPING_METHODS
+        channelId: "bc/store/channel/{{channel_id}}"
+        localeId: "bc/store/locale/{{locale_code}}"
+        resourceIds: ["bc/store/shippingMethod/1"]
+      }
+    ) {
+      edges {
+        node {
+          resourceId
+          fields {
+            fieldName
+            original
+            translation
+          }
+        }
+        cursor
+      }
+    }
+  }
+}
+```
+
+</Tab>
+<Tab>
+
+```json filename="Example query: Query a translation by id" showLineNumbers copy
+{
+  "data": {
+    "store": {
+      "translations": {
+        "edges": [
+          {
+            "node": {
+              "resourceId": "bc/store/shippingMethod/1",
+              "fields": [
+                {
+                  "fieldName": "shipping_method_name",
+                  "original": "Dev Test 1",
+                  "translation": "espanol"
+                }
+              ]
+            },
+            "cursor": ""
+          }
+        ]
+      }
+    }
+  }
+}
+```
+
+</Tab>
+</Tabs>
+
+### Update a Translation
+
+<Tabs items={['Request', 'Response']}>
+<Tab>
+
+```graphql filename="Example mutation: Update a translation" showLineNumbers copy
+GRAPHQL https://api.bigcommerce.com/stores/{{store_hash}}/graphql
+X-Auth-Token: {{token}}
+
+mutation {
+  translation {
+    updateTranslations(input: {
+      resourceType: SHIPPING_METHODS,
+      channelId: "bc/store/channel/{{channel_id}}",
+      localeId: "bc/store/locale/{{locale_code}}",
+      entities: [
+        {
+          resourceId: "bc/store/shippingMethod/1",
+          fields: [
+            {
+              fieldName: "shipping_method_name",
+              value: "Nuevo Nombre de Envío"
+            }
+          ]
+        }
+      ]
+    }) {
+      errors {
+        __typename
+        ... on Error {
+          message
+        }
+        ... on EntityNotFoundError {
+          message
+        }
+        ... on ValidationError {
+          message
+        }
+      }
+    }
+  }
+}
+```
+
+</Tab>
+<Tab>
+
+```json filename="Example mutation: Update a translation" showLineNumbers copy
+{
+  "data": {
+    "translation": {
+      "updateTranslations": {
+        "errors": []
+      }
+    }
+  }
+}
+```
+
+</Tab>
+</Tabs>
+
+### Delete a Translation
+
+<Tabs items={['Request', 'Response']}>
+<Tab>
+
+```graphql filename="Example mutation: Delete a translation" showLineNumbers copy
+GRAPHQL https://api.bigcommerce.com/stores/{{store_hash}}/graphql
+X-Auth-Token: {{token}}
+
+mutation {
+  translation {
+    deleteTranslations(input: {
+      resourceType: SHIPPING_METHODS,
+      channelId: "bc/store/channel/{{channel_id}}",
+      localeId: "bc/store/locale/{{locale_code}}",
+      resources: [
+        {
+          resourceId: "bc/store/shippingMethod/1",
+          fields: ["shipping_method_name"]
+        }
+      ]
+    }) {
+      errors {
+        __typename
+        ... on Error {
+          message
+        }
+        ... on EntityNotFoundError {
+          message
+        }
+        ... on ValidationError {
+          message
+        }
+      }
+    }
+  }
+}
+```
+
+</Tab>
+<Tab>
+
+```json filename="Example mutation: Delete a translation" showLineNumbers copy
+{
+  "data": {
+    "translation": {
+      "deleteTranslations": {
+        "errors": []
+      }
+    }
+  }
+}
+```
+
+</Tab>
+</Tabs>
+

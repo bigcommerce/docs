@@ -1,108 +1,54 @@
-# GraphQL Complexity Limiter
+# Storefront GraphQL platform protection
 
-This document explains how the **per-IP inflight GraphQL complexity limiter** behaves in Storefront GraphQL and how to interpret limiter headers.
-
----
-
-## Why your query can be limited
-
-The limiter protects Storefront GraphQL infrastructure from bursts of expensive concurrent traffic from a single source.
-
-At runtime, each request has a calculated GraphQL complexity. The service tracks in-flight complexity per IP
-and rejects requests when accepting a new one would exceed the configured per-IP in-flight threshold.
-This prevents one source from over-consuming shared compute and helps keep latency stable for everyone.
-
-The limiter is applied only for Storefront GraphQL API origin requests.
+Storefront GraphQL is protected from over-consumption so that traffic remains fair and stable for all users. This page describes how that protection works from a client perspective.
 
 ---
 
-## Client profiles and recommendations
+## How protection works
 
-### 1) Stencil (pure frontend)
+GraphQL requests are **not** rate-limited the same way as REST API endpoints. Protection is based on **how much data** each request asks for—heavier queries (more or deeper fields) consume more of the available capacity than lighter ones. If too much is requested at once from a single source, some requests may be rejected with `429 Too Many Requests` until capacity frees up.
 
-When using Stencil, you are a frontend client. Optimize page-load behavior:
-
-- Avoid firing many GraphQL queries at once on initial page load.
-- Prefer batching/fewer round-trips where possible.
-- Cache repeated reads aggressively.
-
-### 2) Catalyst (headless)
-
-Catalyst can act like frontend traffic or backend traffic depending on your architecture.
-
-- Keep GraphQL calls minimal.
-- Cache reusable results.
-- Control concurrency on server-render paths.
-
-### 3) Server-to-server
-
-You usually have the most control.
-
-- Use a trusted proxy/load balancer configuration so the effective client IP is propagated correctly.
-- Add edge/application caching.
-- Avoid fan-out bursts from one egress IP.
+The mechanism is applied only to Storefront GraphQL; it does not affect other APIs.
 
 ---
 
-## Header reference
+## Common issues and recommendations
 
-### `X-BC-IP-Rate-Limit-Requests-Quota`
+**General:** Use **lazy loading** for below-the-fold or secondary content so you don’t request everything up front. **Refine your queries** so each one asks only for the fields and depth you actually use—smaller, focused requests use less capacity and are less likely to trigger protection.
 
-Current configured per-IP in-flight complexity threshold used by limiter evaluation for this request.
+### Stencil
 
-### `X-BC-IP-Rate-Limit-Requests-Quota-Left`
+Heavy themes that fire many GraphQL calls at once on page load (e.g. header, footer, product grid, recommendations) can hit protection limits. The same applies to custom scripts that run several queries in parallel or request more data than the page needs.
 
-Remaining per-IP in-flight complexity before crossing threshold, based on current in-flight counters.
+- Avoid firing many GraphQL queries at once on initial page load; use lazy loading where possible.
+- Prefer batching or fewer round-trips.
 
----
+### Headless
 
-## All response header combinations and examples
+Missing or weak caching is a frequent cause of unnecessary load. Most storefront data (products, categories, content) is public and should be cacheable.
 
-> Note: examples show realistic values; exact numbers vary per environment and traffic state.
-
-### Case A: Per-IP limiter evaluated, request allowed
-
-- Typical status: `200` (or any non-429 business status)
-- Headers:
-
-```http
-X-BC-IP-Rate-Limit-Requests-Quota: 50000
-X-BC-IP-Rate-Limit-Requests-Quota-Left: 35000
-```
-
-Meaning: request passed and the limiter reports current quota and remaining headroom.
-
-### Case B: Per-IP limiter evaluated, request rejected
-
-- Status: `429 Too Many Requests`
-- Headers:
-
-```http
-X-BC-IP-Rate-Limit-Requests-Quota: 50000
-X-BC-IP-Rate-Limit-Requests-Quota-Left: 750
-```
-
-Meaning: request was rejected because this IP exceeded per-IP in-flight complexity threshold.
+- Cache reusable results and control concurrency on server-render paths.
+- Keep GraphQL calls minimal and only request what you need.
+- [Catalyst](https://www.catalyst.dev/) is designed to follow best practices for Storefront GraphQL and is a good default for headless builds.
 
 ---
 
-## Quota value is not a public contract
+## Response headers
 
-The `X-BC-IP-Rate-Limit-Requests-Quota` header reflects the **current configured per-IP in-flight complexity threshold**.
+When the protection layer is applied, responses may include headers that indicate your current usage relative to the limit. These values are for monitoring and tuning only; they are not part of a public SLA and may change.
 
-- It can be changed without notice.
-- It should **not** be treated as a fixed, publicly advertised SLA number.
+| Header | Description |
+|--------|-------------|
+| `X-BC-IP-Rate-Limit-Requests-Quota` | Current limit (complexity) used for evaluation. |
+| `X-BC-IP-Rate-Limit-Requests-Quota-Left` | Remaining complexity before the limit. |
 
-In other words: do not hardcode logic around a specific value. Always read and react to headers dynamically.
+Lower remaining capacity means you are closer to the limit. Do not hardcode logic around specific numeric values—use the headers as a signal and react with backoff or reduced concurrency when you see `429` or declining headroom.
 
-## Operational guidance
+---
 
-- Treat `429` as retryable with backoff/jitter.
-- Reduce burst concurrency per IP.
-- Cache read-heavy queries.
-- Avoid redundant page-load calls.
-- Inspect `X-BC-IP-Rate-Limit-Requests-Quota` for the configured quota value (the maximum allowed request weight for the current window).
-- Inspect `X-BC-IP-Rate-Limit-Requests-Quota-Left` to understand how much quota remains and whether you are approaching the threshold.
-- Calculate the current request’s query complexity by subtracting `X-BC-IP-Rate-Limit-Requests-Quota-Left` from `X-BC-IP-Rate-Limit-Requests-Quota`.
-  The difference represents how much of the quota has been consumed in the current window,
-  which reflects the effective complexity of the executed query.
+## When you get 429
+
+- Treat `429` as retryable with backoff and jitter.
+- Reduce how many concurrent GraphQL requests you send.
+- Cache read-heavy queries and avoid redundant calls.
+- If you need more throughput, design queries to request only the data you need so each request is lighter.

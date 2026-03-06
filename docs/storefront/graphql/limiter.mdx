@@ -1,0 +1,59 @@
+---
+title: Storefront GraphQL platform protection
+keywords: graphql, rate limiting, 429, protection, throttling
+---
+
+# Storefront GraphQL platform protection
+
+Storefront GraphQL is protected from over-consumption so that traffic remains fair and stable for all users. This page describes how that protection works from a client perspective.
+
+---
+
+## How protection works
+
+GraphQL requests are **not** rate-limited the same way as REST API endpoints. Protection is based on **how much data** each request asks for—heavier queries (more or deeper fields) consume more of the available capacity than lighter ones. If too much is requested at once from a single source, some requests may be rejected with `429 Too Many Requests` until capacity frees up.
+
+The mechanism is applied only to Storefront GraphQL; it does not affect other APIs.
+
+---
+
+## Common issues and recommendations
+
+**General:** Use **lazy loading** for below-the-fold or secondary content so you don’t request everything up front. **Refine your queries** so each one asks only for the fields and depth you actually use—smaller, focused requests use less capacity and are less likely to trigger protection.
+
+### Stencil
+
+Heavy themes that fire many GraphQL calls at once on page load (e.g. header, footer, product grid, recommendations) can hit protection limits. The same applies to custom scripts that run several queries in parallel or request more data than the page needs.
+
+- Avoid firing many GraphQL queries at once on initial page load; use lazy loading where possible.
+- Prefer batching or fewer round-trips.
+
+### Headless
+
+Missing or weak caching is a frequent cause of unnecessary load. Most storefront data (products, categories, content) is public and should be cacheable.
+
+- Cache reusable results and control concurrency on server-render paths.
+- Keep GraphQL calls minimal and only request what you need.
+- [Catalyst](https://www.catalyst.dev/) is designed to follow best practices for Storefront GraphQL and is a good default for headless builds.
+- Ensure proper IP address propagation. See [this guide](https://support.bigcommerce.com/s/article/Third-Party-Reverse-Proxies?language=en_US) for details.
+---
+
+## Response headers
+
+When the protection layer is applied, responses may include headers that indicate your current usage relative to the limit. These values are for monitoring and tuning only; they are not part of a public SLA and may change.
+
+| Header | Description |
+|--------|-------------|
+| `X-BC-IP-Rate-Limit-Requests-Quota` | Current limit (complexity) used for evaluation. |
+| `X-BC-IP-Rate-Limit-Requests-Quota-Left` | Remaining complexity before the limit. |
+
+Lower remaining capacity means you are closer to the limit. Do not hardcode logic around specific numeric values—use the headers as a signal and react with backoff or reduced concurrency when you see `429` or declining headroom.
+
+---
+
+## When you get 429
+
+- Treat `429` as retryable with backoff and jitter.
+- Reduce how many concurrent GraphQL requests you send.
+- Cache read-heavy queries and avoid redundant calls.
+- If you need more throughput, design queries to request only the data you need so each request is lighter.

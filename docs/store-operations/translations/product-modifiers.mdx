@@ -1,0 +1,300 @@
+# Translations for Product Modifiers (Beta)
+
+<Callout type='info'>
+  The Translations Admin GraphQL API for managing product modifier translations is available on Catalyst storefronts only.
+</Callout>
+
+The following entities are translatable for product modifiers:
+
+- Product Modifiers
+  - Display name as `display_name` — The name of the option shown on the storefront
+  - Checkbox label as `config.checkbox_label` — (checkbox type) Label displayed next to the checkbox
+  - Default value as `config.default_value` — (text, multi_line_text, numbers_only_text, date types) Default value shown in the field
+- Product Modifier Values
+  - Label as `label` — The text displayed for the option value on the storefront (e.g., "Yes", "No", "Red")
+
+For more on product modifiers and modifier types, see [Product modifiers](/docs/rest-catalog/product-modifiers).
+
+## Resource fields
+
+The entities listed above are referenced differently based on resource type and must use the following values in the queries outlined below:
+
+| Entity Type | `resourceType` | `resourceId` Format |
+| --- | --- | --- |
+| Product Modifier | `PRODUCT_MODIFIERS` | `bc/store/productModifier/{{modifier_id}}` |
+| Product Modifier Value | `PRODUCT_MODIFIER_VALUES` | `bc/store/productModifierValue/{{value_id}}` |
+
+## Querying Product Modifier Translations (Storefront API)
+
+Data is returned in the current locale determined by the context (e.g., `Accept-Language` header, channel settings, or session locale). Product options on the storefront include modifier display names and value labels; when translations exist for the requested locale, those translated values are returned.
+
+## Managing Product Modifier Translations (Admin API)
+
+Product modifier translation management (list, update, delete) is available via the Admin GraphQL API. These mutations and queries are not available on the Storefront API.
+
+### Query a List of Product Modifier Translations
+
+<Tabs items={['Request', 'Response']}>
+<Tab>
+
+The request below uses several variables for reusability. Replace `{{resourceType}}`, `{{channel_id}}`, and `{{locale_code}}` with the appropriate values for your use case. Use `PRODUCT_MODIFIERS` or `PRODUCT_MODIFIER_VALUES` depending on whether you are querying modifiers or modifier values.
+
+This query returns a paginated list of translations with a maximum of 50 results per request. Use the `cursor` from the response in a subsequent request to fetch more results.
+
+```graphql filename="Example query: Query a list of translations" showLineNumbers copy
+GRAPHQL https://api.bigcommerce.com/stores/{{store_hash}}/graphql
+X-Auth-Token: {{token}}
+
+query {
+  store {
+    translations(filters: {
+        resourceType: {{resourceType}},
+        channelId: "bc/store/channel/{{channel_id}}",
+        localeId: "bc/store/locale/{{locale_code}}"
+      } first: 50) {
+      edges {
+        node {
+          resourceId
+          fields {
+            fieldName
+            original
+            translation
+          }
+        }
+        cursor
+      }
+      pageInfo {
+        hasNextPage
+        hasPreviousPage
+        startCursor
+        endCursor
+      }
+    }
+  }
+}
+```
+
+</Tab>
+<Tab>
+
+The response example below references product modifier translations. For modifier values, the `resourceId` will use the format `bc/store/productModifierValue/{{value_id}}`.
+
+```json filename="Example query: Query a list of product modifier translations" showLineNumbers copy
+{
+  "data": {
+    "store": {
+      "translations": {
+        "edges": [
+          {
+            "node": {
+              "resourceId": "bc/store/productModifier/206",
+              "fields": [
+                {
+                  "fieldName": "display_name",
+                  "original": "Insurance",
+                  "translation": "Assurance"
+                },
+                {
+                  "fieldName": "config.checkbox_label",
+                  "original": "$5 for insurance",
+                  "translation": "5 $ pour l'assurance"
+                }
+              ]
+            },
+            "cursor": "eyJpZCI6MjA2fQ"
+          }
+        ],
+        "pageInfo": {
+          "hasNextPage": false,
+          "hasPreviousPage": false,
+          "startCursor": "eyJpZCI6MjA2fQ",
+          "endCursor": "eyJpZCI6MjA2fQ"
+        }
+      }
+    }
+  }
+}
+```
+
+</Tab>
+</Tabs>
+
+### Query a Product Modifier Translation by Resource ID
+
+The request below uses several variables for reusability. Replace `{{resourceId}}`, `{{resourceType}}`, `{{channel_id}}`, and `{{locale_code}}` with appropriate values for your use case. Make sure `resourceId` follows the format from the [Resource fields](#resource-fields) table.
+
+<Tabs items={['Request', 'Response']}>
+<Tab>
+
+```graphql filename="Example query: Query a product modifier translation by id" showLineNumbers copy
+GRAPHQL https://api.bigcommerce.com/stores/{{store_hash}}/graphql
+X-Auth-Token: {{token}}
+
+query {
+  store {
+    translations(filters: {
+      resourceType: {{resourceType}},
+      channelId: "bc/store/channel/{{channel_id}}",
+      localeId: "bc/store/locale/{{locale_code}}",
+      resourceIds: ["{{resourceId}}"]
+    }) {
+      edges {
+        node {
+          resourceId
+          fields {
+            fieldName
+            original
+            translation
+          }
+        }
+        cursor
+      }
+    }
+  }
+}
+```
+
+</Tab>
+<Tab>
+
+```json filename="Example query: Query a product modifier translation by id" showLineNumbers copy
+{
+  "data": {
+    "store": {
+      "translations": {
+        "edges": [
+          {
+            "node": {
+              "resourceId": "bc/store/productModifier/206",
+              "fields": [
+                {
+                  "fieldName": "display_name",
+                  "original": "Insurance",
+                  "translation": "Assurance"
+                }
+              ]
+            },
+            "cursor": "eyJpZCI6MjA2fQ"
+          }
+        ]
+      }
+    }
+  }
+}
+```
+
+</Tab>
+</Tabs>
+
+### Update a Product Modifier Translation
+
+<Tabs items={['Request', 'Response']}>
+<Tab>
+
+The request below is for updating a product modifier. For product modifier values, replace `resourceType` and `resourceId` with appropriate values from the [Resource fields](#resource-fields) table.
+
+```graphql filename="Example mutation: Update a product modifier translation" showLineNumbers copy
+GRAPHQL https://api.bigcommerce.com/stores/{{store_hash}}/graphql
+X-Auth-Token: {{token}}
+
+mutation {
+  translation {
+    updateTranslations(input: {
+      resourceType: PRODUCT_MODIFIERS,
+      channelId: "bc/store/channel/{{channel_id}}",
+      localeId: "bc/store/locale/{{locale_code}}",
+      entities: [
+        {
+          resourceId: "bc/store/productModifier/206",
+          fields: [
+            { fieldName: "display_name", value: "Assurance" },
+            { fieldName: "config.checkbox_label", value: "5 $ pour l'assurance" }
+          ]
+        }
+      ]
+    }) {
+      __typename
+      errors {
+        __typename
+        ... on Error {
+          message
+        }
+      }
+    }
+  }
+}
+```
+
+</Tab>
+<Tab>
+
+```json filename="Example mutation: Update a product modifier translation" showLineNumbers copy
+{
+  "data": {
+    "translation": {
+      "updateTranslations": {
+        "__typename": "UpdateTranslationsResult",
+        "errors": []
+      }
+    }
+  }
+}
+```
+
+</Tab>
+</Tabs>
+
+### Delete a Product Modifier Translation
+
+The request below is for deleting translations on a product modifier. For product modifier values, replace `resourceType` and `resourceId` with appropriate values from the [Resource fields](#resource-fields) table.
+
+<Tabs items={['Request', 'Response']}>
+<Tab>
+
+```graphql filename="Example mutation: Delete a product modifier translation" showLineNumbers copy
+GRAPHQL https://api.bigcommerce.com/stores/{{store_hash}}/graphql
+X-Auth-Token: {{token}}
+
+mutation {
+  translation {
+    deleteTranslations(input: {
+      resourceType: PRODUCT_MODIFIERS,
+      channelId: "bc/store/channel/{{channel_id}}",
+      localeId: "bc/store/locale/{{locale_code}}",
+      resources: [
+        {
+          resourceId: "bc/store/productModifier/206",
+          fields: ["display_name", "config.checkbox_label"]
+        }
+      ]
+    }) {
+      __typename
+      errors {
+        __typename
+        ... on Error {
+          message
+        }
+      }
+    }
+  }
+}
+```
+
+</Tab>
+<Tab>
+
+```json filename="Example mutation: Delete a product modifier translation" showLineNumbers copy
+{
+  "data": {
+    "translation": {
+      "deleteTranslations": {
+        "__typename": "DeleteTranslationsResult",
+        "errors": []
+      }
+    }
+  }
+}
+```
+
+</Tab>
+</Tabs>

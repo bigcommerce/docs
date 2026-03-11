@@ -1,0 +1,337 @@
+# Translations for Order Statuses (Beta)
+
+<Callout type='info'>
+	The Translations Admin GraphQL API is currently available on Catalyst
+	storefronts only.
+</Callout>
+
+The following entities are translatable for order statuses:
+
+- Label as `label`
+
+<Callout type='info'>
+	Order status IDs are predefined and static (0–14). Merchants can only change the status name. See the [Order Status REST API](https://developer.bigcommerce.com/docs/rest-management/orders/order-status#get-all-order-statuses) for the full list of statuses and their IDs.
+</Callout>
+
+## Resource fields
+
+| Entity Type     | `resourceType`    | `resourceId` Format                |
+| --------------- | ----------------- | ---------------------------------- |
+| Order Status    | `ORDER_STATUSES`  | `bc/store/orderStatus/{status_id}` |
+
+## Examples
+
+Below are examples of GraphQL queries and mutations for retrieving and managing translation settings for order statuses.
+
+### Query a List of Translations
+
+This query returns up to 2 order status translations for the specified resource type, channel, and locale.
+
+The request below uses several variables for reusability. Replace `{{channel_id}}` and `{{locale_code}}` with the appropriate values for your use case.
+
+<Tabs items={['Request', 'Response']}>
+<Tab>
+
+```graphql filename="Example query: Query a list of translations" showLineNumbers copy
+GRAPHQL https://api.bigcommerce.com/stores/{{store_hash}}/graphql
+X-Auth-Token: {{token}}
+
+query {
+  store {
+    translations(
+      filters: {
+        resourceType: ORDER_STATUSES
+        channelId: "bc/store/channel/{{channel_id}}"
+        localeId: "bc/store/locale/{{locale_code}}"
+      }
+      first: 2
+    ) {
+      edges {
+        node {
+          resourceId
+          fields {
+            fieldName
+            original
+            translation
+          }
+        }
+        cursor
+      }
+      pageInfo {
+        hasNextPage
+        hasPreviousPage
+        startCursor
+        endCursor
+      }
+    }
+  }
+}
+```
+
+</Tab>
+<Tab>
+
+```json filename="Example query: Query a list of translations" showLineNumbers copy
+{
+  "data": {
+    "store": {
+      "translations": {
+        "edges": [
+          {
+            "node": {
+              "resourceId": "bc/store/orderStatus/0",
+              "fields": [
+                {
+                  "fieldName": "label",
+                  "original": "Incomplete",
+                  "translation": "Incomplete (FR)"
+                }
+              ]
+            },
+            "cursor": "eyJpZCI6MH0"
+          },
+          {
+            "node": {
+              "resourceId": "bc/store/orderStatus/1",
+              "fields": [
+                {
+                  "fieldName": "label",
+                  "original": "Pending",
+                  "translation": "Pending (FR)"
+                }
+              ]
+            },
+            "cursor": "eyJpZCI6MX0"
+          }
+        ],
+        "pageInfo": {
+          "hasNextPage": true,
+          "hasPreviousPage": false,
+          "startCursor": "eyJpZCI6MH0",
+          "endCursor": "eyJpZCI6MX0"
+        }
+      }
+    }
+  }
+}
+```
+
+</Tab>
+</Tabs>
+
+### Query a Translation by Resource ID
+
+This query returns translation(s) by resourceId.
+
+The request below uses several variables for reusability. Replace `{{resourceId}}`, `{{channel_id}}`, and `{{locale_code}}` with appropriate values for your use case. Make sure `resourceId` follows the format from the [Resource fields](#resource-fields) table.
+
+<Tabs items={['Request', 'Response']}>
+<Tab>
+
+```graphql filename="Example query: Query a translation by id" showLineNumbers copy
+GRAPHQL https://api.bigcommerce.com/stores/{{store_hash}}/graphql
+X-Auth-Token: {{token}}
+
+query {
+  store {
+    translations(
+      filters: {
+        resourceType: ORDER_STATUSES
+        channelId: "bc/store/channel/{{channel_id}}"
+        localeId: "bc/store/locale/{{locale_code}}"
+        resourceIds: ["{{resourceId}}"]
+      }
+    ) {
+      edges {
+        node {
+          resourceId
+          fields {
+            fieldName
+            original
+            translation
+          }
+        }
+        cursor
+      }
+    }
+  }
+}
+```
+
+</Tab>
+<Tab>
+
+```json filename="Example query: Query a translation by id" showLineNumbers copy
+{
+  "data": {
+    "store": {
+      "translations": {
+        "edges": [
+          {
+            "node": {
+              "resourceId": "bc/store/orderStatus/1",
+              "fields": [
+                {
+                  "fieldName": "label",
+                  "original": "Pending",
+                  "translation": "Pending (FR)"
+                }
+              ]
+            },
+            "cursor": "eyJpZCI6MX0"
+          }
+        ]
+      }
+    }
+  }
+}
+```
+
+</Tab>
+</Tabs>
+
+### Update a Translation
+
+This mutation updates translated values for order statuses for a specific channel and locale.
+
+<Tabs items={['Request', 'Response']}>
+<Tab>
+
+```graphql filename="Example mutation: Update a translation" showLineNumbers copy
+GRAPHQL https://api.bigcommerce.com/stores/{{store_hash}}/graphql
+X-Auth-Token: {{token}}
+
+mutation {
+  translation {
+    updateTranslations(
+      input: {
+        resourceType: ORDER_STATUSES,
+        channelId: "bc/store/channel/{{channel_id}}",
+        localeId: "bc/store/locale/{{locale_code}}",
+        entities: [
+          {
+            resourceId: "bc/store/orderStatus/0",
+            fields: [
+              { fieldName: "label", value: "Incomplete (FR)" }
+            ]
+          },
+          {
+            resourceId: "bc/store/orderStatus/1",
+            fields: [
+              { fieldName: "label", value: "Pending (FR)" }
+            ]
+          }
+        ]
+      }
+    ) {
+      __typename
+      errors {
+        __typename
+        ... on ValidationError {
+          message
+        }
+        ... on EntityNotFoundError {
+          id
+          message
+        }
+        ... on InvalidTranslationEntityFieldsError {
+          id
+          message
+          fields
+        }
+      }
+    }
+  }
+}
+```
+
+</Tab>
+<Tab>
+
+```json filename="Example mutation: Update a translation" showLineNumbers copy
+{
+  "data": {
+    "translation": {
+      "updateTranslations": {
+        "__typename": "UpdateTranslationsResult",
+        "errors": []
+      }
+    }
+  }
+}
+```
+
+</Tab>
+</Tabs>
+
+### Delete a Translation
+
+The following mutation removes translated values for specified order status fields, reverting them to the original values for a specific channel and locale.
+
+<Tabs items={['Request', 'Response']}>
+<Tab>
+
+```graphql filename="Example mutation: Delete a translation" showLineNumbers copy
+GRAPHQL https://api.bigcommerce.com/stores/{{store_hash}}/graphql
+X-Auth-Token: {{token}}
+
+mutation {
+  translation {
+    deleteTranslations(
+      input: {
+        resourceType: ORDER_STATUSES,
+        channelId: "bc/store/channel/{{channel_id}}",
+        localeId: "bc/store/locale/{{locale_code}}",
+        resources: [
+          {
+            resourceId: "bc/store/orderStatus/0",
+            fields: ["label"]
+          },
+          {
+            resourceId: "bc/store/orderStatus/1",
+            fields: ["label"]
+          }
+        ]
+      }
+    ) {
+      __typename
+      errors {
+        __typename
+        ... on ValidationError {
+          message
+        }
+        ... on EntityNotFoundError {
+          id
+          message
+        }
+        ... on InvalidTranslationEntityFieldsError {
+          id
+          message
+          fields
+        }
+      }
+    }
+  }
+}
+```
+
+</Tab>
+<Tab>
+
+```json filename="Example mutation: Delete a translation" showLineNumbers copy
+{
+  "data": {
+    "translation": {
+      "deleteTranslations": {
+        "__typename": "DeleteTranslationsResult",
+        "errors": []
+      }
+    }
+  }
+}
+```
+
+</Tab>
+</Tabs>
+
+

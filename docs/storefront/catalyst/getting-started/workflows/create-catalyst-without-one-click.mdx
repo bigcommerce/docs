@@ -1,0 +1,175 @@
+# Manually Create a Catalyst Channel
+
+Learn how to create a Catalyst channel and assign routes from scratch using the [REST Management API](/docs/rest-management). Additionally, learn how to (optionally) create and attach a Makeswift site.
+
+## Prerequisites
+
+You need the same prerequisites as in [Getting started with Catalyst](/docs/storefront/catalyst/getting-started):
+
+- An existing BigCommerce store or [sandbox](/docs/start/about/sandboxes)
+- Permissions: **Manage Channels**, **Create Channels**, **Edit Channels**
+- Your user must have **Create store-level API Accounts**
+- A storefront seat available
+
+### Create an API token
+
+You will also need an **API token** to authenticate requests made to the [REST Management API](/docs/rest-management). The token must have the following OAuth scopes:
+
+- **Channel Settings** (modify) — `store_channel_settings`
+- **Sites & Routes** (modify) — `store_sites`
+
+In the BigCommerce Control Panel, go to **Settings → Store-level API accounts** and click **Create API Account**. Add the scopes above when creating the account, then click **Save** and copy the **Access token** to use in the next steps.
+
+
+## Create a Catalyst channel 
+
+Using the token from **Create an API token** and your store hash, send a POST request to the [Create a channel](/docs/rest-management/channels#create-a-channel) endpoint. Use `type: "storefront"` and `platform: "catalyst"` for a Catalyst channel. 
+
+```bash copy
+curl -X POST https://api.bigcommerce.com/stores/{store_hash}/v3/channels \
+  -H "Content-Type: application/json" \
+  -H "X-Auth-Token: YOUR_ACCESS_TOKEN" \
+  -d '{
+    "name": "My Catalyst Storefront",
+    "type": "storefront",
+    "platform": "catalyst",
+    "status": "prelaunch"
+  }'
+```
+
+ The response includes the new channel's `id`; use it when creating the site and checkout URL in the next steps.
+
+## Add the headless site URL
+
+You need a primary domain for your storefront (and a separate domain for checkout, which you set in the next section). Subdomains are permitted. Ensure each domain is not already in use by another channel or the default storefront; the API does not verify domain ownership. Use the [Create a channel site](/docs/rest-management/channels/site#create-a-channel-site) endpoint with your channel ID and primary storefront domain so BigCommerce knows where your Catalyst storefront is (or will be) hosted.
+
+```bash copy
+curl -X POST https://api.bigcommerce.com/stores/{store_hash}/v3/sites \
+  -H "Content-Type: application/json" \
+  -H "X-Auth-Token: YOUR_ACCESS_TOKEN" \
+  -d '{
+    "url": "https://mystore.com/",
+    "channel_id": CHANNEL_ID
+  }'
+```
+
+Use the same `{store_hash}` and `YOUR_ACCESS_TOKEN` from when you created the channel. Replace `CHANNEL_ID` with the channel `id` from the create-channel response. Use your actual primary storefront URL for `url` (for example, `https://www.mystore.com/` or your production domain).
+
+## Add a checkout URL
+
+Catalyst uses [Redirected Checkout](/docs/storefront/catalyst/getting-started#redirected-checkout): shoppers are sent to BigCommerce hosted checkout. Set the checkout domain with the [Upsert a site's checkout URL](/docs/rest-management/channels/site-checkout-url#upsert-a-siteʼs-checkout-url) endpoint. The checkout URL must be a subdomain of your primary storefront URL (same main domain). You can configure `www_redirect` via the [Settings](/docs/rest-management/settings) API if needed.
+
+```bash copy
+curl -X PUT https://api.bigcommerce.com/stores/{store_hash}/v3/channels/CHANNEL_ID/site/checkout-url \
+  -H "Content-Type: application/json" \
+  -H "X-Auth-Token: YOUR_ACCESS_TOKEN" \
+  -d '{
+    "url": "https://checkout.mystore.com"
+  }'
+```
+
+Use the same `{store_hash}` and `YOUR_ACCESS_TOKEN` as before. Replace `CHANNEL_ID` with your channel `id`. Set `url` to your checkout domain (for example, `https://checkout.mystore.com` if your primary site is `https://mystore.com/`). Keep in mind that your checkout domain must be a subdomain of your primary storefront URL.
+
+## Add channel menus
+
+Channels created via the API do not get control panel navigation by default. Use the [Create channel menus](/docs/rest-management/channels/channel-menus#create-channel-menus) endpoint to define the Channel Manager sidebar for your Catalyst channel. The request **creates or replaces** the list of menu sections. Each entry in `bigcommerce_protected_app_sections` enables a BigCommerce-provided, channel-specific settings page (protected sections override storewide defaults for that channel). See [Building Storefront Channels — Protected UI sections](/docs/integrations/channels/guide/storefronts#protected-ui-sections) for context.
+
+```bash copy
+curl -X POST "https://api.bigcommerce.com/stores/{store_hash}/v3/channels/CHANNEL_ID/channel-menus" \
+  -H "Content-Type: application/json" \
+  -H "X-Auth-Token: YOUR_ACCESS_TOKEN" \
+  -d '{
+    "bigcommerce_protected_app_sections": [
+      "storefront_settings",
+      "currencies",
+      "domains",
+      "notifications",
+      "social",
+      "localization",
+      "pages",
+      "checkout",
+      "payments",
+      "data_solutions",
+      "script_manager"
+    ]
+  }'
+```
+
+Replace `CHANNEL_ID` with your channel `id`. Adjust the array to match the sections you need; valid values are listed in the [Channel Menus API reference](https://developer.bigcommerce.com/docs/rest-management/channels/channel-menus#create-channel-menus) (for example `overview`, `carousel`, and the sections shown above). You can also supply `custom_app_sections` with `title` and `query_path` for app-specific menu items.
+
+### Add 3P SSL to the checkout domain (optional)
+
+Optionally add a 3P SSL certificate for the checkout domain using the [Upsert a site's SSL/TLS certificate information](/docs/rest-management/sites/site-certificate#upsert-a-site's-ssl/tls-certificate-information) endpoint.
+
+### Connect your Catalyst project to the channel
+
+Fork and clone the [Catalyst repository](https://github.com/bigcommerce/catalyst), then run:
+
+```shell copy
+pnpm create @bigcommerce/catalyst@latest init
+```
+
+The CLI will prompt you to log in to your BigCommerce store and select the channel you created. It will generate an `.env.local` file with the environment variables needed to run Catalyst, including the GraphQL Storefront API token and channel ID. For the full steps (including forking and cloning), see [Manual installation](/docs/storefront/catalyst/development/manual-installation). If you are not using `init` and need to set tokens manually, see [Environment variables](/docs/storefront/catalyst/development/environment-variables#bigcommerce_storefront_token).
+
+## Set up routes for the channel
+
+A channel has a **site**. Routes tell BigCommerce how URLs map to pages on your headless storefront (home, cart, product, login, etc.). Catalyst's [with-routes middleware](/docs/storefront/catalyst/development/middleware) and the GraphQL Storefront API [route()](https://developer.bigcommerce.com/graphql-storefront/reference#definition-Route) node depend on these routes.
+
+### Get your site ID
+
+Send a request to list sites for your store and identify the site for your Catalyst channel:
+
+```bash copy
+curl -X GET "https://api.bigcommerce.com/stores/{store_hash}/v3/sites" \
+  -H "Accept: application/json" \
+  -H "X-Auth-Token: YOUR_ACCESS_TOKEN"
+```
+
+Use the `id` of the site that corresponds to your Catalyst channel as `site_id` in the next step. You can find your store hash in the BigCommerce Control Panel or in your app's credentials.
+
+### Configure routes
+
+Send a **PUT** request to update the site's routes. The body **replaces the full set** of routes for the site. Include at least the following route types so the storefront and checkout session syncing work correctly:
+
+```bash copy
+curl -X PUT "https://api.bigcommerce.com/stores/{store_hash}/v3/sites/{site_id}/routes" \
+  -H "Content-Type: application/json" \
+  -H "X-Auth-Token: YOUR_ACCESS_TOKEN" \
+  -d '[
+  {"type": "home", "matching": "*", "route": "/"},
+  {"type": "cart", "matching": "*", "route": "/cart/"},
+  {"type": "login", "matching": "*", "route": "/login/"},
+  {"type": "logout", "matching": "*", "route": "/logout/"},
+  {"type": "search", "matching": "*", "route": "/search/"},
+  {"type": "account", "matching": "*", "route": "/account/"}
+]'
+```
+
+Replace `{site_id}` with the site `id` from the list-sites response. Use the same `{store_hash}` and token as before.
+
+## Create a Makeswift site and connect it to the Catalyst channel
+
+Start by creating a site in [Makeswift](https://www.makeswift.com/) for your Catalyst storefront.
+
+### Get the site API key
+
+In the Makeswift dashboard, go to **Settings → Host** and copy the site API key. You will use this as the value for `MAKESWIFT_SITE_API_KEY` in your Catalyst app.
+
+### Set the environment variable in Catalyst
+
+Set `MAKESWIFT_SITE_API_KEY` in your Catalyst's `.env.local` file for local development. This determines which Makeswift site the storefront uses. For details, see [Environment variables](/docs/storefront/catalyst/development/environment-variables#makeswift_site_api_key).
+
+### Set the Host URL in Makeswift
+
+In Makeswift, set the **Host URL** to your storefront URL so Makeswift can serve content to the correct host:
+
+- For **local development**, Catalyst uses `http://localhost:3000` by default.
+- For **production**, set the Host URL to your deployed storefront URL. See [Deploying](/docs/storefront/catalyst/getting-started/deploying/vercel) for updating the production Makeswift site after deploy.
+
+
+## Next steps
+
+- [Run Catalyst locally](/docs/storefront/catalyst/getting-started/local-development) and point your Makeswift development site at `http://localhost:3000`.
+- [Manual installation](/docs/storefront/catalyst/development/manual-installation) for full CLI and fork-based setup steps.
+- [Deploy your storefront](/docs/storefront/catalyst/getting-started/deploying/overview) to your own hosting.
+- [Create custom components](/docs/storefront/catalyst/getting-started/guides/custom-components) that are editable in Makeswift.

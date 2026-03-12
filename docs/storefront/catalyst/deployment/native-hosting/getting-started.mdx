@@ -1,0 +1,87 @@
+# Getting Started
+
+<Callout type="warning">
+  The Catalyst CLI and Native Hosting are currently in closed alpha. There may be breaking changes as we finalize the API. To express interest in gaining access, fill out the [Native Hosting Closed Alpha Interest Form](https://docs.google.com/forms/d/e/1FAIpQLSfDepq3qRtEtavb1wQvSvdK21pwr_kNsYQbH2B7JjWYyptUSA/viewform?usp=header).
+</Callout>
+
+Below, you’ll find the steps for using the Catalyst CLI to deploy your Catalyst application. Make sure to read the [Overview](/docs/storefront/catalyst/deployment/native-hosting/overview) documentation for an overview of BigCommerce’s hosting infrastructure, how configuration variables work, etc.
+
+## Prerequisites
+
+1. **Local Catalyst repository**  \- This can be created either via the [One-Click Catalyst app](https://developer.bigcommerce.com/docs/storefront/catalyst/getting-started/local-development) or [manually](https://developer.bigcommerce.com/docs/storefront/catalyst/development/manual-installation).  
+2. **The Native Hosting feature flag enabled \-** This flag enables the core hosting APIs and allows you to create an API Account with the correct permissions. While Native Hosting is in closed Alpha, you must be approved to have this flag turned on.  
+3. Configuration variables \- Refer to the [Overview](/docs/storefront/catalyst/deployment/native-hosting/overview) documentation for which variables are needed and where they are read from  
+4. Your store user account must have "high-risk user permissions" to create [**Store-level API Accounts**](https://support.bigcommerce.com/s/article/Store-API-Accounts).
+
+## Installation
+
+Install the Catalyst CLI and the OpenNext Cloudflare adapter in the `core` directory of your Catalyst project.
+
+```shell
+cd core
+pnpm add @bigcommerce/catalyst@alpha @opennextjs/cloudflare
+```
+
+In the `scripts` section of your `core/package.json` file, replace `next build` with `catalyst build` in the `build` script. Then, add a new script for deploying: `"deploy": "catalyst deploy"`. The `dev` and `start` scripts remain unchanged and continue to use `next dev` and `next start` directly.
+
+The final result will look like this.
+
+```json
+{
+  "build": "npm run generate && catalyst build",
+  //...leave the other scripts as-is
+  "deploy": "catalyst deploy", // This is the only new script
+}
+```
+
+For running Catalyst locally, you will still use the same terminal command you used in the past, `pnpm dev`.
+
+## Usage
+
+The Catalyst CLI provides several commands for deploying a Catalyst storefront application to BigCommerce’s infrastructure. See the [CLI Reference](/docs/storefront/catalyst/reference/cli) for a full list of commands and details.
+
+### Authenticate
+
+Before running any commands that interact with the BigCommerce API, you need to provide your store credentials. How you do this depends on your environment:
+
+**Local development (interactive)**: Run `pnpm catalyst auth login` to authenticate via your browser. The CLI will walk you through an OAuth flow and store your credentials locally in `.bigcommerce/project.json`.
+
+```
+pnpm catalyst auth login
+```
+
+After logging in, you can omit the `--store-hash` and `--access-token` flags from all subsequent commands — the CLI will read them from `project.json` automatically.
+
+**CI/CD (non-interactive)** — In environments like GitHub Actions where a browser is not available, provide credentials via environment variables (`CATALYST_STORE_HASH`, `CATALYST_ACCESS_TOKEN`) or pass them directly as flags (`--store-hash` and `--access-token`) on each command. See the [Overview](/docs/storefront/catalyst/deployment/native-hosting/overview) documentation for the full configuration priority order.
+
+### Create a project 
+
+Run the `project create` command to create a new BigCommerce infrastructure project.
+
+```
+pnpm catalyst project create
+```
+
+Alternatively, if you’ve already created a project, you can link to an existing one if you know the project’s uuid using the `project link` command. 
+
+```
+pnpm catalyst project link --project-uuid <PROJECT_UUID>
+```
+
+After creating a new project or linking to an existing one, a `.bigcommerce/project.json` file should have been created for you. This file will store the necessary configuration variables such as your store hash, access token, etc. **Since this file includes an access token, it should not be checked into source control**.
+
+### Deploy your Catalyst project 
+
+When you’re ready, run the `deploy` command to build your Catalyst project and deploy those build assets to BigCommerce’s hosting infrastructure. 
+
+In addition to the `deploy` command depending on the configuration variables mentioned in the creation step, you’ll also need to include the runtime variables necessary for Catalyst. See the [Environment Variables](https://developer.bigcommerce.com/docs/storefront/catalyst/development/environment-variables) documentation for a full list of required variables.
+
+You’ll need to pass each of your runtime variables into the `deploy` command as a secret by using the `--secret` flag. The `--secret` flag ensures that each of your variables is encrypted and is not human readable after creation. 
+
+For example, to pass the `BIGCOMMERCE_STORE_HASH` and `BIGCOMMERCE_STOREFRONT_TOKEN` variables, the command would look like this:
+
+```
+pnpm catalyst deploy --secret BIGCOMMERCE_STORE_HASH=<YOUR_STORE_HASH> --secret BIGCOMMERCE_STOREFRONT_TOKEN=<YOUR_STOREFRONT_TOKEN>
+```
+
+Again, make sure to pass all necessary runtime variables.

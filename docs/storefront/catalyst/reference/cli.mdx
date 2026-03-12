@@ -1,0 +1,265 @@
+# Catalyst CLI
+
+<Callout type="warning">
+  The Catalyst CLI and Native Hosting are currently in closed alpha. There may be breaking changes as we finalize the API. To express interest in gaining access, fill out the [Native Hosting Closed Alpha Interest Form](https://docs.google.com/forms/d/e/1FAIpQLSfDepq3qRtEtavb1wQvSvdK21pwr_kNsYQbH2B7JjWYyptUSA/viewform?usp=header).
+</Callout>
+
+Make sure to read the [Overview](/docs/storefront/catalyst/deployment/native-hosting/overview) documentation to understand the purpose of the CLI, how configuration variables work, etc. The Catalyst CLI supports the following commands:
+
+## version
+
+Display detailed version information (CLI version, Node version, and platform).
+
+### Parameters
+
+This command does not accept any parameters.
+
+### Example
+
+```shell
+pnpm catalyst version
+```
+
+---
+
+## auth login
+
+Authenticate with BigCommerce via your browser. Uses an OAuth device code flow. The CLI displays a one-time code, opens your browser to the BigCommerce login page, and waits for you to authorize. After logging in, your credentials are stored in `.bigcommerce/project.json`.
+
+If you are already logged in, the CLI will display your current credentials and suggest running `catalyst auth logout` to re-authenticate.
+
+### Parameters
+
+| Parameter | Required | Description |
+| :---- | :---- | :---- |
+
+### Example
+
+```shell
+# Login via browser (recommended)
+pnpm catalyst auth login
+```
+
+```shell
+# Login with existing credentials (skips browser flow)
+pnpm catalyst auth login --store-hash <STORE_HASH> --access-token <ACCESS_TOKEN>
+```
+
+---
+
+## auth logout
+
+Remove stored credentials for the current project.
+
+### Parameters
+
+This command does not accept any parameters.
+
+### Example
+
+```shell
+pnpm catalyst auth logout
+```
+
+---
+
+## auth whoami
+
+Verify your stored credentials and display information about the authenticated store and linked project.
+
+### Parameters
+
+| Parameter | Required | Description |
+| :---- | :---- | :---- |
+| `--store-hash <hash>` | No | The BigCommerce store hash (found in the URL of your store's Control Panel). The value is required but can also be set via an environment variable named `CATALYST_STORE_HASH` or the `.bigcommerce/project.json` file. |
+| `--access-token <token>` | No | Your BigCommerce access token. The value is required but can also be set via an environment variable named `CATALYST_ACCESS_TOKEN` or the `.bigcommerce/project.json` file. |
+
+### Example
+
+```shell
+pnpm catalyst auth whoami
+```
+
+Example output:
+
+```
+Logged in to My Store (abc123), connected to project my-project (43eba682-0c48-11f1-9bd5-827a48b0ce1e)
+```
+
+If no credentials are found, the command exits with a "not logged in" message.
+
+---
+
+## start
+
+Start a local preview of your Catalyst storefront using OpenNext/Cloudflare. Requires a successful `catalyst build` first.
+
+### Parameters
+
+*This command does not accept any parameters.*
+
+### Example
+
+```shell
+pnpm catalyst start
+```
+
+---
+
+## build
+
+Build your Catalyst project. Runs either the Next.js build or the Catalyst (OpenNext/Cloudflare) build pipeline depending on the configured framework. For the Catalyst framework, also runs a Wrangler dry-run to generate deployment artifacts.
+
+### Parameters
+
+| Parameter | Required | Description |
+| :---- | :---- | :---- |
+| `--project-uuid` | No | The uuid of the project to be included in the deployment configuration.  The value is required when using `catalyst` as the framework but can be set via an environment variable named `CATALYST_PROJECT_UUID` or the `.bigcommerce/project.json` file. |
+| `--framework` | No | The framework to use: `catalyst` or `nextjs`. Can be set via an environment variable named `CATALYST_FRAMEWORK` or the .bigcommerce/project.json file. |
+| `–env-file` | No | The local path to an environment variables file to load variables from |
+| `[next-build-options...]` | No | Next.js `build` options when using the Next.js framework. See [Next.js build options](https://nextjs.org/docs/app/api-reference/cli/next#next-build-options). |
+
+### Example
+
+```shell
+pnpm catalyst build
+```
+
+```shell
+# Include framework and project UUID
+pnpm catalyst build --framework catalyst --project-uuid <UUID>
+```
+
+---
+
+## deploy
+
+Deploy your application to Cloudflare. By default, this also runs a build before deploying which can be skipped with the `--prebuilt` flag. Generates a bundle from `.bigcommerce/dist`, uploads it to BigCommerce, and creates a deployment. Requires a previous `link` if not passing `--project-uuid`.
+
+### Parameters
+
+| Parameter | Required | Description |
+| :---- | :---- | :---- |
+| `--store-hash <hash>` | **No** | The BigCommerce store hash (found in the URL of your store’s Control Panel). The value is required but can also be set via an environment variable named `` `CATALYST_STORE_HASH` `` or the `.bigcommerce/project.json` file. |
+| `--access-token <token>` | **No** | Your BigCommerce access token. The value is required but can also be set via an environment variable named `` `CATALYST_ACCESS_TOKEN` `` or the `.bigcommerce/project.json` file. |
+| `--project-uuid <uuid>` | No | The uuid of the project to be included in the deployment configuration. The value is required but can also be set via an environment variable named `CATALYST_PROJECT_UUID` or the `.bigcommerce/project.json` file. |
+| `--secret <KEY=VALUE>` | No | A single secret configuration variable that is used to run your deployed Catalyst project. When deploying, you’ll need to either pass your runtime variables using `--secret` or have them already set as environment variables |
+| `--prebuilt` | No | Skips the build  |
+| `–env-file` | No | The local path to an environment variables file to load variables from |
+| `--dry-run` | No | Generate the bundle without uploading or deploying. |
+
+### Example
+
+```shell
+pnpm catalyst deploy --secret BIGCOMMERCE_STORE_HASH=<YOUR_STORE_HASH> --secret BIGCOMMERCE_STOREFRONT_TOKEN=<YOUR_STOREFRONT_TOKEN>
+```
+
+---
+
+## project create
+
+Create a BigCommerce infrastructure project.
+
+### Parameters
+
+| Parameter | Required | Description |
+| :---- | :---- | :---- |
+| `--store-hash <hash>` | No | The BigCommerce store hash (found in the URL of your store’s Control Panel). The value is required but can also be set via an environment variable named `` `CATALYST_STORE_HASH` `` or the `.bigcommerce/project.json` file. |
+| `--access-token <token>` | No | Your BigCommerce access token. The value is required but can also be set via an environment variable named `` `CATALYST_ACCESS_TOKEN` `` or the `.bigcommerce/project.json` file. |
+| `–env-file` | No | The local path to an environment variables file to load variables from |
+
+### Example
+
+```shell
+# Create a project
+pnpm catalyst project create
+```
+
+```shell
+# Create a project and pass store hash and access token
+pnpm catalyst project create --store-hash <STORE_HASH> --access-token <ACCESS_TOKEN>
+```
+
+---
+
+## project link
+
+Link your local Catalyst project to a BigCommerce infrastructure project. You can provide a project UUID directly, or use store credentials to fetch and select from available projects (or create a new one).
+
+### Parameters
+
+| Parameter | Required | Description |
+| :---- | :---- | :---- |
+| `--store-hash <hash>` | No | BigCommerce store hash (found in the URL of your store Control Panel). The value is required if not passing `--project-uuid` but can also be set via `CATALYST_STORE_HASH` env var or the `.bigcommerce/project.json` file.  |
+| `--access-token <token>` | No | BigCommerce access token (from a store-level API account). The value is required if not passing `--project-uuid` but can also be set via `CATALYST_ACCESS_TOKEN` env var.  |
+| `--project-uuid <uuid>` | No\*\* | BigCommerce infrastructure project UUID (from GET /v3/infrastructure/projects). Use this to link directly without fetching projects. **Either this or both `--store-hash` and `--access-token` must be provided.** |
+| `–env-file` | No | The local path to an environment variables file to load variables from |
+
+### Example
+
+```shell
+# Link using a project UUID directly
+pnpm catalyst link --project-uuid <uuid>
+```
+
+```shell
+# Link by fetching projects (prompts to select or create)
+pnpm catalyst link --store-hash <STORE_HASH> --access-token <ACCESS_TOKEN>
+```
+
+---
+
+## project list
+
+List BigCommerce infrastructure projects for your store.
+
+### Parameters
+
+| Parameter | Required | Description |
+| :---- | :---- | :---- |
+| `--store-hash <hash>` | No | BigCommerce store hash (found in the URL of your store Control Panel). The value is required but can also be set via `CATALYST_STORE_HASH` env var or the `.bigcommerce/project.json` file.  |
+| `--access-token <token>` | No | BigCommerce access token (from a store-level API account). The value is required but can also be set via `CATALYST_ACCESS_TOKEN` env var or the `.bigcommerce/project.json` file.  |
+
+### Example
+
+```shell
+# List your projects
+pnpm catalyst project list
+```
+
+```shell
+# List projects by passing store hash and access token
+pnpm catalyst project list --store-hash <STORE_HASH> --access-token <ACCESS_TOKEN>
+```
+
+---
+
+## telemetry
+
+View or change CLI telemetry collection status (enable, disable, or show current status).
+
+### Parameters
+
+| Parameter | Required | Description |
+| :---- | :---- | :---- |
+| `[arg]` | No | Subcommand. Choices: `disable`, `enable`, `status`. Can also be omitted to show status. |
+| `--enable` | No | Enables CLI telemetry collection. Conflicts with `--disable`. |
+| `--disable` | No | Disables CLI telemetry collection. |
+
+### Example
+
+```shell
+# Show telemetry status
+pnpm catalyst telemetry
+```
+
+```shell
+# Enable telemetry collection
+pnpm catalyst telemetry enable
+```
+
+```shell
+# Disable telemetry collection
+pnpm catalyst telemetry --disable
+```
+

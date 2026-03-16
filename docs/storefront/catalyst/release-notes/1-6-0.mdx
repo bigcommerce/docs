@@ -1,0 +1,62 @@
+# Catalyst version 1.6.0 Release Notes
+
+We are excited to announce the release of Catalyst v1.6.0, which adds reCAPTCHA v2 support to storefront forms, including registration, contact, and product review forms.
+
+For additional details, you can refer to the [Catalyst 1.6 changeset](https://github.com/bigcommerce/catalyst/releases/tag/%40bigcommerce%2Fcatalyst-core%401.6.0).
+
+## reCAPTCHA v2 support
+
+Catalyst now supports reCAPTCHA v2 on the registration, contact us, and product review forms. When reCAPTCHA is enabled in the BigCommerce admin, a reCAPTCHA widget is rendered on each supported form. Validation is performed server-side in the corresponding form actions — the token is read from the native `g-recaptcha-response` field that the reCAPTCHA widget injects into the form, so no manual client-side token extraction is required.
+
+### Migration
+
+1. Install the required dependencies:
+
+```bash copy
+pnpm add react-google-recaptcha
+pnpm add -D @types/react-google-recaptcha
+```
+
+2. Create `core/lib/recaptcha/constants.ts` with the `ReCaptchaSettings` interface and `RECAPTCHA_TOKEN_FORM_KEY` constant, and create the `core/lib/recaptcha.ts` server-side helper with `getRecaptchaFromForm` and `assertRecaptchaTokenPresent` utilities.
+
+3. Add `recaptchaRequired` translation strings to `core/messages/en.json` for the following namespaces:
+   - `Auth.Register`
+   - `Product.Reviews.Form`
+   - `WebPages.ContactUs.Form`
+   - `Form`
+
+4. Update the following GraphQL mutations to accept an optional `$reCaptchaV2: ReCaptchaV2Input` variable:
+   - `register-customer.ts`
+   - `submit-review.ts`
+   - `submit-contact-form.ts`
+
+5. Add server-side reCAPTCHA token validation in each of the three form actions using `getRecaptchaFromForm` and `assertRecaptchaTokenPresent`.
+
+6. Fetch `recaptchaSiteKey` via `getRecaptchaSiteKey()` and pass it into form components from:
+   - `register/page.tsx`
+   - `product/[slug]/page.tsx`
+   - `webpages/[id]/contact/page.tsx`
+
+7. Render the `<RecaptchaWidget>` component (from `react-google-recaptcha`) inside:
+   - `dynamic-form/index.tsx`
+   - `reviews/review-form.tsx`
+
+8. Thread the `recaptchaSiteKey?: string` prop through the following intermediate components:
+   - `dynamic-form-section/index.tsx`
+   - `product-detail/index.tsx`
+   - `reviews/index.tsx`
+   - `product/[slug]/_components/reviews.tsx`
+
+Due to the number of changes involved, it is recommended to use the [PR](https://github.com/bigcommerce/catalyst/releases/tag/%40bigcommerce%2Fcatalyst-core%401.6.0) as a reference for migration.
+
+## Release Tags
+
+We have published new tags for the Core and Makeswift versions of Catalyst. Target these tags to pull the latest code:
+
+- [**@bigcommerce/catalyst-core@1.6.0**](https://github.com/bigcommerce/catalyst/releases/tag/%40bigcommerce%2Fcatalyst-core%401.6.0)
+- [**@bigcommerce/catalyst-makeswift@1.6.0**](https://github.com/bigcommerce/catalyst/releases/tag/%40bigcommerce%2Fcatalyst-makeswift%401.6.0)
+
+And as always, you can pull the latest stable release with these tags:
+
+- [**@bigcommerce/catalyst-core@latest**](https://github.com/bigcommerce/catalyst/releases/tag/%40bigcommerce%2Fcatalyst-core%40latest)
+- [**@bigcommerce/catalyst-makeswift@latest**](https://github.com/bigcommerce/catalyst/releases/tag/%40bigcommerce%2Fcatalyst-makeswift%40latest)

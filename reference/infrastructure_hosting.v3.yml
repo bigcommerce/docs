@@ -1,0 +1,696 @@
+openapi: '3.0.3'
+info:
+  title: Infrastructure Hosting
+  version: '3'
+  description: |-
+    Manage infrastructure hosting projects and deployments for your BigCommerce store. Use these endpoints to create and manage hosting projects, upload deployment artifacts, trigger deployments, monitor deployment progress via server-sent events, and tail real-time worker logs.
+
+    For more about native hosting, see [Native Hosting Overview](/docs/storefront/catalyst/deployment/native-hosting/overview).
+  termsOfService: 'https://www.bigcommerce.com/terms'
+  contact:
+    name: BigCommerce
+    url: 'https://www.bigcommerce.com'
+    email: support@bigcommerce.com
+servers:
+  - url: 'https://api.bigcommerce.com/stores/{store_hash}/v3'
+    variables:
+      store_hash:
+        default: store_hash
+        description: Permanent ID of the BigCommerce store.
+    description: BigCommerce API Gateway
+tags:
+  - name: Projects
+    description: Create, list, and delete infrastructure hosting projects.
+  - name: Deployments
+    description: Create deployments, generate upload signatures, and stream deployment events.
+  - name: Logs
+    description: Tail real-time worker logs for a project.
+security:
+  - X-Auth-Token: []
+paths:
+  /infrastructure/projects:
+    get:
+      tags:
+        - Projects
+      summary: List Projects
+      operationId: listProjects
+      description: Returns a list of infrastructure hosting projects for the store. Supports cursor-based pagination and filtering.
+      parameters:
+        - name: limit
+          in: query
+          description: The number of results to return per page. Defaults to 50.
+          schema:
+            type: integer
+            default: 50
+        - name: after
+          in: query
+          description: Cursor for forward pagination. Returns results after this cursor.
+          schema:
+            type: string
+        - name: before
+          in: query
+          description: Cursor for backward pagination. Returns results before this cursor.
+          schema:
+            type: string
+        - name: 'uuid:in'
+          in: query
+          description: 'A comma-separated list of project UUIDs by which to filter. For example, `?uuid:in=uuid1,uuid2`.'
+          schema:
+            type: string
+        - name: 'name:like'
+          in: query
+          description: Filter projects by name using a partial match.
+          schema:
+            type: string
+        - name: 'date_created:min'
+          in: query
+          description: 'Filter for projects created after this date. RFC 3339 format, for example `2024-01-01T00:00:00Z`.'
+          schema:
+            type: string
+            format: date-time
+        - name: 'date_created:max'
+          in: query
+          description: 'Filter for projects created before this date. RFC 3339 format, for example `2024-12-31T23:59:59Z`.'
+          schema:
+            type: string
+            format: date-time
+        - name: 'date_modified:min'
+          in: query
+          description: 'Filter for projects modified after this date. RFC 3339 format.'
+          schema:
+            type: string
+            format: date-time
+        - name: 'date_modified:max'
+          in: query
+          description: 'Filter for projects modified before this date. RFC 3339 format.'
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: The request completed successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Project'
+                  meta:
+                    $ref: '#/components/schemas/CursorPaginationMeta'
+              example:
+                data:
+                  - uuid: '019500e2-933d-7057-8e81-090dd7240795'
+                    name: 'my-storefront'
+                    date_created: '2024-06-15T10:30:00Z'
+                    date_modified: '2024-06-16T14:22:00Z'
+                meta:
+                  cursor_pagination:
+                    count: 1
+                    per_page: 50
+                    start_cursor: 'abc123'
+                    end_cursor: 'def456'
+                    links:
+                      previous: '?before=abc123'
+                      next: '?after=def456'
+    post:
+      tags:
+        - Projects
+      summary: Create a Project
+      operationId: createProject
+      description: Creates a new infrastructure hosting project.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProjectRequest'
+            example:
+              name: 'my-storefront'
+      responses:
+        '200':
+          description: The project was created successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Project'
+                  meta:
+                    $ref: '#/components/schemas/EmptyMeta'
+              example:
+                data:
+                  uuid: '019500e2-933d-7057-8e81-090dd7240795'
+                  name: 'my-storefront'
+                  date_created: '2024-06-15T10:30:00Z'
+                  date_modified: '2024-06-15T10:30:00Z'
+                meta: {}
+    delete:
+      tags:
+        - Projects
+      summary: Delete Projects
+      operationId: deleteProjects
+      description: 'Deletes one or more infrastructure hosting projects by UUID. The `project_uuid:in` query parameter is required.'
+      parameters:
+        - name: 'project_uuid:in'
+          in: query
+          required: true
+          description: 'A comma-separated list of project UUIDs to delete. For example, `?project_uuid:in=uuid1,uuid2`.'
+          schema:
+            type: string
+      responses:
+        '204':
+          description: The projects were deleted successfully. No content is returned.
+        '422':
+          description: The request could not be processed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                status: 422
+                title: "'project_uuid:in' must be specified"
+                type: 'https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes'
+                errors: {}
+  '/infrastructure/projects/{project_uuid}':
+    delete:
+      tags:
+        - Projects
+      summary: Delete a Project
+      operationId: deleteProject
+      description: Deletes a single infrastructure hosting project by UUID.
+      parameters:
+        - name: project_uuid
+          in: path
+          required: true
+          description: The UUID of the project to delete.
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: The project was deleted successfully. No content is returned.
+  /infrastructure/deployments:
+    post:
+      tags:
+        - Deployments
+      summary: Create a Deployment
+      operationId: createDeployment
+      description: |-
+        Creates a new deployment for an infrastructure hosting project. You must first generate an upload signature and upload your deployment artifact before creating a deployment.
+
+        Only one deployment can be in progress per project at a time. If a deployment is already in progress, the API returns a `409 Conflict` response.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDeploymentRequest'
+            example:
+              upload_uuid: '0194fd2b-2ac6-72de-b73f-d83f2d626a74'
+              project_uuid: '01956ca2-72dd-7968-9484-469ce291d38f'
+              environment_variables:
+                - type: plain_text
+                  key: API_URL
+                  value: 'https://api.example.com'
+                - type: secret
+                  key: API_SECRET
+                  value: 's3cret'
+      responses:
+        '200':
+          description: The deployment was created successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/CreateDeploymentResponse'
+                  meta:
+                    $ref: '#/components/schemas/EmptyMeta'
+              example:
+                data:
+                  deployment_uuid: '019500e2-933d-7057-8e81-090dd7240795'
+                meta: {}
+        '409':
+          description: A deployment is already in progress for this project.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                status: 409
+                title: 'You already have a deployment in progress for this project. Please wait for it to complete before trying again.'
+                type: 'https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes'
+                errors: {}
+  /infrastructure/deployments/uploads:
+    post:
+      tags:
+        - Deployments
+      summary: Generate Upload Signature
+      operationId: generateUploadSignature
+      description: |-
+        Generates a pre-signed upload URL for uploading deployment artifacts. Use the returned `upload_url` to upload your deployment package, then pass the `upload_uuid` when creating a deployment.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmptyMeta'
+            example: {}
+      responses:
+        '200':
+          description: The upload signature was generated successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/UploadSignatureResponse'
+                  meta:
+                    $ref: '#/components/schemas/EmptyMeta'
+              example:
+                data:
+                  upload_url: 'https://storage.example.com/uploads/signed-url'
+                  upload_uuid: '0194fd2b-2ac6-72de-b73f-d83f2d626a74'
+                meta: {}
+  '/infrastructure/deployments/{deployment_uuid}/events':
+    get:
+      tags:
+        - Deployments
+      summary: Get Deployment Event Stream
+      operationId: getDeploymentEventStream
+      description: |-
+        Opens a server-sent events (SSE) stream that delivers real-time deployment progress updates. The stream remains open until the deployment completes, fails, or the connection times out (30 seconds).
+
+        Each event is a JSON object delivered as an SSE `data` field.
+      parameters:
+        - name: deployment_uuid
+          in: path
+          required: true
+          description: The UUID of the deployment to stream events for.
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: A stream of server-sent events with deployment progress updates.
+          content:
+            text/event-stream:
+              schema:
+                $ref: '#/components/schemas/DeploymentEvent'
+              example:
+                deployment_uuid: '019500e2-933d-7057-8e81-090dd7240795'
+                deployment_status: 'in_progress'
+                event:
+                  step: 'downloading'
+                  progress: 25
+                deployment_url: null
+        '400':
+          description: The deployment UUID is not a valid UUID.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                status: 400
+                title: ':deploymentUuid should be valid UUID.'
+                type: 'https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes'
+                errors: {}
+  '/infrastructure/logs/{project_uuid}/tail':
+    get:
+      tags:
+        - Logs
+      summary: Tail Worker Logs
+      operationId: tailWorkerLogs
+      description: |-
+        Opens a server-sent events (SSE) stream that delivers real-time worker logs for a project. The stream includes log messages, request data, and exception information. A keep-alive is sent every 15 seconds. The stream times out after 60 seconds.
+
+        Each event is a JSON object delivered as an SSE `data` field.
+
+        > **Note**: This endpoint is served from the streaming API server, not the main API gateway.
+      parameters:
+        - name: project_uuid
+          in: path
+          required: true
+          description: The UUID of the project to tail logs for.
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: A stream of server-sent events with real-time worker log entries.
+          content:
+            text/event-stream:
+              schema:
+                $ref: '#/components/schemas/WorkerLogEvent'
+              example:
+                uuid: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'
+                project_uuid: '019500e2-933d-7057-8e81-090dd7240795'
+                request:
+                  method: 'GET'
+                  url: '/products'
+                  status_code: 200
+                logs:
+                  - timestamp: '2024-06-15T10:30:00Z'
+                    level: 'info'
+                    messages:
+                      - 'Request processed successfully'
+                exceptions: []
+                timestamp: '2024-06-15T10:30:00Z'
+        '400':
+          description: The project UUID is not a valid UUID.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                status: 400
+                title: ':projectUuid should be valid UUID.'
+                type: 'https://developer.bigcommerce.com/api-docs/getting-started/api-status-codes'
+                errors: {}
+components:
+  schemas:
+    Project:
+      type: object
+      description: An infrastructure hosting project.
+      properties:
+        uuid:
+          type: string
+          format: uuid
+          description: The unique identifier for the project.
+          example: '019500e2-933d-7057-8e81-090dd7240795'
+        name:
+          type: string
+          description: The name of the project.
+          example: 'my-storefront'
+        date_created:
+          type: string
+          format: date-time
+          description: The date the project was created, in RFC 3339 format.
+          example: '2024-06-15T10:30:00Z'
+        date_modified:
+          type: string
+          format: date-time
+          description: The date the project was last modified, in RFC 3339 format.
+          example: '2024-06-16T14:22:00Z'
+    CreateProjectRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          description: The name for the new project.
+          example: 'my-storefront'
+    CreateDeploymentRequest:
+      type: object
+      required:
+        - upload_uuid
+        - project_uuid
+      properties:
+        upload_uuid:
+          type: string
+          description: The UUID of the uploaded deployment artifact, obtained from the Generate Upload Signature endpoint.
+          example: '0194fd2b-2ac6-72de-b73f-d83f2d626a74'
+        project_uuid:
+          type: string
+          format: uuid
+          description: The UUID of the project to deploy to.
+          example: '01956ca2-72dd-7968-9484-469ce291d38f'
+        environment_variables:
+          type: array
+          nullable: true
+          description: Optional environment variables to set for this deployment.
+          items:
+            $ref: '#/components/schemas/EnvironmentVariable'
+    EnvironmentVariable:
+      type: object
+      required:
+        - type
+        - key
+        - value
+      properties:
+        type:
+          type: string
+          enum:
+            - plain_text
+            - secret
+          description: |-
+            The type of environment variable.
+            - `plain_text`: A regular environment variable visible in responses.
+            - `secret`: A sensitive environment variable that is encrypted and not returned in responses.
+        key:
+          type: string
+          description: The name of the environment variable.
+          example: 'API_URL'
+        value:
+          type: string
+          description: The value of the environment variable.
+          example: 'https://api.example.com'
+    CreateDeploymentResponse:
+      type: object
+      properties:
+        deployment_uuid:
+          type: string
+          format: uuid
+          description: The unique identifier of the newly created deployment.
+          example: '019500e2-933d-7057-8e81-090dd7240795'
+    UploadSignatureResponse:
+      type: object
+      properties:
+        upload_url:
+          type: string
+          format: uri
+          description: The pre-signed URL to upload the deployment artifact to.
+          example: 'https://storage.example.com/uploads/signed-url'
+        upload_uuid:
+          type: string
+          description: The UUID identifying this upload. Pass this value when creating a deployment.
+          example: '0194fd2b-2ac6-72de-b73f-d83f2d626a74'
+    DeploymentEvent:
+      type: object
+      description: A deployment event delivered via server-sent events.
+      properties:
+        deployment_uuid:
+          type: string
+          format: uuid
+          description: The UUID of the deployment.
+          example: '019500e2-933d-7057-8e81-090dd7240795'
+        deployment_status:
+          type: string
+          enum:
+            - queued
+            - in_progress
+            - failed
+            - completed
+          description: The current status of the deployment.
+        event:
+          type: object
+          nullable: true
+          description: Details about the current deployment step and progress. Null when no step information is available.
+          properties:
+            step:
+              type: string
+              enum:
+                - initializing
+                - downloading
+                - unzipping
+                - processing
+                - deploying
+                - finalizing
+                - complete
+              description: The current step in the deployment process.
+            progress:
+              type: integer
+              minimum: 0
+              maximum: 100
+              description: The progress percentage of the deployment.
+              example: 25
+        error:
+          type: object
+          nullable: true
+          description: Error information if the deployment failed. Null when the deployment has not failed.
+          properties:
+            code:
+              type: integer
+              description: An error code identifying the failure reason.
+              example: 20
+        deployment_url:
+          type: string
+          nullable: true
+          description: The URL where the deployed application is accessible. Null until the deployment is finalizing or complete.
+          example: 'my-store.catalyst-sandbox.store'
+    WorkerLogEvent:
+      type: object
+      description: A worker log event delivered via server-sent events.
+      properties:
+        uuid:
+          type: string
+          format: uuid
+          description: The unique identifier for this log event.
+          example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'
+        project_uuid:
+          type: string
+          format: uuid
+          description: The UUID of the project this log belongs to.
+          example: '019500e2-933d-7057-8e81-090dd7240795'
+        request:
+          type: object
+          nullable: true
+          description: HTTP request information associated with this log entry, if applicable.
+          properties:
+            method:
+              type: string
+              description: The HTTP method.
+              example: 'GET'
+            url:
+              type: string
+              description: The request URL.
+              example: '/products'
+            status_code:
+              type: integer
+              description: The HTTP response status code.
+              example: 200
+        logs:
+          type: array
+          description: Log messages associated with this event.
+          items:
+            type: object
+            properties:
+              timestamp:
+                type: string
+                format: date-time
+                nullable: true
+                description: The timestamp of the log message.
+                example: '2024-06-15T10:30:00Z'
+              level:
+                type: string
+                enum:
+                  - debug
+                  - info
+                  - warn
+                  - error
+                description: The severity level of the log message.
+              messages:
+                type: array
+                items:
+                  type: string
+                description: The log message content.
+        exceptions:
+          type: array
+          description: Exceptions that occurred during request processing.
+          items:
+            type: object
+            properties:
+              timestamp:
+                type: string
+                format: date-time
+                nullable: true
+                description: The timestamp of the exception.
+                example: '2024-06-15T10:30:01Z'
+              name:
+                type: string
+                description: The name or type of the exception.
+                example: 'TypeError'
+              message:
+                type: string
+                description: The exception message.
+                example: 'Cannot read property of undefined'
+        timestamp:
+          type: string
+          format: date-time
+          nullable: true
+          description: The timestamp of the overall log event.
+          example: '2024-06-15T10:30:00Z'
+    CursorPaginationMeta:
+      type: object
+      description: Meta information including cursor-based pagination.
+      properties:
+        cursor_pagination:
+          type: object
+          properties:
+            count:
+              type: integer
+              description: The number of items in the current page.
+              example: 1
+            per_page:
+              type: integer
+              description: The number of items per page.
+              example: 50
+            start_cursor:
+              type: string
+              description: The cursor marking the start of the current page.
+              example: 'abc123'
+            end_cursor:
+              type: string
+              description: The cursor marking the end of the current page.
+              example: 'def456'
+            links:
+              type: object
+              properties:
+                previous:
+                  type: string
+                  description: The relative URL for the previous page.
+                  example: '?before=abc123'
+                next:
+                  type: string
+                  description: The relative URL for the next page.
+                  example: '?after=def456'
+    EmptyMeta:
+      type: object
+      description: Empty meta object.
+      properties: {}
+    ErrorResponse:
+      type: object
+      description: Error payload for the BigCommerce API.
+      properties:
+        status:
+          type: integer
+          description: The HTTP status code.
+        title:
+          type: string
+          description: A description of the error.
+        type:
+          type: string
+          description: A URL identifying the error type.
+        errors:
+          type: object
+          description: Additional error details.
+          properties: {}
+          additionalProperties:
+            type: string
+  securitySchemes:
+    X-Auth-Token:
+      name: X-Auth-Token
+      description: |-
+        ### OAuth scopes
+
+        | UI Name | Permission | Parameter |
+        |:--------|:-----------|:----------|
+        | Infrastructure Deployments | read-only | `store_infrastructure_deployments_read_only` |
+        | Infrastructure Deployments | create preview | `store_infrastructure_deployments_create_preview` |
+        | Infrastructure Deployments | manage | `store_infrastructure_deployments_manage` |
+        | Infrastructure Projects | read-only | `store_infrastructure_projects_read_only` |
+        | Infrastructure Projects | manage | `store_infrastructure_projects_manage` |
+        | Infrastructure Logs | read-only | `store_infrastructure_logs_read_only` |
+
+        ### Authentication header
+
+        | Header | Argument | Description |
+        |:-------|:---------|:------------|
+        | `X-Auth-Token` | `access_token` | For more about API accounts that generate `access_token`s, see our [Guide to API Accounts](/docs/start/authentication/api-accounts). |
+
+        ### Further reading
+
+        For example requests and more information about authenticating BigCommerce APIs, see [Authentication and Example Requests](/docs/start/authentication#x-auth-token-header-example-requests).
+
+        For more about BigCommerce OAuth scopes, see our [Guide to API Accounts](/docs/start/authentication/api-accounts#oauth-scopes).
+
+        For a list of API status codes, see [API Status Codes](/docs/start/about/status-codes).
+      type: apiKey
+      in: header

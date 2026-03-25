@@ -1,0 +1,198 @@
+# Catalyst version 1.5.0 Release Notes
+
+We are excited to announce the release of Catalyst v1.5.0, which upgrades to Next.js 16, migrates to the proxy pattern with Node.js 24, adds product gallery pagination, uncached product inventory fetching, canonical URL and hreflang SEO support, cart inventory messaging, and a collection of bug fixes and improvements.
+
+For additional details, you can refer to the [Catalyst 1.5 changeset](https://github.com/bigcommerce/catalyst/releases/tag/%40bigcommerce%2Fcatalyst-core%401.5.0).
+
+## Next.js 16
+
+Catalyst has been upgraded from Next.js 15 to Next.js 16. This release bumps `next` to `^16.1.6`, aligns React and peer dependencies, migrates away from deprecated `unstable_*` cache APIs, updates TypeScript configuration for Next.js 16 compatibility, and resolves new deprecation lint errors.
+
+### Cache API migration
+
+Next.js 16 stabilizes the cache invalidation APIs that Catalyst previously consumed as unstable imports. This release replaces all usage:
+
+- `unstable_expireTag` → `revalidateTag` (from `next/cache`)
+- `unstable_expirePath` → `revalidatePath` (from `next/cache`)
+
+The function signatures are identical — no behavioral changes to cache invalidation.
+
+**Before:**
+
+```ts copy
+import { unstable_expireTag } from "next/cache";
+
+unstable_expireTag("product");
+```
+
+**After:**
+
+```ts copy
+import { revalidateTag } from "next/cache";
+
+revalidateTag("product");
+```
+
+### TypeScript configuration
+
+Next.js 16 requires updated TypeScript compiler options. The `tsconfig.json` has been updated:
+
+- `moduleResolution` changed to `"bundler"`
+- `module` changed to `"nodenext"`
+
+If you have customized your `tsconfig.json`, ensure these values are set to avoid type resolution issues.
+
+### Dynamic imports in the client module
+
+To support Next.js 16's module resolution behavior, the BigCommerce API client (`core/client/index.ts`) now uses dynamic `import()` calls for `next/headers`, `next/navigation`, and `next-intl/server` instead of static top-level imports. This prevents AsyncLocalStorage context poisoning that occurs when `next.config.ts` eagerly evaluates the full module graph during config resolution.
+
+This change is internal to the client module — all consumer imports remain unchanged.
+
+### Deprecation lint fixes
+
+Next.js 16 introduces stricter linting for HTML best practices. This release resolves deprecation warnings for:
+
+- Legacy `<img>` elements (replaced with `next/image` or explicitly opted out)
+- Missing `rel="noopener noreferrer"` on external `target="_blank"` links
+
+### Middleware to proxy migration
+
+Next.js 16 deprecates `middleware.ts` in favor of `proxy.ts` to clarify its network-boundary purpose. This release migrates Catalyst to the new proxy pattern:
+
+- `middleware.ts` has been renamed to `proxy.ts`
+- `export const middleware` has been renamed to `export const proxy`
+- The internal `middlewares/` directory has been renamed to `proxies/`
+
+The proxy runs on the Node.js runtime (not Edge), which requires **Node.js 24 or later**. Catalyst now enforces this via the `engines` field in `package.json` as well as the `.nvmrc` Node.js version configuration file in the root of the Catalyst repository.
+
+Internal middleware composition (`composeMiddlewares` → `composeProxies`, all `with-*.ts` files) follows the same patterns — only the naming and entry point have changed. There are no behavioral changes to auth, redirects, or locale switching.
+
+### Migration
+
+To upgrade your Catalyst storefront to Next.js 16:
+
+1. Update `next` to `^16.0.0` in your `package.json` and install dependencies.
+2. Replace any usage of `unstable_expireTag` with `revalidateTag` and `unstable_expirePath` with `revalidatePath` from `next/cache`.
+3. Update `tsconfig.json` to use `"moduleResolution": "bundler"` and `"module": "nodenext"`.
+4. Rename `middleware.ts` to `proxy.ts` and change `export const middleware` to `export const proxy`.
+5. Rename the `middlewares/` directory to `proxies/` and update any internal imports accordingly.
+6. Ensure you are running **Node.js 24 or later**.
+7. Address any Next.js 16 deprecation lint errors (e.g., legacy `<img>` elements, missing `rel="noopener noreferrer"` on external links).
+
+## Product gallery pagination
+
+Products with many images now support paginated loading in the gallery. When a product has more images than the initial page load, additional images load in batches as the user scrolls through the thumbnails. Thumbnail images now display horizontally across all viewport sizes.
+
+### Migration
+
+1. Create the new server action file `core/app/[locale]/(default)/product/[slug]/_actions/get-more-images.ts` with a GraphQL query to fetch additional product images with pagination.
+2. Update the product page data fetching in `core/app/[locale]/(default)/product/[slug]/page-data.ts` to include `pageInfo` (with `hasNextPage` and `endCursor`) from the images query.
+3. Update `core/app/[locale]/(default)/product/[slug]/page.tsx` to pass the new pagination props (`pageInfo`, `productId`, `loadMoreAction`) to the `ProductDetail` component.
+
+Due to the number of changes, it is recommended to use the [PR](https://github.com/bigcommerce/catalyst/releases/tag/%40bigcommerce%2Fcatalyst-core%401.5.0) as a reference for migration.
+
+## Uncached product inventory fetching
+
+Product inventory data is now fetched with a separate GraphQL query that bypasses caching. This ensures that customers always see real-time stock levels on the product detail page, rather than potentially stale cached inventory counts.
+
+### Migration
+
+Rebase the following files with the new release code:
+
+- `core/app/[locale]/(default)/product/[slug]/page-data.ts`
+- `core/app/[locale]/(default)/product/[slug]/page.tsx`
+
+## Canonical URLs and hreflang alternates
+
+Pages now generate proper canonical URLs and hreflang alternate links for SEO. A new `getMetadataAlternates` helper (`core/lib/seo/canonical.ts`) fetches the vanity URL via GraphQL and builds canonical and hreflang metadata for each page. The default locale uses no path prefix; other locales use `/{locale}/path`.
+
+On Vercel preview deployments (`VERCEL_ENV=preview`), the canonical and hreflang URLs use `VERCEL_URL` instead of the production vanity URL, preventing preview environments from generating SEO metadata that points to production.
+
+### Migration
+
+This change touches many page files to add `alternates` to their `generateMetadata` exports. Due to the number of changes, it is recommended to use the [PR](https://github.com/bigcommerce/catalyst/releases/tag/%40bigcommerce%2Fcatalyst-core%401.5.0) as a reference for migration. At a high level:
+
+1. Create the new `core/lib/seo/canonical.ts` helper.
+2. Update the root locale layout (`core/app/[locale]/layout.tsx`) to set `metadataBase` from the vanity URL.
+3. Add `alternates: await getMetadataAlternates(...)` to `generateMetadata` in each page file (home, product, category, brand, blog, blog post, webpages, gift certificates, compare, and wishlist pages).
+4. Add the `path` field to brand, blog post, and product GraphQL queries so metadata can build canonical URLs.
+
+## Cart line item inventory messaging
+
+The cart page now displays inventory-aware messaging on each line item based on store inventory settings:
+
+- **Out-of-stock message** when a line item is fully or partially out of stock (if enabled on the store)
+- **Ready-to-ship quantity** (if enabled on the store)
+- **Backordered quantity** (if enabled on the store)
+
+### Migration
+
+Rebase the following files with the new release code:
+
+- `core/app/[locale]/(default)/cart/page-data.ts`
+- `core/app/[locale]/(default)/cart/page.tsx`
+- `core/messages/en.json`
+- `core/vibes/soul/sections/cart/client.tsx`
+
+## DOMPurify migration
+
+Catalyst now uses `dompurify` instead of `isomorphic-dompurify`, which required JSDOM. JSDOM does not work in edge-runtime environments, and since DOMPurify is only needed on the client for JSON-LD schema sanitization, the isomorphic variant was unnecessary. The `ProductReviewSchema` component is now a client component.
+
+### Migration
+
+1. Remove the old dependency and add the new one:
+
+```bash copy
+pnpm rm isomorphic-dompurify
+pnpm add dompurify -S
+```
+
+2. Update the import in `core/app/[locale]/(default)/product/[slug]/_components/product-review-schema/product-review-schema.tsx`:
+
+```diff
+- import DOMPurify from 'isomorphic-dompurify';
++ import DOMPurify from 'dompurify';
+```
+
+3. Add the `'use client';` directive to the top of the same file.
+
+## Form field validation translations
+
+Forms now translate validation error messages. Due to the breadth of changes across form components, it is recommended to use the [PR](https://github.com/bigcommerce/catalyst/pull/2844) as a reference for migration.
+
+## Conditional SEO metadata
+
+Optional SEO metadata fields (`description`, `keywords`, `alternates`, `openGraph`) are now only included in `generateMetadata` return values when they have a value, using conditional spread syntax. Previously, these fields could be set to `null` or an empty string, which caused Next.js to render empty `<meta>` tags.
+
+### Migration
+
+Update `generateMetadata` in page files (brand, category, webpages, blog, blog post, product) to use conditional spread syntax for optional metadata fields:
+
+```diff
+  return {
+    title: pageTitle || entity.name,
+-   description: metaDescription,
+-   keywords: metaKeywords ? metaKeywords.split(',') : null,
++   ...(metaDescription && { description: metaDescription }),
++   ...(metaKeywords && { keywords: metaKeywords.split(',') }),
+  };
+```
+
+## Bug fixes and improvements
+
+- **Makeswift layout shift**: Upgraded `@makeswift/runtime` to `^0.26.3`, which replaces `<Suspense>` with the React `<Activity>` API to eliminate layout shift when loading Makeswift pages and when client-side navigating between Makeswift and non-Makeswift pages.
+- **Gift certificate amount selection**: Fixed an issue where the `GiftCertificateCard` was not updating when selecting a new amount on the gift certificate purchase form.
+- **Cart shipping form state values**: The cart shipping estimator now uses state abbreviations instead of `entityId` for state values. The shipping API expects abbreviations, and using `entityId` caused form submissions to fail. Certain US military states that share the same abbreviation (AE) are now filtered to prevent duplicate key issues.
+- **Translation updates**: Updated translations across the storefront.
+
+## Release Tags
+
+We have published new tags for the Core and Makeswift versions of Catalyst. Target these tags to pull the latest code:
+
+- [**@bigcommerce/catalyst-core@1.5.0**](https://github.com/bigcommerce/catalyst/releases/tag/%40bigcommerce%2Fcatalyst-core%401.5.0)
+- [**@bigcommerce/catalyst-makeswift@1.5.0**](https://github.com/bigcommerce/catalyst/releases/tag/%40bigcommerce%2Fcatalyst-makeswift%401.5.0)
+
+And as always, you can pull the latest stable release with these tags:
+
+- [**@bigcommerce/catalyst-core@latest**](https://github.com/bigcommerce/catalyst/releases/tag/%40bigcommerce%2Fcatalyst-core%40latest)
+- [**@bigcommerce/catalyst-makeswift@latest**](https://github.com/bigcommerce/catalyst/releases/tag/%40bigcommerce%2Fcatalyst-makeswift%40latest)

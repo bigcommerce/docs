@@ -275,7 +275,7 @@ paths:
                     $ref: '#/components/schemas/EmptyMeta'
               example:
                 data:
-                  upload_url: 'https://storage.example.com/uploads/signed-url'
+                  upload_url: 'https://storage.googleapis.com/bigcommerce-production-ignition-gcs-bucket-platform/0000000000/0194fd2b-2ac6-72de-b73f-d83f2d626a74/bundle.zip?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=example%40bigcommerce-production.iam.gserviceaccount.com%2F20240615%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20240615T103000Z&X-Goog-Expires=59&X-Goog-Signature=example-signature&X-Goog-SignedHeaders=content-type%3Bhost'
                   upload_uuid: '0194fd2b-2ac6-72de-b73f-d83f2d626a74'
                 meta: {}
   '/infrastructure/deployments/{deployment_uuid}/events':
@@ -298,18 +298,24 @@ paths:
             format: uuid
       responses:
         '200':
-          description: A stream of server-sent events with deployment progress updates.
+          description: 'A stream of server-sent events with deployment progress updates. The `data` attribute is stringified JSON.'
           content:
             text/event-stream:
               schema:
-                $ref: '#/components/schemas/DeploymentEvent'
-              example:
-                deployment_uuid: '019500e2-933d-7057-8e81-090dd7240795'
-                deployment_status: 'in_progress'
-                event:
-                  step: 'downloading'
-                  progress: 25
-                deployment_url: null
+                type: string
+              examples:
+                queued:
+                  summary: Deployment queued
+                  value: 'event: message\ndata: {"deployment_uuid":"019500e2-933d-7057-8e81-090dd7240795","deployment_status":"queued","event":null,"deployment_url":null}\n\n'
+                in_progress:
+                  summary: Deployment in progress
+                  value: 'event: message\ndata: {"deployment_uuid":"019500e2-933d-7057-8e81-090dd7240795","deployment_status":"in_progress","event":{"step":"downloading","progress":25},"deployment_url":null}\n\n'
+                completed:
+                  summary: Deployment completed
+                  value: 'event: message\ndata: {"deployment_uuid":"019500e2-933d-7057-8e81-090dd7240795","deployment_status":"completed","event":{"step":"complete","progress":100},"deployment_url":"catalyst.catalyst-sandbox.store"}\n\n'
+                failed:
+                  summary: Deployment failed
+                  value: 'event: message\ndata: {"deployment_uuid":"019500e2-933d-7057-8e81-090dd7240795","deployment_status":"failed","event":null,"error":{"code":20},"deployment_url":null}\n\n'
         '400':
           description: The deployment UUID is not a valid UUID.
           content:
@@ -343,25 +349,18 @@ paths:
             format: uuid
       responses:
         '200':
-          description: A stream of server-sent events with real-time worker log entries.
+          description: 'A stream of server-sent events with real-time worker log entries. The `data` attribute is stringified JSON.'
           content:
             text/event-stream:
               schema:
-                $ref: '#/components/schemas/WorkerLogEvent'
-              example:
-                uuid: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'
-                project_uuid: '019500e2-933d-7057-8e81-090dd7240795'
-                request:
-                  method: 'GET'
-                  url: '/products'
-                  status_code: 200
-                logs:
-                  - timestamp: '2024-06-15T10:30:00Z'
-                    level: 'info'
-                    messages:
-                      - 'Request processed successfully'
-                exceptions: []
-                timestamp: '2024-06-15T10:30:00Z'
+                type: string
+              examples:
+                success_log:
+                  summary: Successful request log
+                  value: 'event: message\ndata: {"uuid":"a1b2c3d4-e5f6-7890-abcd-ef1234567890","project_uuid":"019500e2-933d-7057-8e81-090dd7240795","request":{"method":"GET","url":"/products","status_code":200},"logs":[{"timestamp":"2024-06-15T10:30:00Z","level":"info","messages":["Request processed successfully"]}],"exceptions":[],"timestamp":"2024-06-15T10:30:00Z"}\n\n'
+                error_log:
+                  summary: Request with exception
+                  value: 'event: message\ndata: {"uuid":"b2c3d4e5-f6a7-8901-bcde-f12345678901","project_uuid":"019500e2-933d-7057-8e81-090dd7240795","request":{"method":"GET","url":"/checkout","status_code":500},"logs":[{"timestamp":"2024-06-15T10:31:00Z","level":"error","messages":["Internal server error"]}],"exceptions":[{"timestamp":"2024-06-15T10:31:00Z","name":"TypeError","message":"Cannot read property of undefined"}],"timestamp":"2024-06-15T10:31:00Z"}\n\n'
         '400':
           description: The project UUID is not a valid UUID.
           content:
@@ -467,7 +466,7 @@ components:
           type: string
           format: uri
           description: The pre-signed URL to upload the deployment artifact to.
-          example: 'https://storage.example.com/uploads/signed-url'
+          example: 'https://storage.googleapis.com/bigcommerce-production-ignition-gcs-bucket-platform/0000000000/0194fd2b-2ac6-72de-b73f-d83f2d626a74/bundle.zip?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=example%40bigcommerce-production.iam.gserviceaccount.com%2F20240615%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20240615T103000Z&X-Goog-Expires=59&X-Goog-Signature=example-signature&X-Goog-SignedHeaders=content-type%3Bhost'
         upload_uuid:
           type: string
           description: The UUID identifying this upload. Pass this value when creating a deployment.
@@ -524,7 +523,7 @@ components:
           type: string
           nullable: true
           description: The URL where the deployed application is accessible. Null until the deployment is finalizing or complete.
-          example: 'my-store.catalyst-sandbox.store'
+          example: 'catalyst.catalyst-sandbox.store'
     WorkerLogEvent:
       type: object
       description: A worker log event delivered via server-sent events.

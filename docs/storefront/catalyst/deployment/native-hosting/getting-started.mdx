@@ -19,7 +19,7 @@ Install the Catalyst CLI and the OpenNext Cloudflare adapter in the `core` direc
 
 ```shell
 cd core
-pnpm add @bigcommerce/catalyst@alpha @opennextjs/cloudflare
+pnpm add @bigcommerce/catalyst@alpha @opennextjs/cloudflare@1.17.3
 ```
 
 In the `scripts` section of your `core/package.json` file, replace `next build` with `catalyst build` in the `build` script. Then, add a new script for deploying: `"deploy": "catalyst deploy"`. The `dev` and `start` scripts remain unchanged and continue to use `next dev` and `next start` directly.
@@ -35,6 +35,27 @@ The final result will look like this.
 ```
 
 For running Catalyst locally, you will still use the same terminal command you used in the past, `pnpm dev`.
+
+## Next.js 16 Migration Note
+
+<Callout type="warning">
+  If your Catalyst project uses Next.js 16, you may have a `proxy.ts` file in your project root (the default in Next.js 16). Native Hosting on Cloudflare Workers does not currently support Node.js middleware (`proxy.ts`). You must make the following changes.
+</Callout>
+
+1. **Rename** `proxy.ts` to `middleware.ts`
+2. **Change the export** from `export const proxy` to `export const middleware`
+3. **Add the edge runtime** to your exported config object:
+
+```ts
+export const config = {
+  runtime: 'experimental-edge',
+  matcher: [
+    // ...your existing matchers
+  ],
+};
+```
+
+This is required because `proxy.ts` is locked to the Node.js runtime, which is not supported by the OpenNext Cloudflare adapter. Using `middleware.ts` with `runtime: 'experimental-edge'` ensures your middleware runs on Cloudflare Workers. This workaround will be removed once the OpenNext Cloudflare adapter adds support for Node middleware via the Adapters API.
 
 ## Usage
 

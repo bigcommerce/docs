@@ -2,7 +2,7 @@ openapi: 3.0.3
 info:
   title: Tax Classes
   description: |
-    Manage tax calculations applied to sales. Tax classes are used to apply different tax rates for specific types of products and orders.
+    Manage tax classification options available on your store. Tax classes are used to apply different tax rates to products and other item types.
 
     This API exposes batch operations (`POST`, `PUT`, `DELETE`) for tax classes.
 
@@ -26,21 +26,20 @@ servers:
     description: BigCommerce API Gateway
 
 tags:
-  - name: Tax — Class (batch)
-    description: Batch create, update, and delete tax classes.
+  - name: Tax Classes
+    description: Create, update, and delete tax classes.
 
 paths:
-  /tax/class:
+  /tax/classes:
     post:
-      tags: [Tax — Class (batch)]
-      summary: Batch create tax classes
+      tags:
+        - Tax Classes
+      summary: Create tax classes
       description: |
         Creates multiple tax classes in a single request. Max **50** items per request.
-        Each `name` must be **1–100** characters and cannot contain angle brackets,
-        braces, backticks, parentheses, semicolons, or pipes.
-        Names must be **unique case-insensitively** within the batch.
+        Names must be **unique case-insensitively** across the store (both existing classes and the incoming batch).
 
-        Conflicting names against existing tax classes produce **409**.
+        Conflicting names produce **409**.
       operationId: taxClassBatchPost
       security:
         - adminAuth: []
@@ -100,14 +99,15 @@ paths:
                 $ref: '#/components/schemas/ProblemResponseEnvelope'
 
     put:
-      tags: [Tax — Class (batch)]
+      tags:
+        - Tax Classes
       summary: Batch update tax classes
       description: |
         Updates multiple tax classes in a single request. Collection PUT only.
 
         Request body: non-empty array, max **50** items. Each item must include:
         - `id`: positive integer (**unique** across the batch)
-        - `name`: same length and character rules as create; **unique case-insensitively** in the batch.
+        - `name`: same length and character rules as create; **unique case-insensitively** across the store.
 
         Returns **400** if one or more specified classes are not found.
         Duplicate names → **409**.
@@ -171,7 +171,8 @@ paths:
                 $ref: '#/components/schemas/ProblemResponseEnvelope'
 
     delete:
-      tags: [Tax — Class (batch)]
+      tags:
+        - Tax Classes
       summary: Batch delete tax classes
       description: |
         Deletes multiple tax classes in a single request. The request must include the **`id:in`** query parameter
@@ -291,7 +292,8 @@ components:
             minLength: 1
             maxLength: 100
             description: >
-              Must not contain < > { } ` ( ) ; |
+              Tax class name. Must be 1–100 characters and cannot contain
+              < > { } ` ( ) ; |
         additionalProperties: false
 
     TaxClassUpdateBatch:

@@ -1,23 +1,20 @@
 openapi: 3.0.3
 info:
-  title: BigCommerce Internal API — Tax classes (batch Tax API)
+  title: Tax Classes
   description: |
-    OpenAPI for batch operations implemented by `Bigcommerce\Tax\Api\V1\Classes\ClassesController`
-    (`batchPostAction`, `batchPutAction`, `batchDeleteAction`) via `TaxBatchResourceController`.
+    Manage tax calculations applied to sales. Tax classes are used to apply different tax rates for specific types of products and orders.
 
-    **Route:** `tax/class` → controller `Bigcommerce\Tax\Api\V1\Classes\ClassesController`
-    (`config/routes/V1/api_internal.php`). Full path is typically `/v1/tax/class` on the internal API host.
+    This API exposes batch operations (`POST`, `PUT`, `DELETE`) for tax classes.
 
-    **Auth:** `admin` and `hawk` (hawk config includes `api_proxy`).
+    **Responses:** Successful JSON bodies use the envelope format:
+    `{ "data": ..., "meta": ... }`. Batch POST/PUT return an array of tax class resources under `data`.
 
-    **Write access:** `TaxResourceController::beforeAction` enforces `Manage_Tax` for non-read-only actions and CSRF where applicable.
-
-    **Responses:** Successful JSON bodies use the internal API envelope from `ResourceController::handleResponse`:
-    `{ "data": ..., "meta": ... }`. Collection payloads from Fractal omit the inner `meta` key (it is hoisted to the outer `meta`).
-    Batch POST/PUT return an array of tax class resources under `data` (see `ClassTransformer`).
-
-    **DELETE:** `batchDeleteAction` uses `ClassesServiceRequest` built from query parameters; the path segment `:id`
-    is ignored (`TaxBatchResourceController::deleteAction`). Deletes require `id:in` filter with the `in` operator.
+    **DELETE:** Deletes are filter-based using the `id:in` query parameter. The request must specify the ids to delete — there is no single-resource delete on this endpoint.
+  termsOfService: 'https://www.bigcommerce.com/terms'
+  contact:
+    name: BigCommerce
+    url: 'https://www.bigcommerce.com'
+    email: support@bigcommerce.com
   version: 1.0.0
 
 servers:
@@ -30,7 +27,7 @@ servers:
 
 tags:
   - name: Tax — Class (batch)
-    description: V1 Tax API tax class batch CRUD (internal).
+    description: Batch create, update, and delete tax classes.
 
 paths:
   /tax/class:
@@ -38,12 +35,12 @@ paths:
       tags: [Tax — Class (batch)]
       summary: Batch create tax classes
       description: |
-        `batchPostAction`: JSON array of create items. Max **50** items per request (`TaxBatchResourceValidator`).
-        Each `name` must be **1–100** characters, non-empty, and cannot contain angle brackets,
-        braces, backticks, parentheses, semicolon, or pipe (see `TaxBatchResourceValidator::INVALID_DISPLAY_CHARACTERS`).
+        Creates multiple tax classes in a single request. Max **50** items per request.
+        Each `name` must be **1–100** characters and cannot contain angle brackets,
+        braces, backticks, parentheses, semicolons, or pipes.
         Names must be **unique case-insensitively** within the batch.
 
-        Conflicting names against existing data produce **409** (`DuplicateTaxClassNamesException` → `InternalApiException::create409`).
+        Conflicting names against existing tax classes produce **409**.
       operationId: taxClassBatchPost
       security:
         - adminAuth: []
@@ -59,13 +56,13 @@ paths:
               - name: Class Two
       responses:
         '200':
-          description: Created classes returned as a collection (default response status unless overridden upstream).
+          description: Created classes returned as a collection.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/TaxClassCollectionEnvelope'
         '400':
-          description: Bad request (e.g. invalid input via `InvalidInputException`, default status 400).
+          description: Bad request (e.g. invalid input).
           content:
             application/problem+json:
               schema:
@@ -84,8 +81,7 @@ paths:
                 $ref: '#/components/schemas/ProblemResponseEnvelope'
         '422':
           description: |
-            Unprocessable entity — empty body, non-array batch shape, duplicate `name` or `id` in batch per validator,
-            or other `InternalApiException::create422` cases.
+            Unprocessable entity — empty body, non-array batch shape, or duplicate `name` or `id` within the batch.
           content:
             application/problem+json:
               schema:
@@ -97,7 +93,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemResponseEnvelope'
         '500':
-          description: Unexpected error (wrapped by internal API factory in production).
+          description: Unexpected server error.
           content:
             application/problem+json:
               schema:
@@ -107,16 +103,14 @@ paths:
       tags: [Tax — Class (batch)]
       summary: Batch update tax classes
       description: |
-        `batchPutAction` (collection **PUT** only — `TaxBatchResourceController` allows PUT when `isCollection` is true).
+        Updates multiple tax classes in a single request. Collection PUT only.
 
         Request body: non-empty array, max **50** items. Each item must include:
         - `id`: positive integer (**unique** across the batch)
-        - At least one non-`id` field; schema allows `name` (optional in Respect `keySet`, but **required in practice** so the item is not id-only).
+        - `name`: same length and character rules as create; **unique case-insensitively** in the batch.
 
-        `name` when present: same length and character rules as create; **unique case-insensitively** in the batch.
-
-        `ClassesNotFoundException` from `TaxClassService::update` → **400** (`InternalApiException::create400`).
-        Duplicate names → **409** (same as create).
+        Returns **400** if one or more specified classes are not found.
+        Duplicate names → **409**.
       operationId: taxClassBatchPut
       security:
         - adminAuth: []
@@ -180,14 +174,13 @@ paths:
       tags: [Tax — Class (batch)]
       summary: Batch delete tax classes
       description: |
-        `deleteAction` → `batchDeleteAction`. Request must include filter **`id:in`** with comma-separated positive integer ids
-        (`validateBatchRequestUsesSupportedOperator` requires operator `in`; `getIdList()` reads the `in` criterion).
+        Deletes multiple tax classes in a single request. The request must include the **`id:in`** query parameter
+        with a comma-separated list of positive integer ids.
 
-        Max **50** ids (`validateBatchRequestLimit`). Empty id list → **404** (`validateNonEmptyQueryFilter`).
-        Invalid id values → **422**. `ClassesNotFoundException` on delete → **400**.
+        Max **50** ids. Empty id list → **404**. Invalid id values → **422**.
+        Returns **400** if one or more specified classes are not found.
 
-        Success returns **204 No Content** (`RESULT_NO_CONTENT`).
-        The `:id` path parameter on singular delete routes is **not used** for the id list.
+        Success returns **204 No Content**.
       operationId: taxClassBatchDelete
       security:
         - adminAuth: []
@@ -197,7 +190,7 @@ paths:
           in: query
           required: true
           description: |
-            Internal filter parameter: field `id`, operator `in`, comma-separated ids (e.g. `1,2,3`).
+            Comma-separated list of tax class ids to delete (e.g. `1,2,3`).
             Must use the `in` operator; other filter operators are rejected with **400**.
           schema:
             type: string
@@ -248,12 +241,40 @@ components:
       type: apiKey
       in: header
       name: X-Auth-Client
-      description: Internal API admin authentication (see platform docs).
+      description: |-
+        ### Required permissions
+
+        | Permission | Description |
+        |:-----------|:------------|
+        | `Manage_Tax` | Required for write operations (POST, PUT, DELETE). Read-only actions do not require this permission. |
+
+        ### Authentication header
+
+        | Header | Argument | Description |
+        |:-------|:---------|:------------|
+        | `X-Auth-Client` | `client_id` | Admin client identifier. |
+
+        ### Further reading
+
+        For a list of API status codes, see [API Status Codes](/docs/start/about/status-codes).
     hawkAuth:
       type: apiKey
       in: header
       name: X-Auth-Client
-      description: Hawk-authenticated clients (e.g. API proxy).
+      description: |-
+        ### Overview
+
+        Hawk-authenticated clients authorized via the hawk configuration.
+
+        ### Required permissions
+
+        | Permission | Description |
+        |:-----------|:------------|
+        | `Manage_Tax` | Required for write operations (POST, PUT, DELETE). |
+
+        ### Further reading
+
+        For a list of API status codes, see [API Status Codes](/docs/start/about/status-codes).
 
   schemas:
     TaxClassCreateBatch:
@@ -270,7 +291,7 @@ components:
             minLength: 1
             maxLength: 100
             description: >
-              Must not contain < > { } ` ( ) ; | (see TaxBatchResourceValidator::INVALID_DISPLAY_CHARACTERS).
+              Must not contain < > { } ` ( ) ; |
         additionalProperties: false
 
     TaxClassUpdateBatch:
@@ -283,7 +304,7 @@ components:
           - id
           - name
         description: |
-          Code allows optional `name` in Respect rules but requires at least one non-id field; only `name` is permitted besides `id`.
+          Each item must include `id` and at least one other field. Only `name` is permitted alongside `id`.
         properties:
           id:
             type: integer
@@ -309,7 +330,7 @@ components:
         created_at:
           type: string
           format: date-time
-          description: ISO-8601 (`DateTimeInterface::ATOM`).
+          description: ISO-8601 timestamp.
         updated_at:
           type: string
           format: date-time
@@ -326,7 +347,7 @@ components:
             $ref: '#/components/schemas/TaxClassResource'
         meta:
           type: object
-          description: Fractal / serializer metadata (may be empty object).
+          description: Response metadata (may be an empty object).
 
     Problem:
       type: object

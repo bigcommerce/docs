@@ -1,0 +1,109 @@
+# Native Hosting Request Lifecycle
+
+<Callout type="warning">
+  The Catalyst CLI and Native Hosting are currently in closed alpha. There may be breaking changes as we finalize the API.
+</Callout>
+
+The following sequence diagram illustrates the full lifecycle of a request to a Catalyst storefront deployed via Native Hosting. It covers static asset serving, dynamic page rendering with multi-layer caching (regional cache and R2), stale-while-revalidate behavior, and on-demand cache invalidation.
+
+```mermaid
+sequenceDiagram
+    actor Browser
+    participant CF as Cloudflare Edge
+    participant DW as Dispatch Worker
+    participant RKV as Routing KV
+    participant SA as Workers Static Assets
+    participant NW as Next.js Worker<br/>(OpenNext)
+    participant RC as Regional Cache<br/>(CF Cache API)
+    participant R2 as R2 Bucket
+    participant DOQ as DO Queue
+    participant DOTC as DO Sharded Tag Cache
+    participant DOP as DO Cache Purge
+    participant BCGQL as BigCommerce<br/>GraphQL API
+
+    Note over DW, NW: WfP: $0.3/M req + $0.02/M CPU-ms<br/>DW + NW count as single request<br/>CPU-ms billed across both
+    Note over RKV: Reads: $0.5/M ops<br/>Writes: $5/M ops<br/>Storage: $0.5/GB/mo
+    Note over RC: Free
+    Note over R2: Storage: $0.015/GB/mo<br/>Class A: $4.5/M ops<br/>Class B: $0.36/M ops
+    Note over DOQ: Req: $0.15/M req<br/>Duration: $12.5/M GB-s<br/>Rows Read: $0.001/M<br/>Rows Written: $1/M
+    Note over DOTC: Req: $0.15/M req<br/>Duration: $12.5/M GB-s<br/>Rows Read: $0.001/M<br/>Rows Written: $1/M
+    Note over DOP: Req: $0.15/M req<br/>Duration: $12.5/M GB-s
+
+    Browser->>CF: GET https://catalyst-demo.site/shop-all/
+    CF->>DW: fetch(request)
+
+    Note over DW: Extract hostname from URL
+
+    DW->>RKV: GET hostname:catalyst-demo.site
+    RKV-->>DW: { catalyst: { worker_name: "12345-abc-uuid" } }
+
+    Note over DW: DISPATCHER.get("12345-abc-uuid")
+
+    DW->>NW: worker.fetch(request, { headers })
+
+    Note over NW: OpenNext fetch handler begins
+
+    alt Request Type: Static Asset
+        NW->>SA: ASSETS binding serves file
+        SA-->>NW: Static file response
+        NW-->>DW: Response with immutable cache headers
+        DW-->>CF: Response
+        CF-->>Browser: Static asset
+    else Request Type: Dynamic Page
+        NW->>RC: cache.match(request)
+
+        alt Cache Layer 1: Regional Cache HIT
+            RC-->>NW: HIT - cached HTML response
+            NW-->>DW: Cached HTML response
+            DW-->>CF: Response
+            CF-->>Browser: Full page HTML
+        else Cache Layer 1: Regional Cache MISS
+            RC-->>NW: MISS
+            NW->>R2: GET cache key for /shop-all/
+
+            alt Cache Layer 2: R2 STALE
+                R2-->>NW: STALE
+                Note over NW, RC: Serve stale response immediately
+                NW->>DOQ: Enqueue revalidation job<br/>deduplicated across workers
+                NW-->>DW: Stale HTML response
+                DW-->>CF: Response
+                CF-->>Browser: Stale page HTML
+
+                Note over DOQ, BCGQL: Background revalidation begins
+                DOQ->>NW: Re-render page via self-reference
+                NW->>BCGQL: GraphQL queries for fresh data
+                BCGQL-->>NW: Fresh page data
+                NW->>RC: cache.put fresh response
+                NW->>R2: PUT updated cache entry
+                NW->>DOTC: Update tag to path mapping
+            else Cache Layer 2: R2 MISS - Full SSR
+                R2-->>NW: MISS
+                Note over NW: Next.js SSR begins<br/>Layout + Page render
+
+                NW->>BCGQL: GraphQL queries for page data
+                BCGQL-->>NW: Page data
+
+                Note over NW, RC: Store rendered output in cache
+
+                NW->>RC: cache.put request and response<br/>long-lived regional cache
+                NW->>R2: PUT cache entry<br/>with cache tags like category-23
+                NW->>DOTC: Record tag to path mapping<br/>sharded across 12 base shards<br/>4 soft and 2 hard replicas
+
+                NW-->>DW: HTML response streaming
+                DW-->>CF: Response
+                CF-->>Browser: Streamed HTML<br/>shell first then Suspense chunks
+            end
+        end
+    end
+
+    Note over Browser, BCGQL: On-Demand Invalidation Flow
+
+    Browser->>NW: Server action calls revalidateTag
+    NW->>DOTC: Resolve paths for invalidated tag
+    DOTC-->>NW: List of affected paths
+    NW->>DOP: Purge regional cache for affected paths
+    DOP->>RC: Batched cache purge via CF API
+    RC-->>DOP: Purged
+    NW->>R2: Delete stale cache entries
+    Note over NW, RC: Next request for these paths<br/>will trigger a fresh SSR
+```

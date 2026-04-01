@@ -1,0 +1,347 @@
+openapi: 3.0.3
+info:
+  title: Tax Classes
+  description: |
+    Manage tax classification options available on your store. Tax classes are used to apply different tax rates to products and other item types.
+
+    This API exposes batch operations (`POST`, `PUT`, `DELETE`) for tax classes.
+
+    **Responses:** Successful JSON bodies use the envelope format:
+    `{ "data": ..., "meta": ... }`. Batch POST/PUT return an array of tax class resources under `data`.
+
+    **DELETE:** Deletes are filter-based using the `id:in` query parameter. The request must specify the IDs to delete — there is no single-resource delete on this endpoint.
+  termsOfService: 'https://www.bigcommerce.com/terms'
+  contact:
+    name: BigCommerce
+    url: 'https://www.bigcommerce.com'
+    email: support@bigcommerce.com
+  version: 1.0.0
+
+servers:
+  - url: 'https://api.bigcommerce.com/stores/{store_hash}/v3'
+    variables:
+      store_hash:
+        default: store_hash
+        description: Permanent ID of the BigCommerce store.
+    description: BigCommerce API Gateway
+
+security:
+  - X-Auth-Token: []
+
+tags:
+  - name: Tax Classes
+
+paths:
+  /tax/classes:
+    post:
+      tags:
+        - Tax Classes
+      summary: Create tax classes
+      description: |
+        Creates multiple tax classes in a single request. Max **50** items per request.
+      operationId: taxClassBatchPost
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaxClassCreateBatch'
+            example:
+              - name: Class One
+              - name: Class Two
+      responses:
+        '200':
+          description: Created classes returned as a collection.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaxClassCollectionEnvelope'
+        '400':
+          description: Bad request (e.g., invalid input).
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemResponseEnvelope'
+        '409':
+          description: Duplicate tax class names (conflict).
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemResponseEnvelope'
+        '413':
+          description: Batch exceeds limit (50 items).
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemResponseEnvelope'
+        '422':
+          description: |
+            Unprocessable entity — empty body, non-array batch shape, or duplicate `name` or `id` within the batch.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemResponseEnvelope'
+        '403':
+          description: Authentication or `Manage_Tax` denied.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemResponseEnvelope'
+        '500':
+          description: Unexpected server error.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemResponseEnvelope'
+
+    put:
+      tags:
+        - Tax Classes
+      summary: Update tax classes
+      description: |
+        Updates multiple tax classes in a single request. Max **50** items per request.
+      operationId: taxClassBatchPut
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaxClassUpdateBatch'
+            example:
+              - id: 1
+                name: Renamed One
+              - id: 2
+                name: Renamed Two
+      responses:
+        '200':
+          description: Updated classes returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaxClassCollectionEnvelope'
+        '400':
+          description: One or more classes not found (update).
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemResponseEnvelope'
+        '409':
+          description: Duplicate tax class names.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemResponseEnvelope'
+        '413':
+          description: Batch exceeds 50 ids/items.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemResponseEnvelope'
+        '422':
+          description: Validation error (format, duplicate `id` in batch, invalid ID values, ID-only update payload, etc.).
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemResponseEnvelope'
+        '403':
+          description: Authentication or permission denied.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemResponseEnvelope'
+        '500':
+          description: Server error.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemResponseEnvelope'
+
+    delete:
+      tags:
+        - Tax Classes
+      summary: Delete tax classes
+      description: |
+        Deletes multiple tax classes in a single request. Max **50** items per request.
+      operationId: taxClassBatchDelete
+
+      parameters:
+        - name: id:in
+          in: query
+          required: true
+          description: |
+            Comma-separated list of tax class IDs to delete (e.g., `1,2,3`).
+          schema:
+            type: string
+          example: '101,102,103'
+      responses:
+        '204':
+          description: All listed classes deleted successfully.
+        '400':
+          description: Delete failed (e.g., class not found).
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemResponseEnvelope'
+        '404':
+          description: Missing or empty `id:in` filter.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemResponseEnvelope'
+        '413':
+          description: More than 50 IDs.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemResponseEnvelope'
+        '422':
+          description: Invalid ID values in filter.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemResponseEnvelope'
+        '403':
+          description: Authentication or permission denied.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemResponseEnvelope'
+        '500':
+          description: Server error.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemResponseEnvelope'
+
+components:
+  securitySchemes:
+    X-Auth-Token:
+      name: X-Auth-Token
+      description: |-
+        ### OAuth scopes
+
+        | UI Name | Permission | Parameter |
+        |:--------|:-----------|:----------|
+        | Tax | modify | `MANAGE_TAX` |
+
+        ### Authentication header
+
+        | Header | Argument | Description |
+        |:-------|:---------|:------------|
+        | `X-Auth-Token` | `access_token` | For more about API accounts that generate `access_token`s, see our [Guide to API Accounts](/docs/start/authentication/api-accounts). |
+
+        ### Further reading
+
+        For example requests and more information about authenticating BigCommerce APIs, see [Authentication and Example Requests](/docs/start/authentication#x-auth-token-header-example-requests).
+
+        For more about BigCommerce OAuth scopes, see our [Guide to API Accounts](/docs/start/authentication/api-accounts#oauth-scopes).
+
+        For a list of API status codes, see [API Status Codes](/docs/start/about/status-codes).
+      type: apiKey
+      in: header
+
+  schemas:
+    TaxClassCreateBatch:
+      type: array
+      minItems: 1
+      maxItems: 50
+      items:
+        type: object
+        required:
+          - name
+        properties:
+          name:
+            type: string
+            minLength: 1
+            maxLength: 100
+            description: >
+              Tax class name. Must be 1–100 characters and cannot contain
+              < > { } ` ( ) ; |. Must be unique case-insensitively across the store
+              (both existing classes and the incoming batch). Conflicting names produce a 409.
+        additionalProperties: false
+
+    TaxClassUpdateBatch:
+      type: array
+      minItems: 1
+      maxItems: 50
+      items:
+        type: object
+        required:
+          - id
+          - name
+        description: |
+          Each item must include `id` and at least one other field.
+        properties:
+          id:
+            type: integer
+            minimum: 1
+          name:
+            type: string
+            minLength: 1
+            maxLength: 100
+        additionalProperties: false
+
+    TaxClassResource:
+      type: object
+      required:
+        - id
+        - name
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+          description: ISO-8601 timestamp.
+        updated_at:
+          type: string
+          format: date-time
+
+    TaxClassCollectionEnvelope:
+      type: object
+      required:
+        - data
+        - meta
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/TaxClassResource'
+        meta:
+          type: object
+          description: Response metadata (may be an empty object).
+
+    Problem:
+      type: object
+      description: RFC 7807-style problem object (optional fields omitted when empty).
+      properties:
+        title:
+          type: string
+        status:
+          type: integer
+        type:
+          type: string
+          format: uri
+        detail:
+          type: string
+        code:
+          type: integer
+        errors:
+          type: object
+          additionalProperties: true
+
+    ProblemResponseEnvelope:
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Problem'
+        meta:
+          type: object
